@@ -85,6 +85,9 @@
   with the existing 8-bit logic-flag contract.
 - M2 T2 S3 P44 adds the compare form of `83 /7 ib`, sign-extending the byte
   immediate into the shared 16-bit comparison-flag contract.
+- M2 T2 S3 P45 adds a focused PCjs DeskPro 386 reset-path regression fixture,
+  with controlled port responses, from the reset vector through the `E000:0003`
+  option-ROM dispatch.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
