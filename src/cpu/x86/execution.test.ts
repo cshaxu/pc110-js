@@ -208,6 +208,24 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("compares a register byte with an immediate value through 80 /7", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x80],
+      [0x000ffff1, 0xfb],
+      [0x000ffff2, 0x09]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    state.writeRegister8(3, 0x09);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0x09 },
+      eflags: 0x00000046,
+      eip: 0x0000fff3
+    });
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],

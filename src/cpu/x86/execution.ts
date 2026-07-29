@@ -163,6 +163,17 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0x80: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect || modRm.reg !== 0x07)
+        throw new UnsupportedOpcodeError("Unsupported 80 opcode form");
+      state.writeCompareFlags8(
+        state.readRegister8(modRm.rm),
+        fetchCodeByte(memory, state, 2).opcode
+      );
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0xe9: {
       const displacement = signedWord(fetchCodeUint16(memory, state, 1));
       state.writeEip16(fetched.instructionPointer + 3 + displacement);

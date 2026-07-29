@@ -119,4 +119,12 @@ describe("Cpu386State", () => {
     expect(cpu.readRegister8(7)).toBe(0x12);
     expect(cpu.snapshot().eflags).toBe(0x00000082);
   });
+
+  it("sets 8-bit comparison flags without modifying operands", () => {
+    const cpu = new Cpu386State();
+    cpu.writeCompareFlags8(0x08, 0x09);
+
+    expect(cpu.snapshot().eflags).toBe(0x00000097);
+    expect(cpu.zeroFlag()).toBe(false);
+  });
 });

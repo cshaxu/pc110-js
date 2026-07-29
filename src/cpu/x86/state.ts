@@ -48,9 +48,13 @@ const CR0_PROTECTED_MODE = 0x00000001;
 const EFLAGS_STATUS_MASK = 0x000000d5;
 const EFLAGS_INTERRUPT_ENABLE = 0x00000200;
 const EFLAGS_LOGIC_MASK = 0x000008c5;
+const EFLAGS_ARITHMETIC_MASK = 0x000008d5;
+const EFLAGS_CARRY = 0x00000001;
+const EFLAGS_AUXILIARY_CARRY = 0x00000010;
 const EFLAGS_PARITY = 0x00000004;
 const EFLAGS_ZERO = 0x00000040;
 const EFLAGS_SIGN = 0x00000080;
+const EFLAGS_OVERFLOW = 0x00000800;
 const REAL_MODE_SEGMENT: SegmentState = { selector: 0, base: 0, limit: 0xffff };
 const RESET_CS: SegmentState = { selector: 0xf000, base: 0xffff0000, limit: 0xffff };
 
@@ -205,6 +209,20 @@ export class Cpu386State {
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x8000) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeCompareFlags8(left: number, right: number): void {
+    const leftByte = left & 0xff;
+    const rightByte = right & 0xff;
+    const result = (leftByte - rightByte) & 0xff;
+    let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
+    if (leftByte < rightByte) flags |= EFLAGS_CARRY;
+    if ((leftByte ^ rightByte ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    if ((leftByte ^ rightByte) & (leftByte ^ result) & 0x80) flags |= EFLAGS_OVERFLOW;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
