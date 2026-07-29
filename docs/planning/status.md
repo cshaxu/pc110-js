@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T2 S3: in progress; inventory BIOS, ROM, disk, configuration, browser,
-  and build dependencies.
+- M1 T2 S4: reject machine candidates that require unrelated PCjs website or
+  archive content.
 
 ## Delivery Nodes
 
