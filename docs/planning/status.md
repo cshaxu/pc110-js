@@ -12,8 +12,7 @@
 
 ## Next Eligible Work
 
-- M2 T1 S3: define machine-profile, device-registry, interface, and variant
-  contracts.
+- M2 T1 S4: define deterministic emulated-time and host-scheduling boundaries.
 
 ## Delivery Nodes
 
