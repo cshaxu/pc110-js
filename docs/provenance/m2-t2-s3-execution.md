@@ -612,6 +612,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   (`66 FF /3`) through the existing descriptor loader and 32-bit stack frame path.
 - M2 T2 S3 P224 adds protected-mode `JMP FAR m16:32` (`66 FF /5`) through the
   existing descriptor loader and 32-bit instruction-pointer path.
+- M2 T2 S3 P225 adds CPL-zero protected-mode `PUSHFD` and `POPFD` (`66 9C/9D`)
+  through the existing 32-bit stack path, preserving VM and RF across POPFD.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

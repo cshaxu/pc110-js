@@ -1607,6 +1607,40 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("pushes and restores 32-bit protected-mode flags without VM or RF", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0x9c],
+      [0x00000002, 0x66],
+      [0x00000003, 0x9d]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x2000);
+    state.writeEflags(0x00010257);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x1ffc } });
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x1ffc + offset))).toEqual([
+      0x57, 0x02, 0x00, 0x00
+    ]);
+    values.set(0x1ffc, 0xd5);
+    values.set(0x1ffd, 0x04);
+    values.set(0x1ffe, 0x03);
+    values.set(0x1fff, 0x00);
+
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({
+      eflags: 0x000104d7,
+      registers: { esp: 0x2000 },
+      eip: 0x00000004
+    });
+  });
+
   it("loads a real-mode data segment from a direct memory operand", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x8e],

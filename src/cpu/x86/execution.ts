@@ -2115,6 +2115,22 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if (opcode === 0x9c || opcode === 0x9d) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
+          throw new UnsupportedOpcodeError(
+            "32-bit flags stack operations require the implemented protected-mode stack path"
+          );
+        if ((snapshot.cs.selector & 0x03) !== 0)
+          throw new UnsupportedOpcodeError("Protected-mode POPFD requires CPL zero");
+        if (opcode === 0x9c) pushUint32(memory, state, snapshot.eflags & ~0x00030000);
+        else {
+          const flags = popUint32(memory, state);
+          state.writeEflags((flags & ~0x00030000) | (snapshot.eflags & 0x00030000));
+        }
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (opcode === 0x68 || opcode === 0x6a) {
         const snapshot = state.snapshot();
         if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
