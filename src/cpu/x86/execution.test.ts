@@ -1740,6 +1740,25 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000006);
   });
 
+  it("XORs byte memory destinations through an ES override", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x26],
+      [0x000ffff1, 0x30],
+      [0x000ffff2, 0x05],
+      [0x00002010, 0x0f]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("es", 0x0200);
+    state.writeRegister16(7, 0x0010);
+    state.writeRegister8(0, 0xf0);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(values.get(0x00002010)).toBe(0xff);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x000000f0 }, eip: 0x0000fff3 });
+    expect(state.snapshot().eflags).toBe(0x00000086);
+  });
+
   it("compares byte and word register destinations with ModR/M sources", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x3a],

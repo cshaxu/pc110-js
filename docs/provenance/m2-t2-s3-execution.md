@@ -241,6 +241,8 @@
 - M2 T2 S3 P106 adds `XOR r/m8, r8` (`30 /r`) for observed DeskPro ROM
   byte-state updates, using the shared ModR/M writable-memory and 8-bit
   logic-flag contracts.
+- M2 T2 S3 P107 adds the observed `ES:`-overridden `XOR r/m8, r8` form
+  (`26 30 /r`) without widening unsupported segment-prefix handling.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
