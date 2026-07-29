@@ -197,4 +197,13 @@ describe("Cpu386State", () => {
     cpu.writeShiftLeftFlags16(0x0001, 6);
     expect(cpu.snapshot().eflags).toBe(0x00000002);
   });
+
+  it("sets byte and word logical-right-shift flags with the 80386 count mask", () => {
+    const cpu = new Cpu386State();
+    cpu.writeShiftRightFlags16(0x8001, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000007);
+
+    cpu.writeShiftRightFlags8(0x80, 4);
+    expect(cpu.snapshot().eflags).toBe(0x00000002);
+  });
 });

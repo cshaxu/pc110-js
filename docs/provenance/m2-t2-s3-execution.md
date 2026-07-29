@@ -108,6 +108,8 @@
   stack and EFLAGS boundaries while leaving protected-mode privilege rules open.
 - M2 T2 S3 P56 adds byte `ADC` through `80 /2` and unsigned `MUL r/m16`
   (`F7 /4`) with the PCjs-defined CF/OF result boundary.
+- M2 T2 S3 P57 adds logical right shifts for word `D1/C1 /5` and byte `C0 /5`
+  forms using the PCjs count-mask and logic-result flag behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

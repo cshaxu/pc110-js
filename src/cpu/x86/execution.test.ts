@@ -699,6 +699,24 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x00001234), values.get(0x00001235)]).toEqual([0x02, 0x00]);
   });
 
+  it("logically shifts 16-bit and 8-bit register operands right", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xd1],
+      [0x000ffff1, 0xe9],
+      [0x000ffff2, 0xc0],
+      [0x000ffff3, 0xef],
+      [0x000ffff4, 0x04]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(1, 0x8001);
+    state.writeRegister8(7, 0x80);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0x4000 }, eflags: 0x00000007 });
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x0800 }, eflags: 0x00000002 });
+  });
+
   it("divides DX:AX by word register operands and reports divide faults", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xf7],
