@@ -323,6 +323,14 @@ export function stepInstruction(
       state.setDirectionFlag();
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0xf8:
+      state.clearCarryFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    case 0xf9:
+      state.setCarryFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0xea: {
       const snapshot = state.snapshot();
       if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
@@ -565,6 +573,12 @@ export function stepInstruction(
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       if (state.carryFlag() || state.zeroFlag())
         state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      else state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0x72: {
+      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
+      if (state.carryFlag()) state.writeEip16(fetched.instructionPointer + 2 + displacement);
       else state.advanceEip(2);
       return { halted: false, fetched };
     }

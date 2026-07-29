@@ -271,6 +271,22 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff6);
   });
 
+  it("controls carry and takes JC", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf9],
+      [0x000ffff1, 0x72],
+      [0x000ffff2, 0x02],
+      [0x000ffff5, 0xf8]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().eip).toBe(0x0000fff5);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.carryFlag()).toBe(false);
+  });
+
   it("updates AL and status flags through immediate AND, OR, and CMP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x24],

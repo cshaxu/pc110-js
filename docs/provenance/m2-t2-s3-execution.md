@@ -68,6 +68,7 @@
 - M2 T2 S3 P34 adds real-mode `PUSHA` and `POPA` through SS:SP.
 - M2 T2 S3 P35 adds 16-bit register `INC` and `DEC` with their carry-preserving
   flag behavior.
+- M2 T2 S3 P36 adds carry control and `JC rel8` control flow.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

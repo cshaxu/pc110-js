@@ -183,6 +183,14 @@ export class Cpu386State {
     return Boolean(this.eflags & EFLAGS_CARRY);
   }
 
+  public clearCarryFlag(): void {
+    this.eflags = (this.eflags & ~EFLAGS_CARRY) >>> 0;
+  }
+
+  public setCarryFlag(): void {
+    this.eflags = (this.eflags | EFLAGS_CARRY) >>> 0;
+  }
+
   public advanceEip(bytes: number): void {
     this.eip = (this.eip + bytes) >>> 0;
   }
