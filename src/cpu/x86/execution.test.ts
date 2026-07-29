@@ -226,6 +226,25 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("executes register-direct byte XOR and follows JBE on carry", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x32],
+      [0x000ffff1, 0xff],
+      [0x000ffff2, 0x76],
+      [0x000ffff3, 0x02]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    state.writeRegister8(7, 0x55);
+    state.writeCompareFlags8(0x08, 0x09);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { edi: 0 }, eip: 0x0000fff2 });
+    state.writeCompareFlags8(0x08, 0x09);
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x0000fff6);
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],

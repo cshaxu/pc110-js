@@ -126,5 +126,6 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().eflags).toBe(0x00000097);
     expect(cpu.zeroFlag()).toBe(false);
+    expect(cpu.carryFlag()).toBe(true);
   });
 });

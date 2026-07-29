@@ -163,6 +163,16 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0x32: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect)
+        throw new UnsupportedOpcodeError("Memory-form XOR is not implemented");
+      const result = state.readRegister8(modRm.reg) ^ state.readRegister8(modRm.rm);
+      state.writeRegister8(modRm.reg, result);
+      state.writeLogicFlags8(result);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0x80: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect || modRm.reg !== 0x07)
@@ -196,6 +206,13 @@ export function stepInstruction(
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       if (state.zeroFlag()) state.advanceEip(2);
       else state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      return { halted: false, fetched };
+    }
+    case 0x76: {
+      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
+      if (state.carryFlag() || state.zeroFlag())
+        state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      else state.advanceEip(2);
       return { halted: false, fetched };
     }
     case 0xa8: {

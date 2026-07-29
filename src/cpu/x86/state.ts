@@ -166,6 +166,10 @@ export class Cpu386State {
     return Boolean(this.eflags & EFLAGS_ZERO);
   }
 
+  public carryFlag(): boolean {
+    return Boolean(this.eflags & EFLAGS_CARRY);
+  }
+
   public advanceEip(bytes: number): void {
     this.eip = (this.eip + bytes) >>> 0;
   }

@@ -29,7 +29,8 @@
   Immediate port reads, TEST, JNZ, and 16-bit LOOP follow the observed
   reset-ROM path. ModR/M field decoding and register-form MOV/XOR support the
   next observed ROM sequence. Register-byte CMP derives 8-bit subtraction flags
-  for the following ROM conditional branch.
+  for following JBE and JNZ conditional branches; byte-register XOR uses the
+  same logic-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
