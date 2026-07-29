@@ -1065,7 +1065,7 @@ function executeWordAluModRm(
 function executeDwordAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  operation: "add" | "adc" | "or" | "and" | "sub" | "xor" | "cmp" | "sbb",
+  operation: "add" | "adc" | "or" | "and" | "sub" | "xor" | "cmp" | "test" | "sbb",
   destinationIsRegister: boolean,
   modRmOffset: number,
   addressSize: 16 | 32
@@ -1098,17 +1098,29 @@ function executeDwordAluModRm(
       : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize)
     : state.readRegister(modRm.reg);
   const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
-  const result =
-    operation === "add" || operation === "adc"
-      ? destination + source + carry
-      : operation === "or"
-        ? destination | source
-        : operation === "and"
-          ? destination & source
-          : operation === "xor"
-            ? destination ^ source
-            : destination - source - carry;
-  if (operation !== "cmp") {
+  let result: number;
+  switch (operation) {
+    case "add":
+    case "adc":
+      result = destination + source + carry;
+      break;
+    case "or":
+      result = destination | source;
+      break;
+    case "and":
+    case "test":
+      result = destination & source;
+      break;
+    case "xor":
+      result = destination ^ source;
+      break;
+    case "sub":
+    case "sbb":
+    case "cmp":
+      result = destination - source - carry;
+      break;
+  }
+  if (operation !== "cmp" && operation !== "test") {
     if (destinationIsRegister) state.writeRegister(modRm.reg, result);
     else if (modRm.registerDirect) state.writeRegister(modRm.rm, result);
     else writeSegmentUint32(memory, state, address!.segment, address!.offset, result, addressSize);
@@ -1676,7 +1688,8 @@ export function stepInstruction(
         opcode === 0x31 ||
         opcode === 0x33 ||
         opcode === 0x39 ||
-        opcode === 0x3b
+        opcode === 0x3b ||
+        opcode === 0x85
       ) {
         executeDwordAluModRm(
           memory,
@@ -1695,7 +1708,9 @@ export function stepInstruction(
                       ? "xor"
                       : opcode === 0x39 || opcode === 0x3b
                         ? "cmp"
-                        : "sub",
+                        : opcode === 0x85
+                          ? "test"
+                          : "sub",
           opcode === 0x03 ||
             opcode === 0x0b ||
             opcode === 0x13 ||
@@ -1876,7 +1891,8 @@ export function stepInstruction(
           overriddenOpcode === 0x31 ||
           overriddenOpcode === 0x33 ||
           overriddenOpcode === 0x39 ||
-          overriddenOpcode === 0x3b
+          overriddenOpcode === 0x3b ||
+          overriddenOpcode === 0x85
         ) {
           executeDwordAluModRm(
             memory,
@@ -1895,7 +1911,9 @@ export function stepInstruction(
                         ? "xor"
                         : overriddenOpcode === 0x39 || overriddenOpcode === 0x3b
                           ? "cmp"
-                          : "sub",
+                          : overriddenOpcode === 0x85
+                            ? "test"
+                            : "sub",
             overriddenOpcode === 0x03 ||
               overriddenOpcode === 0x0b ||
               overriddenOpcode === 0x13 ||

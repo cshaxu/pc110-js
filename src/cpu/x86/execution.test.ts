@@ -2892,6 +2892,45 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("tests 32-bit ModR/M operands without modifying them through both address sizes", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x85],
+      [0x0002, 0xc3],
+      [0x0003, 0x66],
+      [0x0004, 0x67],
+      [0x0005, 0x85],
+      [0x0006, 0x06],
+      [0x12000, 0x00],
+      [0x12001, 0x00],
+      [0x12002, 0x00],
+      [0x12003, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(0, 0x80000000);
+    state.writeRegister(3, 0x00000001);
+    state.writeRegister(6, 0x12000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x80000000, ebx: 0x00000001 },
+      eflags: 0x00000046
+    });
+    state.writeRegister(3, 0x80000000);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0x80000000 },
+      eflags: 0x00000086
+    });
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x12000 + offset))).toEqual([
+      0x00, 0x00, 0x00, 0x80
+    ]);
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

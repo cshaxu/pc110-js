@@ -525,6 +525,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   directions (`66 09/0B/21/23/31/33/39/3B`). Logical forms use the project
   dword logic-flag contract; CMP retains both operands and updates comparison
   flags only.
+- M2 T2 S3 P197 adds PCjs-selected `TEST r/m32,r32` (`66 85 /r`) to the same
+  operand-size path. It computes dword logic flags without writing either
+  operand, using both the 16-bit and 32-bit effective-address decoders.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
