@@ -510,6 +510,25 @@ export function stepInstruction(
       state.loadRealModeCodeSegment(selector, instructionPointer);
       return { halted: false, fetched };
     }
+    case 0x60: {
+      const originalStackPointer = state.readRegister16(4);
+      for (const register of [0, 1, 2, 3, 4, 5, 6, 7]) {
+        pushUint16(
+          memory,
+          state,
+          register === 4 ? originalStackPointer : state.readRegister16(register)
+        );
+      }
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
+    case 0x61:
+      for (const register of [7, 6, 5]) state.writeRegister16(register, popUint16(memory, state));
+      popUint16(memory, state);
+      for (const register of [3, 2, 1, 0])
+        state.writeRegister16(register, popUint16(memory, state));
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0xeb: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       state.writeEip16(fetched.instructionPointer + 2 + displacement);

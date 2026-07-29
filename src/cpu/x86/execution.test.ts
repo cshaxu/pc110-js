@@ -585,6 +585,36 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xbeef, esp: 0x1000 } });
   });
 
+  it("preserves general registers through PUSHA and POPA", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x60],
+      [0x000ffff1, 0x61]
+    ]);
+    const state = new Cpu386State();
+    for (let register = 0; register < 8; register += 1)
+      state.writeRegister16(register, 0x1000 + register);
+    state.writeRegister16(4, 0x2000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    for (let register = 0; register < 8; register += 1) {
+      if (register !== 4) state.writeRegister16(register, 0);
+    }
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: {
+        eax: 0x1000,
+        ecx: 0x1001,
+        edx: 0x1002,
+        ebx: 0x1003,
+        esp: 0x2000,
+        ebp: 0x1005,
+        esi: 0x1006,
+        edi: 0x1007
+      }
+    });
+  });
+
   it("clears direction and repeats STOSW through ES:DI", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xfc],
