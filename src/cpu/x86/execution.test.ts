@@ -1696,6 +1696,29 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000086);
   });
 
+  it("XORs byte register and memory destinations with register sources", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x30],
+      [0x000ffff1, 0xc8],
+      [0x000ffff2, 0x30],
+      [0x000ffff3, 0x06],
+      [0x000ffff4, 0x00],
+      [0x000ffff5, 0x20],
+      [0x00002000, 0xf0]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0xff);
+    state.writeRegister8(1, 0x0f);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xf0 }, eflags: 0x00000086 });
+
+    state.writeRegister8(0, 0xf0);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(values.get(0x00002000)).toBe(0x00);
+    expect(state.snapshot().eflags).toBe(0x00000046);
+  });
+
   it("ANDs byte register destinations through an ES override", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
