@@ -1635,6 +1635,13 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0x25: {
+      const result = state.readRegister16(0) & fetchCodeUint16(memory, state, 1);
+      state.writeRegister16(0, result);
+      state.writeLogicFlags16(result);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x3c:
       state.writeCompareFlags8(state.readRegister8(0), fetchCodeByte(memory, state, 1).opcode);
       state.advanceEip(2);
