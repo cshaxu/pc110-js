@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T3 S3: verify clear runner failure diagnostics for source, baseline, and
-  local-media validation failures.
+- M1 T4 S1: record read-only attachment of the known-good DOS floppy through
+  the PCjs reference machine.
 
 ## Delivery Nodes
 

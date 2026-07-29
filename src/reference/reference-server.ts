@@ -3,7 +3,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { basename, dirname, extname, resolve, sep } from "node:path";
+import { basename, dirname, extname, resolve } from "node:path";
 
 const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 const FLOPPY_SHA256 = "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5";
@@ -48,9 +48,20 @@ function verifyInputs(): Buffer {
     throw new Error(`Missing sibling PCjs checkout: ${pcjsRoot}`);
   }
 
-  runGit(["cat-file", "-e", `${PINNED_PCJS_COMMIT}:${SOURCE_MACHINE}`]);
+  try {
+    runGit(["cat-file", "-e", `${PINNED_PCJS_COMMIT}:${SOURCE_MACHINE}`]);
+  } catch {
+    throw new Error(
+      `Pinned PCjs baseline ${PINNED_PCJS_COMMIT} or selected machine is unavailable in ../pcjs`
+    );
+  }
 
-  const floppy = readFileSync(floppyPath);
+  let floppy: Buffer;
+  try {
+    floppy = readFileSync(floppyPath);
+  } catch {
+    throw new Error("Missing local DOS floppy: ../fdd.img");
+  }
   if (floppy.length !== FLOPPY_SIZE) {
     throw new Error(`Unexpected fdd.img size: ${floppy.length} bytes`);
   }
