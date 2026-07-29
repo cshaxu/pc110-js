@@ -1259,6 +1259,29 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0xef, 0xbe]);
   });
 
+  it("adds word register and memory operands in both ModR/M directions", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x03],
+      [0x000ffff1, 0xc3],
+      [0x000ffff2, 0x01],
+      [0x000ffff3, 0x1e],
+      [0x000ffff4, 0x00],
+      [0x000ffff5, 0x20],
+      [0x00002000, 0xff],
+      [0x00002001, 0xff]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x7fff);
+    state.writeRegister16(3, 0x0001);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000896 });
+    stepInstruction(memory, state);
+    expect(state.snapshot().eflags).toBe(0x00000057);
+    expect([values.get(0x00002000), values.get(0x00002001)]).toEqual([0x00, 0x00]);
+  });
+
   it("returns from real-mode far calls with optional stack cleanup", () => {
     const plainValues = new Map<number, number>([
       [0x000ffff0, 0xff],

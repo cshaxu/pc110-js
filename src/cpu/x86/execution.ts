@@ -642,6 +642,31 @@ function executeByteAluModRm(
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
+function executeWordAddModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  destinationIsRegister: boolean
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+  const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+  const destination = destinationIsRegister
+    ? state.readRegister16(modRm.reg)
+    : modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset);
+  const source = destinationIsRegister
+    ? modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset)
+    : state.readRegister16(modRm.reg);
+  const result = destination + source;
+  if (destinationIsRegister) state.writeRegister16(modRm.reg, result);
+  else if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+  else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
+  state.writeAddFlags16(destination, source);
+  state.advanceEip(2 + (address?.displacementBytes ?? 0));
+}
+
 function executeShiftWord(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1126,8 +1151,14 @@ export function stepInstruction(
     case 0x00:
       executeByteAluModRm(memory, state, "add", true);
       return { halted: false, fetched };
+    case 0x01:
+      executeWordAddModRm(memory, state, false);
+      return { halted: false, fetched };
     case 0x02:
       executeByteAluModRm(memory, state, "add", false);
+      return { halted: false, fetched };
+    case 0x03:
+      executeWordAddModRm(memory, state, true);
       return { halted: false, fetched };
     case 0x05: {
       const accumulator = state.readRegister16(0);

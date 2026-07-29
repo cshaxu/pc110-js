@@ -186,6 +186,9 @@
   SS:SP writable-memory boundary.
 - M2 T2 S3 P86 adds the observed ES-overridden `PUSH r/m16` (`26 FF /6`),
   preserving ES as the source segment while keeping stack writes on SS:SP.
+- M2 T2 S3 P87 adds `ADD r/m16, r16` and `ADD r16, r/m16` (`01` and `03 /r`)
+  for observed DeskPro ROM pointer and work-area arithmetic through shared
+  ModR/M memory and 16-bit addition-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
