@@ -302,6 +302,10 @@
   flag contracts.
 - M2 T2 S3 P130 adds observed accumulator-register XCHG short forms (`91`
   through `97`), preserving 16-bit register behavior and EFLAGS.
+- M2 T2 S3 P131 adds observed `DAA` and `DAS` (`27` and `2F`). Behavior is
+  derived from PCjs `x86ops.js` and `cpux86.js`: incoming AF and CF select the
+  decimal corrections, result flags update PF/ZF/SF, CF/AF are explicit, and
+  OF clears. Tests cover dual correction, low-digit subtraction, and CF input.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

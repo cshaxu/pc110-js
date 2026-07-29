@@ -809,6 +809,40 @@ export function stepInstruction(
 
   const fetched = fetchOpcode(memory, state);
   switch (fetched.opcode) {
+    case 0x27: {
+      let accumulator = state.readRegister8(0);
+      let auxiliaryCarry = state.auxiliaryCarryFlag();
+      let carry = state.carryFlag();
+      if ((accumulator & 0x0f) > 9 || auxiliaryCarry) {
+        accumulator += 0x06;
+        auxiliaryCarry = true;
+      } else auxiliaryCarry = false;
+      if (accumulator > 0x9f || carry) {
+        accumulator += 0x60;
+        carry = true;
+      } else carry = false;
+      state.writeRegister8(0, accumulator);
+      state.writeDecimalAdjustFlags8(accumulator, carry, auxiliaryCarry);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
+    case 0x2f: {
+      let accumulator = state.readRegister8(0);
+      let auxiliaryCarry = state.auxiliaryCarryFlag();
+      let carry = state.carryFlag();
+      if ((accumulator & 0x0f) > 9 || auxiliaryCarry) {
+        accumulator -= 0x06;
+        auxiliaryCarry = true;
+      } else auxiliaryCarry = false;
+      if (accumulator > 0x9f || carry) {
+        accumulator -= 0x60;
+        carry = true;
+      } else carry = false;
+      state.writeRegister8(0, accumulator);
+      state.writeDecimalAdjustFlags8(accumulator, carry, auxiliaryCarry);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0x90:
       state.advanceEip(1);
       return { halted: false, fetched };

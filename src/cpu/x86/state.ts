@@ -189,12 +189,27 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeDecimalAdjustFlags8(value: number, carry: boolean, auxiliaryCarry: boolean): void {
+    const result = value & 0xff;
+    let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
+    if (carry) flags |= EFLAGS_CARRY;
+    if (auxiliaryCarry) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public zeroFlag(): boolean {
     return Boolean(this.eflags & EFLAGS_ZERO);
   }
 
   public carryFlag(): boolean {
     return Boolean(this.eflags & EFLAGS_CARRY);
+  }
+
+  public auxiliaryCarryFlag(): boolean {
+    return Boolean(this.eflags & EFLAGS_AUXILIARY_CARRY);
   }
 
   public parityFlag(): boolean {

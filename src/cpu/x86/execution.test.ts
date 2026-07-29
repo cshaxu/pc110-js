@@ -2929,6 +2929,43 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x56 }, eip: 0x0000fff3 });
   });
 
+  it("performs DAA and DAS with PCjs-compatible arithmetic flags", () => {
+    const daaValues = new Map<number, number>([[0x000ffff0, 0x27]]);
+    const daaState = new Cpu386State();
+    daaState.writeRegister8(0, 0x9b);
+
+    stepInstruction(resetAliasMemory(daaValues), daaState);
+
+    expect(daaState.snapshot()).toMatchObject({
+      registers: { eax: 0x01 },
+      eip: 0x0000fff1,
+      eflags: 0x0013
+    });
+
+    const dasValues = new Map<number, number>([[0x000ffff0, 0x2f]]);
+    const dasState = new Cpu386State();
+    dasState.writeRegister8(0, 0x0b);
+
+    stepInstruction(resetAliasMemory(dasValues), dasState);
+
+    expect(dasState.snapshot()).toMatchObject({
+      registers: { eax: 0x05 },
+      eip: 0x0000fff1,
+      eflags: 0x0016
+    });
+  });
+
+  it("uses incoming carry for DAA high-digit adjustment", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0x27]]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x15);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x75 }, eflags: 0x0003 });
+  });
+
   it("increments AH through the observed FE /0 form while preserving carry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xfe],
