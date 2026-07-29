@@ -969,6 +969,11 @@ export function stepInstruction(
       state.advanceEip(1);
       state.halt();
       return { halted: true, fetched };
+    case 0xf5:
+      if (state.carryFlag()) state.clearCarryFlag();
+      else state.setCarryFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0x9e:
       state.writeStatusFlagsFromAh((state.snapshot().registers.eax >>> 8) & 0xff);
       state.advanceEip(1);

@@ -1689,6 +1689,14 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ebx: 15 }, eflags: 0x00000042 });
   });
 
+  it("complements CF through CMC without changing other EFLAGS", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0xf5]]);
+    const state = new Cpu386State();
+    state.writeEflags(0x000008d7);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x000008d6, eip: 0x0000fff1 });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

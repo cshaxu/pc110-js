@@ -350,6 +350,8 @@
 - M2 T2 S3 P146 adds 16-bit `BSF/BSR` (`0F BC/BD`) from PCjs bit-scan
   behavior: nonzero sources produce the lowest or highest set-bit index, while
   zero sources preserve the destination and set ZF.
+- M2 T2 S3 P147 adds `CMC` (`F5`) from PCjs `opCMC`: complement CF while
+  preserving every other EFLAGS bit.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
