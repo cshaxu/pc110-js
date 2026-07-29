@@ -5,6 +5,7 @@ import {
   CR0_PAGING,
   CR0_PROTECTED_MODE,
   EFLAGS_VIRTUAL_8086,
+  PageFaultError,
   translateLinearAddress,
   translateSegmentOffset
 } from "./address-translation.js";
@@ -41,11 +42,34 @@ describe("80386 address translation", () => {
       [0x1000 + 4, 0x2007],
       [0x2000 + 8, 0x3007]
     ]);
-    const memory = { readUint32: (address: number) => values.get(address) ?? 0 };
+    const memory = {
+      readUint32: (address: number) => values.get(address) ?? 0,
+      writeUint32: (address: number, value: number) => values.set(address, value >>> 0)
+    };
     const linear = (1 << 22) | (2 << 12) | 0x345;
 
     expect(
       translateLinearAddress(memory, CR0_PAGING, 0x1000, linear, { write: false, user: true })
     ).toBe(0x3345);
+    expect(values.get(0x1004)).toBe(0x2027);
+    expect(values.get(0x2008)).toBe(0x3027);
+  });
+
+  it("reports page-fault metadata and marks dirty pages", () => {
+    const values = new Map<number, number>([
+      [0x1000, 0x2007],
+      [0x2000, 0x3007]
+    ]);
+    const memory = {
+      readUint32: (address: number) => values.get(address) ?? 0,
+      writeUint32: (address: number, value: number) => values.set(address, value >>> 0)
+    };
+    expect(translateLinearAddress(memory, CR0_PAGING, 0x1000, 0, { write: true, user: true })).toBe(
+      0x3000
+    );
+    expect(values.get(0x2000)).toBe(0x3067);
+    expect(() =>
+      translateLinearAddress(memory, CR0_PAGING, 0x1000, 0x400000, { write: false, user: false })
+    ).toThrow(PageFaultError);
   });
 });

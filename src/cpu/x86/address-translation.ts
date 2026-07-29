@@ -13,6 +13,7 @@ export interface CachedSegment {
 
 export interface PageTableMemory {
   readUint32(address: number): number;
+  writeUint32(address: number, value: number): void;
 }
 
 export interface PagingAccess {
@@ -21,6 +22,17 @@ export interface PagingAccess {
 }
 
 export class AddressTranslationError extends Error {}
+
+export class PageFaultError extends AddressTranslationError {
+  public constructor(
+    readonly linearAddress: number,
+    readonly present: boolean,
+    readonly access: PagingAccess,
+    message: string
+  ) {
+    super(message);
+  }
+}
 
 export function addressMode(cr0: number, eflags: number): CpuAddressMode {
   if (!(cr0 & CR0_PROTECTED_MODE)) return "real";
@@ -56,18 +68,27 @@ export function translateLinearAddress(
 
   const directoryAddress = ((cr3 & 0xfffff000) + (((linear >>> 22) & 0x3ff) << 2)) >>> 0;
   const directoryEntry = memory.readUint32(directoryAddress) >>> 0;
-  validatePageEntry(directoryEntry, access, "directory");
+  validatePageEntry(linear, directoryEntry, access, "directory");
+  memory.writeUint32(directoryAddress, directoryEntry | 0x20);
 
   const tableAddress = ((directoryEntry & 0xfffff000) + (((linear >>> 12) & 0x3ff) << 2)) >>> 0;
   const tableEntry = memory.readUint32(tableAddress) >>> 0;
-  validatePageEntry(tableEntry, access, "table");
+  validatePageEntry(linear, tableEntry, access, "table");
+  memory.writeUint32(tableAddress, tableEntry | 0x20 | (access.write ? 0x40 : 0));
   return ((tableEntry & 0xfffff000) + (linear & 0xfff)) >>> 0;
 }
 
-function validatePageEntry(entry: number, access: PagingAccess, level: string): void {
-  if (!(entry & 0x1)) throw new AddressTranslationError(`Page ${level} entry is not present`);
+function validatePageEntry(
+  linear: number,
+  entry: number,
+  access: PagingAccess,
+  level: string
+): void {
+  if (!(entry & 0x1)) {
+    throw new PageFaultError(linear, false, access, `Page ${level} entry is not present`);
+  }
   if (access.user && !(entry & 0x4))
-    throw new AddressTranslationError(`Page ${level} entry denies user access`);
-  if (access.write && !(entry & 0x2))
-    throw new AddressTranslationError(`Page ${level} entry denies write access`);
+    throw new PageFaultError(linear, true, access, `Page ${level} entry denies user access`);
+  if (access.write && access.user && !(entry & 0x2))
+    throw new PageFaultError(linear, true, access, `Page ${level} entry denies write access`);
 }
