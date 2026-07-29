@@ -274,6 +274,11 @@
   forms as single iterations of the established string-operation semantics.
 - M2 T2 S3 P120 adds the observed CS-source `MOVSW`, `REP MOVSW`, and `LODSW`
   forms without treating the narrow support as a general prefix decoder.
+- M2 T2 S3 P121 performed a bounded real-ROM trace experiment against the
+  selected read-only DeskPro ROM. It classified a pre-execution sparse-memory
+  mapping prerequisite: contiguous RAM currently occupies the required system
+  ROM window. The result is evidence for planned S4 memory-region work, not a
+  CPU behavior claim or an implementation change.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
