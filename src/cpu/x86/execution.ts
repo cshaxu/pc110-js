@@ -420,7 +420,8 @@ function deliverProtectedModeInterrupt(
     pushUint16(memory, state, snapshot.cs.selector);
     pushUint16(memory, state, returnInstructionPointer);
   }
-  state.clearInterruptAndTrapFlags();
+  if (gate.trap) state.clearTrapFlag();
+  else state.clearInterruptAndTrapFlags();
   loadProtectedModeCodeSegment(memory, state, gate.selector, gate.offset);
 }
 

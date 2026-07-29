@@ -171,6 +171,10 @@ export class Cpu386State {
     this.eflags = (this.eflags & ~(EFLAGS_INTERRUPT_ENABLE | EFLAGS_TRAP)) >>> 0;
   }
 
+  public clearTrapFlag(): void {
+    this.eflags = (this.eflags & ~EFLAGS_TRAP) >>> 0;
+  }
+
   public setInterruptFlag(): void {
     this.eflags = (this.eflags | EFLAGS_INTERRUPT_ENABLE) >>> 0;
   }

@@ -477,6 +477,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   delivery and `IRET` restoration from the PCjs-selected frame-width model.
   The frame width must match the current SS default size; mixed-size stacks,
   privilege transitions, and virtual-8086 behavior remain later S3 work.
+- M2 T2 S3 P182 applies the decoded IDT gate type during protected-mode entry:
+  interrupt gates clear IF and TF, while trap gates preserve IF and clear TF.
+  The saved EFLAGS frame remains the pre-entry state, matching the selected
+  PCjs interrupt model.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
