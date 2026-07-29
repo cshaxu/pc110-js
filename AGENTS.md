@@ -76,6 +76,10 @@ Do not treat this file as a substitute for those canonical documents.
   subtask complete when required verification was skipped or failed.
 - Add a compact English verification record under `docs/verification/` for
   every completed subtask.
+- Maintain the task tracking record at
+  `docs/tracking/M<milestone>-T<task>.md`. Create it when work on a task
+  begins, give every active subtask its own section, and add one concise part
+  entry in the same commit as each change to that subtask.
 - Review the working tree for protected assets, generated files, unrelated
   changes, and machine-specific paths before committing.
 - Use commit subjects in this exact form:

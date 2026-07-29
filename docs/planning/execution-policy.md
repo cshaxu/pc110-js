@@ -23,6 +23,11 @@ Before implementation, record:
 - completion evidence;
 - stop conditions and escalation conditions.
 
+Create or update the task tracking file at
+`docs/tracking/M<milestone>-T<task>.md`. It must contain a section for the
+active subtask and receive a concise `P<part>` entry in the same commit as each
+change to that subtask.
+
 The canonical breakdown may provide these directly. Otherwise add a short execution note under `docs/planning/subtasks/` before code changes.
 
 ## Completion Standard
@@ -35,6 +40,7 @@ A subtask is complete only when:
 - the latest achieved boot baselines still pass;
 - provenance, evidence, TODOs, Quick Start, and third-party notices are updated where affected;
 - a compact English verification record exists under `docs/verification/`;
+- the relevant `docs/tracking/M<milestone>-T<task>.md` subtask section records the completed part and verification state;
 - the working tree is reviewed for accidental protected assets and unrelated changes;
 - the commit follows M/T/S/P format and is pushed to the canonical remote.
 

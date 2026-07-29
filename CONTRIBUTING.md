@@ -167,6 +167,20 @@ M4 T2 S2 P1: add PC110 audio device variant
 - Historical commits may retain the hierarchy active when they were created.
 - The owner-authorized pre-implementation direction correction in `M0 T3 S1 P2` replaces the previous M1-M13 roadmap. M0-M5 identifiers are frozen after that correction.
 
+## Task Tracking
+
+- Maintain concise task logs under `docs/tracking/`.
+- Each task uses exactly one file named `M<milestone>-T<task>.md`.
+- Organize each task log with one `## S<subtask>` section per subtask. Use a
+  short `P<part>` entry for each relevant commit.
+- Create the task log when the task begins. Update the relevant subtask section
+  in the same commit as every change to that subtask.
+- Record only scope, outcome, verification state, blockers, and durable follow-
+  up information. Link to verification, evidence, provenance, or change-report
+  records instead of duplicating their contents.
+- Do not record protected media content, credentials, machine-specific paths, or
+  long narrative progress reports.
+
 ## Assets And Licensing
 
 - Follow [the asset policy](docs/governance/asset-policy.md).
