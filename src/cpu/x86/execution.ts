@@ -1203,6 +1203,14 @@ export function stepInstruction(
     case 0x03:
       executeWordAddModRm(memory, state, true);
       return { halted: false, fetched };
+    case 0x04: {
+      const accumulator = state.readRegister8(0);
+      const immediate = fetchCodeByte(memory, state, 1).opcode;
+      state.writeRegister8(0, accumulator + immediate);
+      state.writeAddFlags8(accumulator, immediate);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0x05: {
       const accumulator = state.readRegister16(0);
       const immediate = fetchCodeUint16(memory, state, 1);

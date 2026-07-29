@@ -1533,6 +1533,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000896 });
   });
 
+  it("adds immediate byte values to AL with arithmetic flags", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x04],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0x04],
+      [0x000ffff3, 0x01]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x7f);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x00000892 });
+
+    state.writeRegister8(0, 0xff);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00 }, eflags: 0x00000057 });
+  });
+
   it("subtracts immediate byte and word values from accumulator registers", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x2c],

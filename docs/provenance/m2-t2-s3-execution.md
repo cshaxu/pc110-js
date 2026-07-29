@@ -214,6 +214,8 @@
 - M2 T2 S3 P96 adds `AND AX, imm16` for observed DeskPro ROM state masks,
   keeping the 16-bit accumulator form aligned with the existing logic-flag
   contract and separate 32-bit operand-size-override behavior.
+- M2 T2 S3 P97 adds `ADD AL, imm8` for observed DeskPro ROM character and
+  byte-counter arithmetic, using the existing 8-bit addition-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
