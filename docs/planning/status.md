@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T2 S3: implement supported opcode families, exceptions, interrupts, and
-  privilege behavior with focused conformance coverage.
+- M2 T2 S3: active. Implement supported opcode families, exceptions, interrupts,
+  and privilege behavior with focused conformance coverage.
 
 ## Delivery Nodes
 
