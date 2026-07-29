@@ -19,7 +19,8 @@
 ## Migration
 
 - Imported behavior: 80386 mode selection, PDE/PTE address derivation,
-  descriptor field decoding, and segment access predicates.
+  descriptor field decoding, segment access predicates, and GDT-resident LDT
+  descriptor validation.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
 - Intentional behavior changes: none.
 - Incomplete behavior: descriptor-table loading, gates, tasks, and CPU exception

@@ -74,6 +74,24 @@ export function loadSelectorDescriptor(
   return loadDescriptor(memory, tables.gdt, selector);
 }
 
+export function loadLocalDescriptorTable(
+  memory: DescriptorMemory,
+  gdt: DescriptorTable,
+  selector: number
+): DescriptorTable | undefined {
+  const normalizedSelector = selector & 0xffff;
+  if ((normalizedSelector & 0xfff8) === 0) return undefined;
+  if (normalizedSelector & 0x04)
+    throw new SegmentDescriptorError("LDTR selector must reference the GDT");
+
+  const descriptor = loadDescriptor(memory, gdt, normalizedSelector);
+  if (descriptor.system || descriptor.type !== 0x02)
+    throw new SegmentDescriptorError("LDTR selector does not reference an LDT descriptor");
+  if (!descriptor.present) throw new SegmentDescriptorError("LDT descriptor is not present");
+
+  return { base: descriptor.base, limit: descriptor.limit };
+}
+
 export function validateDescriptorAccess(
   descriptor: SegmentDescriptor,
   cpl: number,
