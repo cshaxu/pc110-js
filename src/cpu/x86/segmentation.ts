@@ -22,6 +22,8 @@ export interface SegmentDescriptor {
 
 export class SegmentDescriptorError extends Error {}
 
+export type SegmentAccess = "read" | "write" | "execute";
+
 export function loadDescriptor(
   memory: DescriptorMemory,
   table: DescriptorTable,
@@ -53,4 +55,53 @@ export function loadDescriptor(
     default32: Boolean(flags & 0x4),
     granularityPages
   };
+}
+
+export function validateDescriptorAccess(
+  descriptor: SegmentDescriptor,
+  cpl: number,
+  access: SegmentAccess
+): void {
+  if (!descriptor.present) throw new SegmentDescriptorError("Segment is not present");
+  if (!descriptor.system)
+    throw new SegmentDescriptorError("Descriptor is not a code or data segment");
+
+  const rpl = descriptor.selector & 0x03;
+  const isCode = Boolean(descriptor.type & 0x08);
+  const readableOrWritable = Boolean(descriptor.type & 0x02);
+  const conformingOrExpandDown = Boolean(descriptor.type & 0x04);
+
+  if (isCode) {
+    if (access === "write") throw new SegmentDescriptorError("Code segments are not writable");
+    if (access === "read" && !readableOrWritable)
+      throw new SegmentDescriptorError("Code segment is execute-only");
+    if (conformingOrExpandDown) {
+      if (cpl < descriptor.dpl)
+        throw new SegmentDescriptorError("Conforming code privilege violation");
+    } else if (cpl !== descriptor.dpl || rpl > cpl) {
+      throw new SegmentDescriptorError("Non-conforming code privilege violation");
+    }
+    return;
+  }
+
+  if (access === "execute") throw new SegmentDescriptorError("Data segments are not executable");
+  if (access === "write" && !readableOrWritable)
+    throw new SegmentDescriptorError("Data segment is read-only");
+  if (Math.max(cpl, rpl) > descriptor.dpl)
+    throw new SegmentDescriptorError("Data segment privilege violation");
+}
+
+export function validateDescriptorOffset(descriptor: SegmentDescriptor, offset: number): void {
+  const unsignedOffset = offset >>> 0;
+  const isCode = Boolean(descriptor.type & 0x08);
+  const expandDown = !isCode && Boolean(descriptor.type & 0x04);
+  if (!expandDown && unsignedOffset > descriptor.limit) {
+    throw new SegmentDescriptorError("Segment limit exceeded");
+  }
+  if (expandDown) {
+    const upperBound = descriptor.default32 ? 0xffffffff : 0xffff;
+    if (unsignedOffset <= descriptor.limit || unsignedOffset > upperBound) {
+      throw new SegmentDescriptorError("Expand-down segment limit exceeded");
+    }
+  }
 }

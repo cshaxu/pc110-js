@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loadDescriptor, SegmentDescriptorError } from "./segmentation.js";
+import {
+  loadDescriptor,
+  SegmentDescriptorError,
+  validateDescriptorAccess,
+  validateDescriptorOffset
+} from "./segmentation.js";
 
 describe("80386 descriptor decoding", () => {
   it("decodes a present 32-bit page-granular code descriptor", () => {
@@ -27,5 +32,27 @@ describe("80386 descriptor decoding", () => {
     const memory = { readUint32: () => 0 };
     expect(() => loadDescriptor(memory, { base: 0, limit: 7 }, 0)).toThrow(SegmentDescriptorError);
     expect(() => loadDescriptor(memory, { base: 0, limit: 7 }, 8)).toThrow(SegmentDescriptorError);
+  });
+
+  it("enforces descriptor access and expand-down limits", () => {
+    const data = {
+      selector: 0x13,
+      base: 0,
+      limit: 0x0fff,
+      type: 0x06,
+      system: true,
+      dpl: 3,
+      present: true,
+      available: false,
+      default32: false,
+      granularityPages: false
+    };
+
+    expect(() => validateDescriptorAccess(data, 3, "write")).not.toThrow();
+    expect(() => validateDescriptorOffset(data, 0x1000)).not.toThrow();
+    expect(() => validateDescriptorOffset(data, 0x0fff)).toThrow("Expand-down");
+    expect(() => validateDescriptorAccess({ ...data, type: 0x0a }, 3, "write")).toThrow(
+      "not writable"
+    );
   });
 });
