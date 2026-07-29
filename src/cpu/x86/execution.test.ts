@@ -1551,6 +1551,28 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00 }, eflags: 0x00000057 });
   });
 
+  it("adds carry and an immediate word to AX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x15],
+      [0x000ffff1, 0x00],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0x15],
+      [0x000ffff4, 0x00],
+      [0x000ffff5, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0xffff);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x0000 }, eflags: 0x00000057 });
+
+    state.writeRegister16(0, 0x7fff);
+    state.setCarryFlag();
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000896 });
+  });
+
   it("subtracts immediate byte and word values from accumulator registers", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x2c],

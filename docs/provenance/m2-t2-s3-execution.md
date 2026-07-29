@@ -219,6 +219,9 @@
 - M2 T2 S3 P98 adds `CMP AX, imm16` for observed DeskPro ROM decision paths,
   retaining the accumulator while using the existing 16-bit subtraction-flag
   contract.
+- M2 T2 S3 P99 adds `ADC AX, imm16` for the observed DeskPro ROM arithmetic
+  path and extends the shared 16-bit addition-flag contract with an explicit
+  carry input, matching the PCjs `fnADCw` behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

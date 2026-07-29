@@ -194,6 +194,13 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x00000896);
   });
 
+  it("includes carry in 16-bit addition flags", () => {
+    const cpu = new Cpu386State();
+    cpu.writeAddFlags16(0xffff, 0x0000, 1);
+
+    expect(cpu.snapshot().eflags).toBe(0x00000057);
+  });
+
   it("sets carry and overflow for a single-bit left shift", () => {
     const cpu = new Cpu386State();
     cpu.writeShiftLeftFlags8(0x80);

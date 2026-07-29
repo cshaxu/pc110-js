@@ -330,18 +330,19 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
-  public writeAddFlags16(left: number, right: number): void {
+  public writeAddFlags16(left: number, right: number, carry = 0): void {
     const leftWord = left & 0xffff;
     const rightWord = right & 0xffff;
-    const sum = leftWord + rightWord;
+    const effectiveRight = (rightWord + carry) & 0xffff;
+    const sum = leftWord + rightWord + carry;
     const result = sum & 0xffff;
     let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
     if (sum > 0xffff) flags |= EFLAGS_CARRY;
-    if ((leftWord ^ rightWord ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
+    if ((leftWord ^ effectiveRight ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x8000) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
-    if (~(leftWord ^ rightWord) & (leftWord ^ result) & 0x8000) flags |= EFLAGS_OVERFLOW;
+    if (~(leftWord ^ effectiveRight) & (leftWord ^ result) & 0x8000) flags |= EFLAGS_OVERFLOW;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 

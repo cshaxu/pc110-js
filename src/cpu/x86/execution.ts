@@ -1226,6 +1226,15 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0x15: {
+      const accumulator = state.readRegister16(0);
+      const immediate = fetchCodeUint16(memory, state, 1);
+      const carry = state.carryFlag() ? 1 : 0;
+      state.writeRegister16(0, accumulator + immediate + carry);
+      state.writeAddFlags16(accumulator, immediate, carry);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x2a:
       executeByteAluModRm(memory, state, "sub", false);
       return { halted: false, fetched };
