@@ -283,6 +283,10 @@
   (`2E A0` and `2E A2`) reached by the bounded DeskPro ROM trace at `F000:BAB0`.
 - M2 T2 S3 P123 adds the observed direct-register `INC r/m8` form (`FE /0`)
   reached at `F000:9BF1`, preserving CF while updating 8-bit increment flags.
+- M2 T2 S3 P124 repeated the bounded DeskPro ROM trace with only a controlled
+  keyboard-controller status response. The CPU path reached an `ES:B800`
+  `REP STOSW` write, classifying missing VGA memory as the next planned T5
+  hardware boundary rather than a CPU opcode failure.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
