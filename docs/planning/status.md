@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T4 S1: record read-only attachment of the known-good DOS floppy through
-  the PCjs reference machine.
+- M1 T4 S2: record BIOS startup and boot-sector loading through the selected
+  PCjs reference hardware path.
 
 ## Delivery Nodes
 
