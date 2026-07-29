@@ -1654,6 +1654,10 @@ export function stepInstruction(
       state.writeCompareFlags8(state.readRegister8(0), fetchCodeByte(memory, state, 1).opcode);
       state.advanceEip(2);
       return { halted: false, fetched };
+    case 0x3d:
+      state.writeCompareFlags16(state.readRegister16(0), fetchCodeUint16(memory, state, 1));
+      state.advanceEip(3);
+      return { halted: false, fetched };
     case 0xe4: {
       if (!ports?.readPort8) throw new UnsupportedOpcodeError("IN requires a port reader");
       const port = fetchCodeByte(memory, state, 1).opcode;

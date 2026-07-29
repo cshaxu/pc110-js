@@ -216,6 +216,9 @@
   contract and separate 32-bit operand-size-override behavior.
 - M2 T2 S3 P97 adds `ADD AL, imm8` for observed DeskPro ROM character and
   byte-counter arithmetic, using the existing 8-bit addition-flag contract.
+- M2 T2 S3 P98 adds `CMP AX, imm16` for observed DeskPro ROM decision paths,
+  retaining the accumulator while using the existing 16-bit subtraction-flag
+  contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
