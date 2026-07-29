@@ -485,6 +485,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff0);
   });
 
+  it("uses SS:SP for near CALL and RET", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xe8],
+      [0x000ffff1, 0x03],
+      [0x000ffff2, 0x00],
+      [0x000ffff6, 0xc3]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(4, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ eip: 0x0000fff6, registers: { esp: 0x0ffe } });
+    expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0xf3, 0xff]);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ eip: 0x0000fff3, registers: { esp: 0x1000 } });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

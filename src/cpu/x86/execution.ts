@@ -119,6 +119,19 @@ function writeSegmentUint8(
   );
 }
 
+function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
+  const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
+  state.writeRegister16(4, stackPointer);
+  writeSegmentUint16(memory, state, "ss", stackPointer, value);
+}
+
+function popUint16(memory: InstructionMemory, state: Cpu386State): number {
+  const stackPointer = state.readRegister16(4);
+  const value = readSegmentUint16(memory, state, "ss", stackPointer);
+  state.writeRegister16(4, (stackPointer + 2) & 0xffff);
+  return value;
+}
+
 function signedByte(value: number): number {
   return (value << 24) >> 24;
 }
@@ -425,6 +438,16 @@ export function stepInstruction(
       state.writeEip16(fetched.instructionPointer + 3 + displacement);
       return { halted: false, fetched };
     }
+    case 0xe8: {
+      const displacement = signedWord(fetchCodeUint16(memory, state, 1));
+      const returnAddress = (fetched.instructionPointer + 3) & 0xffff;
+      pushUint16(memory, state, returnAddress);
+      state.writeEip16(returnAddress + displacement);
+      return { halted: false, fetched };
+    }
+    case 0xc3:
+      state.writeEip16(popUint16(memory, state));
+      return { halted: false, fetched };
     case 0xeb: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       state.writeEip16(fetched.instructionPointer + 2 + displacement);
