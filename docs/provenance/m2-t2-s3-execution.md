@@ -394,6 +394,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   (`0F A4/A5/AC/AD`) from PCjs `helpSHLDw` and `helpSHRDw`: counts are masked,
   cross-word behavior follows the PCjs helper, and defined logic flags are
   updated through a project-native state boundary.
+- M2 T2 S3 P161 adds `ADC r/m16,r16` (`11 /r`) from PCjs `opADCmw` and
+  `fnADCw`: register and memory destinations use the current carry flag and
+  the existing 16-bit addition-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

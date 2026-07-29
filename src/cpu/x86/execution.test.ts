@@ -684,6 +684,32 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x2000), values.get(0x2001)]).toEqual([0x78, 0x56]);
   });
 
+  it("adds carry into register and memory destinations through ADC r/m16, r16", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x11],
+      [0x00000001, 0xd8],
+      [0x00000002, 0x11],
+      [0x00000003, 0x1e],
+      [0x00000004, 0x00],
+      [0x00000005, 0x20],
+      [0x00002000, 0xff],
+      [0x00002001, 0xff]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister16(0, 0xffff);
+    state.writeRegister16(3, 1);
+    state.writeEflags(0x00000003);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 1 }, eflags: 0x00000013 });
+    state.setCarryFlag();
+    stepInstruction(memory, state);
+    expect([values.get(0x2000), values.get(0x2001)]).toEqual([0x01, 0x00]);
+    expect(state.snapshot().eflags).toBe(0x00000013);
+  });
+
   it("moves CR0 through register-direct MOV forms", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

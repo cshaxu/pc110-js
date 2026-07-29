@@ -2000,6 +2000,21 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0x11: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const destination = modRm.registerDirect
+        ? state.readRegister16(modRm.rm)
+        : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      const source = state.readRegister16(modRm.reg);
+      const carry = state.carryFlag() ? 1 : 0;
+      const result = destination + source + carry;
+      if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+      else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
+      state.writeAddFlags16(destination, source, carry);
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+      return { halted: false, fetched };
+    }
     case 0x1c: {
       const accumulator = state.readRegister8(0);
       const immediate = fetchCodeByte(memory, state, 1).opcode;
