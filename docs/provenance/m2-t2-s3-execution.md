@@ -227,6 +227,8 @@
 - M2 T2 S3 P101 adds `AND r8, r/m8` (`22 /r`) for observed DeskPro ROM
   byte-state masks, using the shared ModR/M memory-read and 8-bit logic-flag
   contracts.
+- M2 T2 S3 P102 adds the observed `ES:`-overridden `AND r8, r/m8` form
+  (`26 22 /r`) without widening unsupported segment-prefix handling.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

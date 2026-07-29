@@ -866,6 +866,33 @@ export function stepInstruction(
         executeMov8FromModRm(memory, state, true, 2, "es");
         return { halted: false, fetched };
       }
+      if (opcode === 0x22) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        const source = modRm.registerDirect
+          ? state.readRegister8(modRm.rm)
+          : readSegmentUint8(
+              memory,
+              state,
+              "es",
+              decodeModRm16Address(
+                modRm,
+                (index) => state.readRegister16(index),
+                (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+              ).offset
+            );
+        const result = state.readRegister8(modRm.reg) & source;
+        state.writeRegister8(modRm.reg, result);
+        state.writeLogicFlags8(result);
+        const displacementBytes = modRm.registerDirect
+          ? 0
+          : decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+            ).displacementBytes;
+        state.advanceEip(3 + displacementBytes);
+        return { halted: false, fetched };
+      }
       if (opcode === 0xff) {
         executePushModRm(memory, state, 2, "es");
         return { halted: false, fetched };
