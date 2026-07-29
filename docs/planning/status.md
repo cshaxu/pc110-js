@@ -12,8 +12,7 @@
 
 ## Next Eligible Work
 
-- M1 T1 S1: in progress; select PCjs PCx86 v2 as the implementation reference
-  generation.
+- M1 T1 S2: verify the pinned PCjs commit and read-only sibling path.
 
 ## Delivery Nodes
 
