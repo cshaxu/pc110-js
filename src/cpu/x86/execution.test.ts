@@ -54,6 +54,36 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads 16-bit immediate values into the selected register", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xbb],
+      [0x000ffff1, 0x78],
+      [0x000ffff2, 0x56]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x5678 }, eip: 0x0000fff3 });
+  });
+
+  it("follows signed short and near real-mode jumps", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xeb],
+      [0x000ffff1, 0x04],
+      [0x000ffff6, 0xe9],
+      [0x000ffff7, 0xf7],
+      [0x000ffff8, 0xff]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x0000fff6);
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x0000fff0);
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = { readUint8: (address: number) => values.get(address) ?? 0 };

@@ -21,7 +21,8 @@
 - Imported behavior: opcode fetch begins at the current linear instruction
   address derived from CS:EIP; NOP advances EIP and HLT stops instruction
   execution until an interrupt resumes the CPU; a real-mode far jump loads a
-  new CS selector and 16-bit instruction pointer.
+  new CS selector and 16-bit instruction pointer; register-immediate and
+  relative jumps update architectural state.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

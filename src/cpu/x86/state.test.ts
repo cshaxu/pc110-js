@@ -55,4 +55,16 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().eflags).toBe(0x00020002);
   });
+
+  it("writes 16-bit register and instruction-pointer values without high-word loss", () => {
+    const cpu = new Cpu386State();
+    cpu.writeRegister(0, 0xface0000);
+    cpu.writeRegister16(0, 0xbeef);
+    cpu.writeEip16(0x12345);
+
+    expect(cpu.snapshot()).toMatchObject({
+      registers: { eax: 0xfacebeef },
+      eip: 0x2345
+    });
+  });
 });

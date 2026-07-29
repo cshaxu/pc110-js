@@ -52,6 +52,14 @@ function fetchCodeUint16(
   return low | (high << 8);
 }
 
+function signedByte(value: number): number {
+  return (value << 24) >> 24;
+}
+
+function signedWord(value: number): number {
+  return (value << 16) >> 16;
+}
+
 export function stepInstruction(memory: InstructionMemory, state: Cpu386State): ExecutionResult {
   if (state.snapshot().halted) return { halted: true };
 
@@ -73,7 +81,22 @@ export function stepInstruction(memory: InstructionMemory, state: Cpu386State): 
       state.loadRealModeCodeSegment(selector, instructionPointer);
       return { halted: false, fetched };
     }
+    case 0xe9: {
+      const displacement = signedWord(fetchCodeUint16(memory, state, 1));
+      state.writeEip16(fetched.instructionPointer + 3 + displacement);
+      return { halted: false, fetched };
+    }
+    case 0xeb: {
+      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
+      state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      return { halted: false, fetched };
+    }
     default:
+      if (fetched.opcode >= 0xb8 && fetched.opcode <= 0xbf) {
+        state.writeRegister16(fetched.opcode - 0xb8, fetchCodeUint16(memory, state, 1));
+        state.advanceEip(3);
+        return { halted: false, fetched };
+      }
       throw new UnsupportedOpcodeError(
         `Unsupported opcode 0x${fetched.opcode.toString(16).padStart(2, "0")}`
       );

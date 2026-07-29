@@ -1,5 +1,16 @@
 export type GeneralRegister = "eax" | "ebx" | "ecx" | "edx" | "esp" | "ebp" | "esi" | "edi";
 
+const GENERAL_REGISTER_ORDER: readonly GeneralRegister[] = [
+  "eax",
+  "ecx",
+  "edx",
+  "ebx",
+  "esp",
+  "ebp",
+  "esi",
+  "edi"
+];
+
 export interface SegmentState {
   readonly selector: number;
   readonly base: number;
@@ -118,6 +129,20 @@ export class Cpu386State {
     this.eip = (this.eip + bytes) >>> 0;
   }
 
+  public writeEip16(value: number): void {
+    this.eip = value & 0xffff;
+  }
+
+  public writeRegister(index: number, value: number): void {
+    const register = this.generalRegisterAt(index);
+    this.registers[register] = value >>> 0;
+  }
+
+  public writeRegister16(index: number, value: number): void {
+    const register = this.generalRegisterAt(index);
+    this.registers[register] = ((this.registers[register] & 0xffff0000) | (value & 0xffff)) >>> 0;
+  }
+
   public loadRealModeCodeSegment(selector: number, instructionPointer: number): void {
     this.cs = {
       selector: selector & 0xffff,
@@ -149,5 +174,11 @@ export class Cpu386State {
 
   private emptyRegisters(): Record<GeneralRegister, number> {
     return { eax: 0, ebx: 0, ecx: 0, edx: 0, esp: 0, ebp: 0, esi: 0, edi: 0 };
+  }
+
+  private generalRegisterAt(index: number): GeneralRegister {
+    const register = GENERAL_REGISTER_ORDER[index];
+    if (!register) throw new RangeError(`Invalid general-register index ${index}`);
+    return register;
   }
 }
