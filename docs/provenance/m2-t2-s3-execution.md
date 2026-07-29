@@ -189,6 +189,8 @@
 - M2 T2 S3 P87 adds `ADD r/m16, r16` and `ADD r16, r/m16` (`01` and `03 /r`)
   for observed DeskPro ROM pointer and work-area arithmetic through shared
   ModR/M memory and 16-bit addition-flag contracts.
+- M2 T2 S3 P88 adds `AND r/m16, imm16` (`81 /4 iw`) for observed DeskPro ROM
+  status-word masking while retaining the existing `/1` OR and `/7` CMP forms.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
