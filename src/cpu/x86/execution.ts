@@ -619,6 +619,23 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     default:
+      if (fetched.opcode >= 0x40 && fetched.opcode <= 0x47) {
+        const register = fetched.opcode - 0x40;
+        const source = state.readRegister16(register);
+        const result = (source + 1) & 0xffff;
+        state.writeRegister16(register, result);
+        state.writeIncrementFlags16(source);
+        state.advanceEip(1);
+        return { halted: false, fetched };
+      }
+      if (fetched.opcode >= 0x48 && fetched.opcode <= 0x4f) {
+        const register = fetched.opcode - 0x48;
+        const source = state.readRegister16(register);
+        state.writeRegister16(register, (source - 1) & 0xffff);
+        state.writeDecrementFlags16(source);
+        state.advanceEip(1);
+        return { halted: false, fetched };
+      }
       if (fetched.opcode >= 0x50 && fetched.opcode <= 0x57) {
         pushUint16(memory, state, state.readRegister16(fetched.opcode - 0x50));
         state.advanceEip(1);

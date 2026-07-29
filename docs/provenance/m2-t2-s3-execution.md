@@ -66,6 +66,8 @@
 - M2 T2 S3 P33 adds `IN AL, DX` and `OUT DX, AL` through the existing narrow
   port-I/O contract.
 - M2 T2 S3 P34 adds real-mode `PUSHA` and `POPA` through SS:SP.
+- M2 T2 S3 P35 adds 16-bit register `INC` and `DEC` with their carry-preserving
+  flag behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

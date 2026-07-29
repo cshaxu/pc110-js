@@ -585,6 +585,21 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xbeef, esp: 0x1000 } });
   });
 
+  it("increments and decrements 16-bit registers without changing carry", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x42],
+      [0x000ffff1, 0x4a]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(2, 0xffff);
+    state.writeEflags(0x00000003);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0 }, eflags: 0x00000057 });
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0xffff }, eflags: 0x00000097 });
+  });
+
   it("preserves general registers through PUSHA and POPA", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x60],
