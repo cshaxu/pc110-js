@@ -390,6 +390,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P159 adds real-mode `UD2` (`0F 0B`) from PCjs `opInvalid`: it
   delivers IVT vector 6 through the existing real-mode fault boundary and
   stacks the original instruction pointer rather than the following address.
+- M2 T2 S3 P160 adds 16-bit `SHLD/SHRD` immediate and CL forms
+  (`0F A4/A5/AC/AD`) from PCjs `helpSHLDw` and `helpSHRDw`: counts are masked,
+  cross-word behavior follows the PCjs helper, and defined logic flags are
+  updated through a project-native state boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

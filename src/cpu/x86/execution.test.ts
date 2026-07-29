@@ -1823,6 +1823,50 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("performs immediate and CL-controlled 16-bit SHLD and SHRD", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0xa4],
+      [0x00000002, 0xd8],
+      [0x00000003, 0x04],
+      [0x00000004, 0x0f],
+      [0x00000005, 0xad],
+      [0x00000006, 0xd8]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister16(0, 0x1234);
+    state.writeRegister16(3, 0xabcd);
+    state.writeRegister8(1, 4);
+    state.writeEflags(0x00000012);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x234a }, eflags: 0x00000013 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xd234 }, eflags: 0x00000093 });
+  });
+
+  it("extends 16-bit double shifts across the source word for memory operands", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0xac],
+      [0x00000002, 0x1e],
+      [0x00000003, 0x00],
+      [0x00000004, 0x20],
+      [0x00000005, 0x14],
+      [0x00002000, 0x34],
+      [0x00002001, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister16(3, 0xabcd);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect([values.get(0x2000), values.get(0x2001)]).toEqual([0xbc, 0xda]);
+  });
+
   it("scans the lowest and highest set bit while preserving the destination for zero", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

@@ -212,6 +212,47 @@ function executeLoadSegmentPointer(
   state.advanceEip(3 + address.displacementBytes);
 }
 
+function executeDoubleShiftWord(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  left: boolean,
+  count: number,
+  immediateCount: boolean
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+  const address = modRm.registerDirect
+    ? undefined
+    : decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+      );
+  const instructionBytes = 3 + (address?.displacementBytes ?? 0) + (immediateCount ? 1 : 0);
+  let normalizedCount = count & 0x1f;
+  if (!normalizedCount) {
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  let destination = modRm.registerDirect
+    ? state.readRegister16(modRm.rm)
+    : readSegmentUint16(memory, state, address!.segment, address!.offset);
+  const source = state.readRegister16(modRm.reg);
+  if (normalizedCount > 16) {
+    destination = source;
+    normalizedCount -= 16;
+  }
+  const carry = left
+    ? Boolean((destination << (normalizedCount - 1)) & 0x8000)
+    : Boolean((destination >>> (normalizedCount - 1)) & 0x01);
+  const result = left
+    ? ((destination << normalizedCount) | (source >>> (16 - normalizedCount))) & 0xffff
+    : ((destination >>> normalizedCount) | (source << (16 - normalizedCount))) & 0xffff;
+  if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+  else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
+  state.writeDoubleShiftFlags16(result, carry);
+  state.advanceEip(instructionBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1414,6 +1455,28 @@ export function stepInstruction(
           state.loadRealModeSegment(segment, selector);
         else loadProtectedModeSegment(memory, state, segment, selector);
         state.advanceEip(2);
+        return { halted: false, fetched };
+      }
+      if (extension === 0xa4 || extension === 0xa5 || extension === 0xac || extension === 0xad) {
+        const immediateCount = extension === 0xa4 || extension === 0xac;
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        const address = modRm.registerDirect
+          ? undefined
+          : decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+            );
+        const count = immediateCount
+          ? fetchCodeByte(memory, state, 3 + (address?.displacementBytes ?? 0)).opcode
+          : state.readRegister8(1);
+        executeDoubleShiftWord(
+          memory,
+          state,
+          extension === 0xa4 || extension === 0xa5,
+          count,
+          immediateCount
+        );
         return { halted: false, fetched };
       }
       if (extension >= 0x80 && extension <= 0x8f) {
