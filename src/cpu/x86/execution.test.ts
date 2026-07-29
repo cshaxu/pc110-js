@@ -431,6 +431,27 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("loads AL from DS:SI and respects the direction flag", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xfd],
+      [0x000ffff1, 0xac],
+      [0x000ffff2, 0xfc],
+      [0x000ffff3, 0xac],
+      [0x00001600, 0xa5],
+      [0x000015ff, 0x5a]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ds", 0x0040);
+    state.writeRegister16(6, 0x1200);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x5a, esi: 0x1200 } });
+  });
+
   it("writes immediate byte and word values through ModR/M memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xc6],

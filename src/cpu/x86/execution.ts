@@ -515,6 +515,13 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0xac: {
+      const source = state.readRegister16(6);
+      state.writeRegister8(0, readSegmentUint8(memory, state, "ds", source));
+      state.writeRegister16(6, (source + (state.directionFlag() ? -1 : 1)) & 0xffff);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0xc6: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (modRm.reg !== 0) throw new UnsupportedOpcodeError("Unsupported C6 opcode form");

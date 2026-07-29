@@ -79,6 +79,8 @@
   reads through register or writable-memory destinations.
 - M2 T2 S3 P41 adds the observed `ES:`-overridden `C6 /0` and `C7 /0` memory
   forms without widening unsupported segment-prefix behavior.
+- M2 T2 S3 P42 adds `LODSB` through DS:SI, including direction-flag controlled
+  index advancement.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
