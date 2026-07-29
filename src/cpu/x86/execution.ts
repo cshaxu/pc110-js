@@ -817,6 +817,33 @@ export function stepInstruction(
 
   const fetched = fetchOpcode(memory, state);
   switch (fetched.opcode) {
+    case 0x37: {
+      let accumulator = state.readRegister8(0);
+      let highAccumulator = state.readRegister8(4);
+      const adjusted = (accumulator & 0x0f) > 9 || state.auxiliaryCarryFlag();
+      if (adjusted) {
+        accumulator += 0x06;
+        if (accumulator > 0xff) highAccumulator++;
+        highAccumulator++;
+      }
+      state.writeRegister16(0, ((highAccumulator << 8) | accumulator) & 0xff0f);
+      state.writeAsciiAdjustFlags(adjusted);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
+    case 0x3f: {
+      let accumulator = state.readRegister8(0);
+      let highAccumulator = state.readRegister8(4);
+      const adjusted = (accumulator & 0x0f) > 9 || state.auxiliaryCarryFlag();
+      if (adjusted) {
+        accumulator = (accumulator - 0x06) & 0x0f;
+        highAccumulator = (highAccumulator - 1) & 0xff;
+      }
+      state.writeRegister16(0, (highAccumulator << 8) | accumulator);
+      state.writeAsciiAdjustFlags(adjusted);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0x27: {
       let accumulator = state.readRegister8(0);
       let auxiliaryCarry = state.auxiliaryCarryFlag();

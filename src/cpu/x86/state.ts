@@ -200,6 +200,12 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeAsciiAdjustFlags(adjusted: boolean): void {
+    let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_AUXILIARY_CARRY);
+    if (adjusted) flags |= EFLAGS_CARRY | EFLAGS_AUXILIARY_CARRY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public zeroFlag(): boolean {
     return Boolean(this.eflags & EFLAGS_ZERO);
   }

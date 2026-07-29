@@ -549,6 +549,34 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("performs AAA and AAS while preserving non-adjust flags", () => {
+    const aaaValues = new Map<number, number>([[0x000ffff0, 0x37]]);
+    const aaaState = new Cpu386State();
+    aaaState.writeRegister16(0, 0x12ff);
+    aaaState.writeEflags(0x000008c6);
+
+    stepInstruction(resetAliasMemory(aaaValues), aaaState);
+
+    expect(aaaState.snapshot()).toMatchObject({
+      registers: { eax: 0x1505 },
+      eflags: 0x000008d7,
+      eip: 0x0000fff1
+    });
+
+    const aasValues = new Map<number, number>([[0x000ffff0, 0x3f]]);
+    const aasState = new Cpu386State();
+    aasState.writeRegister16(0, 0x120b);
+    aasState.writeEflags(0x000008c6);
+
+    stepInstruction(resetAliasMemory(aasValues), aasState);
+
+    expect(aasState.snapshot()).toMatchObject({
+      registers: { eax: 0x1105 },
+      eflags: 0x000008d7,
+      eip: 0x0000fff1
+    });
+  });
+
   it("pushes, restores, and enables real-mode flags through SS:SP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x9c],

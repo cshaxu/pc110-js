@@ -324,6 +324,9 @@
 - M2 T2 S3 P137 adds `AAM imm8` (`D4 ib`) from PCjs `opAAM`: divide AL into
   AH quotient and AL remainder, update the PCjs logical result flags, and use
   the existing real-mode divide-error delivery path for a zero divisor.
+- M2 T2 S3 P138 adds `AAA` and `AAS` (`37` and `3F`) from PCjs `opAAA` and
+  `opAAS`: adjust packed AX low digits, update only CF/AF, and preserve other
+  flags. AAA includes the PCjs 80286+ carry propagation into AH.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
