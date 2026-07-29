@@ -58,6 +58,20 @@ function fetchCodeUint16(
   return low | (high << 8);
 }
 
+function readSegmentUint16(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds",
+  offset: number
+): number {
+  const snapshot = state.snapshot();
+  const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  const selected = { ...snapshot[segment], present: true };
+  const lowAddress = translateSegmentOffset(mode, selected, offset);
+  const highAddress = translateSegmentOffset(mode, selected, (offset + 1) & 0xffff);
+  return (memory.readUint8(lowAddress) & 0xff) | ((memory.readUint8(highAddress) & 0xff) << 8);
+}
+
 function signedByte(value: number): number {
   return (value << 24) >> 24;
 }
@@ -117,6 +131,20 @@ export function stepInstruction(
         throw new UnsupportedOpcodeError("Protected-mode far jumps are not implemented");
       const instructionPointer = fetchCodeUint16(memory, state, 1);
       const selector = fetchCodeUint16(memory, state, 3);
+      state.loadRealModeCodeSegment(selector, instructionPointer);
+      return { halted: false, fetched };
+    }
+    case 0x2e: {
+      const snapshot = state.snapshot();
+      const opcode = fetchCodeByte(memory, state, 1).opcode;
+      const modRm = fetchCodeByte(memory, state, 2).opcode;
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+        throw new UnsupportedOpcodeError("Protected-mode segment overrides are not implemented");
+      if (opcode !== 0xff || modRm !== 0x2e)
+        throw new UnsupportedOpcodeError("Unsupported CS override instruction");
+      const pointerOffset = fetchCodeUint16(memory, state, 3);
+      const instructionPointer = readSegmentUint16(memory, state, "cs", pointerOffset);
+      const selector = readSegmentUint16(memory, state, "cs", pointerOffset + 2);
       state.loadRealModeCodeSegment(selector, instructionPointer);
       return { halted: false, fetched };
     }

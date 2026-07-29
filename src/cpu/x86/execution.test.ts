@@ -54,6 +54,28 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("follows the reset-ROM CS-overridden far jump table entry", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0xff],
+      [0x000ffff2, 0x2e],
+      [0x000ffff3, 0xfd],
+      [0x000ffff4, 0xf8],
+      [0x000ff8fd, 0x34],
+      [0x000ff8fe, 0x12],
+      [0x000ff8ff, 0x00],
+      [0x000ff900, 0xf0]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff }
+    });
+  });
+
   it("loads 16-bit immediate values into the selected register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xbb],
