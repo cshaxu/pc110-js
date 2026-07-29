@@ -1719,6 +1719,31 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000046);
   });
 
+  it("subtracts immediate bytes and carry from byte register and memory destinations", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x80],
+      [0x000ffff1, 0xdf],
+      [0x000ffff2, 0x02],
+      [0x000ffff3, 0x80],
+      [0x000ffff4, 0x1e],
+      [0x000ffff5, 0x00],
+      [0x000ffff6, 0x20],
+      [0x000ffff7, 0x00],
+      [0x00002000, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(7, 0x05);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x00000200 }, eflags: 0x00000002 });
+
+    state.setCarryFlag();
+    stepInstruction(resetAliasMemory(values), state);
+    expect(values.get(0x00002000)).toBe(0xff);
+    expect(state.snapshot().eflags).toBe(0x00000097);
+  });
+
   it("ANDs byte register destinations through an ES override", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

@@ -1428,6 +1428,7 @@ export function stepInstruction(
       if (
         modRm.reg !== 0x00 &&
         modRm.reg !== 0x02 &&
+        modRm.reg !== 0x03 &&
         modRm.reg !== 0x04 &&
         modRm.reg !== 0x05 &&
         modRm.reg !== 0x07
@@ -1439,12 +1440,15 @@ export function stepInstruction(
       const destination = modRm.registerDirect
         ? state.readRegister8(modRm.rm)
         : readSegmentUint8(memory, state, address!.segment, address!.offset);
-      if (modRm.reg === 0x00 || modRm.reg === 0x02) {
+      if (modRm.reg === 0x00 || modRm.reg === 0x02 || modRm.reg === 0x03) {
         const carry = modRm.reg === 0x02 && state.carryFlag() ? 1 : 0;
-        const result = destination + immediate + carry;
+        const borrow = modRm.reg === 0x03 && state.carryFlag() ? 1 : 0;
+        const result =
+          modRm.reg === 0x03 ? destination - immediate - borrow : destination + immediate + carry;
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
         else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
-        state.writeAddFlags8(destination, immediate, carry);
+        if (modRm.reg === 0x03) state.writeCompareFlags8(destination, immediate, borrow);
+        else state.writeAddFlags8(destination, immediate, carry);
       } else if (modRm.reg === 0x04) {
         const result = destination & immediate;
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);

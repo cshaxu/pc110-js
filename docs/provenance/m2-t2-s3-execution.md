@@ -246,6 +246,9 @@
 - M2 T2 S3 P108 adds `NOT` and `NEG` for 8-bit and 16-bit F6/F7 group operands
   used by the DeskPro ROM. `NOT` preserves EFLAGS; `NEG` reuses the established
   subtraction-flag contracts for `0 - operand`.
+- M2 T2 S3 P109 adds the observed `SBB r/m8, imm8` Group 1 form (`80 /3 ib`) and a
+  borrow-aware extension of the existing 8-bit subtraction-flag contract,
+  matching PCjs `fnSBB` arithmetic behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
