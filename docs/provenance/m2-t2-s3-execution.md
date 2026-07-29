@@ -584,6 +584,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   operand-size dispatch paths. Each stores the 16-bit limit and all four
   little-endian base bytes, matching the observed 80386 behavior described by
   PCjs rather than assuming the load instruction's truncation rule applies.
+- M2 T2 S3 P213 extends `MOV r32, CRn` and `MOV CRn, r32` (`0F 20/22`) from
+  CR0-only dispatch to CR0, CR2, and CR3. It preserves the selected 80386
+  behavior that ignores the ModR/M `MOD` bits, and normalizes CR3 to its
+  page-directory base alignment. Full nonzero-CPL `#GP(0)` delivery remains
+  coupled to the later error-code exception path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

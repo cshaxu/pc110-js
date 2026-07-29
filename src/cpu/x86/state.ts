@@ -159,6 +159,10 @@ export class Cpu386State {
     this.cr3 = value & 0xfffff000;
   }
 
+  public writeCr2(value: number): void {
+    this.cr2 = value >>> 0;
+  }
+
   public writeCr0(value: number): void {
     this.cr0 = value >>> 0;
   }

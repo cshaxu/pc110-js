@@ -1238,6 +1238,37 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("moves CR0, CR2, and CR3 through 80386 control-register forms", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x20],
+      [0x000ffff2, 0xd0],
+      [0x000ffff3, 0x0f],
+      [0x000ffff4, 0x20],
+      [0x000ffff5, 0x18],
+      [0x000ffff6, 0x0f],
+      [0x000ffff7, 0x22],
+      [0x000ffff8, 0xd9],
+      [0x000ffff9, 0x0f],
+      [0x000ffffa, 0x22],
+      [0x000ffffb, 0xc2]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr2(0xcafebabe);
+    state.writeCr3(0x12345abc);
+    state.writeRegister(1, 0x45678def);
+    state.writeRegister(2, 0x00000001);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().registers.eax).toBe(0xcafebabe);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().registers.eax).toBe(0x12345000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().cr3).toBe(0x45678000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().cr0).toBe(0x00000001);
+  });
+
   it("loads a real-mode data segment from a general register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xb8],

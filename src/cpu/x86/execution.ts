@@ -2619,11 +2619,23 @@ export function stepInstruction(
       }
       if (extension === 0x20 || extension === 0x22) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
-        if (!modRm.registerDirect || modRm.reg !== 0x00) {
+        const snapshot = state.snapshot();
+        if (
+          addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+          (snapshot.cs.selector & 0x03) !== 0
+        ) {
+          throw new UnsupportedOpcodeError("Control-register MOV requires CPL zero");
+        }
+        if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x03) {
           throw new UnsupportedOpcodeError("Unsupported control-register MOV form");
         }
-        if (extension === 0x20) state.writeRegister(modRm.rm, state.snapshot().cr0);
-        else state.writeCr0(state.readRegister(modRm.rm));
+        if (extension === 0x20) {
+          const value =
+            modRm.reg === 0x00 ? snapshot.cr0 : modRm.reg === 0x02 ? snapshot.cr2 : snapshot.cr3;
+          state.writeRegister(modRm.rm, value);
+        } else if (modRm.reg === 0x00) state.writeCr0(state.readRegister(modRm.rm));
+        else if (modRm.reg === 0x02) state.writeCr2(state.readRegister(modRm.rm));
+        else state.writeCr3(state.readRegister(modRm.rm));
         state.advanceEip(3);
         return { halted: false, fetched };
       }
