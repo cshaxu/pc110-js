@@ -614,6 +614,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   existing descriptor loader and 32-bit instruction-pointer path.
 - M2 T2 S3 P225 adds CPL-zero protected-mode `PUSHFD` and `POPFD` (`66 9C/9D`)
   through the existing 32-bit stack path, preserving VM and RF across POPFD.
+- M2 T2 S3 P226 runs the local read-only selected DeskPro ROM through project-owned
+  physical memory and CPU stepping. It supplies only deterministic zero-valued port reads
+  for classification and does not claim device emulation or a firmware boot result.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
