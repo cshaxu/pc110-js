@@ -12,7 +12,7 @@
 
 ## Next Eligible Work
 
-- M1 T5 S1: map PCjs CPU and instruction modules to project-native M2
+- M1 T5 S2: map PCjs memory, bus, machine, and timing modules to M2
   destinations.
 
 ## Delivery Nodes
