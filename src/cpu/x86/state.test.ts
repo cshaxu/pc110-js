@@ -100,4 +100,13 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().ds).toEqual({ selector: 0x0040, base: 0x0400, limit: 0xffff });
   });
+
+  it("updates logic flags while preserving undefined auxiliary carry state", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEflags(0x00000012);
+    cpu.writeLogicFlags8(0);
+
+    expect(cpu.snapshot().eflags).toBe(0x00000056);
+    expect(cpu.zeroFlag()).toBe(true);
+  });
 });

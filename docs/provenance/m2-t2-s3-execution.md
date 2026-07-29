@@ -26,10 +26,12 @@
   a project-owned port-writer interface; SAHF and real-mode CLI update flags.
   The observed register-form LMSW preserves PE and MSW fixed bits; real-mode
   register segment loads update selector and base while preserving cached limit.
+  Immediate port reads, TEST, and JNZ follow the observed reset-ROM path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
 - Incomplete behavior: paging hookup, prefetch, general decode, exceptions,
+- Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
 - Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
 - Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
   exceptions, interrupt wakeup, protected-mode CLI and far jumps, and remaining

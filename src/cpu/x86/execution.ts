@@ -5,8 +5,9 @@ export interface InstructionMemory {
   readUint8(linearAddress: number): number;
 }
 
-export interface PortWriter {
-  writePort8(port: number, value: number): void;
+export interface PortIo {
+  readPort8?(port: number): number;
+  writePort8?(port: number, value: number): void;
 }
 
 export interface FetchedOpcode {
@@ -84,7 +85,7 @@ function segmentForMove(index: number): LoadableSegment | undefined {
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
-  ports?: PortWriter
+  ports?: PortIo
 ): ExecutionResult {
   if (state.snapshot().halted) return { halted: true };
 
@@ -153,8 +154,27 @@ export function stepInstruction(
       state.writeEip16(fetched.instructionPointer + 2 + displacement);
       return { halted: false, fetched };
     }
+    case 0x75: {
+      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
+      if (state.zeroFlag()) state.advanceEip(2);
+      else state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      return { halted: false, fetched };
+    }
+    case 0xa8: {
+      const immediate = fetchCodeByte(memory, state, 1).opcode;
+      state.writeLogicFlags8(state.snapshot().registers.eax & 0xff & immediate);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0xe4: {
+      if (!ports?.readPort8) throw new UnsupportedOpcodeError("IN requires a port reader");
+      const port = fetchCodeByte(memory, state, 1).opcode;
+      state.writeRegister8(0, ports.readPort8(port));
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0xe6: {
-      if (!ports) throw new UnsupportedOpcodeError("OUT requires a port writer");
+      if (!ports?.writePort8) throw new UnsupportedOpcodeError("OUT requires a port writer");
       const port = fetchCodeByte(memory, state, 1).opcode;
       ports.writePort8(port, state.snapshot().registers.eax & 0xff);
       state.advanceEip(2);

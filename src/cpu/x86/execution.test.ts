@@ -135,6 +135,40 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("reads a port, tests AL, and follows JNZ from the reset-ROM path", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xe4],
+      [0x000ffff1, 0x64],
+      [0x000ffff2, 0xa8],
+      [0x000ffff3, 0x04],
+      [0x000ffff4, 0x75],
+      [0x000ffff5, 0x02]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    const ports = { readPort8: (port: number) => (port === 0x64 ? 0x04 : 0) };
+
+    stepInstruction(memory, state, ports);
+    stepInstruction(memory, state, ports);
+    stepInstruction(memory, state, ports);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x04 }, eip: 0x0000fff8 });
+  });
+
+  it("does not take JNZ when TEST produces a zero result", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xa8],
+      [0x000ffff1, 0x04],
+      [0x000ffff2, 0x75],
+      [0x000ffff3, 0x02]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x0000fff4);
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],
