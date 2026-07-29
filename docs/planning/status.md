@@ -12,8 +12,7 @@
 
 ## Next Eligible Work
 
-- M1 T1 S4: in progress; define the project-owned reference-run boundary and
-  relative path resolution.
+- M1 T2 S1: select one existing PCjs 80386 PC/AT machine configuration.
 
 ## Delivery Nodes
 
