@@ -12,8 +12,7 @@
 
 ## Next Eligible Work
 
-- M1 T4 S3: record the visible DOS prompt from the selected PCjs reference
-  machine in a local browser.
+- M1 T4 S4: record compact observable M1 reference boot markers.
 
 ## Delivery Nodes
 
