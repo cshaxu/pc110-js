@@ -1015,6 +1015,39 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("moves 32-bit ModR/M operands through default 16-bit addresses", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0x89],
+      [0x00000002, 0x1e],
+      [0x00000003, 0x00],
+      [0x00000004, 0x20],
+      [0x00000005, 0x66],
+      [0x00000006, 0x8b],
+      [0x00000007, 0x0e],
+      [0x00000008, 0x00],
+      [0x00000009, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister(3, 0x12345678);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+
+    expect([
+      values.get(0x2000),
+      values.get(0x2001),
+      values.get(0x2002),
+      values.get(0x2003)
+    ]).toEqual([0x78, 0x56, 0x34, 0x12]);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0x12345678, ecx: 0x12345678 },
+      eip: 0x0000000a
+    });
+  });
+
   it("returns from the observed protected-mode sequence through a real-mode far jump", () => {
     const values = new Map<number, number>([
       [0x00002000, 0xb8],

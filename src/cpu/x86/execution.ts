@@ -98,6 +98,24 @@ function readSegmentUint16(
   return (memory.readUint8(lowAddress) & 0xff) | ((memory.readUint8(highAddress) & 0xff) << 8);
 }
 
+function readSegmentUint32(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
+  offset: number
+): number {
+  const snapshot = state.snapshot();
+  const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  const selected = { ...snapshot[segment], present: true };
+  return (
+    (memory.readUint8(translateSegmentOffset(mode, selected, offset)) |
+      (memory.readUint8(translateSegmentOffset(mode, selected, (offset + 1) & 0xffff)) << 8) |
+      (memory.readUint8(translateSegmentOffset(mode, selected, (offset + 2) & 0xffff)) << 16) |
+      (memory.readUint8(translateSegmentOffset(mode, selected, (offset + 3) & 0xffff)) << 24)) >>>
+    0
+  );
+}
+
 function readSegmentUint8(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -126,6 +144,23 @@ function writeSegmentUint16(
   const selected = { ...snapshot[segment], present: true };
   memory.writeUint8(translateSegmentOffset(mode, selected, offset), value & 0xff);
   memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 1) & 0xffff), value >>> 8);
+}
+
+function writeSegmentUint32(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
+  offset: number,
+  value: number
+): void {
+  if (!memory.writeUint8) throw new UnsupportedOpcodeError("Memory does not support writes");
+  const snapshot = state.snapshot();
+  const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  const selected = { ...snapshot[segment], present: true };
+  memory.writeUint8(translateSegmentOffset(mode, selected, offset), value & 0xff);
+  memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 1) & 0xffff), value >>> 8);
+  memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 2) & 0xffff), value >>> 16);
+  memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 3) & 0xffff), value >>> 24);
 }
 
 function writeSegmentUint8(
@@ -1378,6 +1413,28 @@ export function stepInstruction(
       if (opcode >= 0xb8 && opcode <= 0xbf) {
         state.writeRegister(opcode - 0xb8, fetchCodeUint32(memory, state, 2));
         state.advanceEip(6);
+        return { halted: false, fetched };
+      }
+      if (opcode === 0x89 || opcode === 0x8b) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        const address = modRm.registerDirect
+          ? undefined
+          : decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+            );
+        if (opcode === 0x89) {
+          const source = state.readRegister(modRm.reg);
+          if (modRm.registerDirect) state.writeRegister(modRm.rm, source);
+          else writeSegmentUint32(memory, state, address!.segment, address!.offset, source);
+        } else {
+          const source = modRm.registerDirect
+            ? state.readRegister(modRm.rm)
+            : readSegmentUint32(memory, state, address!.segment, address!.offset);
+          state.writeRegister(modRm.reg, source);
+        }
+        state.advanceEip(3 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }
       const accumulator = state.readRegister(0);

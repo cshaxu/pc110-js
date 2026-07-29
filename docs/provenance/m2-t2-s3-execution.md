@@ -424,6 +424,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P169 adds operand-size-overridden `MOV r32,imm32` (`66 B8+rd id`)
   from PCjs `opMOVri`: all eight project general-register slots receive the
   complete immediate value without altering flags.
+- M2 T2 S3 P170 adds operand-size-overridden `MOV r/m32,r32` and
+  `MOV r32,r/m32` (`66 89/8B`) from PCjs `opMOVmr` and `opMOVrm`: 32-bit
+  values use project segmented dword helpers while retaining default 16-bit
+  ModR/M address calculation; address-size override remains later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
