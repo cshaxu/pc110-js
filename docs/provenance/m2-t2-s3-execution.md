@@ -499,6 +499,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P188 adds operand-size-overridden near `RET imm16` (`66 C2 iw`)
   from PCjs `opRETn`: after restoring EIP from the same 32-bit frame, it adds
   the unsigned immediate cleanup count to ESP.
+- M2 T2 S3 P189 adds operand-size-overridden `PUSHAD` and `POPAD` (`66 60`
+  and `66 61`) from PCjs `opPUSHA` and `opPOPA`. It snapshots the original ESP
+  for the push frame and deliberately skips that saved slot on restoration.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

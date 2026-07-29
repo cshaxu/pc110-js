@@ -1602,6 +1602,30 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if (opcode === 0x60 || opcode === 0x61) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
+          throw new UnsupportedOpcodeError(
+            "32-bit push-all and pop-all require the implemented protected-mode stack path"
+          );
+        if (opcode === 0x60) {
+          const originalStackPointer = state.readRegister(4);
+          for (const register of [0, 1, 2, 3, 4, 5, 6, 7]) {
+            pushUint32(
+              memory,
+              state,
+              register === 4 ? originalStackPointer : state.readRegister(register)
+            );
+          }
+        } else {
+          for (const register of [7, 6, 5]) state.writeRegister(register, popUint32(memory, state));
+          popUint32(memory, state);
+          for (const register of [3, 2, 1, 0])
+            state.writeRegister(register, popUint32(memory, state));
+        }
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (opcode === 0xe8 || opcode === 0xc2 || opcode === 0xc3) {
         const snapshot = state.snapshot();
         if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)

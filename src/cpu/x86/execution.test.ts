@@ -2596,6 +2596,52 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eip: 0x00000006, registers: { esp: 0x3004 } });
   });
 
+  it("saves and restores 32-bit registers through PUSHAD and POPAD", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x60],
+      [0x0002, 0x66],
+      [0x0003, 0x61]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    for (const [register, value] of [
+      [0, 0x11111111],
+      [1, 0x22222222],
+      [2, 0x33333333],
+      [3, 0x44444444],
+      [5, 0x55555555],
+      [6, 0x66666666],
+      [7, 0x77777777]
+    ])
+      state.writeRegister(register, value);
+    state.writeRegister(4, 0x3000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x2fe0 } });
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x2fe0 + offset))).toEqual([
+      0x77, 0x77, 0x77, 0x77
+    ]);
+    for (const register of [0, 1, 2, 3, 5, 6, 7]) state.writeRegister(register, 0);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: {
+        eax: 0x11111111,
+        ecx: 0x22222222,
+        edx: 0x33333333,
+        ebx: 0x44444444,
+        esp: 0x3000,
+        ebp: 0x55555555,
+        esi: 0x66666666,
+        edi: 0x77777777
+      }
+    });
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
