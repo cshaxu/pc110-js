@@ -455,6 +455,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   requests enforce gate DPL before creating the frame; external interrupts
   remain independent of gate DPL. Privilege stack switching and fault delivery
   remain later S3 work.
+- M2 T2 S3 P177 adds same-CPL 32-bit protected-mode `IRET` restoration from the
+  PCjs selected frame model: it pops EIP, CS, and EFLAGS through SS:ESP then
+  validates and reloads the target code descriptor. Privilege returns, 16-bit
+  frames, and virtual-8086 return remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

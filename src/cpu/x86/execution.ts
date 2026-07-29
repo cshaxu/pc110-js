@@ -359,6 +359,13 @@ function popUint16(memory: InstructionMemory, state: Cpu386State): number {
   return value;
 }
 
+function popUint32(memory: InstructionMemory, state: Cpu386State): number {
+  const stackPointer = state.readRegister(4);
+  const value = readSegmentUint32(memory, state, "ss", stackPointer, 32);
+  state.writeRegister(4, stackPointer + 4);
+  return value;
+}
+
 function deliverRealModeInterrupt(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2817,14 +2824,23 @@ export function stepInstruction(
     }
     case 0xcf: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode IRET is not implemented");
-      }
-      const instructionPointer = popUint16(memory, state);
-      const selector = popUint16(memory, state);
-      const flags = popUint16(memory, state);
-      state.writeEflags(flags);
-      state.loadRealModeCodeSegment(selector, instructionPointer);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real") {
+        const instructionPointer = popUint16(memory, state);
+        const selector = popUint16(memory, state);
+        const flags = popUint16(memory, state);
+        state.writeEflags(flags);
+        state.loadRealModeCodeSegment(selector, instructionPointer);
+      } else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected") {
+        if (!snapshot.ss.default32)
+          throw new UnsupportedOpcodeError("Protected-mode 16-bit IRET stacks are not implemented");
+        const instructionPointer = popUint32(memory, state);
+        const selector = popUint32(memory, state) & 0xffff;
+        const flags = popUint32(memory, state);
+        if ((selector & 0x03) !== (snapshot.cs.selector & 0x03))
+          throw new UnsupportedOpcodeError("Protected-mode privilege return is not implemented");
+        state.writeEflags(flags);
+        loadProtectedModeCodeSegment(memory, state, selector, instructionPointer);
+      } else throw new UnsupportedOpcodeError("Virtual-8086 IRET is not implemented");
       return { halted: false, fetched };
     }
     case 0x60: {
