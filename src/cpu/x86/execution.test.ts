@@ -479,6 +479,53 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("returns from the observed protected-mode sequence through a real-mode far jump", () => {
+    const values = new Map<number, number>([
+      [0x00002000, 0xb8],
+      [0x00002001, 0x10],
+      [0x00002002, 0x00],
+      [0x00002003, 0x8e],
+      [0x00002004, 0xc0],
+      [0x00002005, 0x0f],
+      [0x00002006, 0x20],
+      [0x00002007, 0xc0],
+      [0x00002008, 0x66],
+      [0x00002009, 0x25],
+      [0x0000200a, 0xfe],
+      [0x0000200b, 0xff],
+      [0x0000200c, 0xff],
+      [0x0000200d, 0x7f],
+      [0x0000200e, 0x0f],
+      [0x0000200f, 0x22],
+      [0x00002010, 0xc0],
+      [0x00002011, 0xea],
+      [0x00002012, 0xdc],
+      [0x00002013, 0x87],
+      [0x00002014, 0x00],
+      [0x00002015, 0xf0],
+      [0x00001010, 0xff],
+      [0x00001011, 0xff],
+      [0x00001012, 0x00],
+      [0x00001013, 0x00],
+      [0x00001014, 0x00],
+      [0x00001015, 0x92],
+      [0x00001016, 0x00],
+      [0x00001017, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x80000001);
+    state.writeGdtr(0x00001000, 0x00000017);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00002000);
+
+    for (let step = 0; step < 6; step += 1) stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      cr0: 0x00000000,
+      eip: 0x000087dc,
+      cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff }
+    });
+  });
+
   it("loads GDTR and IDTR through real-mode LGDT and LIDT memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

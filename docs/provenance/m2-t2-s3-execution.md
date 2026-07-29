@@ -129,6 +129,8 @@
   through the shared ModR/M write path and the cached protected ES base.
 - M2 T2 S3 P65 adds the observed operand-size-overridden `AND EAX, imm32`
   (`66 25 id`) form and a shared 32-bit logic-flag contract.
+- M2 T2 S3 P66 adds an integrated regression for the observed protected-mode
+  return sequence through CR0 and its real-mode far jump.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

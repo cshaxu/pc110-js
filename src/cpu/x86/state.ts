@@ -410,7 +410,7 @@ export class Cpu386State {
     this.cs = {
       selector: selector & 0xffff,
       base: (selector & 0xffff) << 4,
-      limit: this.cs.limit
+      limit: 0xffff
     };
     this.eip = instructionPointer & 0xffff;
   }
