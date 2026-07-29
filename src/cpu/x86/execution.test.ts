@@ -2983,6 +2983,42 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("preserves operands and flags for zero-count immediate shifts", () => {
+    const byteValues = new Map<number, number>([
+      [0x000ffff0, 0xc0],
+      [0x000ffff1, 0xed],
+      [0x000ffff2, 0x00]
+    ]);
+    const byteState = new Cpu386State();
+    byteState.writeRegister8(5, 0x81);
+    byteState.writeEflags(0x000008d7);
+
+    stepInstruction(resetAliasMemory(byteValues), byteState);
+
+    expect(byteState.snapshot()).toMatchObject({
+      registers: { ecx: 0x8100 },
+      eip: 0x0000fff3,
+      eflags: 0x000008d7
+    });
+
+    const wordValues = new Map<number, number>([
+      [0x000ffff0, 0xc1],
+      [0x000ffff1, 0xe3],
+      [0x000ffff2, 0x00]
+    ]);
+    const wordState = new Cpu386State();
+    wordState.writeRegister16(3, 0x8001);
+    wordState.writeEflags(0x000008d7);
+
+    stepInstruction(resetAliasMemory(wordValues), wordState);
+
+    expect(wordState.snapshot()).toMatchObject({
+      registers: { ebx: 0x8001 },
+      eip: 0x0000fff3,
+      eflags: 0x000008d7
+    });
+  });
+
   it("increments AH through the observed FE /0 form while preserving carry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xfe],

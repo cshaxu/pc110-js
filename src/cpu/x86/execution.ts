@@ -738,6 +738,10 @@ function executeShiftWord(
     ? state.readRegister16(modRm.rm)
     : readSegmentUint16(memory, state, address!.segment, address!.offset);
   const normalizedCount = count & 0x1f;
+  if (!normalizedCount) {
+    state.advanceEip(2 + (address?.displacementBytes ?? 0) + (immediateCount ? 1 : 0));
+    return;
+  }
   const result =
     normalizedCount > 16
       ? 0
@@ -759,6 +763,10 @@ function executeShiftRightByte(memory: InstructionMemory, state: Cpu386State, co
     ? state.readRegister8(modRm.rm)
     : readSegmentUint8(memory, state, address!.segment, address!.offset);
   const normalizedCount = count & 0x1f;
+  if (!normalizedCount) {
+    state.advanceEip(3 + (address?.displacementBytes ?? 0));
+    return;
+  }
   const result = normalizedCount > 8 ? 0 : source >>> normalizedCount;
   if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
   else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);

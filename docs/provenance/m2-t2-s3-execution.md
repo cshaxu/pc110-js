@@ -310,6 +310,10 @@
   contains `D5 0A` at `0x4230` and `0x4E60`. PCjs `opAAD` is the behavior
   authority: `AL + AH * imm8` becomes AL, AH clears, and byte arithmetic flags
   derive from that addition. No NXVM behavior or guest-service code was used.
+- M2 T2 S3 P133 corrects existing immediate-count `C0/C1` shift helpers. PCjs
+  `fnSHRb` and `fnSHRw` leave operands and flags unchanged when the normalized
+  count is zero. Focused byte and word regressions preserve EFLAGS while still
+  advancing EIP past the decoded instruction.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
