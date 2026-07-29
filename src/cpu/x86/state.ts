@@ -188,6 +188,18 @@ export class Cpu386State {
     return Boolean(this.eflags & EFLAGS_CARRY);
   }
 
+  public parityFlag(): boolean {
+    return Boolean(this.eflags & EFLAGS_PARITY);
+  }
+
+  public signFlag(): boolean {
+    return Boolean(this.eflags & EFLAGS_SIGN);
+  }
+
+  public overflowFlag(): boolean {
+    return Boolean(this.eflags & EFLAGS_OVERFLOW);
+  }
+
   public clearCarryFlag(): void {
     this.eflags = (this.eflags & ~EFLAGS_CARRY) >>> 0;
   }

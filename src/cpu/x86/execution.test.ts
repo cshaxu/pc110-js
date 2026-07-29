@@ -723,6 +723,43 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff6);
   });
 
+  it("executes every short conditional jump for taken and not-taken flags", () => {
+    const conditions = [
+      [0x70, 0x0800, 0x0000],
+      [0x71, 0x0000, 0x0800],
+      [0x72, 0x0001, 0x0000],
+      [0x73, 0x0000, 0x0001],
+      [0x74, 0x0040, 0x0000],
+      [0x75, 0x0000, 0x0040],
+      [0x76, 0x0001, 0x0000],
+      [0x77, 0x0000, 0x0001],
+      [0x78, 0x0080, 0x0000],
+      [0x79, 0x0000, 0x0080],
+      [0x7a, 0x0004, 0x0000],
+      [0x7b, 0x0000, 0x0004],
+      [0x7c, 0x0080, 0x0000],
+      [0x7d, 0x0000, 0x0080],
+      [0x7e, 0x0040, 0x0000],
+      [0x7f, 0x0000, 0x0040]
+    ];
+
+    for (const [opcode, takenFlags, notTakenFlags] of conditions) {
+      const values = new Map<number, number>([
+        [0x000ffff0, opcode],
+        [0x000ffff1, 0x03]
+      ]);
+      const takenState = new Cpu386State();
+      takenState.writeEflags(takenFlags);
+      stepInstruction(resetAliasMemory(values), takenState);
+      expect(takenState.snapshot().eip).toBe(0x0000fff5);
+
+      const notTakenState = new Cpu386State();
+      notTakenState.writeEflags(notTakenFlags);
+      stepInstruction(resetAliasMemory(values), notTakenState);
+      expect(notTakenState.snapshot().eip).toBe(0x0000fff2);
+    }
+  });
+
   it("tests immediate byte operands without changing the register or memory source", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xf6],

@@ -151,6 +151,9 @@
 - M2 T2 S3 P74 adds `TEST r/m16, r16` (`85 /r`) for the observed DeskPro ROM
   branch predicates, retaining both source operands and applying the existing
   word-width logic-flag contract.
+- M2 T2 S3 P75 adds the complete `JO` through `JG` short conditional-jump
+  family (`70` through `7F`), using explicit architectural EFLAGS predicates
+  and preserving the existing 16-bit real-mode target-width behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

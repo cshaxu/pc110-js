@@ -165,6 +165,50 @@ function signedWord(value: number): number {
   return (value << 16) >> 16;
 }
 
+function shortJumpCondition(state: Cpu386State, condition: number): boolean {
+  const carry = state.carryFlag();
+  const zero = state.zeroFlag();
+  const sign = state.signFlag();
+  const overflow = state.overflowFlag();
+
+  switch (condition) {
+    case 0x00:
+      return overflow;
+    case 0x01:
+      return !overflow;
+    case 0x02:
+      return carry;
+    case 0x03:
+      return !carry;
+    case 0x04:
+      return zero;
+    case 0x05:
+      return !zero;
+    case 0x06:
+      return carry || zero;
+    case 0x07:
+      return !carry && !zero;
+    case 0x08:
+      return sign;
+    case 0x09:
+      return !sign;
+    case 0x0a:
+      return state.parityFlag();
+    case 0x0b:
+      return !state.parityFlag();
+    case 0x0c:
+      return sign !== overflow;
+    case 0x0d:
+      return sign === overflow;
+    case 0x0e:
+      return zero || sign !== overflow;
+    case 0x0f:
+      return !zero && sign === overflow;
+    default:
+      throw new UnsupportedOpcodeError("Unsupported short conditional-jump form");
+  }
+}
+
 function segmentForMove(index: number): LoadableSegment | undefined {
   switch (index) {
     case 0:
@@ -1234,28 +1278,25 @@ export function stepInstruction(
       else state.advanceEip(2);
       return { halted: false, fetched };
     }
-    case 0x75: {
+    case 0x70:
+    case 0x71:
+    case 0x72:
+    case 0x73:
+    case 0x74:
+    case 0x75:
+    case 0x76:
+    case 0x77:
+    case 0x78:
+    case 0x79:
+    case 0x7a:
+    case 0x7b:
+    case 0x7c:
+    case 0x7d:
+    case 0x7e:
+    case 0x7f: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
-      if (state.zeroFlag()) state.advanceEip(2);
-      else state.writeEip16(fetched.instructionPointer + 2 + displacement);
-      return { halted: false, fetched };
-    }
-    case 0x74: {
-      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
-      if (state.zeroFlag()) state.writeEip16(fetched.instructionPointer + 2 + displacement);
-      else state.advanceEip(2);
-      return { halted: false, fetched };
-    }
-    case 0x76: {
-      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
-      if (state.carryFlag() || state.zeroFlag())
+      if (shortJumpCondition(state, fetched.opcode & 0x0f))
         state.writeEip16(fetched.instructionPointer + 2 + displacement);
-      else state.advanceEip(2);
-      return { halted: false, fetched };
-    }
-    case 0x72: {
-      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
-      if (state.carryFlag()) state.writeEip16(fetched.instructionPointer + 2 + displacement);
       else state.advanceEip(2);
       return { halted: false, fetched };
     }
