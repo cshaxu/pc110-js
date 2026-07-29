@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T1 S4: define deterministic emulated-time and host-scheduling boundaries.
+- M2 T1 S5: define local asset configuration with relative paths, size, and
+  SHA-256 validation.
 
 ## Delivery Nodes
 
