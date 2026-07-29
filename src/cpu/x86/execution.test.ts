@@ -452,6 +452,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x5a, esi: 0x1200 } });
   });
 
+  it("ORs byte registers and memory sources while updating logic flags", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0a],
+      [0x000ffff1, 0xc0],
+      [0x000ffff2, 0x0a],
+      [0x000ffff3, 0x06],
+      [0x000ffff4, 0x34],
+      [0x000ffff5, 0x12],
+      [0x00001234, 0x80]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x00000082 });
+  });
+
   it("writes immediate byte and word values through ModR/M memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xc6],

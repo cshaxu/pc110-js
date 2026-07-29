@@ -570,6 +570,22 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0x0a: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      let source: number;
+      let displacementBytes = 0;
+      if (modRm.registerDirect) source = state.readRegister8(modRm.rm);
+      else {
+        const address = decodeMemoryAddress(memory, state, modRm);
+        source = readSegmentUint8(memory, state, address.segment, address.offset);
+        displacementBytes = address.displacementBytes;
+      }
+      const result = state.readRegister8(modRm.reg) | source;
+      state.writeRegister8(modRm.reg, result);
+      state.writeLogicFlags8(result);
+      state.advanceEip(2 + displacementBytes);
+      return { halted: false, fetched };
+    }
     case 0x32: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)

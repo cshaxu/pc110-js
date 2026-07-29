@@ -81,6 +81,8 @@
   forms without widening unsupported segment-prefix behavior.
 - M2 T2 S3 P42 adds `LODSB` through DS:SI, including direction-flag controlled
   index advancement.
+- M2 T2 S3 P43 adds `OR r8, r/m8` (`0A`) through the shared ModR/M decoder
+  with the existing 8-bit logic-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
