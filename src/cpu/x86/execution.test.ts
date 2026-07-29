@@ -3574,6 +3574,56 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("delivers and returns through a same-privilege 16-bit protected-mode interrupt gate", () => {
+    const values = new Map<number, number>([
+      [0x0034, 0xcf],
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0x8f],
+      [0x100f, 0x00],
+      [0x2040, 0x34],
+      [0x2041, 0x00],
+      [0x2042, 0x08],
+      [0x2043, 0x00],
+      [0x2044, 0x00],
+      [0x2045, 0x86],
+      [0x2046, 0x00],
+      [0x2047, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.writeIdtr(0x2000, 0x0047);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x1234, false);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, false);
+    state.writeRegister16(4, 0x3000);
+    state.writeEflags(0x00000302);
+    const memory = resetAliasMemory(values);
+
+    expect(serviceExternalInterrupt(memory, state, 0x08)).toBe(true);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0034,
+      cs: { selector: 0x0008, default32: false },
+      registers: { esp: 0x2ffa },
+      eflags: 0x00000002
+    });
+    expect(Array.from({ length: 6 }, (_, offset) => values.get(0x2ffa + offset))).toEqual([
+      0x34, 0x12, 0x08, 0x00, 0x02, 0x03
+    ]);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      cs: { selector: 0x0008, default32: false },
+      registers: { esp: 0x3000 },
+      eflags: 0x00000302
+    });
+  });
+
   it("delivers a ring-three software interrupt through an eligible 32-bit gate", () => {
     const values = new Map<number, number>([
       [0x0000, 0xcd],

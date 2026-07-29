@@ -473,6 +473,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   unchanged; a limit violation now reaches protected-mode vector five through
   the selected PCjs IDT model. The 32-bit `BOUND` operand form remains later S3
   work.
+- M2 T2 S3 P181 adds same-CPL 16-bit protected-mode interrupt/trap gate
+  delivery and `IRET` restoration from the PCjs-selected frame-width model.
+  The frame width must match the current SS default size; mixed-size stacks,
+  privilege transitions, and virtual-8086 behavior remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

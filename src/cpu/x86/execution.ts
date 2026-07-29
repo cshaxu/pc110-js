@@ -392,8 +392,6 @@ function deliverProtectedModeInterrupt(
   software = false
 ): void {
   const snapshot = state.snapshot();
-  if (!snapshot.ss.default32)
-    throw new UnsupportedOpcodeError("Protected-mode 16-bit interrupt stacks are not implemented");
   const descriptorMemory = {
     readUint32: (address: number) =>
       (memory.readUint8(address) & 0xff) |
@@ -406,14 +404,22 @@ function deliverProtectedModeInterrupt(
     throw new UnsupportedOpcodeError("Protected-mode interrupt gate is not present");
   if (software && (snapshot.cs.selector & 0x03) > gate.dpl)
     throw new UnsupportedOpcodeError("Protected-mode software interrupt gate privilege violation");
-  if (!gate.default32)
-    throw new UnsupportedOpcodeError("Protected-mode 16-bit interrupt gates are not implemented");
   if ((gate.selector & 0x03) !== (snapshot.cs.selector & 0x03))
     throw new UnsupportedOpcodeError("Protected-mode privilege stack switching is not implemented");
+  if (snapshot.ss.default32 !== gate.default32)
+    throw new UnsupportedOpcodeError(
+      "Mixed-size protected-mode interrupt frames are not implemented"
+    );
 
-  pushUint32(memory, state, snapshot.eflags);
-  pushUint32(memory, state, snapshot.cs.selector);
-  pushUint32(memory, state, returnInstructionPointer);
+  if (gate.default32) {
+    pushUint32(memory, state, snapshot.eflags);
+    pushUint32(memory, state, snapshot.cs.selector);
+    pushUint32(memory, state, returnInstructionPointer);
+  } else {
+    pushUint16(memory, state, snapshot.eflags);
+    pushUint16(memory, state, snapshot.cs.selector);
+    pushUint16(memory, state, returnInstructionPointer);
+  }
   state.clearInterruptAndTrapFlags();
   loadProtectedModeCodeSegment(memory, state, gate.selector, gate.offset);
 }
@@ -2889,11 +2895,12 @@ export function stepInstruction(
         state.writeEflags(flags);
         state.loadRealModeCodeSegment(selector, instructionPointer);
       } else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected") {
-        if (!snapshot.ss.default32)
-          throw new UnsupportedOpcodeError("Protected-mode 16-bit IRET stacks are not implemented");
-        const instructionPointer = popUint32(memory, state);
-        const selector = popUint32(memory, state) & 0xffff;
-        const flags = popUint32(memory, state);
+        const instructionPointer = snapshot.ss.default32
+          ? popUint32(memory, state)
+          : popUint16(memory, state);
+        const selector =
+          (snapshot.ss.default32 ? popUint32(memory, state) : popUint16(memory, state)) & 0xffff;
+        const flags = snapshot.ss.default32 ? popUint32(memory, state) : popUint16(memory, state);
         if ((selector & 0x03) !== (snapshot.cs.selector & 0x03))
           throw new UnsupportedOpcodeError("Protected-mode privilege return is not implemented");
         state.writeEflags(flags);
