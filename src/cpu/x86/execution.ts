@@ -168,6 +168,35 @@ function executeMovReg16FromModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
+function executeMovSegmentFromModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number
+): void {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+    throw new UnsupportedOpcodeError("Protected-mode segment loads are not implemented");
+  }
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const segment = segmentForMove(modRm.reg);
+  if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
+  if (modRm.registerDirect) {
+    state.loadRealModeSegment(segment, state.readRegister16(modRm.rm));
+    state.advanceEip(modRmOffset + 1);
+    return;
+  }
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  state.loadRealModeSegment(
+    segment,
+    readSegmentUint16(memory, state, address.segment, address.offset)
+  );
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -225,16 +254,7 @@ export function stepInstruction(
       );
     }
     case 0x8e: {
-      const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-        throw new UnsupportedOpcodeError("Protected-mode segment loads are not implemented");
-      const modRm = fetchCodeByte(memory, state, 1).opcode;
-      if ((modRm & 0xc0) !== 0xc0)
-        throw new UnsupportedOpcodeError("Memory-form segment loads are not implemented");
-      const segment = segmentForMove((modRm >>> 3) & 0x07);
-      if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
-      state.loadRealModeSegment(segment, state.readRegister16(modRm & 0x07));
-      state.advanceEip(2);
+      executeMovSegmentFromModRm(memory, state, 1);
       return { halted: false, fetched };
     }
     case 0x8b: {

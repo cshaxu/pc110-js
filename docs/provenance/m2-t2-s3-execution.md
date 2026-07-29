@@ -44,6 +44,8 @@
   extension signature check after `XOR BX, BX`.
 - M2 T2 S3 P21 adds the observed CS-overridden memory-source `MOV r16, r/m16`
   form and shares its 16-bit ModR/M path with the default-segment instruction.
+- M2 T2 S3 P22 extends real-mode `MOV Sreg, r/m16` to direct and computed
+  memory operands through the same project-native ModR/M decoder.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

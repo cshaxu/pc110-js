@@ -184,6 +184,24 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads a real-mode data segment from a direct memory operand", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x8e],
+      [0x000ffff1, 0x1e],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x00001234, 0x40],
+      [0x00001235, 0x00]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      ds: { selector: 0x0040, base: 0x0400, limit: 0xffff },
+      eip: 0x0000fff4
+    });
+  });
+
   it("reads a port, tests AL, and follows JNZ from the reset-ROM path", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xe4],
