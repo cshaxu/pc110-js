@@ -300,6 +300,8 @@
 - M2 T2 S3 P129 adds observed CMPS and SCAS byte/word forms, including `REPE`
   and `REPNE` termination through DS:SI, ES:DI, CX, direction, and comparison
   flag contracts.
+- M2 T2 S3 P130 adds observed accumulator-register XCHG short forms (`91`
+  through `97`), preserving 16-bit register behavior and EFLAGS.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

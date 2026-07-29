@@ -812,6 +812,20 @@ export function stepInstruction(
     case 0x90:
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x91:
+    case 0x92:
+    case 0x93:
+    case 0x94:
+    case 0x95:
+    case 0x96:
+    case 0x97: {
+      const register = fetched.opcode - 0x90;
+      const accumulator = state.readRegister16(0);
+      state.writeRegister16(0, state.readRegister16(register));
+      state.writeRegister16(register, accumulator);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0x98: {
       const value = state.readRegister8(0);
       state.writeRegister16(0, value & 0x80 ? value | 0xff00 : value);

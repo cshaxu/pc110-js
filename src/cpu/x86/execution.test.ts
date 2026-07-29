@@ -2295,6 +2295,27 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x00001234), values.get(0x00001235)]).toEqual([0x12, 0x34]);
   });
 
+  it("exchanges AX with short-encoded general registers without changing flags", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x93],
+      [0x000ffff1, 0x97]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x1234);
+    state.writeRegister16(3, 0x5678);
+    state.writeRegister16(7, 0x9abc);
+    state.writeEflags(0x00000ad7);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x9abc, ebx: 0x1234, edi: 0x5678 },
+      eflags: 0x00000ad7,
+      eip: 0x0000fff2
+    });
+  });
+
   it("compares 16-bit register and memory operands with sign-extended bytes", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x83],
