@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T5 S2: map PCjs memory, bus, machine, and timing modules to M2
-  destinations.
+- M1 T5 S3: map PCjs chipset, interrupt, timer, DMA, RTC, and system-port
+  sources to M2 destinations.
 
 ## Delivery Nodes
 
