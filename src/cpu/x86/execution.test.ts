@@ -301,6 +301,22 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("compares a 16-bit memory operand with an immediate through 81 /7", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x81],
+      [0x000ffff1, 0x3f],
+      [0x000ffff2, 0xaa],
+      [0x000ffff3, 0x55],
+      [0x00001000, 0xaa],
+      [0x00001001, 0x55]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0x1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ eip: 0x0000fff4, eflags: 0x00000046 });
+  });
+
   it("executes register-direct byte XOR and follows JBE on carry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x32],

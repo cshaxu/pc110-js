@@ -39,6 +39,9 @@
 - M2 T2 S3 P19 replaces the observed CS-overridden far-jump table special case
   with a project-native real-mode `FF /5 m16:16` path that shares the 16-bit
   ModR/M decoder and supports default or CS-overridden pointer segments.
+- M2 T2 S3 P20 adds `CMP r/m16, imm16` (`81 /7 iw`) for register and memory
+  operands with complete 16-bit subtraction flags, covering the reset-ROM
+  extension signature check after `XOR BX, BX`.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

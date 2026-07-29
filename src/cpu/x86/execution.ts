@@ -109,6 +109,18 @@ function readFarPointer(
   };
 }
 
+function decodeMemoryAddress(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRm: ReturnType<typeof decodeModRm>
+) {
+  return decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, offset).opcode
+  );
+}
+
 function executeMemoryFarJump(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -207,11 +219,7 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
-      const address = decodeModRm16Address(
-        modRm,
-        (index) => state.readRegister16(index),
-        (offset) => fetchCodeByte(memory, state, offset).opcode
-      );
+      const address = decodeMemoryAddress(memory, state, modRm);
       state.writeRegister16(
         modRm.reg,
         readSegmentUint16(memory, state, address.segment, address.offset)
@@ -248,6 +256,24 @@ export function stepInstruction(
         fetchCodeByte(memory, state, 2).opcode
       );
       state.advanceEip(3);
+      return { halted: false, fetched };
+    }
+    case 0x81: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.reg !== 0x07) throw new UnsupportedOpcodeError("Unsupported 81 opcode form");
+      if (modRm.registerDirect) {
+        const immediate = fetchCodeUint16(memory, state, 2);
+        state.writeCompareFlags16(state.readRegister16(modRm.rm), immediate);
+        state.advanceEip(4);
+        return { halted: false, fetched };
+      }
+      const address = decodeMemoryAddress(memory, state, modRm);
+      const immediate = fetchCodeUint16(memory, state, 2 + address.displacementBytes);
+      state.writeCompareFlags16(
+        readSegmentUint16(memory, state, address.segment, address.offset),
+        immediate
+      );
+      state.advanceEip(4 + address.displacementBytes);
       return { halted: false, fetched };
     }
     case 0xd0: {
