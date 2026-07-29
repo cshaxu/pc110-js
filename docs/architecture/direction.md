@@ -1,62 +1,81 @@
 # Architecture Direction
 
-`pc110js` is a standalone TypeScript emulator project. It should not be a thin wrapper around the PCjs website tree, and it should not become a raw fork-shaped copy of the PCjs repository.
+## Product Boundary
 
-## Source Strategy
+`pc110-js` is a standalone browser-first TypeScript emulator. It owns its build, runtime, UI, tests, configuration, and release model. Sibling repositories are read-only references and are not runtime dependencies of a released build.
 
-PCjs is the primary implementation source for mature PC/AT-compatible emulator behavior. The project will migrate PCjs behavior into the pc110js source layout in controlled subsystem-sized steps.
+## Boot-Preserving Migration
 
-Reference priority for implementation decisions is:
+The project uses vertical migration:
 
-1. PCjs.
-2. PC110-EMU.
-3. pc110js-v2.
-4. pc110js-v1.
-5. NXVM.
+1. Run an unmodified PCjs PCx86 v2 machine and boot the known-good DOS disk.
+2. Record the exact PCjs commit, machine configuration, assets, command, expected markers, and proof.
+3. Import the smallest complete PCjs dependency closure into the pc110-js source layout.
+4. Prove the migrated browser runtime reaches the same DOS result.
+5. Publish and manually verify `QUICKSTART.md` immediately.
+6. Convert one coherent module group at a time to TypeScript.
+7. Rerun the golden boot after every migration increment.
+8. Introduce the PC110 profile only after the generic baseline is stable.
 
-`pc110js-v2` may contain useful analysis from deeper hardware investigations. Treat it as a reference for lessons and evidence, not as a direction to inherit wholesale.
+This keeps a whole-machine result available early. CPU-first and device-first work is allowed only inside an already bootable vertical baseline.
 
-The migration goal is not to preserve PCjs file layout. The goal is to preserve useful behavior while making the resulting codebase natural for this project.
+## CPU Scope
 
-## Early Machine Target
+PCjs PCx86 v2 explicitly supports CPU models through the 80386. The generic golden machine therefore uses a supported 80386 configuration.
 
-The first emulator target is a complete bootable 486-class PC/AT virtual machine. This target should boot a known-good DOS disk image before PC110-specific hardware work becomes the dominant activity.
+The IBM Palm Top PC 110 requires 486SX/SL-compatible behavior. That behavior is implemented as an explicit delta over the proven PCjs core and must be driven by firmware traces or conformance tests. Passing `80486` as a numeric model to code that only defines `80386` is not evidence of complete 80486 support.
 
-This baseline is the safety rail for later PC110 bring-up.
+The initial PC110 CPU delta is limited to:
 
-## Implementation Language
+- reset state and reset alias behavior required by the dumped firmware;
+- 486 instructions actually reached by firmware or guest tests;
+- control-register and exception semantics demonstrated to differ from the PCjs 80386 baseline;
+- timing behavior only where correctness depends on it.
 
-TypeScript is the implementation language for emulator code. Plain JavaScript should be limited to scripts, configuration, generated compatibility shims, or tool requirements that cannot reasonably use TypeScript.
+Complete 80486 conformance is outside the initial boot goal unless separately approved and planned.
 
-## Layout Inspiration
+## Source Layout
 
-NXVM is useful as a source-organization reference. Its structure separates the emulator into entry/control code, machine logic, device modules, platform code, debugger code, and assembler/disassembler tooling.
-
-`pc110js` should use similar conceptual boundaries, adapted for browser-first TypeScript:
+The expected layout is:
 
 ```text
 src/
+  app/
   core/
-  machine/
-  bus/
   cpu/
   memory/
+  bus/
   devices/
+  machine/
+  profiles/
   platform/
   debugger/
   tools/
-  profiles/
-  assets/
+  pcjs/
+tests/
+docs/
+local-assets/
 ```
 
-This layout is a starting point, not a fixed contract. It should evolve only when real integration work justifies a change.
+`src/pcjs/` is a migration staging area for provenance-tracked PCjs source. Mechanically converted modules should move into the natural project boundary only when tests protect their behavior. The layout may evolve when real integration work justifies it.
 
-## Migration Rules
+## Device Boundaries
 
-- Migrate by subsystem.
-- Record provenance for each imported subsystem.
-- Preserve behavior first; clean up second.
-- Keep behavior changes separate from mechanical TypeScript adaptation.
-- Add tests and smoke checks around each migrated subsystem as soon as practical.
-- Keep PCjs license and attribution requirements visible.
+- The machine profile selects device implementations and owns machine wiring.
+- A registry may select generic PC/AT or PC110-specific variants.
+- Adapters isolate PCjs lifecycle, bus, timing, memory, and browser assumptions from local contracts.
+- Standard PC/AT behavior remains PCjs-derived unless evidence shows it cannot meet the goal.
+- PC110 wrappers own PC110-specific wiring and quirks without duplicating generic cores.
+- Unknown I/O remains traceable and explicit; it is not silently converted into successful behavior.
 
+## Runtime Boundaries
+
+- Browser UI and emulator execution are separate modules.
+- Headless execution uses the same machine core as the browser.
+- Host time, scheduling, file selection, rendering, and audio are platform services.
+- Emulated time must be deterministic in tests and must not depend directly on wall-clock time.
+- Protected assets are loaded through explicit local configuration and validated by size and hash.
+
+## Evidence Boundary
+
+PCjs is primary for standard PC/AT implementation. Real hardware, dumped firmware behavior, and reliable hardware documentation are primary for PC110-specific behavior. PC110-EMU and previous attempts provide supporting evidence and investigation leads. See [the evidence policy](../governance/evidence-policy.md).

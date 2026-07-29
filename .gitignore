@@ -4,6 +4,10 @@ dist/
 build/
 .cache/
 .tmp/
+coverage/
+local-assets/*
+!local-assets/README.md
+artifacts/verification/raw/
 
 # disk/rom/media assets; keep provenance explicit before committing any image
 *.img

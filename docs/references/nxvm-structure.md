@@ -15,7 +15,7 @@ src/
   xasm32/
 ```
 
-Useful ideas for pc110js:
+Useful ideas for pc110-js:
 
 - Keep machine orchestration separate from device implementations.
 - Keep platform integration separate from emulated hardware.
