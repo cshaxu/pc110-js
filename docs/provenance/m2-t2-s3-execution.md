@@ -502,6 +502,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P189 adds operand-size-overridden `PUSHAD` and `POPAD` (`66 60`
   and `66 61`) from PCjs `opPUSHA` and `opPOPA`. It snapshots the original ESP
   for the push frame and deliberately skips that saved slot on restoration.
+- M2 T2 S3 P190 adds operand-size-overridden general-register `PUSH` and
+  `POP` (`66 50-5F`) from the PCjs register-stack opcode family. `PUSH ESP`
+  saves the pre-decrement value and `POP ESP` retains the popped value.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

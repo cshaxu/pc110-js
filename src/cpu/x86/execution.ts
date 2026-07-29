@@ -1626,6 +1626,18 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if ((opcode >= 0x50 && opcode <= 0x57) || (opcode >= 0x58 && opcode <= 0x5f)) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
+          throw new UnsupportedOpcodeError(
+            "32-bit register push and pop require the implemented protected-mode stack path"
+          );
+        const register = opcode & 0x07;
+        if (opcode < 0x58) pushUint32(memory, state, state.readRegister(register));
+        else state.writeRegister(register, popUint32(memory, state));
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (opcode === 0xe8 || opcode === 0xc2 || opcode === 0xc3) {
         const snapshot = state.snapshot();
         if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
