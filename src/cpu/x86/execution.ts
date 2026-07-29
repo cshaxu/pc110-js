@@ -1107,10 +1107,6 @@ export function stepInstruction(
   const fetched = fetchOpcode(memory, state);
   switch (fetched.opcode) {
     case 0x62: {
-      const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode BOUND is not implemented");
-      }
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (modRm.registerDirect) throw new UnsupportedOpcodeError("BOUND requires a memory operand");
       const address = decodeMemoryAddress(memory, state, modRm);
@@ -1120,7 +1116,7 @@ export function stepInstruction(
         (readSegmentUint16(memory, state, address.segment, (address.offset + 2) & 0xffff) << 16) >>
         16;
       if (index < lower || index > upper) {
-        deliverRealModeInterrupt(memory, state, 5, fetched.instructionPointer);
+        deliverCpuFault(memory, state, 5, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       state.advanceEip(2 + address.displacementBytes);

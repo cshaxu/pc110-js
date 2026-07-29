@@ -468,6 +468,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   and supported divide errors now preserve their faulting EIP; fault error-code
   frames, privilege stack switching, and virtual-8086 delivery remain later S3
   work.
+- M2 T2 S3 P180 extends that no-error-code fault boundary to the existing
+  16-bit `BOUND` implementation. Its established operand decoding remains
+  unchanged; a limit violation now reaches protected-mode vector five through
+  the selected PCjs IDT model. The 32-bit `BOUND` operand form remains later S3
+  work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
