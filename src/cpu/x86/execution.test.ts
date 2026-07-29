@@ -3038,6 +3038,37 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().registers.edx).toBe(0xffffff80);
   });
 
+  it("scans lowest and highest 32-bit set bits while preserving zero-source destinations", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x0f],
+      [0x0002, 0xbc],
+      [0x0003, 0xc3],
+      [0x0004, 0x66],
+      [0x0005, 0x0f],
+      [0x0006, 0xbd],
+      [0x0007, 0xc3],
+      [0x0008, 0x66],
+      [0x0009, 0x0f],
+      [0x000a, 0xbc],
+      [0x000b, 0xc3]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(3, 0x80000010);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 4 }, eflags: 0x00000002 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 31 }, eflags: 0x00000002 });
+    state.writeRegister(3, 0);
+    state.writeRegister(0, 0x12345678);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x12345678 }, eflags: 0x00000042 });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

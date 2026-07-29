@@ -1403,6 +1403,33 @@ function executeMovExtendDwordModRm(
   state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
 }
 
+function executeBitScanDwordModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  extension: 0xbc | 0xbd,
+  modRmOffset: number
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = modRm.registerDirect
+    ? undefined
+    : decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+      );
+  const source = modRm.registerDirect
+    ? state.readRegister(modRm.rm)
+    : readSegmentUint32(memory, state, address!.segment, address!.offset, 16);
+  state.writeBitScanZeroFlag(source === 0);
+  if (source !== 0) {
+    let index = extension === 0xbc ? 0 : 31;
+    if (extension === 0xbc) while (!(source & (1 << index))) index += 1;
+    else while (!(source & (1 << index))) index -= 1;
+    state.writeRegister(modRm.reg, index);
+  }
+  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0));
+}
+
 function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386State): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
@@ -2072,6 +2099,10 @@ export function stepInstruction(
       }
       if (opcode === 0x0f) {
         const extension = fetchCodeByte(memory, state, 2).opcode;
+        if (extension === 0xbc || extension === 0xbd) {
+          executeBitScanDwordModRm(memory, state, extension, 3);
+          return { halted: false, fetched };
+        }
         if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
           executeMovExtendDwordModRm(memory, state, extension, 3, 16);
           return { halted: false, fetched };
