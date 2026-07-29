@@ -92,9 +92,6 @@
   cache objects.
 - Intentional behavior changes: none.
 - Incomplete behavior: paging hookup, prefetch, general decode, exceptions,
-- Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
-- Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
-- Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
-  exceptions, interrupt wakeup, protected-mode CLI and far jumps, and remaining
-  instruction behavior, including non-register LMSW and segment-load forms,
-  remain later S3 work.
+  interrupt wakeup, protected-mode CLI and far jumps, and remaining instruction
+  behavior, including non-register LMSW, wider I/O forms, and segment-load
+  forms, remain later S3 work. Concrete port routing is active S5 work.
