@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T2 S1: select one existing PCjs 80386 PC/AT machine configuration.
+- M1 T2 S1: in progress; select one existing PCjs 80386 PC/AT machine
+  configuration.
 
 ## Delivery Nodes
 
