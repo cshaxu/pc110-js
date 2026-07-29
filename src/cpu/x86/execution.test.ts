@@ -2764,6 +2764,29 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x1234, esi: 0x2002 } });
   });
 
+  it("loads and stores AL through the observed CS moffs byte forms", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0xa0],
+      [0x000ffff2, 0xfe],
+      [0x000ffff3, 0xff],
+      [0x000ffff4, 0x2e],
+      [0x000ffff5, 0xa2],
+      [0x000ffff6, 0xfe],
+      [0x000ffff7, 0xff],
+      [0x000ffffe, 0x34]
+    ]);
+    const state = new Cpu386State();
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    state.writeRegister8(0, 0x56);
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x56 }, eip: 0x0000fff8 });
+    expect(values.get(0x000ffffe)).toBe(0x56);
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

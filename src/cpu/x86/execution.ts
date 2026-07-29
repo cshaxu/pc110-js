@@ -895,7 +895,15 @@ export function stepInstruction(
       } else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
       else if (opcode === 0x3a) executeCompareRegFromModRm(memory, state, 8, 2, "cs");
       else if (opcode === 0x3b) executeCompareRegFromModRm(memory, state, 16, 2, "cs");
-      else if (opcode === 0xa5) {
+      else if (opcode === 0xa0) {
+        const offset = fetchCodeUint16(memory, state, 2);
+        state.writeRegister8(0, readSegmentUint8(memory, state, "cs", offset));
+        state.advanceEip(4);
+      } else if (opcode === 0xa2) {
+        const offset = fetchCodeUint16(memory, state, 2);
+        writeSegmentUint8(memory, state, "cs", offset, state.readRegister8(0));
+        state.advanceEip(4);
+      } else if (opcode === 0xa5) {
         const source = state.readRegister16(6);
         const destination = state.readRegister16(7);
         const step = state.directionFlag() ? -2 : 2;

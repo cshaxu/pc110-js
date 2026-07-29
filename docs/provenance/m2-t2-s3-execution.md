@@ -279,6 +279,8 @@
   mapping prerequisite: contiguous RAM currently occupies the required system
   ROM window. The result is evidence for planned S4 memory-region work, not a
   CPU behavior claim or an implementation change.
+- M2 T2 S3 P122 adds the observed CS-overridden byte accumulator moffs forms
+  (`2E A0` and `2E A2`) reached by the bounded DeskPro ROM trace at `F000:BAB0`.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
