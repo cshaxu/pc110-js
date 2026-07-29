@@ -552,6 +552,12 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   (`0F 00 /3` and `/1`). LTR validates a present available GDT TSS descriptor,
   caches its task-register state, and marks the descriptor busy. Task switches
   and TSS-based privilege-stack entry remain later S3 work.
+- M2 T2 S3 P205 adds 32-bit TSS-based entry for a protected-mode interrupt or
+  trap gate targeting a more privileged nonconforming code segment. It reads
+  `ESP0` and `SS0`, validates the target stack descriptor, switches stacks, and
+  creates the documented old-SS/old-ESP/EFLAGS/CS/EIP frame. Privilege-return
+  IRET, 16-bit frames, conforming targets, and virtual-8086 entry remain later
+  S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

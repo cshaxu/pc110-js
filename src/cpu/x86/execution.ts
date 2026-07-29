@@ -446,12 +446,79 @@ function deliverProtectedModeInterrupt(
     throw new UnsupportedOpcodeError("Protected-mode interrupt gate is not present");
   if (software && (snapshot.cs.selector & 0x03) > gate.dpl)
     throw new UnsupportedOpcodeError("Protected-mode software interrupt gate privilege violation");
-  if ((gate.selector & 0x03) !== (snapshot.cs.selector & 0x03))
-    throw new UnsupportedOpcodeError("Protected-mode privilege stack switching is not implemented");
+  const targetDescriptor = loadDescriptor(descriptorMemory, snapshot.gdtr, gate.selector);
+  if (!targetDescriptor.system || !(targetDescriptor.type & 0x08) || !targetDescriptor.present)
+    throw new UnsupportedOpcodeError(
+      "Protected-mode interrupt gate requires a present code descriptor"
+    );
+  if (targetDescriptor.type & 0x04)
+    throw new UnsupportedOpcodeError(
+      "Conforming protected-mode interrupt targets are not implemented"
+    );
+  const currentPrivilege = snapshot.cs.selector & 0x03;
+  const targetPrivilege = targetDescriptor.dpl;
+  if (targetPrivilege > currentPrivilege)
+    throw new UnsupportedOpcodeError("Protected-mode interrupt gate cannot target lower privilege");
   if (snapshot.ss.default32 !== gate.default32)
     throw new UnsupportedOpcodeError(
       "Mixed-size protected-mode interrupt frames are not implemented"
     );
+
+  if (targetPrivilege < currentPrivilege) {
+    if (!gate.default32 || !targetDescriptor.default32)
+      throw new UnsupportedOpcodeError(
+        "16-bit protected-mode privilege stack switching is not implemented"
+      );
+    const taskRegister = snapshot.tr;
+    if (!taskRegister.default32 || taskRegister.limit < 0x0b)
+      throw new UnsupportedOpcodeError(
+        "Protected-mode privilege stack switching requires a 32-bit TSS"
+      );
+    const stackPointer =
+      (memory.readUint8((taskRegister.base + 4) >>> 0) & 0xff) |
+      ((memory.readUint8((taskRegister.base + 5) >>> 0) & 0xff) << 8) |
+      ((memory.readUint8((taskRegister.base + 6) >>> 0) & 0xff) << 16) |
+      ((memory.readUint8((taskRegister.base + 7) >>> 0) & 0xff) << 24);
+    const stackSelector =
+      (memory.readUint8((taskRegister.base + 8) >>> 0) & 0xff) |
+      ((memory.readUint8((taskRegister.base + 9) >>> 0) & 0xff) << 8);
+    const stackDescriptor = loadDescriptor(descriptorMemory, snapshot.gdtr, stackSelector);
+    if (
+      !stackDescriptor.system ||
+      Boolean(stackDescriptor.type & 0x08) ||
+      !(stackDescriptor.type & 0x02) ||
+      !stackDescriptor.present ||
+      stackDescriptor.dpl !== targetPrivilege ||
+      (stackSelector & 0x03) !== targetPrivilege ||
+      !stackDescriptor.default32
+    )
+      throw new UnsupportedOpcodeError(
+        "TSS privilege stack selector is not a valid 32-bit stack segment"
+      );
+    state.loadProtectedModeSegment(
+      "ss",
+      stackSelector,
+      stackDescriptor.base,
+      stackDescriptor.limit,
+      true
+    );
+    state.writeRegister(4, stackPointer >>> 0);
+    pushUint32(memory, state, snapshot.ss.selector);
+    pushUint32(memory, state, snapshot.registers.esp);
+    pushUint32(memory, state, snapshot.eflags);
+    pushUint32(memory, state, snapshot.cs.selector);
+    pushUint32(memory, state, returnInstructionPointer);
+    if (gate.trap) state.clearTrapFlag();
+    else state.clearInterruptAndTrapFlags();
+    state.loadProtectedModeCodeSegment(
+      gate.selector,
+      targetDescriptor.base,
+      targetDescriptor.limit,
+      gate.offset,
+      targetDescriptor.default32
+    );
+    return;
+  }
 
   if (gate.default32) {
     pushUint32(memory, state, snapshot.eflags);
