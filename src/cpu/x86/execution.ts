@@ -1076,7 +1076,18 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0xff:
-      executeMemoryFarJump(memory, state, 1);
+      {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+        if (modRm.reg === 0x04) {
+          if (modRm.registerDirect) state.writeEip16(state.readRegister16(modRm.rm));
+          else {
+            const address = decodeMemoryAddress(memory, state, modRm);
+            state.writeEip16(readSegmentUint16(memory, state, address.segment, address.offset));
+          }
+        } else {
+          executeMemoryFarJump(memory, state, 1);
+        }
+      }
       return { halted: false, fetched };
     case 0xe9: {
       const displacement = signedWord(fetchCodeUint16(memory, state, 1));

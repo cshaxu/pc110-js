@@ -87,6 +87,19 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("jumps to a 16-bit register through FF /4", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xff],
+      [0x000ffff1, 0xe5]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(5, 0x1234);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot().eip).toBe(0x1234);
+  });
+
   it("loads a checked GDT code descriptor through a protected-mode far jump", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xea],

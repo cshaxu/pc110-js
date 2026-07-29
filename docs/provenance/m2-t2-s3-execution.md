@@ -131,6 +131,8 @@
   (`66 25 id`) form and a shared 32-bit logic-flag contract.
 - M2 T2 S3 P66 adds an integrated regression for the observed protected-mode
   return sequence through CR0 and its real-mode far jump.
+- M2 T2 S3 P67 adds the observed 16-bit `JMP r/m16` (`FF /4`) form used after
+  the return-path `LIDT` sequence.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
