@@ -1549,6 +1549,22 @@ export function stepInstruction(
     }
     case 0x66: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode === 0x62) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.registerDirect)
+          throw new UnsupportedOpcodeError("BOUND requires a memory operand");
+        const address = decodeMemoryAddress(memory, state, modRm);
+        const index = state.readRegister(modRm.reg) | 0;
+        const lower = readSegmentUint32(memory, state, address.segment, address.offset) | 0;
+        const upper =
+          readSegmentUint32(memory, state, address.segment, (address.offset + 4) & 0xffff) | 0;
+        if (index < lower || index > upper) {
+          deliverCpuFault(memory, state, 5, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
+        state.advanceEip(3 + address.displacementBytes);
+        return { halted: false, fetched };
+      }
       if (opcode === 0x9a) {
         const snapshot = state.snapshot();
         if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")

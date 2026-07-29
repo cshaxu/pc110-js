@@ -481,6 +481,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   interrupt gates clear IF and TF, while trap gates preserve IF and clear TF.
   The saved EFLAGS frame remains the pre-entry state, matching the selected
   PCjs interrupt model.
+- M2 T2 S3 P183 adds the PCjs-selected operand-size-overridden 32-bit `BOUND`
+  form. It reads signed lower and upper dword limits through the established
+  16-bit effective-address path, then uses the existing vector-five fault
+  delivery. Address-size-overridden `BOUND` remains later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
