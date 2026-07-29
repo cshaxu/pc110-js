@@ -2225,6 +2225,14 @@ export function stepInstruction(
       deliverRealModeInterrupt(memory, state, vector, fetched.instructionPointer + 2);
       return { halted: false, fetched };
     }
+    case 0xcc: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode INT3 is not implemented");
+      }
+      deliverRealModeInterrupt(memory, state, 3, fetched.instructionPointer + 1);
+      return { halted: false, fetched };
+    }
     case 0xce: {
       const snapshot = state.snapshot();
       if (!state.overflowFlag()) {

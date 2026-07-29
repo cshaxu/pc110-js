@@ -352,6 +352,8 @@
   zero sources preserve the destination and set ZF.
 - M2 T2 S3 P147 adds `CMC` (`F5`) from PCjs `opCMC`: complement CF while
   preserving every other EFLAGS bit.
+- M2 T2 S3 P148 adds real-mode `INT3` (`CC`) through the existing vector-3
+  IVT path, using the next instruction as the stacked return address.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

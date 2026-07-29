@@ -1697,6 +1697,25 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eflags: 0x000008d6, eip: 0x0000fff1 });
   });
 
+  it("delivers real-mode INT3 through vector three", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xcc],
+      [0x0000000c, 0x34],
+      [0x0000000d, 0x12],
+      [0x0000000e, 0x00],
+      [0x0000000f, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x2000 },
+      eip: 0x1234,
+      registers: { esp: 0x0ffa }
+    });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
