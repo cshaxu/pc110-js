@@ -397,6 +397,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P161 adds `ADC r/m16,r16` (`11 /r`) from PCjs `opADCmw` and
   `fnADCw`: register and memory destinations use the current carry flag and
   the existing 16-bit addition-flag contract.
+- M2 T2 S3 P162 adds `SBB r/m16,r16` (`19 /r`) from PCjs `opSBBmw` and
+  `fnSBBw`: register and memory destinations consume CF as a borrow through
+  the existing 16-bit subtraction-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
