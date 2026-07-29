@@ -528,6 +528,27 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0x02, 0x02]);
   });
 
+  it("returns from a real-mode interrupt through IRET", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0xcf]]);
+    const state = new Cpu386State();
+    state.writeRegister16(4, 0x0ffa);
+    const memory = resetAliasMemory(values);
+    memory.writeUint8(0x0ffa, 0x34);
+    memory.writeUint8(0x0ffb, 0x12);
+    memory.writeUint8(0x0ffc, 0x00);
+    memory.writeUint8(0x0ffd, 0xf0);
+    memory.writeUint8(0x0ffe, 0x02);
+    memory.writeUint8(0x0fff, 0x02);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      eflags: 0x00000202,
+      cs: { selector: 0xf000, base: 0x000f0000 },
+      registers: { esp: 0x1000 }
+    });
+  });
+
   it("pushes and pops 16-bit general registers through SS:SP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x53],

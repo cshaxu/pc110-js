@@ -498,6 +498,18 @@ export function stepInstruction(
       state.loadRealModeCodeSegment(selector, instructionPointer);
       return { halted: false, fetched };
     }
+    case 0xcf: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode IRET is not implemented");
+      }
+      const instructionPointer = popUint16(memory, state);
+      const selector = popUint16(memory, state);
+      const flags = popUint16(memory, state);
+      state.writeEflags(flags);
+      state.loadRealModeCodeSegment(selector, instructionPointer);
+      return { halted: false, fetched };
+    }
     case 0xeb: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       state.writeEip16(fetched.instructionPointer + 2 + displacement);
