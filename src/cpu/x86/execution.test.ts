@@ -223,6 +223,25 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("stores real-mode segment selectors into registers and memory", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x8c],
+      [0x000ffff1, 0xc8],
+      [0x000ffff2, 0x8c],
+      [0x000ffff3, 0x1e],
+      [0x000ffff4, 0x34],
+      [0x000ffff5, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ds", 0x0040);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xf000 }, eip: 0x0000fff6 });
+    expect([values.get(0x00001634), values.get(0x00001635)]).toEqual([0x40, 0x00]);
+  });
+
   it("reads a port, tests AL, and follows JNZ from the reset-ROM path", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xe4],

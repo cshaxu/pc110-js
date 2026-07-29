@@ -75,6 +75,8 @@
   (`A0` through `A3`) through the DS and writable-memory boundaries.
 - M2 T2 S3 P39 adds `MOV r/m8, imm8` and `MOV r/m16, imm16` (`C6 /0` and
   `C7 /0`) through the shared ModR/M address and writable-memory boundaries.
+- M2 T2 S3 P40 adds `MOV r/m16, Sreg` (`8C`) for real-mode segment-selector
+  reads through register or writable-memory destinations.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

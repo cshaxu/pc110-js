@@ -157,6 +157,25 @@ function segmentForMove(index: number): LoadableSegment | undefined {
   }
 }
 
+function segmentForStore(index: number): "cs" | LoadableSegment | undefined {
+  switch (index) {
+    case 0:
+      return "es";
+    case 1:
+      return "cs";
+    case 2:
+      return "ss";
+    case 3:
+      return "ds";
+    case 4:
+      return "fs";
+    case 5:
+      return "gs";
+    default:
+      return undefined;
+  }
+}
+
 function readFarPointer(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -385,6 +404,21 @@ export function stepInstruction(
     }
     case 0x8e: {
       executeMovSegmentFromModRm(memory, state, 1);
+      return { halted: false, fetched };
+    }
+    case 0x8c: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const segment = segmentForStore(modRm.reg);
+      if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
+      const selector = state.snapshot()[segment].selector;
+      if (modRm.registerDirect) {
+        state.writeRegister16(modRm.rm, selector);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
+      const address = decodeMemoryAddress(memory, state, modRm);
+      writeSegmentUint16(memory, state, address.segment, address.offset, selector);
+      state.advanceEip(2 + address.displacementBytes);
       return { halted: false, fetched };
     }
     case 0x89: {
