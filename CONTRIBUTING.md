@@ -80,27 +80,36 @@ This project is a browser-first IBM Palm Top PC 110 emulator. These guidelines a
 ## Commit Discipline
 
 - Commit messages must be written in English.
-- Every commit should map to the project breakdown hierarchy: milestone, project, task, subtask, and part.
+- Every commit should map to the project breakdown hierarchy: milestone, task, subtask, and part.
 - Use this commit subject format:
 
 ```text
-M<milestone> P<project> T<task> S<subtask> part <n>: <description>
+M<milestone> T<task> S<subtask> P<part>: <description>
 ```
 
 - Use `0` as a placeholder only when that hierarchy level has not been defined yet.
 - Examples:
 
 ```text
-M0 P0 T0 S0 part 1: add project governance docs
-M1 P1 T1 S1 part 1: record PCjs upstream baseline
-M1 P1 T2 S1 part 1: add DOS boot smoke command
-M5 P2 T3 S2 part 1: add minimal device registry
+M0 T0 S0 P1: add project governance docs
+M1 T1 S1 P1: record PCjs upstream baseline
+M1 T2 S1 P1: add DOS boot smoke command
+M5 T3 S2 P1: add minimal device registry
 ```
 
 - Avoid unstructured exploratory commits.
-- If a commit captures exploration, its subject must still identify the milestone, project, task, subtask, and part it belongs to.
+- If a commit captures exploration, its subject must still identify the milestone, task, subtask, and part it belongs to.
 - Prefer small commits that preserve a reviewable and runnable project state.
 - Do not combine unrelated milestone or task work in one commit.
+- Historical commits made before this rule changed may use the previous `M P T S part` format, but all new commits must use `M T S P`.
+
+## Remote Synchronization
+
+- The canonical remote repository is `pc110-js` on GitHub.
+- Locally verified subtasks that meet commit standards should be pushed to the canonical remote promptly.
+- Do not push work that has not passed the relevant local verification for its subtask.
+- If verification cannot be run, the final note for that work must explain what was not verified and why.
+- Remote pushes should preserve small, reviewable commits rather than batching unrelated work.
 
 ## Architecture
 
@@ -161,3 +170,4 @@ M5 P2 T3 S2 part 1: add minimal device registry
 - ROMs, BIOS dumps, disk images, ISO images, VHDs, VMDKs, and other protected media must not be committed by default.
 - Any committed media asset requires explicit provenance, license or permission notes, and a reason it belongs in the repository.
 - Local asset paths may be documented, but protected media should remain outside Git unless explicitly approved.
+

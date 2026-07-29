@@ -1,6 +1,6 @@
 # Milestones
 
-This document records the initial milestone-level breakdown. Project, task, and subtask levels will be expanded later.
+This document records the initial milestone-level breakdown. Task, subtask, and part levels will be expanded later.
 
 ## Milestone 0: Project Foundation
 
@@ -146,3 +146,4 @@ Completion signals:
 - License and attribution requirements are complete.
 - Known limitations are documented.
 - Demo and regression commands are documented.
+
