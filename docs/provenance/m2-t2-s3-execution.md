@@ -181,6 +181,9 @@
 - M2 T2 S3 P84 adds real-mode `CALL r/m16` (`FF /2`) for observed DeskPro
   CS-overridden function-table calls, saving the prefix-inclusive return IP
   through SS:SP while retaining the current code segment.
+- M2 T2 S3 P85 adds `PUSH r/m16` (`FF /6`) for observed DeskPro ROM stack-save
+  paths, including default SS selection for BP-based sources and the existing
+  SS:SP writable-memory boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

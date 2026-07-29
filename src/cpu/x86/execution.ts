@@ -458,6 +458,27 @@ function executeNearCall(
   state.writeEip16(target);
 }
 
+function executePushModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x06) throw new UnsupportedOpcodeError("Unsupported FF opcode form");
+  if (modRm.registerDirect) {
+    pushUint16(memory, state, state.readRegister16(modRm.rm));
+    state.advanceEip(modRmOffset + 1);
+    return;
+  }
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  pushUint16(memory, state, readSegmentUint16(memory, state, address.segment, address.offset));
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
 function executeMovReg16FromModRm(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1340,6 +1361,7 @@ export function stepInstruction(
           executeMemoryFarJump(memory, state, 1);
         } else if (modRm.reg === 0x03) executeMemoryFarCall(memory, state, 1);
         else if (modRm.reg === 0x02) executeNearCall(memory, state, 1);
+        else if (modRm.reg === 0x06) executePushModRm(memory, state, 1);
         else throw new UnsupportedOpcodeError("Unsupported FF opcode form");
       }
       return { halted: false, fetched };

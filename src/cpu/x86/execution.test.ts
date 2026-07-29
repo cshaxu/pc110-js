@@ -390,6 +390,34 @@ describe("80386 instruction fetch", () => {
     expect([memoryValues.get(0x0ffe), memoryValues.get(0x0fff)]).toEqual([0xf5, 0xff]);
   });
 
+  it("pushes register and default-segment memory words through FF /6", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xff],
+      [0x000ffff1, 0xf3],
+      [0x000ffff2, 0xff],
+      [0x000ffff3, 0x76],
+      [0x000ffff4, 0x00],
+      [0x00001000, 0x78],
+      [0x00001001, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x2000);
+    state.writeRegister16(3, 0x1234);
+    state.writeRegister16(5, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x1ffc }, eip: 0x0000fff5 });
+    expect([
+      values.get(0x1ffc),
+      values.get(0x1ffd),
+      values.get(0x1ffe),
+      values.get(0x1fff)
+    ]).toEqual([0x78, 0x56, 0x34, 0x12]);
+  });
+
   it("loads 16-bit immediate values into the selected register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xbb],
