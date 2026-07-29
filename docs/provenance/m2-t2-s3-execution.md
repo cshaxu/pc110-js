@@ -249,6 +249,8 @@
 - M2 T2 S3 P109 adds the observed `SBB r/m8, imm8` Group 1 form (`80 /3 ib`) and a
   borrow-aware extension of the existing 8-bit subtraction-flag contract,
   matching PCjs `fnSBB` arithmetic behavior.
+- M2 T2 S3 P110 adds the observed `SBB r16, r/m16` form (`1B /r`) and the
+  corresponding 16-bit borrow-aware subtraction-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

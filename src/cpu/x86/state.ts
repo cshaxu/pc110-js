@@ -318,17 +318,19 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
-  public writeCompareFlags16(left: number, right: number): void {
+  public writeCompareFlags16(left: number, right: number, borrow = 0): void {
     const leftWord = left & 0xffff;
     const rightWord = right & 0xffff;
-    const result = (leftWord - rightWord) & 0xffff;
+    const subtrahend = rightWord + borrow;
+    const effectiveRight = subtrahend & 0xffff;
+    const result = (leftWord - subtrahend) & 0xffff;
     let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
-    if (leftWord < rightWord) flags |= EFLAGS_CARRY;
-    if ((leftWord ^ rightWord ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (leftWord < subtrahend) flags |= EFLAGS_CARRY;
+    if ((leftWord ^ effectiveRight ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x8000) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
-    if ((leftWord ^ rightWord) & (leftWord ^ result) & 0x8000) flags |= EFLAGS_OVERFLOW;
+    if ((leftWord ^ effectiveRight) & (leftWord ^ result) & 0x8000) flags |= EFLAGS_OVERFLOW;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 

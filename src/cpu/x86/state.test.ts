@@ -192,6 +192,13 @@ describe("Cpu386State", () => {
     expect(cpu.carryFlag()).toBe(true);
   });
 
+  it("includes borrow in 16-bit subtraction flags", () => {
+    const cpu = new Cpu386State();
+    cpu.writeCompareFlags16(0x0000, 0x0000, 1);
+
+    expect(cpu.snapshot().eflags).toBe(0x00000097);
+  });
+
   it("sets 16-bit addition flags for carry and signed overflow", () => {
     const cpu = new Cpu386State();
     cpu.writeAddFlags16(0xffff, 0x0001);
