@@ -114,6 +114,8 @@
   descriptor-initialization prefix through its first initialized descriptor.
 - P58 also corrects sequential EIP wrapping in real and virtual-8086 modes;
   protected-mode sequential EIP remains 32-bit.
+- M2 T2 S3 P59 adds 16-bit-address-size memory `LGDT` and `LIDT` forms
+  (`0F 01 /2,/3`) through the existing descriptor-table state boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

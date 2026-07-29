@@ -622,11 +622,29 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
-      const modRm = fetchCodeByte(memory, state, 2).opcode;
-      if (extension === 0x01 && modRm === 0xf0) {
-        state.loadMachineStatusWord(state.snapshot().registers.eax & 0xffff);
-        state.advanceEip(3);
-        return { halted: false, fetched };
+      if (extension === 0x01) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.registerDirect && modRm.reg === 0x06 && modRm.rm === 0x00) {
+          state.loadMachineStatusWord(state.snapshot().registers.eax & 0xffff);
+          state.advanceEip(3);
+          return { halted: false, fetched };
+        }
+        if (!modRm.registerDirect && (modRm.reg === 0x02 || modRm.reg === 0x03)) {
+          const address = decodeModRm16Address(
+            modRm,
+            (index) => state.readRegister16(index),
+            (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+          );
+          const limit = readSegmentUint16(memory, state, address.segment, address.offset);
+          const base =
+            readSegmentUint8(memory, state, address.segment, (address.offset + 2) & 0xffff) |
+            (readSegmentUint8(memory, state, address.segment, (address.offset + 3) & 0xffff) << 8) |
+            (readSegmentUint8(memory, state, address.segment, (address.offset + 4) & 0xffff) << 16);
+          if (modRm.reg === 0x02) state.writeGdtr(base, limit);
+          else state.writeIdtr(base, limit);
+          state.advanceEip(3 + address.displacementBytes);
+          return { halted: false, fetched };
+        }
       }
       throw new UnsupportedOpcodeError(
         `Unsupported 0F opcode 0x${extension.toString(16).padStart(2, "0")}`

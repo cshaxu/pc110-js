@@ -311,6 +311,40 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
   });
 
+  it("loads GDTR and IDTR through real-mode LGDT and LIDT memory operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0x16],
+      [0x000ffff3, 0x34],
+      [0x000ffff4, 0x12],
+      [0x000ffff5, 0x0f],
+      [0x000ffff6, 0x01],
+      [0x000ffff7, 0x1e],
+      [0x000ffff8, 0x3a],
+      [0x000ffff9, 0x12],
+      [0x00001234, 0x67],
+      [0x00001235, 0x45],
+      [0x00001236, 0x23],
+      [0x00001237, 0x01],
+      [0x00001238, 0x00],
+      [0x0000123a, 0xab],
+      [0x0000123b, 0x89],
+      [0x0000123c, 0x56],
+      [0x0000123d, 0x34],
+      [0x0000123e, 0x12]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      gdtr: { limit: 0x4567, base: 0x000123 },
+      idtr: { limit: 0x89ab, base: 0x123456 }
+    });
+  });
+
   it("loads a real-mode data segment from a general register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xb8],
