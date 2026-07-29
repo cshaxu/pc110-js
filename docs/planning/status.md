@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T2 S2: in progress; inventory every configured hardware device and
-  required source module.
+- M1 T2 S3: inventory BIOS, ROM, disk, configuration, browser, and build
+  dependencies.
 
 ## Delivery Nodes
 
