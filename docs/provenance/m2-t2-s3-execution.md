@@ -437,6 +437,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   protected-mode regression covers both prefix orders and dword accesses above
   `0xffff`; real-mode 32-bit offset behavior remains unimplemented pending a
   focused PCjs comparison.
+- M2 T2 S3 P173 adds project-native IDT interrupt/trap gate decoding from the
+  PCjs-selected 80386 protected-mode descriptor model. It validates IDT bounds
+  and accepted gate types before extracting the gate selector, offset, DPL,
+  present bit, size, and interrupt-versus-trap behavior; gate delivery remains
+  later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   loadDescriptor,
+  loadInterruptGate,
   loadLocalDescriptorTable,
   SegmentDescriptorError,
   validateDescriptorAccess,
@@ -77,5 +78,35 @@ describe("80386 descriptor decoding", () => {
     expect(() => validateDescriptorRange({ ...data, type: 0x02 }, 0x0fff, 2)).toThrow(
       "Segment limit"
     );
+  });
+
+  it("decodes 16-bit and 32-bit IDT interrupt and trap gates", () => {
+    const values = new Map<number, number>([
+      [0x1100, 0x00081234],
+      [0x1104, 0x56788e00],
+      [0x1108, 0x00105678],
+      [0x110c, 0x1234ef00]
+    ]);
+    const memory = { readUint32: (address: number) => values.get(address) ?? 0 };
+
+    expect(loadInterruptGate(memory, { base: 0x1000, limit: 0x1ff }, 0x20)).toEqual({
+      vector: 0x20,
+      selector: 0x0008,
+      offset: 0x56781234,
+      type: 0x0e,
+      dpl: 0,
+      present: true,
+      default32: true,
+      trap: false
+    });
+    expect(loadInterruptGate(memory, { base: 0x1000, limit: 0x1ff }, 0x21)).toMatchObject({
+      selector: 0x0010,
+      offset: 0x12345678,
+      type: 0x0f,
+      dpl: 3,
+      present: true,
+      default32: true,
+      trap: true
+    });
   });
 });

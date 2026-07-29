@@ -25,6 +25,17 @@ export interface SegmentDescriptor {
   readonly granularityPages: boolean;
 }
 
+export interface InterruptGateDescriptor {
+  readonly vector: number;
+  readonly selector: number;
+  readonly offset: number;
+  readonly type: number;
+  readonly dpl: number;
+  readonly present: boolean;
+  readonly default32: boolean;
+  readonly trap: boolean;
+}
+
 export class SegmentDescriptorError extends Error {}
 
 export type SegmentAccess = "read" | "write" | "execute" | "stack";
@@ -72,6 +83,36 @@ export function loadSelectorDescriptor(
     return loadDescriptor(memory, tables.ldt, selector);
   }
   return loadDescriptor(memory, tables.gdt, selector);
+}
+
+export function loadInterruptGate(
+  memory: DescriptorMemory,
+  idt: DescriptorTable,
+  vector: number
+): InterruptGateDescriptor {
+  const normalizedVector = vector & 0xff;
+  const entryOffset = normalizedVector << 3;
+  if (entryOffset + 7 > idt.limit)
+    throw new SegmentDescriptorError("Interrupt vector exceeds descriptor table limit");
+
+  const address = (idt.base + entryOffset) >>> 0;
+  const low = memory.readUint32(address) >>> 0;
+  const high = memory.readUint32(address + 4) >>> 0;
+  const access = (high >>> 8) & 0xff;
+  const type = access & 0x0f;
+  if (access & 0x10 || (type !== 0x06 && type !== 0x07 && type !== 0x0e && type !== 0x0f))
+    throw new SegmentDescriptorError("IDT entry is not an interrupt or trap gate");
+
+  return {
+    vector: normalizedVector,
+    selector: (low >>> 16) & 0xffff,
+    offset: ((low & 0xffff) | (high & 0xffff0000)) >>> 0,
+    type,
+    dpl: (access >>> 5) & 0x03,
+    present: Boolean(access & 0x80),
+    default32: type === 0x0e || type === 0x0f,
+    trap: type === 0x07 || type === 0x0f
+  };
 }
 
 export function loadLocalDescriptorTable(
