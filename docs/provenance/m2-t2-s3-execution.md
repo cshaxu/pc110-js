@@ -254,6 +254,9 @@
 - M2 T2 S3 P111 adds observed accumulator-immediate SBB forms (`1C ib` and
   `1D iw`) for DeskPro ROM arithmetic, using the established borrow-aware
   subtraction-flag contracts.
+- M2 T2 S3 P112 adds observed register-destination ModR/M ADC forms (`12` and
+  `13 /r`) for DeskPro ROM multiword arithmetic, using the established carry-in
+  8-bit and 16-bit addition-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

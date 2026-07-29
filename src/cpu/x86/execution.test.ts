@@ -1789,6 +1789,30 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffff }, eflags: 0x00000097 });
   });
 
+  it("adds ModR/M byte and word sources plus carry to registers", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x12],
+      [0x000ffff1, 0x4f],
+      [0x000ffff2, 0x3c],
+      [0x000ffff3, 0x13],
+      [0x000ffff4, 0xd1],
+      [0x0000013c, 0x01]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0x0100);
+    state.writeRegister8(1, 0xfe);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0x00000000 }, eflags: 0x00000057 });
+
+    state.writeRegister16(2, 0xffff);
+    state.writeRegister16(1, 0x0000);
+    state.setCarryFlag();
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0x00000000 }, eflags: 0x00000057 });
+  });
+
   it("ANDs byte register destinations through an ES override", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
