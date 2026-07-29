@@ -56,6 +56,10 @@ Do not treat this file as a substitute for those canonical documents.
 - The goal text defines the authorized outcome and completion criteria. Do not
   cross a milestone, task, or subtask boundary unless the goal authorizes it
   and the next unit has defined entry conditions and acceptance criteria.
+- A goal may reference a committed specification under `docs/goals/`. Treat
+  the revision present when the goal starts as binding. Do not alter that
+  specification to broaden active scope unless the owner explicitly updates
+  the goal.
 - Select work from `docs/planning/status.md`; update that file whenever active
   or completed work changes.
 - Before implementation, create the required subtask record described in

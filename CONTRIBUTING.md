@@ -203,6 +203,18 @@ M4 T2 S2 P1: add PC110 audio device variant
   when it explicitly authorizes that transition and the preceding snapshot is
   verified and pushed.
 
+## Goal Specifications
+
+- Long-running goals may use committed English specifications under
+  `docs/goals/`.
+- A short goal prompt must name the specification and state its authorized
+  milestone boundary.
+- The specification revision present at goal start is binding. Changing it does
+  not expand an active goal unless the owner explicitly updates the goal.
+- A specification must define the authorized scope, non-goals, completion
+  gates, milestone transitions, snapshot behavior, required records, and stop
+  conditions.
+
 ## Assets And Licensing
 
 - Follow [the asset policy](docs/governance/asset-policy.md).

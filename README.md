@@ -37,6 +37,7 @@ M0 establishes governance before these delivery nodes. M5 packages the verified 
 - [Execution policy](docs/planning/execution-policy.md)
 - [Current status](docs/planning/status.md)
 - [Task tracking logs](docs/tracking/)
+- [M1-to-M2 goal specification](docs/goals/m1-m2.md)
 - [Evidence policy](docs/governance/evidence-policy.md)
 - [Asset policy](docs/governance/asset-policy.md)
 - [Quick Start requirement](docs/requirements/quick-start.md)

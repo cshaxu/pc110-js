@@ -70,7 +70,7 @@ Goal: make autonomous execution bounded, reproducible, legally traceable, and re
 
 ### T3: Pre-Goal Setup Audit
 
-- S1: Correct planning conflicts and missing governance artifacts, apply the owner-authorized four-node direction correction, add durable root agent guidance, add task tracking, require an M1 browser reference run, and add milestone snapshot branches.
+- S1: Correct planning conflicts and missing governance artifacts, apply the owner-authorized four-node direction correction, add durable root agent guidance, add task tracking, require an M1 browser reference run, add milestone snapshot branches, and add committed goal specifications.
 
 Completion gate:
 

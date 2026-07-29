@@ -10,6 +10,14 @@ This policy governs milestone and goal-mode execution.
 - Do not silently broaden a subtask to absorb an architectural redesign, complete-device investigation, or unrelated cleanup.
 - Parts are small implementation commits numbered from 1 within the subtask.
 
+## Goal Specifications
+
+A long-running goal may reference a committed file under `docs/goals/`. The
+goal prompt must name that file and state the authorized milestone boundary.
+The file revision present at goal start is binding. Do not change the file to
+broaden the active goal; request owner authorization and an explicit goal update
+instead.
+
 ## Required Subtask Record
 
 Before implementation, record:

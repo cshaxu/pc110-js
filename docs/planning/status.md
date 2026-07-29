@@ -8,6 +8,7 @@
 - M0 T3 S1 P4: task tracking protocol and initial M0 T3 record.
 - M0 T3 S1 P5: M1 browser reference-run completion gate.
 - M0 T3 S1 P6: M1-M5 milestone snapshot-branch protocol.
+- M0 T3 S1 P7: committed M1-to-M2 goal specification.
 
 ## Next Eligible Work
 
