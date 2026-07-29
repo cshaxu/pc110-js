@@ -295,6 +295,8 @@
 - M2 T2 S3 P127 adds observed direct-register single-bit `RCL` and `RCR`
   forms (`D0 /2,/3`), preserving non-rotate flags and matching PCjs CF/OF
   updates.
+- M2 T2 S3 P128 adds observed direct-register `ROL r/m8, CL` and `ROL r/m16,
+  CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

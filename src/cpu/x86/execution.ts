@@ -1736,6 +1736,42 @@ export function stepInstruction(
     case 0xd1:
       executeShiftWord(memory, state, 1);
       return { halted: false, fetched };
+    case 0xd2: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect || modRm.reg !== 0x00)
+        throw new UnsupportedOpcodeError("Unsupported D2 opcode form");
+      const source = state.readRegister8(modRm.rm);
+      const count = state.readRegister8(1) & 0x1f;
+      if (count) {
+        const rotation = count & 0x07;
+        const carry = rotation ? Boolean(source & (1 << (8 - rotation))) : Boolean(source & 0x01);
+        const result = rotation
+          ? ((source << rotation) | (source >>> (8 - rotation))) & 0xff
+          : source;
+        state.writeRegister8(modRm.rm, result);
+        state.writeRotateFlags8(result, carry);
+      }
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0xd3: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect || modRm.reg !== 0x00)
+        throw new UnsupportedOpcodeError("Unsupported D3 opcode form");
+      const source = state.readRegister16(modRm.rm);
+      const count = state.readRegister8(1) & 0x1f;
+      if (count) {
+        const rotation = count & 0x0f;
+        const carry = rotation ? Boolean(source & (1 << (16 - rotation))) : Boolean(source & 0x01);
+        const result = rotation
+          ? ((source << rotation) | (source >>> (16 - rotation))) & 0xffff
+          : source;
+        state.writeRegister16(modRm.rm, result);
+        state.writeRotateFlags16(result, carry);
+      }
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0xc1: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       const displacementBytes = modRm.registerDirect

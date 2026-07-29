@@ -2115,6 +2115,29 @@ describe("80386 instruction fetch", () => {
     expect(rcrState.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x0803 });
   });
 
+  it("rotates observed byte and word registers left through CL", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xd2],
+      [0x000ffff1, 0xc7],
+      [0x000ffff2, 0xd3],
+      [0x000ffff3, 0xc3]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(1, 1);
+    state.writeRegister8(7, 0x80);
+    state.writeRegister16(3, 0x8000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    state.writeRegister16(3, 0x8000);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0x0001 },
+      eflags: 0x0803,
+      eip: 0x0000fff4
+    });
+  });
+
   it("compares byte register sources with register and memory destinations", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x38],
