@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T1 S3: record the highest supported generic CPU model as 80386.
+- M1 T1 S3: in progress; record the highest supported generic CPU model as
+  80386.
 
 ## Delivery Nodes
 
