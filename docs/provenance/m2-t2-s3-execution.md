@@ -387,6 +387,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P158 adds `SMSW r/m16` (`0F 01 /4`) from PCjs `fnSMSW`: the low
   16 bits of the existing CR0 state write through the project-native ModR/M
   register or memory boundary without changing CPU flags or control state.
+- M2 T2 S3 P159 adds real-mode `UD2` (`0F 0B`) from PCjs `opInvalid`: it
+  delivers IVT vector 6 through the existing real-mode fault boundary and
+  stacks the original instruction pointer rather than the following address.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

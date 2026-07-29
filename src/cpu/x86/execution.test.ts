@@ -1875,6 +1875,30 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("delivers real-mode UD2 through vector six with the faulting instruction pointer", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x0b],
+      [0x00000018, 0x34],
+      [0x00000019, 0x12],
+      [0x0000001a, 0x00],
+      [0x0000001b, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeEflags(0x00000ad7);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x2000 },
+      eip: 0x1234,
+      registers: { esp: 0x0ffa },
+      eflags: 0x000008d7
+    });
+    expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf0, 0xff]);
+  });
+
   it("creates local and nested ENTER stack frames", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xc8],

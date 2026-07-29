@@ -1391,6 +1391,15 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
+      if (extension === 0x0b) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+          throw new UnsupportedOpcodeError(
+            "Protected-mode invalid-opcode delivery is not implemented"
+          );
+        deliverRealModeInterrupt(memory, state, 6, fetched.instructionPointer);
+        return { halted: false, fetched };
+      }
       if (extension === 0xa0 || extension === 0xa8) {
         const segment = extension === 0xa0 ? "fs" : "gs";
         pushUint16(memory, state, state.snapshot()[segment].selector);
