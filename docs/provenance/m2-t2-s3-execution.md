@@ -642,6 +642,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   advancing or retreating SI by one word according to the direction flag.
 - M2 T2 S3 P235 routes nonzero-CPL `POPF` and `POPFD` to `#GP(0)` before either
   operation reads the stack, preserving the pre-fault stack for the error frame.
+- M2 T2 S3 P236 routes nonzero-CPL `LTR` to `#GP(0)` before it reads its selector
+  descriptor or modifies task-register state.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

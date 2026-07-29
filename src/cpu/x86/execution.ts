@@ -1670,7 +1670,11 @@ function executeStoreDescriptorTable(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
-function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386State): void {
+function executeTaskRegisterInstruction(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  faultInstructionPointer: number
+): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
     throw new UnsupportedOpcodeError("Task-register instructions require protected mode");
@@ -1685,8 +1689,10 @@ function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386
     state.advanceEip(3 + (address?.displacementBytes ?? 0));
     return;
   }
-  if ((snapshot.cs.selector & 0x03) !== 0)
-    throw new UnsupportedOpcodeError("LTR requires CPL zero");
+  if ((snapshot.cs.selector & 0x03) !== 0) {
+    deliverCpuFault(memory, state, 13, faultInstructionPointer, 0);
+    return;
+  }
   const selector = modRm.registerDirect
     ? state.readRegister16(modRm.rm)
     : readSegmentUint16(memory, state, address!.segment, address!.offset);
@@ -2806,7 +2812,7 @@ export function stepInstruction(
         return { halted: false, fetched };
       }
       if (extension === 0x00) {
-        executeTaskRegisterInstruction(memory, state);
+        executeTaskRegisterInstruction(memory, state, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       if (extension === 0xa0 || extension === 0xa8) {
