@@ -121,6 +121,8 @@
   remain later S3 work.
 - M2 T2 S3 P61 adds `OR AX, imm16` (`0D`) through the shared 16-bit logic-flag
   contract for the observed PE-bit setup sequence.
+- M2 T2 S3 P62 connects checked GDT code-descriptor loading to 16-bit-offset
+  protected-mode far jumps, including the observed memory-pointer form.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

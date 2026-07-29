@@ -406,6 +406,16 @@ export class Cpu386State {
     this.eip = instructionPointer & 0xffff;
   }
 
+  public loadProtectedModeCodeSegment(
+    selector: number,
+    base: number,
+    limit: number,
+    instructionPointer: number
+  ): void {
+    this.cs = { selector: selector & 0xffff, base: base >>> 0, limit: limit >>> 0 };
+    this.eip = instructionPointer & 0xffff;
+  }
+
   public loadRealModeSegment(segment: LoadableSegment, selector: number): void {
     const existing = this[segment];
     this[segment] = {

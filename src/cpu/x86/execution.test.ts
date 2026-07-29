@@ -87,6 +87,66 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads a checked GDT code descriptor through a protected-mode far jump", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xea],
+      [0x000ffff1, 0x34],
+      [0x000ffff2, 0x12],
+      [0x000ffff3, 0x08],
+      [0x000ffff4, 0x00],
+      [0x00001008, 0xff],
+      [0x00001009, 0xff],
+      [0x0000100a, 0x00],
+      [0x0000100b, 0x00],
+      [0x0000100c, 0x00],
+      [0x0000100d, 0x9a],
+      [0x0000100e, 0x00],
+      [0x0000100f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x00001000, 0x0000000f);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00001234,
+      cs: { selector: 0x0008, base: 0, limit: 0x0000ffff }
+    });
+  });
+
+  it("loads a checked GDT code descriptor through a protected-mode memory far jump", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0xff],
+      [0x000ffff2, 0x2e],
+      [0x000ffff3, 0x00],
+      [0x000ffff4, 0x20],
+      [0x000f2000, 0x78],
+      [0x000f2001, 0x56],
+      [0x000f2002, 0x08],
+      [0x000f2003, 0x00],
+      [0x00001008, 0xff],
+      [0x00001009, 0xff],
+      [0x0000100a, 0x00],
+      [0x0000100b, 0x00],
+      [0x0000100c, 0x00],
+      [0x0000100d, 0x9a],
+      [0x0000100e, 0x00],
+      [0x0000100f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x00001000, 0x0000000f);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00005678,
+      cs: { selector: 0x0008, base: 0, limit: 0x0000ffff }
+    });
+  });
+
   it("follows the reset-ROM CS-overridden far jump table entry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x2e],

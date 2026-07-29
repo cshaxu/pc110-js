@@ -1,5 +1,6 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeModRm, decodeModRm16Address } from "./modrm.js";
+import { SegmentRegister } from "./segment-register.js";
 import type { Cpu386Snapshot, Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
@@ -215,6 +216,36 @@ function readFarPointer(
   };
 }
 
+function loadProtectedModeCodeSegment(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  selector: number,
+  instructionPointer: number
+): void {
+  const snapshot = state.snapshot();
+  const descriptorMemory = {
+    readUint32: (address: number) =>
+      (memory.readUint8(address) & 0xff) |
+      ((memory.readUint8((address + 1) >>> 0) & 0xff) << 8) |
+      ((memory.readUint8((address + 2) >>> 0) & 0xff) << 16) |
+      ((memory.readUint8((address + 3) >>> 0) & 0xff) << 24)
+  };
+  const loaded = new SegmentRegister().load(
+    "protected",
+    selector,
+    "execute",
+    snapshot.cs.selector & 0x03,
+    descriptorMemory,
+    { gdt: snapshot.gdtr }
+  );
+  state.loadProtectedModeCodeSegment(
+    loaded.selector,
+    loaded.base,
+    loaded.limit,
+    instructionPointer
+  );
+}
+
 function decodeMemoryAddress(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -234,9 +265,6 @@ function executeMemoryFarJump(
   segmentOverride?: "cs" | "ds" | "ss"
 ): void {
   const snapshot = state.snapshot();
-  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-    throw new UnsupportedOpcodeError("Protected-mode far jumps are not implemented");
-  }
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.reg !== 0x05 || modRm.registerDirect) {
     throw new UnsupportedOpcodeError("Unsupported FF opcode form");
@@ -247,7 +275,11 @@ function executeMemoryFarJump(
     (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
   );
   const pointer = readFarPointer(memory, state, segmentOverride ?? address.segment, address.offset);
-  state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
+  if (addressMode(snapshot.cr0, snapshot.eflags) === "real") {
+    state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
+  } else {
+    loadProtectedModeCodeSegment(memory, state, pointer.selector, pointer.instructionPointer);
+  }
 }
 
 function executeMovReg16FromModRm(
@@ -539,11 +571,13 @@ export function stepInstruction(
       return { halted: false, fetched };
     case 0xea: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-        throw new UnsupportedOpcodeError("Protected-mode far jumps are not implemented");
       const instructionPointer = fetchCodeUint16(memory, state, 1);
       const selector = fetchCodeUint16(memory, state, 3);
-      state.loadRealModeCodeSegment(selector, instructionPointer);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real") {
+        state.loadRealModeCodeSegment(selector, instructionPointer);
+      } else {
+        loadProtectedModeCodeSegment(memory, state, selector, instructionPointer);
+      }
       return { halted: false, fetched };
     }
     case 0x2e: {
