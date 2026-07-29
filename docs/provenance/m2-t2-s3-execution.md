@@ -488,6 +488,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P184 connects the 32-bit `BOUND` form to the existing 32-bit
   ModR/M/SIB address decoder for both accepted prefix orders. It retains the
   same signed dword limits and vector-five fault contract as P183.
+- M2 T2 S3 P185 adds operand-size-overridden `CDQ` (`66 99`) from PCjs
+  `opCWD`: it sign-extends EAX into EDX without changing flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

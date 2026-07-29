@@ -2504,6 +2504,23 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("sign-extends EAX into EDX through operand-size-overridden CDQ", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x66],
+      [0x000ffff1, 0x99],
+      [0x000ffff2, 0x66],
+      [0x000ffff3, 0x99]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister(0, 0x80000000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0xffffffff }, eip: 0x0000fff2 });
+    state.writeRegister(0, 0x7fffffff);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0 }, eip: 0x0000fff4 });
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
