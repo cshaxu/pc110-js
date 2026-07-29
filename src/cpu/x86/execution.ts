@@ -189,6 +189,29 @@ function executeBitTest(
   state.advanceEip(instructionBytes + (address?.displacementBytes ?? 0));
 }
 
+function executeLoadSegmentPointer(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "ss" | "fs" | "gs"
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+  if (modRm.registerDirect)
+    throw new UnsupportedOpcodeError("Segment pointer source must be memory");
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+  );
+  const value = readSegmentUint16(memory, state, address.segment, address.offset);
+  const selector = readSegmentUint16(memory, state, address.segment, (address.offset + 2) & 0xffff);
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+    state.loadRealModeSegment(segment, selector);
+  else loadProtectedModeSegment(memory, state, segment, selector);
+  state.writeRegister16(modRm.reg, value);
+  state.advanceEip(3 + address.displacementBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1390,6 +1413,14 @@ export function stepInstruction(
           writeSegmentUint8(memory, state, address.segment, address.offset, value);
           state.advanceEip(3 + address.displacementBytes);
         }
+        return { halted: false, fetched };
+      }
+      if (extension === 0xb2 || extension === 0xb4 || extension === 0xb5) {
+        executeLoadSegmentPointer(
+          memory,
+          state,
+          extension === 0xb2 ? "ss" : extension === 0xb4 ? "fs" : "gs"
+        );
         return { halted: false, fetched };
       }
       if (extension === 0xa3 || extension === 0xab || extension === 0xb3 || extension === 0xbb) {

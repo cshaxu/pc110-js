@@ -1708,6 +1708,52 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads real-mode SS, FS, and GS with m16:16 segment pointers", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0xb2],
+      [0x00000002, 0x06],
+      [0x00000003, 0x00],
+      [0x00000004, 0x20],
+      [0x00000005, 0x0f],
+      [0x00000006, 0xb4],
+      [0x00000007, 0x1e],
+      [0x00000008, 0x10],
+      [0x00000009, 0x20],
+      [0x0000000a, 0x0f],
+      [0x0000000b, 0xb5],
+      [0x0000000c, 0x16],
+      [0x0000000d, 0x20],
+      [0x0000000e, 0x20],
+      [0x00002000, 0x34],
+      [0x00002001, 0x12],
+      [0x00002002, 0x00],
+      [0x00002003, 0x30],
+      [0x00002010, 0x78],
+      [0x00002011, 0x56],
+      [0x00002012, 0x00],
+      [0x00002013, 0x40],
+      [0x00002020, 0xbc],
+      [0x00002021, 0x9a],
+      [0x00002022, 0x00],
+      [0x00002023, 0x50]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x1234, ebx: 0x5678, edx: 0x9abc },
+      ss: { selector: 0x3000, base: 0x30000 },
+      fs: { selector: 0x4000, base: 0x40000 },
+      gs: { selector: 0x5000, base: 0x50000 },
+      eip: 15
+    });
+  });
+
   it("scans the lowest and highest set bit while preserving the destination for zero", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

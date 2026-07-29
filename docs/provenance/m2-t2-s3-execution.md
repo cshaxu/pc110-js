@@ -377,6 +377,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P155 adds the 16-bit near `Jcc` family (`0F 80-8F cw`) from PCjs
   `opJOw` through `opJNLEw`: all conditions use the project-native mapping,
   and the unsigned displacement sum is truncated through the 16-bit EIP write.
+- M2 T2 S3 P156 adds `LSS`, `LFS`, and `LGS m16:16` (`0F B2/B4/B5`) from PCjs
+  `fnLSS`, `fnLFS`, and `fnLGS`: a memory-only far pointer supplies the
+  destination word and selector through the existing mode-aware segment loader.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
