@@ -7,6 +7,11 @@ export interface DescriptorTable {
   readonly limit: number;
 }
 
+export interface DescriptorTables {
+  readonly gdt: DescriptorTable;
+  readonly ldt?: DescriptorTable;
+}
+
 export interface SegmentDescriptor {
   readonly selector: number;
   readonly base: number;
@@ -55,6 +60,18 @@ export function loadDescriptor(
     default32: Boolean(flags & 0x4),
     granularityPages
   };
+}
+
+export function loadSelectorDescriptor(
+  memory: DescriptorMemory,
+  tables: DescriptorTables,
+  selector: number
+): SegmentDescriptor {
+  if (selector & 0x04) {
+    if (!tables.ldt) throw new SegmentDescriptorError("Selector requires an unavailable LDT");
+    return loadDescriptor(memory, tables.ldt, selector);
+  }
+  return loadDescriptor(memory, tables.gdt, selector);
 }
 
 export function validateDescriptorAccess(

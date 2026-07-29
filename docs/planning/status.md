@@ -25,6 +25,7 @@
 
 ## Implementation State
 
-No emulator implementation source has been added. Protected ROM and disk images are not tracked.
+Initial standalone emulator foundations and partial CPU implementation exist.
+Protected ROM and disk images are not tracked.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

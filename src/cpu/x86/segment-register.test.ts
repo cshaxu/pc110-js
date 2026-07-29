@@ -20,12 +20,30 @@ describe("SegmentRegister", () => {
     const register = new SegmentRegister();
 
     expect(
-      register.load("protected", 0x08, "execute", 0, memory, { base: 0x1000, limit: 0x17 })
+      register.load("protected", 0x08, "execute", 0, memory, {
+        gdt: { base: 0x1000, limit: 0x17 }
+      })
     ).toMatchObject({
       selector: 8,
       base: 0,
       limit: 0xffffffff,
       descriptor: { type: 0x0a, present: true }
     });
+  });
+
+  it("selects an LDT descriptor when the selector TI bit is set", () => {
+    const values = new Map<number, number>([
+      [0x2008, 0x0000ffff],
+      [0x200c, 0x00cf9200]
+    ]);
+    const memory = { readUint32: (address: number) => values.get(address) ?? 0 };
+    const register = new SegmentRegister();
+
+    expect(
+      register.load("protected", 0x0c, "read", 0, memory, {
+        gdt: { base: 0x1000, limit: 0x07 },
+        ldt: { base: 0x2000, limit: 0x17 }
+      })
+    ).toMatchObject({ selector: 0x0c, descriptor: { type: 0x02, present: true } });
   });
 });

@@ -22,5 +22,5 @@
   descriptor field decoding, and segment access predicates.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
 - Intentional behavior changes: none.
-- Incomplete behavior: LDT, gate, task, and CPU exception delivery remain in
-  later bounded CPU work.
+- Incomplete behavior: descriptor-table loading, gates, tasks, and CPU exception
+  delivery remain in later bounded CPU work.

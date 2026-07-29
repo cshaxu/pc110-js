@@ -1,8 +1,8 @@
 import type { CpuAddressMode } from "./address-translation.js";
 import {
-  loadDescriptor,
+  loadSelectorDescriptor,
   type DescriptorMemory,
-  type DescriptorTable,
+  type DescriptorTables,
   type SegmentAccess,
   type SegmentDescriptor,
   validateDescriptorAccess
@@ -24,15 +24,15 @@ export class SegmentRegister {
     access: SegmentAccess,
     cpl: number,
     memory?: DescriptorMemory,
-    table?: DescriptorTable
+    tables?: DescriptorTables
   ): LoadedSegment {
     if (mode === "real" || mode === "virtual-8086") {
       this.loaded = { selector: selector & 0xffff, base: (selector & 0xffff) << 4, limit: 0xffff };
       return this.snapshot();
     }
-    if (!memory || !table)
-      throw new Error("Protected-mode segment load requires descriptor memory and table");
-    const descriptor = loadDescriptor(memory, table, selector);
+    if (!memory || !tables)
+      throw new Error("Protected-mode segment load requires descriptor memory and tables");
+    const descriptor = loadSelectorDescriptor(memory, tables, selector);
     validateDescriptorAccess(descriptor, cpl, access);
     this.loaded = {
       selector: descriptor.selector,
