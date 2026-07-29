@@ -374,6 +374,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P154 adds the full `SETcc r/m8` family (`0F 90-9F`) from PCjs
   `helpSETcc` and the `fnSET*` functions. The project-native condition mapping
   supplies each result; register and memory writes leave EFLAGS unchanged.
+- M2 T2 S3 P155 adds the 16-bit near `Jcc` family (`0F 80-8F cw`) from PCjs
+  `opJOw` through `opJNLEw`: all conditions use the project-native mapping,
+  and the unsigned displacement sum is truncated through the 16-bit EIP write.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

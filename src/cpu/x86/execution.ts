@@ -1368,6 +1368,13 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
+      if (extension >= 0x80 && extension <= 0x8f) {
+        const displacement = fetchCodeUint16(memory, state, 2);
+        if (shortJumpCondition(state, extension & 0x0f))
+          state.writeEip16(fetched.instructionPointer + 4 + displacement);
+        else state.advanceEip(4);
+        return { halted: false, fetched };
+      }
       if (extension >= 0x90 && extension <= 0x9f) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
         const value = shortJumpCondition(state, extension & 0x0f) ? 1 : 0;

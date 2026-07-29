@@ -1037,6 +1037,50 @@ describe("80386 instruction fetch", () => {
     }
   });
 
+  it("executes every 0F near conditional jump for taken and not-taken flags", () => {
+    const conditions = [
+      [0x80, 0x0800, 0x0000],
+      [0x81, 0x0000, 0x0800],
+      [0x82, 0x0001, 0x0000],
+      [0x83, 0x0000, 0x0001],
+      [0x84, 0x0040, 0x0000],
+      [0x85, 0x0000, 0x0040],
+      [0x86, 0x0001, 0x0000],
+      [0x87, 0x0000, 0x0001],
+      [0x88, 0x0080, 0x0000],
+      [0x89, 0x0000, 0x0080],
+      [0x8a, 0x0004, 0x0000],
+      [0x8b, 0x0000, 0x0004],
+      [0x8c, 0x0080, 0x0000],
+      [0x8d, 0x0000, 0x0080],
+      [0x8e, 0x0040, 0x0000],
+      [0x8f, 0x0000, 0x0040]
+    ];
+
+    for (const [extension, takenFlags, notTakenFlags] of conditions) {
+      for (const [flags, expectedEip] of [
+        [takenFlags, 7],
+        [notTakenFlags, 4]
+      ]) {
+        const state = new Cpu386State();
+        state.loadRealModeCodeSegment(0, 0);
+        state.writeEflags(flags);
+        stepInstruction(
+          resetAliasMemory(
+            new Map<number, number>([
+              [0, 0x0f],
+              [1, extension],
+              [2, 0x03],
+              [3, 0x00]
+            ])
+          ),
+          state
+        );
+        expect(state.snapshot()).toMatchObject({ eip: expectedEip, eflags: flags | 0x0002 });
+      }
+    }
+  });
+
   it("tests immediate byte operands without changing the register or memory source", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xf6],
