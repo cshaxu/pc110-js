@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T1 S6: register the generic `pc-at-386` profile as the default M2 machine
-  family.
+- M2 T2 S1: implement the PCjs-supported 80386 CPU state and reset model in
+  TypeScript.
 
 ## Delivery Nodes
 

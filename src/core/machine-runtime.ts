@@ -1,5 +1,7 @@
 export type MachineRunState = "stopped" | "running" | "paused";
 
+import type { MachineProfile } from "../machine/contracts.js";
+
 export interface MachineSnapshot {
   readonly profileId: string;
   readonly runState: MachineRunState;
@@ -13,7 +15,7 @@ export class MachineRuntime {
   private runState: MachineRunState = "stopped";
   private resetCount = 0;
 
-  public constructor(private readonly profileId: string) {}
+  public constructor(private readonly profile: MachineProfile) {}
 
   public start(): void {
     if (this.runState === "running") return;
@@ -35,7 +37,7 @@ export class MachineRuntime {
 
   public snapshot(): MachineSnapshot {
     return {
-      profileId: this.profileId,
+      profileId: this.profile.id,
       runState: this.runState,
       resetCount: this.resetCount
     };

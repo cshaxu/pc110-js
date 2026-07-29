@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { pcAt386Profile } from "../profiles/pc-at-386.js";
 import { MachineRuntime } from "./machine-runtime.js";
 
 describe("MachineRuntime", () => {
   it("shares deterministic lifecycle state with all hosts", () => {
-    const machine = new MachineRuntime("pc-at-386");
+    const machine = new MachineRuntime(pcAt386Profile);
     const states: string[] = [];
     machine.subscribe((snapshot) => states.push(snapshot.runState));
 

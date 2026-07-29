@@ -1,10 +1,11 @@
 import { MachineRuntime, type MachineSnapshot } from "../core/machine-runtime.js";
+import { pcAt386Profile } from "../profiles/pc-at-386.js";
 import "./styles.css";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("Missing application root");
 
-const machine = new MachineRuntime("pc-at-386");
+const machine = new MachineRuntime(pcAt386Profile);
 root.innerHTML = `
   <section class="machine-shell" aria-label="pc110-js machine">
     <header>
