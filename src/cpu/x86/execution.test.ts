@@ -6136,4 +6136,25 @@ describe("80386 instruction fetch", () => {
     stepInstruction(memory, state);
     expect(state.snapshot()).toMatchObject({ registers: { edx: 0x40000000 }, eflags: 0x00000002 });
   });
+
+  it("writes the signed 64-bit IMUL product into EDX:EAX", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0xf7],
+      [0x00000002, 0xeb]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(0, 0x40000000);
+    state.writeRegister(3, 0xfffffffe);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x80000000, edx: 0xffffffff },
+      eflags: 0x00000002,
+      eip: 0x00000003
+    });
+  });
 });

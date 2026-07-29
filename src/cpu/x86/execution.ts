@@ -1408,6 +1408,40 @@ function executeDwordImmediateImul(
   state.advanceEip(immediateOffset + (opcode === 0x69 ? 4 : 1));
 }
 
+function executeDwordSingleImul(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x05) throw new UnsupportedOpcodeError("Unsupported dword F7 opcode form");
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
+    ? undefined
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
+  const operand = modRm.registerDirect
+    ? state.readRegister(modRm.rm)
+    : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
+  const product =
+    BigInt.asIntN(32, BigInt(state.readRegister(0))) * BigInt.asIntN(32, BigInt(operand));
+  state.writeRegister(0, Number(BigInt.asUintN(32, product)));
+  state.writeRegister(2, Number(BigInt.asUintN(32, product >> 32n)));
+  state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
+  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
+}
+
 function executeDwordImul(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2227,7 +2261,10 @@ export function stepInstruction(
         return { halted: false, fetched };
       }
       if (opcode === 0xf7) {
-        executeDwordTestImmediateModRm(memory, state, 2, 16);
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.reg === 0x00) executeDwordTestImmediateModRm(memory, state, 2, 16);
+        else if (modRm.reg === 0x05) executeDwordSingleImul(memory, state, 2, 16);
+        else throw new UnsupportedOpcodeError("Unsupported dword F7 opcode form");
         return { halted: false, fetched };
       }
       if (opcode === 0x69 || opcode === 0x6b) {

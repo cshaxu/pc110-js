@@ -621,6 +621,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   (`66 69` and `66 6B`) using exact signed-product overflow classification.
 - M2 T2 S3 P228 adds 32-bit `IMUL r32,r/m32` (`66 0F AF`) using the same exact
   signed-product overflow classification across both existing address sizes.
+- M2 T2 S3 P229 adds single-operand 32-bit `IMUL r/m32` (`66 F7 /5`), writing
+  the complete product to EDX:EAX and classifying 32-bit signed overflow.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
