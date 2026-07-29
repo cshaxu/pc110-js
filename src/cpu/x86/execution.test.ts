@@ -237,6 +237,32 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads a 16-bit register from direct and BP-based memory operands", () => {
+    const directValues = new Map<number, number>([
+      [0x000ffff0, 0x8b],
+      [0x000ffff1, 0x06],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x00001234, 0x78],
+      [0x00001235, 0x56]
+    ]);
+    const directState = new Cpu386State();
+    stepInstruction(resetAliasMemory(directValues), directState);
+    expect(directState.snapshot()).toMatchObject({ registers: { eax: 0x5678 }, eip: 0x0000fff4 });
+
+    const stackValues = new Map<number, number>([
+      [0x000ffff0, 0x8b],
+      [0x000ffff1, 0x46],
+      [0x000ffff2, 0x02],
+      [0x00002002, 0xbc],
+      [0x00002003, 0x9a]
+    ]);
+    const stackState = new Cpu386State();
+    stackState.writeRegister16(5, 0x2000);
+    stepInstruction(resetAliasMemory(stackValues), stackState);
+    expect(stackState.snapshot()).toMatchObject({ registers: { eax: 0x9abc }, eip: 0x0000fff3 });
+  });
+
   it("compares a register byte with an immediate value through 80 /7", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x80],

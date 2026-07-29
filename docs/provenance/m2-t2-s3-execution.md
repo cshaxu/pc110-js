@@ -33,6 +33,9 @@
   same logic-flag contract. The observed byte shift updates its defined flags,
   and JCXZ uses the 16-bit count register. The observed CS-overridden far jump
   reads its m16:16 target through the project-owned byte-memory boundary.
+- M2 T2 S3 P18 adds project-native 16-bit ModR/M effective-address decoding
+  and the memory-source form of `MOV r16, r/m16`, including direct, indexed,
+  displacement, and BP-default-SS addressing.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

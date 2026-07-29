@@ -1,5 +1,5 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
-import { decodeModRm } from "./modrm.js";
+import { decodeModRm, decodeModRm16Address } from "./modrm.js";
 import type { Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
@@ -61,7 +61,7 @@ function fetchCodeUint16(
 function readSegmentUint16(
   memory: InstructionMemory,
   state: Cpu386State,
-  segment: "cs" | "ds",
+  segment: "cs" | "ds" | "ss",
   offset: number
 ): number {
   const snapshot = state.snapshot();
@@ -175,10 +175,21 @@ export function stepInstruction(
     }
     case 0x8b: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect)
-        throw new UnsupportedOpcodeError("Memory-form MOV is not implemented");
-      state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
-      state.advanceEip(2);
+      if (modRm.registerDirect) {
+        state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
+      const address = decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, offset).opcode
+      );
+      state.writeRegister16(
+        modRm.reg,
+        readSegmentUint16(memory, state, address.segment, address.offset)
+      );
+      state.advanceEip(2 + address.displacementBytes);
       return { halted: false, fetched };
     }
     case 0x33: {
