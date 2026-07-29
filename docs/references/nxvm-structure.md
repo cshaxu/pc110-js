@@ -1,8 +1,8 @@
 # NXVM Structure Notes
 
-NXVM is a secondary M2 CPU architecture reference. PCjs remains the behavior
-and compatibility authority for M1/M2 comparison. PC110-EMU is the authority
-for PC110-specific hardware behavior.
+NXVM is a secondary, M2-only CPU architecture reference. PCjs remains the
+behavior and compatibility authority for M1/M2 comparison. PC110-EMU is the
+authority for PC110-specific hardware behavior.
 
 Observed high-level structure:
 
@@ -36,10 +36,13 @@ Useful ideas for pc110-js:
 Reference boundary:
 
 - `src/device/vcpu.h` and `src/device/vcpuins.c` may inform TypeScript module
-  boundaries, data-model completeness, and debugging capability.
-- Active NXVM code is not a behavior authority; its 80386 coverage and edge
-  behavior require PCjs-based verification.
+  boundaries, file organization, CPU data-model completeness, instruction
+  coverage inventory, and debugging capability.
+- Active NXVM CPU code is not a behavior authority; every instruction,
+  protection, paging, and edge behavior requires PCjs-based verification.
 - `doc/code/deprecated/cpu/vcpu_i386` is excluded from implementation research.
+- NXVM is not a permitted reference after M2 without explicit owner
+  reauthorization.
 
 Non-goals:
 
@@ -48,3 +51,5 @@ Non-goals:
 - Do not reproduce NXVM BIOS or DOS shortcuts.
 - Do not introduce guest services, POST helpers, or interrupt-service shortcuts
   into M2 execution paths.
+- Do not use NXVM POST, BIOS, device, platform, guest-service, or interrupt
+  service code as implementation or behavioral evidence.

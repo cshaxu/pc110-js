@@ -29,7 +29,10 @@ M0 provides governance. M5 provides preservation-grade release packaging.
 
 ## Reference And Evidence Rules
 
-Repository consultation order is PCjs, PC110-EMU, pc110js-v2, pc110js-v1, then NXVM. Evidence authority is domain-specific:
+Repository consultation order is PCjs, PC110-EMU, pc110js-v2, pc110js-v1, then
+NXVM. NXVM is eligible only during M2 and only for directory/file organization,
+CPU data-model and coverage planning, and trace/debugging design. Evidence
+authority is domain-specific:
 
 - Standard PC/AT behavior: PCjs PCx86 v2 is the primary implementation source.
 - PC110 behavior: real hardware, dumped firmware behavior, and reliable hardware documentation are primary.

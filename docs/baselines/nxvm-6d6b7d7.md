@@ -10,4 +10,13 @@
 
 ## Selection Reason
 
-NXVM is used as a source-organization reference because its layout separates machine orchestration, device modules, platform integration, console/debugger functionality, and tooling. NXVM is not an implementation source for pc110-js unless a future task explicitly approves a narrow port.
+NXVM is used only during M2 as a source-organization and CPU-structure reference:
+its layout separates machine orchestration, device modules, platform integration,
+console/debugger functionality, and tooling. Its active CPU code may inform
+data-model completeness, instruction-coverage planning, and trace design, but
+PCjs remains the behavior authority.
+
+NXVM POST, BIOS, guest-service, interrupt-service, device, and platform code
+is not reliable evidence because it may contain compatibility hacks. NXVM is
+not an implementation source and is not an M3-or-later reference unless the
+owner explicitly reauthorizes it.

@@ -60,7 +60,12 @@ These rules are project constraints.
 - Use real PC110 observations, dumped firmware execution, and reliable hardware documentation as primary PC110 evidence.
 - Use PC110-EMU as a supporting implementation reference. Its hacks and placeholder behavior are not authoritative.
 - Use pc110js-v2 and pc110js-v1 as historical evidence and failure-analysis sources.
-- Use NXVM only as a familiar source-organization reference unless a narrow port is explicitly approved.
+- Use NXVM only during M2 as a secondary reference for directory layout, file
+  boundaries, CPU data-model completeness, instruction-coverage inventory, and
+  trace/debugging design. Its CPU behavior still requires PCjs verification.
+  Treat NXVM POST, BIOS, guest services, interrupt services, device logic, and
+  platform behavior as unreliable hacks. Do not use NXVM as an M3-or-later
+  reference unless the owner explicitly reauthorizes it.
 - Follow [the evidence policy](docs/governance/evidence-policy.md) for every nontrivial hardware claim.
 
 ## Reference Repositories
