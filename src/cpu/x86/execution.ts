@@ -1375,10 +1375,44 @@ export function stepInstruction(
     }
     case 0x66: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
-      if (opcode !== 0x25) throw new UnsupportedOpcodeError("Unsupported operand-size override");
-      const result = state.readRegister(0) & fetchCodeUint32(memory, state, 2);
-      state.writeRegister(0, result);
-      state.writeLogicFlags32(result);
+      const accumulator = state.readRegister(0);
+      const immediate = fetchCodeUint32(memory, state, 2);
+      const carry = state.carryFlag() ? 1 : 0;
+      switch (opcode) {
+        case 0x05:
+          state.writeRegister(0, accumulator + immediate);
+          state.writeAddFlags32(accumulator, immediate);
+          break;
+        case 0x0d:
+          state.writeRegister(0, accumulator | immediate);
+          state.writeLogicFlags32(accumulator | immediate);
+          break;
+        case 0x15:
+          state.writeRegister(0, accumulator + immediate + carry);
+          state.writeAddFlags32(accumulator, immediate, carry);
+          break;
+        case 0x1d:
+          state.writeRegister(0, accumulator - immediate - carry);
+          state.writeCompareFlags32(accumulator, immediate, carry);
+          break;
+        case 0x25:
+          state.writeRegister(0, accumulator & immediate);
+          state.writeLogicFlags32(accumulator & immediate);
+          break;
+        case 0x2d:
+          state.writeRegister(0, accumulator - immediate);
+          state.writeCompareFlags32(accumulator, immediate);
+          break;
+        case 0x35:
+          state.writeRegister(0, accumulator ^ immediate);
+          state.writeLogicFlags32(accumulator ^ immediate);
+          break;
+        case 0x3d:
+          state.writeCompareFlags32(accumulator, immediate);
+          break;
+        default:
+          throw new UnsupportedOpcodeError("Unsupported operand-size override");
+      }
       state.advanceEip(6);
       return { halted: false, fetched };
     }

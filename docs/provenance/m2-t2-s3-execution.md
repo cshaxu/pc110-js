@@ -416,6 +416,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P167 adds `CMP r/m16,r16` (`39 /r`) from PCjs `opCMPmw`: register
   and memory operands use the project 16-bit comparison-flag boundary without
   writing either operand.
+- M2 T2 S3 P168 expands the existing operand-size override from PCjs `opADDAX`,
+  `opORAX`, `opADCAX`, `opSBBAX`, `opANDAX`, `opSUBAX`, `opXORAX`, and
+  `opCMPAX`: 32-bit accumulator immediates use project-native arithmetic and
+  logic flag boundaries. General 32-bit ModR/M and address-size decoding remain
+  later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

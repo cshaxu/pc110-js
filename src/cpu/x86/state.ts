@@ -376,6 +376,22 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeCompareFlags32(left: number, right: number, borrow = 0): void {
+    const leftDword = left >>> 0;
+    const rightDword = right >>> 0;
+    const subtrahend = rightDword + borrow;
+    const effectiveRight = subtrahend >>> 0;
+    const result = (leftDword - subtrahend) >>> 0;
+    let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
+    if (leftDword < subtrahend) flags |= EFLAGS_CARRY;
+    if ((leftDword ^ effectiveRight ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80000000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    if ((leftDword ^ effectiveRight) & (leftDword ^ result) & 0x80000000) flags |= EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeAddFlags16(left: number, right: number, carry = 0): void {
     const leftWord = left & 0xffff;
     const rightWord = right & 0xffff;
@@ -388,6 +404,21 @@ export class Cpu386State {
     if (result & 0x8000) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
     if ((leftWord ^ result) & (rightWord ^ result) & 0x8000) flags |= EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeAddFlags32(left: number, right: number, carry = 0): void {
+    const leftDword = left >>> 0;
+    const rightDword = right >>> 0;
+    const sum = leftDword + rightDword + carry;
+    const result = sum >>> 0;
+    let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
+    if (sum > 0xffffffff) flags |= EFLAGS_CARRY;
+    if ((sum ^ leftDword ^ rightDword) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80000000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    if ((leftDword ^ result) & (rightDword ^ result) & 0x80000000) flags |= EFLAGS_OVERFLOW;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 

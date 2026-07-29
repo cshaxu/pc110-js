@@ -221,6 +221,18 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x00000013);
   });
 
+  it("sets 32-bit addition and comparison flags", () => {
+    const cpu = new Cpu386State();
+    cpu.writeAddFlags32(0xffffffff, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000057);
+
+    cpu.writeAddFlags32(0x7fffffff, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000896);
+
+    cpu.writeCompareFlags32(0, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000097);
+  });
+
   it("sets carry and overflow for a single-bit left shift", () => {
     const cpu = new Cpu386State();
     cpu.writeShiftLeftFlags8(0x80);

@@ -959,6 +959,34 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("executes the 32-bit accumulator ALU family through operand-size overrides", () => {
+    const bytes = [
+      0x66, 0x05, 0x01, 0x00, 0x00, 0x00, 0x66, 0x15, 0x00, 0x00, 0x00, 0x00, 0x66, 0x0d, 0x00,
+      0x00, 0x00, 0xf0, 0x66, 0x1d, 0x01, 0x00, 0x00, 0x00, 0x66, 0x2d, 0x00, 0x00, 0x00, 0xf0,
+      0x66, 0x35, 0xff, 0xff, 0xff, 0xff, 0x66, 0x3d, 0xff, 0xff, 0xff, 0xff
+    ];
+    const values = new Map<number, number>(bytes.map((value, offset) => [offset, value]));
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister(0, 0xffffffff);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x00000057 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 1 }, eflags: 0x00000002 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xf0000001 }, eflags: 0x00000082 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xf0000000 }, eflags: 0x00000086 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x00000046 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffffffff }, eflags: 0x00000086 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffffffff }, eflags: 0x00000046 });
+  });
+
   it("returns from the observed protected-mode sequence through a real-mode far jump", () => {
     const values = new Map<number, number>([
       [0x00002000, 0xb8],
