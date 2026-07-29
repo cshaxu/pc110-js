@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T1 S4: define the project-owned reference-run boundary and relative path
-  resolution.
+- M1 T1 S4: in progress; define the project-owned reference-run boundary and
+  relative path resolution.
 
 ## Delivery Nodes
 
