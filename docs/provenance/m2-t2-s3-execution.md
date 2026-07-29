@@ -428,6 +428,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `MOV r32,r/m32` (`66 89/8B`) from PCjs `opMOVmr` and `opMOVrm`: 32-bit
   values use project segmented dword helpers while retaining default 16-bit
   ModR/M address calculation; address-size override remains later S3 work.
+- M2 T2 S3 P171 adds a project-native 32-bit ModR/M/SIB address decoder from
+  the PCjs selected address-size behavior: it records SIB and displacement
+  lengths separately and applies the 80386 default SS selection for EBP/ESP
+  bases. Execution integration remains later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

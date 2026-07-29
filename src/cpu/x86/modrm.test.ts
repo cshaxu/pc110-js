@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { decodeModRm, decodeModRm16Address, ModRmAddressError } from "./modrm.js";
+import {
+  decodeModRm,
+  decodeModRm16Address,
+  decodeModRm32Address,
+  ModRmAddressError
+} from "./modrm.js";
 
 describe("80386 ModR/M decoding", () => {
   it("decodes register-direct source and destination fields", () => {
@@ -37,5 +42,32 @@ describe("80386 ModR/M decoding", () => {
         () => 0
       )
     ).toThrow(ModRmAddressError);
+  });
+
+  it("decodes 32-bit base, SIB, and displacement addressing forms", () => {
+    const registers = [0x1000, 0x2000, 0x3000, 0x4000, 0x5000, 0x6000, 0x7000, 0x8000];
+    const readRegister32 = (index: number) => registers[index] ?? 0;
+
+    expect(
+      decodeModRm32Address(
+        decodeModRm(0x05),
+        readRegister32,
+        (offset) => [0, 0, 0x78, 0x56, 0x34, 0x12][offset] ?? 0
+      )
+    ).toEqual({ offset: 0x12345678, displacementBytes: 4, sibBytes: 0, segment: "ds" });
+    expect(
+      decodeModRm32Address(
+        decodeModRm(0x44),
+        readRegister32,
+        (offset) => [0, 0, 0x24, 0xf0][offset] ?? 0
+      )
+    ).toEqual({ offset: 0x4ff0, displacementBytes: 1, sibBytes: 1, segment: "ss" });
+    expect(
+      decodeModRm32Address(
+        decodeModRm(0x04),
+        readRegister32,
+        (offset) => [0, 0, 0x95, 0x20, 0x00, 0x00, 0x00][offset] ?? 0
+      )
+    ).toEqual({ offset: 0xc020, displacementBytes: 4, sibBytes: 1, segment: "ds" });
   });
 });
