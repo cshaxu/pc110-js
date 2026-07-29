@@ -145,6 +145,9 @@
 - M2 T2 S3 P72 adds `TEST r/m16, imm16` (`F7 /0 iw`) for the observed DeskPro
   ROM status-word tests, retaining the source operand and applying the
   existing word-width logic-flag contract.
+- M2 T2 S3 P73 adds `TEST r/m8, r8` (`84 /r`) for the observed DeskPro ROM
+  branch predicates, retaining both source operands and applying the existing
+  byte-width logic-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
