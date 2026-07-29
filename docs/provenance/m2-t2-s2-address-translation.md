@@ -22,5 +22,5 @@
   descriptor field decoding, and segment access predicates.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
 - Intentional behavior changes: none.
-- Incomplete behavior: full descriptor loads, CPU fault state integration, and
-  TLB caching remain in this active subtask.
+- Incomplete behavior: full descriptor loads and CPU fault delivery remain in
+  this active subtask.

@@ -85,6 +85,14 @@ export class Cpu386State {
     };
   }
 
+  public writeCr3(value: number): void {
+    this.cr3 = value & 0xfffff000;
+  }
+
+  public recordPageFault(linearAddress: number): void {
+    this.cr2 = linearAddress >>> 0;
+  }
+
   private emptyRegisters(): Record<GeneralRegister, number> {
     return { eax: 0, ebx: 0, ecx: 0, edx: 0, esp: 0, ebp: 0, esi: 0, edi: 0 };
   }
