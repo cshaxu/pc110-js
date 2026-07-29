@@ -147,7 +147,10 @@ function writeSegmentUint8(
 function executeBitTest(
   memory: InstructionMemory,
   state: Cpu386State,
-  extension: 0xa3 | 0xab | 0xb3 | 0xbb
+  extension: 0xa3 | 0xab | 0xb3 | 0xbb,
+  source: number,
+  expandMemoryBitIndex: boolean,
+  instructionBytes: number
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
   const address = modRm.registerDirect
@@ -157,11 +160,11 @@ function executeBitTest(
         (index) => state.readRegister16(index),
         (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
       );
-  const source = state.readRegister16(modRm.reg);
   const signedSource = (source << 16) >> 16;
-  const targetOffset = address
-    ? (address.offset + Math.floor(signedSource / 16) * 2) & 0xffff
-    : undefined;
+  const targetOffset =
+    address && expandMemoryBitIndex
+      ? (address.offset + Math.floor(signedSource / 16) * 2) & 0xffff
+      : address?.offset;
   const target = modRm.registerDirect
     ? state.readRegister16(modRm.rm)
     : readSegmentUint16(memory, state, address!.segment, targetOffset!);
@@ -183,7 +186,7 @@ function executeBitTest(
     else writeSegmentUint16(memory, state, address!.segment, targetOffset!, result);
   }
 
-  state.advanceEip(3 + (address?.displacementBytes ?? 0));
+  state.advanceEip(instructionBytes + (address?.displacementBytes ?? 0));
 }
 
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
@@ -1366,7 +1369,33 @@ export function stepInstruction(
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
       if (extension === 0xa3 || extension === 0xab || extension === 0xb3 || extension === 0xbb) {
-        executeBitTest(memory, state, extension);
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        executeBitTest(memory, state, extension, state.readRegister16(modRm.reg), true, 3);
+        return { halted: false, fetched };
+      }
+      if (extension === 0xba) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.reg < 0x04) throw new UnsupportedOpcodeError("Unsupported 0F BA opcode form");
+        const address = modRm.registerDirect
+          ? undefined
+          : decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+            );
+        const immediate = fetchCodeByte(
+          memory,
+          state,
+          3 + (address?.displacementBytes ?? 0)
+        ).opcode;
+        executeBitTest(
+          memory,
+          state,
+          ([0xa3, 0xab, 0xb3, 0xbb] as const)[modRm.reg - 0x04],
+          immediate,
+          false,
+          4
+        );
         return { halted: false, fetched };
       }
       if (extension === 0x20 || extension === 0x22) {

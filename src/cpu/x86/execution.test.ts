@@ -1889,6 +1889,47 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000003);
   });
 
+  it("masks immediate Group 8 bit indexes without extending memory operands", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0xba],
+      [0x00000002, 0xe0],
+      [0x00000003, 0x1f],
+      [0x00000004, 0x0f],
+      [0x00000005, 0xba],
+      [0x00000006, 0x2e],
+      [0x00000007, 0x00],
+      [0x00000008, 0x20],
+      [0x00000009, 0x11],
+      [0x0000000a, 0x0f],
+      [0x0000000b, 0xba],
+      [0x0000000c, 0xf0],
+      [0x0000000d, 0x1f],
+      [0x0000000e, 0x0f],
+      [0x0000000f, 0xba],
+      [0x00000010, 0xf8],
+      [0x00000011, 0x1f],
+      [0x00002000, 0x00],
+      [0x00002001, 0x00],
+      [0x00002002, 0x00],
+      [0x00002003, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister16(0, 0x8000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000003 });
+    stepInstruction(memory, state);
+    expect([values.get(0x2000), values.get(0x2001)]).toEqual([0x02, 0x00]);
+    expect([values.get(0x2002), values.get(0x2003)]).toEqual([0x00, 0x80]);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x00000003 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000002 });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

@@ -367,6 +367,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   PCjs `fnBTMem`, `fnBTSMem`, `fnBTRMem`, and `fnBTCMem`: they set CF from
   the original selected bit, preserve all other flags, and apply full signed
   register bit indexes when the destination is memory.
+- M2 T2 S3 P153 adds immediate Group 8 `BT`, `BTS`, `BTR`, and `BTC`
+  (`0F BA /4-/7 ib`) from PCjs `aOpGrp8` and the corresponding `fnBT` family:
+  immediate indexes use the low four bits of a 16-bit operand and do not
+  extend a memory operand into a neighboring word.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
