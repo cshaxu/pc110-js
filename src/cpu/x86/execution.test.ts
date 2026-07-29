@@ -3529,6 +3529,52 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("calls and returns within a same-privilege 32-bit protected-mode code segment", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x9a],
+      [0x0002, 0x00],
+      [0x0003, 0x02],
+      [0x0004, 0x00],
+      [0x0005, 0x00],
+      [0x0006, 0x08],
+      [0x0007, 0x00],
+      [0x0200, 0x66],
+      [0x0201, 0xcb],
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0xcf],
+      [0x100f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000200,
+      cs: { selector: 0x0008, default32: true },
+      registers: { esp: 0x2ff8 }
+    });
+    expect(Array.from({ length: 8 }, (_, offset) => values.get(0x2ff8 + offset))).toEqual([
+      0x08, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00
+    ]);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000008,
+      cs: { selector: 0x0008, default32: true },
+      registers: { esp: 0x3000 }
+    });
+  });
+
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x86],

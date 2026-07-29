@@ -1,7 +1,7 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeModRm, decodeModRm16Address, decodeModRm32Address } from "./modrm.js";
 import { loadInterruptGate } from "./segmentation.js";
-import { SegmentRegister } from "./segment-register.js";
+import { SegmentRegister, type LoadedSegment } from "./segment-register.js";
 import type { Cpu386Snapshot, Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
@@ -552,12 +552,11 @@ function readFarPointer(
   };
 }
 
-function loadProtectedModeCodeSegment(
+function resolveProtectedModeCodeSegment(
   memory: InstructionMemory,
   state: Cpu386State,
-  selector: number,
-  instructionPointer: number
-): void {
+  selector: number
+): LoadedSegment {
   const snapshot = state.snapshot();
   const descriptorMemory = {
     readUint32: (address: number) =>
@@ -566,7 +565,7 @@ function loadProtectedModeCodeSegment(
       ((memory.readUint8((address + 2) >>> 0) & 0xff) << 16) |
       ((memory.readUint8((address + 3) >>> 0) & 0xff) << 24)
   };
-  const loaded = new SegmentRegister().load(
+  return new SegmentRegister().load(
     "protected",
     selector,
     "execute",
@@ -574,12 +573,32 @@ function loadProtectedModeCodeSegment(
     descriptorMemory,
     { gdt: snapshot.gdtr }
   );
+}
+
+function applyProtectedModeCodeSegment(
+  state: Cpu386State,
+  loaded: LoadedSegment,
+  instructionPointer: number
+): void {
   state.loadProtectedModeCodeSegment(
     loaded.selector,
     loaded.base,
     loaded.limit,
     instructionPointer,
     loaded.default32
+  );
+}
+
+function loadProtectedModeCodeSegment(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  selector: number,
+  instructionPointer: number
+): void {
+  applyProtectedModeCodeSegment(
+    state,
+    resolveProtectedModeCodeSegment(memory, state, selector),
+    instructionPointer
   );
 }
 
@@ -1516,6 +1535,49 @@ export function stepInstruction(
     }
     case 0x66: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode === 0x9a) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
+          throw new UnsupportedOpcodeError("32-bit far CALL is only implemented in protected mode");
+        if (!snapshot.ss.default32)
+          throw new UnsupportedOpcodeError(
+            "Protected-mode 16-bit far CALL stacks are not implemented"
+          );
+        const instructionPointer = fetchCodeUint32(memory, state, 2);
+        const selector = fetchCodeUint16(memory, state, 6);
+        const loaded = resolveProtectedModeCodeSegment(memory, state, selector);
+        if ((loaded.selector & 0x03) !== (snapshot.cs.selector & 0x03))
+          throw new UnsupportedOpcodeError(
+            "Protected-mode far CALL stack switching is not implemented"
+          );
+        pushUint32(memory, state, snapshot.cs.selector);
+        pushUint32(memory, state, snapshot.eip + 8);
+        applyProtectedModeCodeSegment(state, loaded, instructionPointer);
+        return { halted: false, fetched };
+      }
+      if (opcode === 0xcb || opcode === 0xca) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
+          throw new UnsupportedOpcodeError("32-bit far RET is only implemented in protected mode");
+        if (!snapshot.ss.default32)
+          throw new UnsupportedOpcodeError(
+            "Protected-mode 16-bit far RET stacks are not implemented"
+          );
+        const instructionPointer = popUint32(memory, state);
+        const selector = popUint32(memory, state) & 0xffff;
+        if ((selector & 0x03) !== (snapshot.cs.selector & 0x03))
+          throw new UnsupportedOpcodeError(
+            "Protected-mode far RET privilege return is not implemented"
+          );
+        const stackAdjustment = opcode === 0xca ? fetchCodeUint16(memory, state, 2) : 0;
+        if (stackAdjustment) state.writeRegister(4, state.readRegister(4) + stackAdjustment);
+        applyProtectedModeCodeSegment(
+          state,
+          resolveProtectedModeCodeSegment(memory, state, selector),
+          instructionPointer
+        );
+        return { halted: false, fetched };
+      }
       if (opcode >= 0xb8 && opcode <= 0xbf) {
         state.writeRegister(opcode - 0xb8, fetchCodeUint32(memory, state, 2));
         state.advanceEip(6);

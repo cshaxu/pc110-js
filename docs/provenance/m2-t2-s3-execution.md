@@ -459,6 +459,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   PCjs selected frame model: it pops EIP, CS, and EFLAGS through SS:ESP then
   validates and reloads the target code descriptor. Privilege returns, 16-bit
   frames, and virtual-8086 return remain later S3 work.
+- M2 T2 S3 P178 adds same-CPL 32-bit protected-mode far `CALL` and `RETF` from
+  the PCjs selected far-transfer model. It validates the target descriptor
+  before creating the EIP/CS frame and retains explicit boundaries for call
+  gates, privilege stack switching, 16-bit frames, and virtual-8086 behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
