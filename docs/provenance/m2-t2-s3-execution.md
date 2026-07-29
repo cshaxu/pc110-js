@@ -357,6 +357,9 @@
 - M2 T2 S3 P149 adds 16-bit `ENTER imm16, imm8` (`C8`) from PCjs `opENTER`:
   preserve BP, copy nested SS frame links, push the frame pointer, then allocate
   local bytes below the new frame.
+- M2 T2 S3 P150 adds real-mode memory `BOUND` (`62`) from PCjs `fnBOUND`:
+  signed index/lower/upper comparison advances on success and delivers vector 5
+  with the faulting instruction pointer on range failure.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

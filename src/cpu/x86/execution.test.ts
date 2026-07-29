@@ -1747,6 +1747,40 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("checks signed BOUND memory limits and faults through vector five", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x62],
+      [0x000ffff1, 0x06],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0x20],
+      [0x00002000, 0xfe],
+      [0x00002001, 0xff],
+      [0x00002002, 0x03],
+      [0x00002003, 0x00],
+      [0x00000014, 0x34],
+      [0x00000015, 0x12],
+      [0x00000016, 0x00],
+      [0x00000017, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeRegister16(0, 0xffff);
+    const memory = resetAliasMemory(values);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ eip: 0x0000fff4, registers: { esp: 0x1000 } });
+    state.reset();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeRegister16(0, 4);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x2000 },
+      eip: 0x1234,
+      registers: { esp: 0x0ffa }
+    });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
