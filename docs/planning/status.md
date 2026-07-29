@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T5 S4: map PCjs storage, video, keyboard, and browser integration sources
-  to M2 destinations.
+- M1 T5 S5: record PCjs license boundaries and excluded archival assets for M2
+  assimilation.
 
 ## Delivery Nodes
 
