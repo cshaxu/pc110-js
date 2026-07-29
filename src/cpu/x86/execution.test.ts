@@ -568,6 +568,31 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("pushes 16-bit and sign-extended byte immediates", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x68],
+      [0x000ffff1, 0x34],
+      [0x000ffff2, 0x12],
+      [0x000ffff3, 0x6a],
+      [0x000ffff4, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x0ffc }, eip: 0x0000fff5 });
+    expect([
+      values.get(0x0ffc),
+      values.get(0x0ffd),
+      values.get(0x0ffe),
+      values.get(0x0fff)
+    ]).toEqual([0x80, 0xff, 0x34, 0x12]);
+  });
+
   it("performs AAA and AAS while preserving non-adjust flags", () => {
     const aaaValues = new Map<number, number>([[0x000ffff0, 0x37]]);
     const aaaState = new Cpu386State();

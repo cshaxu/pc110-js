@@ -330,6 +330,9 @@
 - M2 T2 S3 P139 adds `XLAT` (`D7`) from PCjs `opXLAT` through the project-owned
   DS byte-read boundary. The current 16-bit execution path wraps `BX + AL`
   before real-mode address translation and preserves EFLAGS.
+- M2 T2 S3 P140 adds `PUSH imm16` and `PUSH imm8` (`68` and `6A`) through the
+  existing SS:SP word-stack boundary. The byte immediate is sign-extended to
+  match PCjs 16-bit operand behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

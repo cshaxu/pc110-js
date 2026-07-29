@@ -817,6 +817,14 @@ export function stepInstruction(
 
   const fetched = fetchOpcode(memory, state);
   switch (fetched.opcode) {
+    case 0x68:
+      pushUint16(memory, state, fetchCodeUint16(memory, state, 1));
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    case 0x6a:
+      pushUint16(memory, state, signedByte(fetchCodeByte(memory, state, 1).opcode));
+      state.advanceEip(2);
+      return { halted: false, fetched };
     case 0x37: {
       let accumulator = state.readRegister8(0);
       let highAccumulator = state.readRegister8(4);
