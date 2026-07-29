@@ -605,6 +605,26 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x01, edx: 0x331 } });
   });
 
+  it("compares byte register sources with register and memory destinations", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x38],
+      [0x000ffff1, 0xe9],
+      [0x000ffff2, 0x38],
+      [0x000ffff3, 0x2e],
+      [0x000ffff4, 0x34],
+      [0x000ffff5, 0x12],
+      [0x00001234, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(5, 0x20);
+    state.writeRegister8(1, 0x20);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.zeroFlag()).toBe(true);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.zeroFlag()).toBe(true);
+  });
+
   it("shifts 16-bit register and memory operands by one or an immediate count", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xd1],

@@ -750,6 +750,16 @@ export function stepInstruction(
     case 0x2a:
       executeByteAluModRm(memory, state, "sub", false);
       return { halted: false, fetched };
+    case 0x38: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const left = modRm.registerDirect
+        ? state.readRegister8(modRm.rm)
+        : readSegmentUint8(memory, state, address!.segment, address!.offset);
+      state.writeCompareFlags8(left, state.readRegister8(modRm.reg));
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+      return { halted: false, fetched };
+    }
     case 0x32: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)

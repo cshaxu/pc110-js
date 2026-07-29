@@ -100,6 +100,8 @@
   `C1 /4`) using the PCjs 80386 count-mask and logic-flag behavior.
 - M2 T2 S3 P52 adds the observed `ES:`-overridden `MOV r16, r/m16` (`26 8B`)
   through the existing shared ModR/M memory-load path.
+- M2 T2 S3 P53 adds `CMP r/m8, r8` (`38 /r`) through the shared ModR/M
+  decoder and existing 8-bit comparison-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
