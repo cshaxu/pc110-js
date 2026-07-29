@@ -172,6 +172,9 @@
 - M2 T2 S3 P81 exposes a device-facing external-interrupt service boundary.
   It accepts maskable real-mode interrupts only with IF set, uses the shared IVT
   frame path, saves the current EIP, and resumes a halted CPU.
+- M2 T2 S3 P82 adds real-mode `CALL FAR m16:16` (`FF /3`) for observed DeskPro
+  ROM function-pointer paths, saving CS:IP through SS:SP and rejecting other
+  unimplemented FF forms instead of silently treating them as far jumps.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

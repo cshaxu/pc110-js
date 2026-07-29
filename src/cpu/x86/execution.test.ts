@@ -326,6 +326,35 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("calls a real-mode far pointer through FF /3 and saves CS:IP", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xff],
+      [0x000ffff1, 0x1e],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x00001234, 0x78],
+      [0x00001235, 0x56],
+      [0x00001236, 0x00],
+      [0x00001237, 0xf0]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x5678,
+      cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff },
+      registers: { esp: 0x0ffc }
+    });
+    expect([
+      values.get(0x0ffc),
+      values.get(0x0ffd),
+      values.get(0x0ffe),
+      values.get(0x0fff)
+    ]).toEqual([0xf4, 0xff, 0x00, 0xf0]);
+  });
+
   it("loads 16-bit immediate values into the selected register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xbb],
