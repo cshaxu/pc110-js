@@ -2504,6 +2504,56 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x67],
+      [0x0002, 0x62],
+      [0x0003, 0x06],
+      [0x12000, 0xfe],
+      [0x12001, 0xff],
+      [0x12002, 0xff],
+      [0x12003, 0xff],
+      [0x12004, 0x03],
+      [0x12005, 0x00],
+      [0x12006, 0x00],
+      [0x12007, 0x00],
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0xcf],
+      [0x100f, 0x00],
+      [0x3028, 0x78],
+      [0x3029, 0x00],
+      [0x302a, 0x08],
+      [0x302b, 0x00],
+      [0x302c, 0x00],
+      [0x302d, 0x8e],
+      [0x302e, 0x00],
+      [0x302f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.writeIdtr(0x3000, 0x002f);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(0, 4);
+    state.writeRegister(6, 0x00012000);
+    state.writeRegister(4, 0x4000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000078,
+      registers: { esp: 0x3ff4 }
+    });
+  });
+
   it("multiplies signed register and memory operands through IMUL", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

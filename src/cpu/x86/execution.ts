@@ -215,6 +215,48 @@ function executeMov32ModRm(
   state.advanceEip(modRmOffset + 1 + addressBytes);
 }
 
+function executeBound32(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  faultInstructionPointer: number
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.registerDirect) throw new UnsupportedOpcodeError("BOUND requires a memory operand");
+  const address =
+    addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in address && typeof address.sibBytes === "number" ? address.sibBytes : 0;
+  const addressBytes = address.displacementBytes + sibBytes;
+  const offsetMask = addressSize === 16 ? 0xffff : 0xffffffff;
+  const index = state.readRegister(modRm.reg) | 0;
+  const lower = readSegmentUint32(memory, state, address.segment, address.offset, addressSize) | 0;
+  const upper =
+    readSegmentUint32(
+      memory,
+      state,
+      address.segment,
+      (address.offset + 4) & offsetMask,
+      addressSize
+    ) | 0;
+  if (index < lower || index > upper) {
+    deliverCpuFault(memory, state, 5, faultInstructionPointer);
+    return;
+  }
+  state.advanceEip(modRmOffset + 1 + addressBytes);
+}
+
 function writeSegmentUint8(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1550,19 +1592,7 @@ export function stepInstruction(
     case 0x66: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
       if (opcode === 0x62) {
-        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
-        if (modRm.registerDirect)
-          throw new UnsupportedOpcodeError("BOUND requires a memory operand");
-        const address = decodeMemoryAddress(memory, state, modRm);
-        const index = state.readRegister(modRm.reg) | 0;
-        const lower = readSegmentUint32(memory, state, address.segment, address.offset) | 0;
-        const upper =
-          readSegmentUint32(memory, state, address.segment, (address.offset + 4) & 0xffff) | 0;
-        if (index < lower || index > upper) {
-          deliverCpuFault(memory, state, 5, fetched.instructionPointer);
-          return { halted: false, fetched };
-        }
-        state.advanceEip(3 + address.displacementBytes);
+        executeBound32(memory, state, 2, 16, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       if (opcode === 0x9a) {
@@ -1619,6 +1649,10 @@ export function stepInstruction(
       }
       if (opcode === 0x67) {
         const overriddenOpcode = fetchCodeByte(memory, state, 2).opcode;
+        if (overriddenOpcode === 0x62) {
+          executeBound32(memory, state, 3, 32, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
         if (overriddenOpcode !== 0x89 && overriddenOpcode !== 0x8b)
           throw new UnsupportedOpcodeError("Unsupported operand and address-size override");
         executeMov32ModRm(memory, state, overriddenOpcode, 3, 32);
@@ -1669,6 +1703,10 @@ export function stepInstruction(
       if (fetchCodeByte(memory, state, 1).opcode !== 0x66)
         throw new UnsupportedOpcodeError("Unsupported address-size override");
       const overriddenOpcode = fetchCodeByte(memory, state, 2).opcode;
+      if (overriddenOpcode === 0x62) {
+        executeBound32(memory, state, 3, 32, fetched.instructionPointer);
+        return { halted: false, fetched };
+      }
       if (overriddenOpcode !== 0x89 && overriddenOpcode !== 0x8b)
         throw new UnsupportedOpcodeError("Unsupported address and operand-size override");
       executeMov32ModRm(memory, state, overriddenOpcode, 3, 32);

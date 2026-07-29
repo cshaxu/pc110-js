@@ -485,6 +485,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   form. It reads signed lower and upper dword limits through the established
   16-bit effective-address path, then uses the existing vector-five fault
   delivery. Address-size-overridden `BOUND` remains later S3 work.
+- M2 T2 S3 P184 connects the 32-bit `BOUND` form to the existing 32-bit
+  ModR/M/SIB address decoder for both accepted prefix orders. It retains the
+  same signed dword limits and vector-five fault contract as P183.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
