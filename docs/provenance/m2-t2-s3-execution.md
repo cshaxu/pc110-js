@@ -224,6 +224,9 @@
   carry input, matching the PCjs `fnADCw` behavior.
 - M2 T2 S3 P100 adds `XOR AL, imm8` for observed DeskPro ROM byte-state
   manipulation, using the existing 8-bit logic-flag contract.
+- M2 T2 S3 P101 adds `AND r8, r/m8` (`22 /r`) for observed DeskPro ROM
+  byte-state masks, using the shared ModR/M memory-read and 8-bit logic-flag
+  contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
