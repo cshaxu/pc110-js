@@ -413,6 +413,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P166 adds `XOR r/m16,r16` (`31 /r`) and `XOR AX,imm16` (`35 iw`)
   from PCjs `opXORmw` and `opXORAX`: register, memory, and accumulator
   destinations use the project writable-memory and 16-bit logic-flag boundaries.
+- M2 T2 S3 P167 adds `CMP r/m16,r16` (`39 /r`) from PCjs `opCMPmw`: register
+  and memory operands use the project 16-bit comparison-flag boundary without
+  writing either operand.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

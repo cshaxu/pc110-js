@@ -2125,6 +2125,16 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0x39: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const left = modRm.registerDirect
+        ? state.readRegister16(modRm.rm)
+        : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      state.writeCompareFlags16(left, state.readRegister16(modRm.reg));
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+      return { halted: false, fetched };
+    }
     case 0x3a:
       executeCompareRegFromModRm(memory, state, 8);
       return { halted: false, fetched };
