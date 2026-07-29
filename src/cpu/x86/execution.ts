@@ -377,11 +377,12 @@ function deliverRealModeInterrupt(
   state.loadRealModeCodeSegment(selector, instructionPointer);
 }
 
-function deliverProtectedModeExternalInterrupt(
+function deliverProtectedModeInterrupt(
   memory: InstructionMemory,
   state: Cpu386State,
   vector: number,
-  returnInstructionPointer: number
+  returnInstructionPointer: number,
+  software = false
 ): void {
   const snapshot = state.snapshot();
   if (!snapshot.ss.default32)
@@ -396,6 +397,8 @@ function deliverProtectedModeExternalInterrupt(
   const gate = loadInterruptGate(descriptorMemory, snapshot.idtr, vector);
   if (!gate.present)
     throw new UnsupportedOpcodeError("Protected-mode interrupt gate is not present");
+  if (software && (snapshot.cs.selector & 0x03) > gate.dpl)
+    throw new UnsupportedOpcodeError("Protected-mode software interrupt gate privilege violation");
   if (!gate.default32)
     throw new UnsupportedOpcodeError("Protected-mode 16-bit interrupt gates are not implemented");
   if ((gate.selector & 0x03) !== (snapshot.cs.selector & 0x03))
@@ -418,7 +421,7 @@ export function serviceExternalInterrupt(
   if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
     deliverRealModeInterrupt(memory, state, vector, snapshot.eip);
   else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
-    deliverProtectedModeExternalInterrupt(memory, state, vector, snapshot.eip);
+    deliverProtectedModeInterrupt(memory, state, vector, snapshot.eip);
   else
     throw new UnsupportedOpcodeError("Virtual-8086 external interrupt delivery is not implemented");
   state.resume();
@@ -2782,19 +2785,21 @@ export function stepInstruction(
     }
     case 0xcd: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode INT is not implemented");
-      }
       const vector = fetchCodeByte(memory, state, 1).opcode;
-      deliverRealModeInterrupt(memory, state, vector, fetched.instructionPointer + 2);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+        deliverRealModeInterrupt(memory, state, vector, fetched.instructionPointer + 2);
+      else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
+        deliverProtectedModeInterrupt(memory, state, vector, fetched.instructionPointer + 2, true);
+      else throw new UnsupportedOpcodeError("Virtual-8086 INT is not implemented");
       return { halted: false, fetched };
     }
     case 0xcc: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode INT3 is not implemented");
-      }
-      deliverRealModeInterrupt(memory, state, 3, fetched.instructionPointer + 1);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+        deliverRealModeInterrupt(memory, state, 3, fetched.instructionPointer + 1);
+      else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
+        deliverProtectedModeInterrupt(memory, state, 3, fetched.instructionPointer + 1, true);
+      else throw new UnsupportedOpcodeError("Virtual-8086 INT3 is not implemented");
       return { halted: false, fetched };
     }
     case 0xce: {
@@ -2803,10 +2808,11 @@ export function stepInstruction(
         state.advanceEip(1);
         return { halted: false, fetched };
       }
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode INTO is not implemented");
-      }
-      deliverRealModeInterrupt(memory, state, 4, fetched.instructionPointer + 1);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+        deliverRealModeInterrupt(memory, state, 4, fetched.instructionPointer + 1);
+      else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
+        deliverProtectedModeInterrupt(memory, state, 4, fetched.instructionPointer + 1, true);
+      else throw new UnsupportedOpcodeError("Virtual-8086 INTO is not implemented");
       return { halted: false, fetched };
     }
     case 0xcf: {

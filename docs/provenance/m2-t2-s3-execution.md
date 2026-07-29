@@ -450,6 +450,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   creates the EFLAGS/CS/EIP ESP frame, clears IF and TF, and loads the target
   code descriptor. Privilege stack switching, 16-bit gates, trap gates, and
   virtual-8086 delivery remain later S3 work.
+- M2 T2 S3 P176 extends the same protected-mode gate-delivery path to `INT`,
+  `INT3`, and `INTO` using PCjs-selected software interrupt behavior. Software
+  requests enforce gate DPL before creating the frame; external interrupts
+  remain independent of gate DPL. Privilege stack switching and fault delivery
+  remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -3443,6 +3443,50 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("delivers a ring-three software interrupt through an eligible 32-bit gate", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0xcd],
+      [0x0001, 0x80],
+      [0x1018, 0xff],
+      [0x1019, 0xff],
+      [0x101a, 0x00],
+      [0x101b, 0x00],
+      [0x101c, 0x00],
+      [0x101d, 0xfa],
+      [0x101e, 0xcf],
+      [0x101f, 0x00],
+      [0x2400, 0x34],
+      [0x2401, 0x00],
+      [0x2402, 0x1b],
+      [0x2403, 0x00],
+      [0x2404, 0x00],
+      [0x2405, 0xee],
+      [0x2406, 0x00],
+      [0x2407, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x001f);
+    state.writeIdtr(0x2000, 0x0407);
+    state.loadProtectedModeCodeSegment(0x001b, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0023, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    state.writeEflags(0x00000302);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000034,
+      cs: { selector: 0x001b, default32: true },
+      registers: { esp: 0x2ff4 },
+      eflags: 0x00000002
+    });
+    expect(Array.from({ length: 12 }, (_, offset) => values.get(0x2ff4 + offset))).toEqual([
+      0x02, 0x00, 0x00, 0x00, 0x1b, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00
+    ]);
+  });
+
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x86],
