@@ -1717,6 +1717,31 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x0000 }, eflags: 0x00000097 });
   });
 
+  it("compares byte and word register destinations through CS overrides", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0x3a],
+      [0x000ffff2, 0x24],
+      [0x000ffff3, 0x2e],
+      [0x000ffff4, 0x3b],
+      [0x000ffff5, 0x54],
+      [0x000ffff6, 0x01],
+      [0x000f0010, 0x10],
+      [0x000f0011, 0x01],
+      [0x000f0012, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(6, 0x0010);
+    state.writeRegister8(4, 0x20);
+    state.writeRegister16(2, 0x0000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00002000 }, eflags: 0x00000002 });
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0x00000000 }, eflags: 0x00000097 });
+  });
+
   it("executes byte add and subtract forms through registers, memory, and 80 groups", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x00],

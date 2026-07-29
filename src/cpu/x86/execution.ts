@@ -597,6 +597,40 @@ function executeMov8FromModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
+function executeCompareRegFromModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  width: 8 | 16,
+  modRmOffset = 1,
+  segmentOverride?: "cs" | "ds" | "es" | "ss" | "fs" | "gs"
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.registerDirect) {
+    if (width === 8)
+      state.writeCompareFlags8(state.readRegister8(modRm.reg), state.readRegister8(modRm.rm));
+    else state.writeCompareFlags16(state.readRegister16(modRm.reg), state.readRegister16(modRm.rm));
+    state.advanceEip(modRmOffset + 1);
+    return;
+  }
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  if (width === 8) {
+    state.writeCompareFlags8(
+      state.readRegister8(modRm.reg),
+      readSegmentUint8(memory, state, segmentOverride ?? address.segment, address.offset)
+    );
+  } else {
+    state.writeCompareFlags16(
+      state.readRegister16(modRm.reg),
+      readSegmentUint16(memory, state, segmentOverride ?? address.segment, address.offset)
+    );
+  }
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
 function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 8 | 16): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
   if (modRm.registerDirect) {
@@ -853,6 +887,8 @@ export function stepInstruction(
         else if (modRm.reg === 0x02) executeNearCall(memory, state, 2, "cs");
         else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       } else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
+      else if (opcode === 0x3a) executeCompareRegFromModRm(memory, state, 8, 2, "cs");
+      else if (opcode === 0x3b) executeCompareRegFromModRm(memory, state, 16, 2, "cs");
       else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       return { halted: false, fetched };
     }
@@ -1315,26 +1351,12 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
-    case 0x3a: {
-      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
-      const source = modRm.registerDirect
-        ? state.readRegister8(modRm.rm)
-        : readSegmentUint8(memory, state, address!.segment, address!.offset);
-      state.writeCompareFlags8(state.readRegister8(modRm.reg), source);
-      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+    case 0x3a:
+      executeCompareRegFromModRm(memory, state, 8);
       return { halted: false, fetched };
-    }
-    case 0x3b: {
-      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
-      const source = modRm.registerDirect
-        ? state.readRegister16(modRm.rm)
-        : readSegmentUint16(memory, state, address!.segment, address!.offset);
-      state.writeCompareFlags16(state.readRegister16(modRm.reg), source);
-      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+    case 0x3b:
+      executeCompareRegFromModRm(memory, state, 16);
       return { halted: false, fetched };
-    }
     case 0x32: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);

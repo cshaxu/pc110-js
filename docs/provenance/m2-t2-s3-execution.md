@@ -232,6 +232,9 @@
 - M2 T2 S3 P103 adds `CMP r8, r/m8` and `CMP r16, r/m16` (`3A` and `3B /r`)
   for observed DeskPro ROM decision paths, using existing ModR/M source and
   subtraction-flag contracts without writing either source operand.
+- M2 T2 S3 P104 refactors the `CMP r, r/m` read path behind a narrow shared
+  helper and adds observed CS-overridden byte and word forms (`2E 3A/3B /r`)
+  without widening unsupported prefix behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
