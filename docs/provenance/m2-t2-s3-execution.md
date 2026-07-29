@@ -199,6 +199,9 @@
   ModR/M destination.
 - M2 T2 S3 P91 adds the observed ES-overridden `POP r/m16` (`26 8F /0`),
   preserving SS:SP stack reads while selecting ES for the destination write.
+- M2 T2 S3 P92 adds `SUB r16, r/m16` (`2B /r`) for observed DeskPro ROM
+  counter and address arithmetic through shared ModR/M source and 16-bit
+  subtraction-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
