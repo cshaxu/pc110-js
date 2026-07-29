@@ -608,6 +608,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   through the existing descriptor loader and 16-bit stack frame path.
 - M2 T2 S3 P222 adds same-privilege protected-mode `RETF` (`CB` and `CA iw`)
   through the existing descriptor loader and 16-bit stack frame path.
+- M2 T2 S3 P223 adds same-privilege protected-mode `CALL FAR m16:32`
+  (`66 FF /3`) through the existing descriptor loader and 32-bit stack frame path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

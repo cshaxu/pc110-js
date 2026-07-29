@@ -835,6 +835,34 @@ function executeMemoryFarCall(
   }
 }
 
+function executeDwordMemoryFarCall(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number
+): void {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
+    throw new UnsupportedOpcodeError(
+      "32-bit memory far CALL requires the implemented protected-mode stack path"
+    );
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x03 || modRm.registerDirect)
+    throw new UnsupportedOpcodeError("Unsupported dword FF opcode form");
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  const instructionPointer = readSegmentUint32(memory, state, address.segment, address.offset);
+  const selector = readSegmentUint16(memory, state, address.segment, (address.offset + 4) & 0xffff);
+  const loaded = resolveProtectedModeCodeSegment(memory, state, selector);
+  if ((loaded.selector & 0x03) !== (snapshot.cs.selector & 0x03))
+    throw new UnsupportedOpcodeError("Protected-mode far CALL stack switching is not implemented");
+  pushUint32(memory, state, snapshot.cs.selector);
+  pushUint32(memory, state, snapshot.eip + modRmOffset + 1 + address.displacementBytes);
+  applyProtectedModeCodeSegment(state, loaded, instructionPointer);
+}
+
 function executeNearCall(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2305,6 +2333,10 @@ export function stepInstruction(
         pushUint32(memory, state, snapshot.cs.selector);
         pushUint32(memory, state, snapshot.eip + 8);
         applyProtectedModeCodeSegment(state, loaded, instructionPointer);
+        return { halted: false, fetched };
+      }
+      if (opcode === 0xff) {
+        executeDwordMemoryFarCall(memory, state, 2);
         return { halted: false, fetched };
       }
       if (opcode === 0xcb || opcode === 0xca) {
