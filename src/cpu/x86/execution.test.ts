@@ -2720,6 +2720,50 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { esi: 0x2003, edi: 0x3006 } });
   });
 
+  it("uses CS as the observed source segment for REP MOVSW", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf3],
+      [0x000ffff1, 0x2e],
+      [0x000ffff2, 0xa5],
+      [0x000f2000, 0x34],
+      [0x000f2001, 0x12],
+      [0x000f2002, 0x78],
+      [0x000f2003, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(1, 2);
+    state.writeRegister16(6, 0x2000);
+    state.writeRegister16(7, 0x3000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect([
+      values.get(0x3000),
+      values.get(0x3001),
+      values.get(0x3002),
+      values.get(0x3003)
+    ]).toEqual([0x34, 0x12, 0x78, 0x56]);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0000fff3,
+      registers: { ecx: 0, esi: 0x2004, edi: 0x3004 }
+    });
+  });
+
+  it("loads a word through CS:SI for the observed CS LODSW form", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0xad],
+      [0x000f2000, 0x34],
+      [0x000f2001, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(6, 0x2000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x1234, esi: 0x2002 } });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

@@ -272,6 +272,8 @@
   existing word-string execution path with byte width and direction handling.
 - M2 T2 S3 P119 adds observed unprefixed `MOVSB`, `MOVSW`, `STOSB`, and `STOSW`
   forms as single iterations of the established string-operation semantics.
+- M2 T2 S3 P120 adds the observed CS-source `MOVSW`, `REP MOVSW`, and `LODSW`
+  forms without treating the narrow support as a general prefix decoder.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

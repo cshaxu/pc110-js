@@ -895,7 +895,27 @@ export function stepInstruction(
       } else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
       else if (opcode === 0x3a) executeCompareRegFromModRm(memory, state, 8, 2, "cs");
       else if (opcode === 0x3b) executeCompareRegFromModRm(memory, state, 16, 2, "cs");
-      else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
+      else if (opcode === 0xa5) {
+        const source = state.readRegister16(6);
+        const destination = state.readRegister16(7);
+        const step = state.directionFlag() ? -2 : 2;
+        writeSegmentUint16(
+          memory,
+          state,
+          "es",
+          destination,
+          readSegmentUint16(memory, state, "cs", source)
+        );
+        state.writeRegister16(6, (source + step) & 0xffff);
+        state.writeRegister16(7, (destination + step) & 0xffff);
+        state.advanceEip(2);
+      } else if (opcode === 0xad) {
+        const source = state.readRegister16(6);
+        const step = state.directionFlag() ? -2 : 2;
+        state.writeRegister16(0, readSegmentUint16(memory, state, "cs", source));
+        state.writeRegister16(6, (source + step) & 0xffff);
+        state.advanceEip(2);
+      } else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       return { halted: false, fetched };
     }
     case 0x26: {
@@ -1011,7 +1031,14 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0xf3: {
-      const opcode = fetchCodeByte(memory, state, 1).opcode;
+      let opcode = fetchCodeByte(memory, state, 1).opcode;
+      let sourceSegment: "cs" | "ds" = "ds";
+      let instructionLength = 2;
+      if (opcode === 0x2e) {
+        opcode = fetchCodeByte(memory, state, 2).opcode;
+        sourceSegment = "cs";
+        instructionLength = 3;
+      }
       if (opcode !== 0xaa && opcode !== 0xab && opcode !== 0xa4 && opcode !== 0xa5)
         throw new UnsupportedOpcodeError("Unsupported REP instruction");
       const word = opcode === 0xab || opcode === 0xa5;
@@ -1023,12 +1050,12 @@ export function stepInstruction(
       while (count > 0) {
         if (word) {
           const value = copy
-            ? readSegmentUint16(memory, state, "ds", source)
+            ? readSegmentUint16(memory, state, sourceSegment, source)
             : state.readRegister16(0);
           writeSegmentUint16(memory, state, "es", destination, value);
         } else {
           const value = copy
-            ? readSegmentUint8(memory, state, "ds", source)
+            ? readSegmentUint8(memory, state, sourceSegment, source)
             : state.readRegister8(0);
           writeSegmentUint8(memory, state, "es", destination, value);
         }
@@ -1039,7 +1066,7 @@ export function stepInstruction(
       if (copy) state.writeRegister16(6, source);
       state.writeRegister16(7, destination);
       state.writeRegister16(1, count);
-      state.advanceEip(2);
+      state.advanceEip(instructionLength);
       return { halted: false, fetched };
     }
     case 0x0f: {
