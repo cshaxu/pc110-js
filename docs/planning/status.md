@@ -12,8 +12,7 @@
 
 ## Next Eligible Work
 
-- M1 T4 S5: capture compact manual browser proof and exact M1 reference-run
-  commands.
+- M1 T4 S6: add and manually verify the concise M1 reference Quick Start.
 
 ## Delivery Nodes
 

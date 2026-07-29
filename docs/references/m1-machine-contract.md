@@ -49,6 +49,8 @@
   pinned object.
 - Present PCjs VGA, keyboard, FDC media, reset, and run controls in the normal
   browser machine UI.
+- The generated overlay adds the existing CPU `run` and `reset` bindings. It is
+  a project configuration overlay, not a PCjs implementation modification.
 
 ## M2 Implementation Boundary
 

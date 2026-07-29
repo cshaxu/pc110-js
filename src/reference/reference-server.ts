@@ -12,6 +12,12 @@ const SOURCE_MACHINE = "machines/pcx86/compaq/deskpro386/vga/4096kb/machine.xml"
 const LOCAL_MACHINE = "/_pc110js/machine.xml";
 const LOCAL_FLOPPY = "/_pc110js/media/fdd.img";
 const LOCAL_AUTOMOUNT = '{A:{name:"Local DOS floppy",path:"/_pc110js/media/fdd.img"}}';
+const CPU_CONTROLS = [
+  '<cpu id="cpu386" model="80386">',
+  '<control type="button" binding="run">Run</control>',
+  '<control type="button" binding="reset">Reset</control>',
+  '</cpu>'
+].join("");
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(moduleDirectory, "../..");
@@ -91,7 +97,12 @@ function makeMachineXml(): Buffer {
   if (!originalMount.test(source)) {
     throw new Error("Selected PCjs machine no longer has an autoMount definition");
   }
-  return Buffer.from(source.replace(originalMount, `autoMount='${LOCAL_AUTOMOUNT}'`), "utf8");
+  const localMediaMachine = source.replace(originalMount, `autoMount='${LOCAL_AUTOMOUNT}'`);
+  const originalCpu = '<cpu id="cpu386" model="80386"/>';
+  if (!localMediaMachine.includes(originalCpu)) {
+    throw new Error("Selected PCjs machine no longer has the expected CPU definition");
+  }
+  return Buffer.from(localMediaMachine.replace(originalCpu, CPU_CONTROLS), "utf8");
 }
 
 function contentType(pathname: string): string {
