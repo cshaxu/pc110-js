@@ -404,6 +404,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   and `1A`) from PCjs `opADCmb`, `opADCrb`, `opSBBmb`, and `opSBBrb`: all use
   the project byte ALU boundary to consume CF. PCjs `setArithResult` confirms
   that carry-inclusive addition flags use the original source operand.
+- M2 T2 S3 P164 adds `SUB r/m8,r8` and `SUB r/m16,r16` (`28` and `29`) from
+  PCjs `opSUBmb` and `opSUBmw`: register and memory destinations use the
+  project ModR/M arithmetic boundaries and existing subtraction flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

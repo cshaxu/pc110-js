@@ -812,9 +812,10 @@ function executeByteAluModRm(
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
-function executeWordAddModRm(
+function executeWordAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
+  operation: "add" | "sub",
   destinationIsRegister: boolean
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
@@ -829,11 +830,12 @@ function executeWordAddModRm(
       ? state.readRegister16(modRm.rm)
       : readSegmentUint16(memory, state, address!.segment, address!.offset)
     : state.readRegister16(modRm.reg);
-  const result = destination + source;
+  const result = operation === "add" ? destination + source : destination - source;
   if (destinationIsRegister) state.writeRegister16(modRm.reg, result);
   else if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
   else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
-  state.writeAddFlags16(destination, source);
+  if (operation === "add") state.writeAddFlags16(destination, source);
+  else state.writeCompareFlags16(destination, source);
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
@@ -1929,13 +1931,13 @@ export function stepInstruction(
       executeByteAluModRm(memory, state, "add", true);
       return { halted: false, fetched };
     case 0x01:
-      executeWordAddModRm(memory, state, false);
+      executeWordAluModRm(memory, state, "add", false);
       return { halted: false, fetched };
     case 0x02:
       executeByteAluModRm(memory, state, "add", false);
       return { halted: false, fetched };
     case 0x03:
-      executeWordAddModRm(memory, state, true);
+      executeWordAluModRm(memory, state, "add", true);
       return { halted: false, fetched };
     case 0x04: {
       const accumulator = state.readRegister8(0);
@@ -2038,6 +2040,12 @@ export function stepInstruction(
     }
     case 0x2a:
       executeByteAluModRm(memory, state, "sub", false);
+      return { halted: false, fetched };
+    case 0x28:
+      executeByteAluModRm(memory, state, "sub", true);
+      return { halted: false, fetched };
+    case 0x29:
+      executeWordAluModRm(memory, state, "sub", false);
       return { halted: false, fetched };
     case 0x2b: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
