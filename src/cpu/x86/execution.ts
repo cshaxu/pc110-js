@@ -1,6 +1,6 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeModRm, decodeModRm16Address, decodeModRm32Address } from "./modrm.js";
-import { loadInterruptGate } from "./segmentation.js";
+import { loadDescriptor, loadInterruptGate } from "./segmentation.js";
 import { SegmentRegister, type LoadedSegment } from "./segment-register.js";
 import type { Cpu386Snapshot, Cpu386State, LoadableSegment } from "./state.js";
 
@@ -1296,6 +1296,49 @@ function executeLeaDwordModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes + sibBytes);
 }
 
+function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386State): void {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
+    throw new UnsupportedOpcodeError("Task-register instructions require protected mode");
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+  if (modRm.reg !== 0x01 && modRm.reg !== 0x03)
+    throw new UnsupportedOpcodeError("Unsupported 0F 00 opcode form");
+  const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+  if (modRm.reg === 0x01) {
+    const selector = snapshot.tr.selector;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, selector);
+    else writeSegmentUint16(memory, state, address!.segment, address!.offset, selector);
+    state.advanceEip(3 + (address?.displacementBytes ?? 0));
+    return;
+  }
+  if ((snapshot.cs.selector & 0x03) !== 0)
+    throw new UnsupportedOpcodeError("LTR requires CPL zero");
+  const selector = modRm.registerDirect
+    ? state.readRegister16(modRm.rm)
+    : readSegmentUint16(memory, state, address!.segment, address!.offset);
+  if (selector & 0x04) throw new UnsupportedOpcodeError("LTR requires a GDT selector");
+  const descriptorMemory = {
+    readUint32: (linearAddress: number) =>
+      (memory.readUint8(linearAddress) & 0xff) |
+      ((memory.readUint8((linearAddress + 1) >>> 0) & 0xff) << 8) |
+      ((memory.readUint8((linearAddress + 2) >>> 0) & 0xff) << 16) |
+      ((memory.readUint8((linearAddress + 3) >>> 0) & 0xff) << 24)
+  };
+  const descriptor = loadDescriptor(descriptorMemory, snapshot.gdtr, selector);
+  if (descriptor.system || (descriptor.type !== 0x01 && descriptor.type !== 0x09))
+    throw new UnsupportedOpcodeError("LTR requires an available TSS descriptor");
+  if (!descriptor.present) throw new UnsupportedOpcodeError("LTR TSS descriptor is not present");
+  if (!memory.writeUint8)
+    throw new UnsupportedOpcodeError("LTR requires writable descriptor memory");
+  const descriptorAddress = (snapshot.gdtr.base + (selector & 0xfff8)) >>> 0;
+  memory.writeUint8(
+    descriptorAddress + 5,
+    (memory.readUint8(descriptorAddress + 5) & 0xf0) | (descriptor.type | 0x02)
+  );
+  state.loadTaskRegister(selector, descriptor.base, descriptor.limit, descriptor.type === 0x09);
+  state.advanceEip(3 + (address?.displacementBytes ?? 0));
+}
+
 function executeShiftWord(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2260,6 +2303,10 @@ export function stepInstruction(
       const extension = fetchCodeByte(memory, state, 1).opcode;
       if (extension === 0x0b) {
         deliverCpuFault(memory, state, 6, fetched.instructionPointer);
+        return { halted: false, fetched };
+      }
+      if (extension === 0x00) {
+        executeTaskRegisterInstruction(memory, state);
         return { halted: false, fetched };
       }
       if (extension === 0xa0 || extension === 0xa8) {

@@ -548,6 +548,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   cached base and limit, and TSS size attribute. This is a state-model
   prerequisite for later LTR, task, and privilege-stack behavior; it does not
   implement those instructions or behaviors yet.
+- M2 T2 S3 P204 adds PCjs-selected protected-mode `LTR` and `STR` from Group 6
+  (`0F 00 /3` and `/1`). LTR validates a present available GDT TSS descriptor,
+  caches its task-register state, and marks the descriptor busy. Task switches
+  and TSS-based privilege-stack entry remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

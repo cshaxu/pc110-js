@@ -3059,6 +3059,43 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().registers.eax).toBe(0x12340020);
   });
 
+  it("loads and stores the task-register selector through protected-mode system instructions", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x0f],
+      [0x0001, 0x00],
+      [0x0002, 0xd8],
+      [0x0003, 0x0f],
+      [0x0004, 0x00],
+      [0x0005, 0xc8],
+      [0x1008, 0x67],
+      [0x1009, 0x00],
+      [0x100a, 0x00],
+      [0x100b, 0x30],
+      [0x100c, 0x12],
+      [0x100d, 0x89],
+      [0x100e, 0x00],
+      [0x100f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeGdtr(0x1000, 0x0017);
+    state.writeRegister16(0, 0x0008);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().tr).toEqual({
+      selector: 0x0008,
+      base: 0x00123000,
+      limit: 0x00000067,
+      default32: true
+    });
+    expect(values.get(0x100d)).toBe(0x8b);
+    state.writeRegister16(0, 0);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax & 0xffff).toBe(0x0008);
+  });
+
   it("executes every 32-bit Group 1 immediate operation through both address sizes", () => {
     const code = [
       0x66, 0x81, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x66, 0x81, 0xc8, 0x02, 0x00, 0x00, 0x00, 0x66,
