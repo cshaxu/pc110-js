@@ -366,6 +366,45 @@ export function stepInstruction(
       else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       return { halted: false, fetched };
     }
+    case 0x26: {
+      const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode !== 0xc6 && opcode !== 0xc7)
+        throw new UnsupportedOpcodeError("Unsupported ES override instruction");
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+      if (modRm.reg !== 0)
+        throw new UnsupportedOpcodeError(`Unsupported ${opcode.toString(16)} opcode form`);
+      const immediateBytes = opcode === 0xc6 ? 1 : 2;
+      if (modRm.registerDirect) {
+        if (opcode === 0xc6) state.writeRegister8(modRm.rm, fetchCodeByte(memory, state, 3).opcode);
+        else state.writeRegister16(modRm.rm, fetchCodeUint16(memory, state, 3));
+        state.advanceEip(3 + immediateBytes);
+        return { halted: false, fetched };
+      }
+      const address = decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+      );
+      if (opcode === 0xc6) {
+        writeSegmentUint8(
+          memory,
+          state,
+          "es",
+          address.offset,
+          fetchCodeByte(memory, state, 3 + address.displacementBytes).opcode
+        );
+      } else {
+        writeSegmentUint16(
+          memory,
+          state,
+          "es",
+          address.offset,
+          fetchCodeUint16(memory, state, 3 + address.displacementBytes)
+        );
+      }
+      state.advanceEip(3 + immediateBytes + address.displacementBytes);
+      return { halted: false, fetched };
+    }
     case 0xf3: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
       if (opcode !== 0xab && opcode !== 0xa5)

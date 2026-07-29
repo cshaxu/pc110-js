@@ -77,6 +77,8 @@
   `C7 /0`) through the shared ModR/M address and writable-memory boundaries.
 - M2 T2 S3 P40 adds `MOV r/m16, Sreg` (`8C`) for real-mode segment-selector
   reads through register or writable-memory destinations.
+- M2 T2 S3 P41 adds the observed `ES:`-overridden `C6 /0` and `C7 /0` memory
+  forms without widening unsupported segment-prefix behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

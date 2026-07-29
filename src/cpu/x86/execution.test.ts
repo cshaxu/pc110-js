@@ -457,6 +457,32 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fffa);
   });
 
+  it("writes immediate values through ES-overridden ModR/M memory operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x26],
+      [0x000ffff1, 0xc6],
+      [0x000ffff2, 0x07],
+      [0x000ffff3, 0xa5],
+      [0x000ffff4, 0x26],
+      [0x000ffff5, 0xc7],
+      [0x000ffff6, 0x47],
+      [0x000ffff7, 0x02],
+      [0x000ffff8, 0x78],
+      [0x000ffff9, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("es", 0x0040);
+    state.writeRegister16(3, 0x1200);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect([values.get(0x00001600), values.get(0x00001602), values.get(0x00001603)]).toEqual([
+      0xa5, 0x78, 0x56
+    ]);
+    expect(state.snapshot().eip).toBe(0x0000fffa);
+  });
+
   it("stores a 16-bit register through direct and BP-based memory operands", () => {
     const directValues = new Map<number, number>([
       [0x000ffff0, 0x89],
