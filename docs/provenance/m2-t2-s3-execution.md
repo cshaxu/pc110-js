@@ -534,6 +534,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P199 adds PCjs-selected `MOV r/m32,imm32` (`66 C7 /0 id`) through
   the project-native dword memory path. The register and address-size-overridden
   memory forms preserve the established ModR/M and segmented-access contracts.
+- M2 T2 S3 P200 adds the complete PCjs-selected dword Group 1 immediate family:
+  `66 81 /0-/7 id` and `66 83 /0-/7 ib`. The byte-immediate form is sign-extended
+  to dword width, while CMP retains the destination and all other operations
+  use the shared dword writeback and flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

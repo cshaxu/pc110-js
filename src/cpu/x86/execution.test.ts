@@ -3003,6 +3003,35 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("executes every 32-bit Group 1 immediate operation through both address sizes", () => {
+    const code = [
+      0x66, 0x81, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x66, 0x81, 0xc8, 0x02, 0x00, 0x00, 0x00, 0x66,
+      0x83, 0xd0, 0xff, 0x66, 0x83, 0xd8, 0x00, 0x66, 0x81, 0xe0, 0xff, 0xff, 0xff, 0xff, 0x66,
+      0x83, 0xe8, 0x01, 0x66, 0x83, 0xf0, 0x01, 0x66, 0x83, 0xf8, 0x02, 0x66, 0x67, 0x83, 0x2e, 0xff
+    ];
+    const values = new Map<number, number>(code.map((value, address) => [address, value]));
+    values.set(0x12000, 0x03);
+    values.set(0x12001, 0x00);
+    values.set(0x12002, 0x00);
+    values.set(0x12003, 0x00);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeEflags(0x00000003);
+    state.writeRegister(6, 0x12000);
+    const memory = resetAliasMemory(values);
+
+    for (let index = 0; index < 7; index += 1) stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(1);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 1 }, eflags: 0x00000097 });
+    stepInstruction(memory, state);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x12000 + offset))).toEqual([
+      0x04, 0x00, 0x00, 0x00
+    ]);
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

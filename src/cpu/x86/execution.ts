@@ -1062,10 +1062,71 @@ function executeWordAluModRm(
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
+type DwordAluOperation = "add" | "adc" | "or" | "and" | "sub" | "xor" | "cmp" | "test" | "sbb";
+
+function dwordGroupOneOperation(group: number): DwordAluOperation {
+  switch (group) {
+    case 0x00:
+      return "add";
+    case 0x01:
+      return "or";
+    case 0x02:
+      return "adc";
+    case 0x03:
+      return "sbb";
+    case 0x04:
+      return "and";
+    case 0x05:
+      return "sub";
+    case 0x06:
+      return "xor";
+    case 0x07:
+      return "cmp";
+    default:
+      throw new UnsupportedOpcodeError("Unsupported dword Group 1 opcode form");
+  }
+}
+
+function writeDwordAluResult(
+  state: Cpu386State,
+  operation: DwordAluOperation,
+  destination: number,
+  source: number
+): number {
+  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
+  let result: number;
+  switch (operation) {
+    case "add":
+    case "adc":
+      result = destination + source + carry;
+      break;
+    case "or":
+      result = destination | source;
+      break;
+    case "and":
+    case "test":
+      result = destination & source;
+      break;
+    case "xor":
+      result = destination ^ source;
+      break;
+    case "sub":
+    case "sbb":
+    case "cmp":
+      result = destination - source - carry;
+      break;
+  }
+  if (operation === "add" || operation === "adc") state.writeAddFlags32(destination, source, carry);
+  else if (operation === "sub" || operation === "sbb" || operation === "cmp")
+    state.writeCompareFlags32(destination, source, carry);
+  else state.writeLogicFlags32(result);
+  return result;
+}
+
 function executeDwordAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  operation: "add" | "adc" | "or" | "and" | "sub" | "xor" | "cmp" | "test" | "sbb",
+  operation: DwordAluOperation,
   destinationIsRegister: boolean,
   modRmOffset: number,
   addressSize: 16 | 32
@@ -1097,39 +1158,54 @@ function executeDwordAluModRm(
       ? state.readRegister(modRm.rm)
       : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize)
     : state.readRegister(modRm.reg);
-  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
-  let result: number;
-  switch (operation) {
-    case "add":
-    case "adc":
-      result = destination + source + carry;
-      break;
-    case "or":
-      result = destination | source;
-      break;
-    case "and":
-    case "test":
-      result = destination & source;
-      break;
-    case "xor":
-      result = destination ^ source;
-      break;
-    case "sub":
-    case "sbb":
-    case "cmp":
-      result = destination - source - carry;
-      break;
-  }
+  const result = writeDwordAluResult(state, operation, destination, source);
   if (operation !== "cmp" && operation !== "test") {
     if (destinationIsRegister) state.writeRegister(modRm.reg, result);
     else if (modRm.registerDirect) state.writeRegister(modRm.rm, result);
     else writeSegmentUint32(memory, state, address!.segment, address!.offset, result, addressSize);
   }
-  if (operation === "add" || operation === "adc") state.writeAddFlags32(destination, source, carry);
-  else if (operation === "sub" || operation === "sbb" || operation === "cmp")
-    state.writeCompareFlags32(destination, source, carry);
-  else state.writeLogicFlags32(result);
   state.advanceEip(modRmOffset + 1 + addressBytes);
+}
+
+function executeDwordGroupOneImmediate(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  immediateBytes: 1 | 4
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
+    ? undefined
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
+  const addressBytes = (address?.displacementBytes ?? 0) + sibBytes;
+  const destination = modRm.registerDirect
+    ? state.readRegister(modRm.rm)
+    : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
+  const immediateOffset = modRmOffset + 1 + addressBytes;
+  const immediate =
+    immediateBytes === 4
+      ? fetchCodeUint32(memory, state, immediateOffset)
+      : signedByte(fetchCodeByte(memory, state, immediateOffset).opcode) >>> 0;
+  const operation = dwordGroupOneOperation(modRm.reg);
+  const result = writeDwordAluResult(state, operation, destination, immediate);
+  if (operation !== "cmp") {
+    if (modRm.registerDirect) state.writeRegister(modRm.rm, result);
+    else writeSegmentUint32(memory, state, address!.segment, address!.offset, result, addressSize);
+  }
+  state.advanceEip(immediateOffset + immediateBytes);
 }
 
 function executeDwordTestImmediateModRm(
@@ -1742,6 +1818,10 @@ export function stepInstruction(
         executeMovImmediateDwordModRm(memory, state, 2, 16);
         return { halted: false, fetched };
       }
+      if (opcode === 0x81 || opcode === 0x83) {
+        executeDwordGroupOneImmediate(memory, state, 2, 16, opcode === 0x81 ? 4 : 1);
+        return { halted: false, fetched };
+      }
       if (
         opcode === 0x01 ||
         opcode === 0x03 ||
@@ -1951,6 +2031,10 @@ export function stepInstruction(
         }
         if (overriddenOpcode === 0xc7) {
           executeMovImmediateDwordModRm(memory, state, 3, 32);
+          return { halted: false, fetched };
+        }
+        if (overriddenOpcode === 0x81 || overriddenOpcode === 0x83) {
+          executeDwordGroupOneImmediate(memory, state, 3, 32, overriddenOpcode === 0x81 ? 4 : 1);
           return { halted: false, fetched };
         }
         if (
