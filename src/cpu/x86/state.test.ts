@@ -76,4 +76,13 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().registers.eax).toBe(0xface3412);
   });
+
+  it("updates status flags from AH and clears the interrupt flag", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEflags(0x00000202);
+    cpu.writeStatusFlagsFromAh(0xd5);
+    cpu.clearInterruptFlag();
+
+    expect(cpu.snapshot().eflags).toBe(0x000000d7);
+  });
 });

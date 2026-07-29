@@ -23,11 +23,12 @@
   execution until an interrupt resumes the CPU; a real-mode far jump loads a
   new CS selector and 16-bit instruction pointer; register-immediate and
   relative jumps update architectural state; immediate-port writes pass through
-  a project-owned port-writer interface.
+  a project-owned port-writer interface; SAHF and real-mode CLI update flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
 - Incomplete behavior: paging hookup, prefetch, general decode, exceptions,
 - Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
-  exceptions, interrupt wakeup, protected-mode far jumps, and remaining
+- Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
+  exceptions, interrupt wakeup, protected-mode CLI and far jumps, and remaining
   instruction behavior remain later S3 work.

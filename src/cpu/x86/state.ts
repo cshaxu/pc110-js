@@ -42,6 +42,8 @@ export interface Cpu386Snapshot {
 
 const RESET_CR0 = 0x7ffffff0;
 const RESET_EFLAGS = 0x00000002;
+const EFLAGS_STATUS_MASK = 0x000000d5;
+const EFLAGS_INTERRUPT_ENABLE = 0x00000200;
 const REAL_MODE_SEGMENT: SegmentState = { selector: 0, base: 0, limit: 0xffff };
 const RESET_CS: SegmentState = { selector: 0xf000, base: 0xffff0000, limit: 0xffff };
 
@@ -123,6 +125,15 @@ export class Cpu386State {
 
   public writeEflags(value: number): void {
     this.eflags = (value | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeStatusFlagsFromAh(value: number): void {
+    this.eflags =
+      ((this.eflags & ~EFLAGS_STATUS_MASK) | (value & EFLAGS_STATUS_MASK) | RESET_EFLAGS) >>> 0;
+  }
+
+  public clearInterruptFlag(): void {
+    this.eflags = (this.eflags & ~EFLAGS_INTERRUPT_ENABLE) >>> 0;
   }
 
   public advanceEip(bytes: number): void {

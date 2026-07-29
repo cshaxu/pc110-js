@@ -80,6 +80,18 @@ export function stepInstruction(
       state.advanceEip(1);
       state.halt();
       return { halted: true, fetched };
+    case 0x9e:
+      state.writeStatusFlagsFromAh((state.snapshot().registers.eax >>> 8) & 0xff);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    case 0xfa: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+        throw new UnsupportedOpcodeError("Protected-mode CLI is not implemented");
+      state.clearInterruptFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0xea: {
       const snapshot = state.snapshot();
       if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")

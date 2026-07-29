@@ -86,6 +86,22 @@ describe("80386 instruction fetch", () => {
     expect(writes).toEqual([[0x84, 0xa5]]);
   });
 
+  it("executes SAHF and real-mode CLI with the expected EFLAGS changes", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x9e],
+      [0x000ffff1, 0xfa]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    state.writeRegister(0, 0x0000d500);
+    state.writeEflags(0x00000202);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().eflags).toBe(0x000002d7);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x000000d7, eip: 0x0000fff2 });
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],
