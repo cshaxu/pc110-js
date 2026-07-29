@@ -12,9 +12,9 @@
 
 ## Next Eligible Work
 
-- M2 T2 S4: active under the 2026-07-29 authorized dependency correction.
-  Complete the bounded module-layout refactor and the minimal physical-memory,
-  A20, and ROM-mapping path required to resume the existing S3 ROM trace.
+- M2 T2 S3: active. Resume supported opcode, exception, interrupt, and
+  privilege behavior only after S4 P4 verified the existing reset-ROM trace
+  through the new physical-memory path.
 
 ## Delivery Nodes
 
@@ -29,9 +29,10 @@
 Initial standalone emulator foundations and partial CPU implementation exist.
 Protected ROM and disk images are not tracked.
 
-M2 T2 S3 is paused after P16. Its observed reset-ROM path reaches a far jump
-into low RAM, so the minimal S4 memory path is an explicit prerequisite for
-continuing CPU opcode work. This is the only authorized sequencing exception;
-the M2 objective and completion gate are unchanged.
+M2 T2 S3 resumed after P16. Its observed reset-ROM path reaches a far jump into
+low RAM, so the minimal S4 memory path was an explicit prerequisite for
+continuing CPU opcode work. S4 P4 verified that path through mapped ROM. This
+was the only authorized sequencing exception; the M2 objective and completion
+gate are unchanged.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.
