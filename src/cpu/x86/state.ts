@@ -154,7 +154,7 @@ export class Cpu386State {
     let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;
-    if ((result.toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
@@ -184,6 +184,11 @@ export class Cpu386State {
     return this.registers[this.generalRegisterAt(index)] & 0xffff;
   }
 
+  public readRegister8(index: number): number {
+    const register = this.generalRegisterAt(index & 0x03);
+    return (this.registers[register] >>> (index < 4 ? 0 : 8)) & 0xff;
+  }
+
   public writeRegister8(index: number, value: number): void {
     const normalizedValue = value & 0xff;
     const registerIndex = index & 0x03;
@@ -192,6 +197,15 @@ export class Cpu386State {
     const mask = ~(0xff << shift);
     this.registers[register] =
       ((this.registers[register] & mask) | (normalizedValue << shift)) >>> 0;
+  }
+
+  public writeLogicFlags16(value: number): void {
+    const result = value & 0xffff;
+    let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x8000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
   public loadRealModeCodeSegment(selector: number, instructionPointer: number): void {

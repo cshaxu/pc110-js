@@ -109,4 +109,14 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x00000056);
     expect(cpu.zeroFlag()).toBe(true);
   });
+
+  it("reads 8-bit register halves and sets 16-bit logic flags", () => {
+    const cpu = new Cpu386State();
+    cpu.writeRegister(3, 0xface1234);
+    cpu.writeLogicFlags16(0x8001);
+
+    expect(cpu.readRegister8(3)).toBe(0x34);
+    expect(cpu.readRegister8(7)).toBe(0x12);
+    expect(cpu.snapshot().eflags).toBe(0x00000082);
+  });
 });

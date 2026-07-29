@@ -27,7 +27,8 @@
   The observed register-form LMSW preserves PE and MSW fixed bits; real-mode
   register segment loads update selector and base while preserving cached limit.
   Immediate port reads, TEST, JNZ, and 16-bit LOOP follow the observed
-  reset-ROM path.
+  reset-ROM path. ModR/M field decoding and register-form MOV/XOR support the
+  next observed ROM sequence.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

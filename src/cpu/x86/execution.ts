@@ -1,4 +1,5 @@
 import { addressMode, translateSegmentOffset } from "./address-translation.js";
+import { decodeModRm } from "./modrm.js";
 import type { Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
@@ -141,6 +142,24 @@ export function stepInstruction(
       const segment = segmentForMove((modRm >>> 3) & 0x07);
       if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
       state.loadRealModeSegment(segment, state.readRegister16(modRm & 0x07));
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0x8b: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect)
+        throw new UnsupportedOpcodeError("Memory-form MOV is not implemented");
+      state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0x33: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect)
+        throw new UnsupportedOpcodeError("Memory-form XOR is not implemented");
+      const result = state.readRegister16(modRm.reg) ^ state.readRegister16(modRm.rm);
+      state.writeRegister16(modRm.reg, result);
+      state.writeLogicFlags16(result);
       state.advanceEip(2);
       return { halted: false, fetched };
     }

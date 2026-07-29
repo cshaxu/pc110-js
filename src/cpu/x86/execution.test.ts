@@ -187,6 +187,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0 }, eip: 0x0000fff5 });
   });
 
+  it("executes register-direct MOV and XOR forms from the reset-ROM path", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x8b],
+      [0x000ffff1, 0xd8],
+      [0x000ffff2, 0x33],
+      [0x000ffff3, 0xdb]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x1234);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.ebx).toBe(0x1234);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0 },
+      eflags: 0x00000046,
+      eip: 0x0000fff4
+    });
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],
