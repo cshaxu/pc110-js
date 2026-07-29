@@ -1343,18 +1343,30 @@ export function stepInstruction(
     }
     case 0x83: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x07) throw new UnsupportedOpcodeError("Unsupported 83 opcode form");
+      if (modRm.reg !== 0x05 && modRm.reg !== 0x07)
+        throw new UnsupportedOpcodeError("Unsupported 83 opcode form");
       const immediate = signedByte(fetchCodeByte(memory, state, 2).opcode) & 0xffff;
       if (modRm.registerDirect) {
-        state.writeCompareFlags16(state.readRegister16(modRm.rm), immediate);
+        const destination = state.readRegister16(modRm.rm);
+        if (modRm.reg === 0x05) state.writeRegister16(modRm.rm, destination - immediate);
+        if (modRm.reg === 0x05) state.writeCompareFlags16(destination, immediate);
+        else state.writeCompareFlags16(destination, immediate);
         state.advanceEip(3);
         return { halted: false, fetched };
       }
       const address = decodeMemoryAddress(memory, state, modRm);
-      state.writeCompareFlags16(
-        readSegmentUint16(memory, state, address.segment, address.offset),
-        signedByte(fetchCodeByte(memory, state, 2 + address.displacementBytes).opcode) & 0xffff
-      );
+      const destination = readSegmentUint16(memory, state, address.segment, address.offset);
+      const memoryImmediate =
+        signedByte(fetchCodeByte(memory, state, 2 + address.displacementBytes).opcode) & 0xffff;
+      if (modRm.reg === 0x05)
+        writeSegmentUint16(
+          memory,
+          state,
+          address.segment,
+          address.offset,
+          destination - memoryImmediate
+        );
+      state.writeCompareFlags16(destination, memoryImmediate);
       state.advanceEip(3 + address.displacementBytes);
       return { halted: false, fetched };
     }

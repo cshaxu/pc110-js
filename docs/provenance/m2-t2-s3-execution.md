@@ -202,6 +202,9 @@
 - M2 T2 S3 P92 adds `SUB r16, r/m16` (`2B /r`) for observed DeskPro ROM
   counter and address arithmetic through shared ModR/M source and 16-bit
   subtraction-flag contracts.
+- M2 T2 S3 P93 adds `SUB r/m16, imm8` (`83 /5 ib`) for observed DeskPro ROM
+  stack and pointer adjustments, sign-extending the immediate through existing
+  writable-memory and 16-bit subtraction-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
