@@ -140,6 +140,7 @@ describe("Cpu386State", () => {
     cpu.loadProtectedModeSegment("ss", 0x0010, 0x00200000, 0xffffffff, true);
 
     expect(cpu.snapshot()).toMatchObject({
+      eip: 0x12345678,
       cs: { selector: 0x0008, base: 0x00100000, limit: 0xffffffff, default32: true },
       ss: { selector: 0x0010, base: 0x00200000, limit: 0xffffffff, default32: true }
     });

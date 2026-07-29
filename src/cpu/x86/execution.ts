@@ -1,5 +1,6 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeModRm, decodeModRm16Address, decodeModRm32Address } from "./modrm.js";
+import { loadInterruptGate } from "./segmentation.js";
 import { SegmentRegister } from "./segment-register.js";
 import type { Cpu386Snapshot, Cpu386State, LoadableSegment } from "./state.js";
 
@@ -345,6 +346,12 @@ function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number
   writeSegmentUint16(memory, state, "ss", stackPointer, value);
 }
 
+function pushUint32(memory: InstructionMemory, state: Cpu386State, value: number): void {
+  const stackPointer = (state.readRegister(4) - 4) >>> 0;
+  state.writeRegister(4, stackPointer);
+  writeSegmentUint32(memory, state, "ss", stackPointer, value, 32);
+}
+
 function popUint16(memory: InstructionMemory, state: Cpu386State): number {
   const stackPointer = state.readRegister16(4);
   const value = readSegmentUint16(memory, state, "ss", stackPointer);
@@ -370,19 +377,50 @@ function deliverRealModeInterrupt(
   state.loadRealModeCodeSegment(selector, instructionPointer);
 }
 
+function deliverProtectedModeExternalInterrupt(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  vector: number,
+  returnInstructionPointer: number
+): void {
+  const snapshot = state.snapshot();
+  if (!snapshot.ss.default32)
+    throw new UnsupportedOpcodeError("Protected-mode 16-bit interrupt stacks are not implemented");
+  const descriptorMemory = {
+    readUint32: (address: number) =>
+      (memory.readUint8(address) & 0xff) |
+      ((memory.readUint8((address + 1) >>> 0) & 0xff) << 8) |
+      ((memory.readUint8((address + 2) >>> 0) & 0xff) << 16) |
+      ((memory.readUint8((address + 3) >>> 0) & 0xff) << 24)
+  };
+  const gate = loadInterruptGate(descriptorMemory, snapshot.idtr, vector);
+  if (!gate.present)
+    throw new UnsupportedOpcodeError("Protected-mode interrupt gate is not present");
+  if (!gate.default32)
+    throw new UnsupportedOpcodeError("Protected-mode 16-bit interrupt gates are not implemented");
+  if ((gate.selector & 0x03) !== (snapshot.cs.selector & 0x03))
+    throw new UnsupportedOpcodeError("Protected-mode privilege stack switching is not implemented");
+
+  pushUint32(memory, state, snapshot.eflags);
+  pushUint32(memory, state, snapshot.cs.selector);
+  pushUint32(memory, state, returnInstructionPointer);
+  state.clearInterruptAndTrapFlags();
+  loadProtectedModeCodeSegment(memory, state, gate.selector, gate.offset);
+}
+
 export function serviceExternalInterrupt(
   memory: InstructionMemory,
   state: Cpu386State,
   vector: number
 ): boolean {
   const snapshot = state.snapshot();
-  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-    throw new UnsupportedOpcodeError(
-      "Protected-mode external interrupt delivery is not implemented"
-    );
-  }
   if (!state.interruptFlag()) return false;
-  deliverRealModeInterrupt(memory, state, vector, snapshot.eip);
+  if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+    deliverRealModeInterrupt(memory, state, vector, snapshot.eip);
+  else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
+    deliverProtectedModeExternalInterrupt(memory, state, vector, snapshot.eip);
+  else
+    throw new UnsupportedOpcodeError("Virtual-8086 external interrupt delivery is not implemented");
   state.resume();
   return true;
 }

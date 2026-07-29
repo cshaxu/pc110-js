@@ -3400,6 +3400,49 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf1, 0xff]);
   });
 
+  it("delivers a protected-mode external interrupt through a 32-bit IDT gate", () => {
+    const values = new Map<number, number>([
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0xcf],
+      [0x100f, 0x00],
+      [0x2040, 0x34],
+      [0x2041, 0x00],
+      [0x2042, 0x08],
+      [0x2043, 0x00],
+      [0x2044, 0x00],
+      [0x2045, 0x8e],
+      [0x2046, 0x00],
+      [0x2047, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.writeIdtr(0x2000, 0x0047);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x12345678, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    state.writeEflags(0x00000302);
+    state.halt();
+    const memory = resetAliasMemory(values);
+
+    expect(serviceExternalInterrupt(memory, state, 0x08)).toBe(true);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000034,
+      cs: { selector: 0x0008, base: 0, limit: 0xffffffff, default32: true },
+      registers: { esp: 0x2ff4 },
+      eflags: 0x00000002,
+      halted: false
+    });
+    expect(Array.from({ length: 12 }, (_, offset) => values.get(0x2ff4 + offset))).toEqual([
+      0x78, 0x56, 0x34, 0x12, 0x08, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00
+    ]);
+  });
+
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x86],

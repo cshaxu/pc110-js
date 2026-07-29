@@ -587,7 +587,7 @@ export class Cpu386State {
       limit: limit >>> 0,
       default32
     };
-    this.eip = instructionPointer & 0xffff;
+    this.eip = default32 ? instructionPointer >>> 0 : instructionPointer & 0xffff;
   }
 
   public loadRealModeSegment(segment: LoadableSegment, selector: number): void {

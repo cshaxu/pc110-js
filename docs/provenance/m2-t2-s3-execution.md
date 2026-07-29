@@ -445,6 +445,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P174 adds the segment-cache `D/B` attribute from PCjs's selected
   protected-mode descriptor state. Project segment loads now retain descriptor
   default32 state for later gate, stack, and control-transfer width selection.
+- M2 T2 S3 P175 adds same-CPL 32-bit protected-mode external interrupt delivery
+  from the PCjs selected IDT gate model. It validates and loads the IDT gate,
+  creates the EFLAGS/CS/EIP ESP frame, clears IF and TF, and loads the target
+  code descriptor. Privilege stack switching, 16-bit gates, trap gates, and
+  virtual-8086 delivery remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
