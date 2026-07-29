@@ -157,6 +157,38 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("traces the PCjs descriptor-initialization prefix through its first descriptor", () => {
+    const values = new Map<number, number>();
+    const bytes = [
+      0x60, 0x1e, 0x06, 0xb8, 0x00, 0x1c, 0x8e, 0xd8, 0x8e, 0xc0, 0xfc, 0x33, 0xc0, 0xbf, 0x00,
+      0x00, 0xb9, 0x04, 0x00, 0xf3, 0xab, 0xbe, 0x08, 0x00, 0xb8, 0x00, 0x1c, 0xbb, 0x10, 0x00,
+      0xf7, 0xe3, 0x05, 0x00, 0x00, 0x80, 0xd2, 0x00, 0x89, 0x44, 0x02, 0x88, 0x54, 0x04, 0xc6,
+      0x44, 0x05, 0x92, 0xc7, 0x04, 0x5f, 0x00
+    ];
+    for (const [offset, value] of bytes.entries()) {
+      values.set(0x000f0000 + ((0x0000fff0 + offset) & 0xffff), value);
+    }
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+
+    for (let index = 0; index < 21; index += 1) stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      ds: { selector: 0x1c00, base: 0x0001c000 },
+      es: { selector: 0x1c00, base: 0x0001c000 },
+      registers: { esi: 0x0008 }
+    });
+    expect([
+      values.get(0x0001c008),
+      values.get(0x0001c009),
+      values.get(0x0001c00a),
+      values.get(0x0001c00b),
+      values.get(0x0001c00c),
+      values.get(0x0001c00d)
+    ]).toEqual([0x5f, 0x00, 0x00, 0xc0, 0x01, 0x92]);
+  });
+
   it("follows a default-data-segment far pointer through FF /5", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xff],

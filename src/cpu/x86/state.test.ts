@@ -68,6 +68,18 @@ describe("Cpu386State", () => {
     });
   });
 
+  it("wraps sequential EIP in real mode while preserving protected-mode width", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEip16(0xfff0);
+    cpu.advanceEip(0x20);
+    expect(cpu.snapshot().eip).toBe(0x0010);
+
+    cpu.writeCr0(0x00000001);
+    cpu.writeEip16(0xfff0);
+    cpu.advanceEip(0x20);
+    expect(cpu.snapshot().eip).toBe(0x00010010);
+  });
+
   it("writes low and high 8-bit register halves independently", () => {
     const cpu = new Cpu386State();
     cpu.writeRegister(0, 0xface0000);

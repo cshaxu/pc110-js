@@ -110,6 +110,10 @@
   (`F7 /4`) with the PCjs-defined CF/OF result boundary.
 - M2 T2 S3 P57 adds logical right shifts for word `D1/C1 /5` and byte `C0 /5`
   forms using the PCjs count-mask and logic-result flag behavior.
+- M2 T2 S3 P58 adds a focused regression fixture for the PCjs DeskPro BIOS
+  descriptor-initialization prefix through its first initialized descriptor.
+- P58 also corrects sequential EIP wrapping in real and virtual-8086 modes;
+  protected-mode sequential EIP remains 32-bit.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
