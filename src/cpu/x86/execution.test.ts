@@ -6157,4 +6157,143 @@ describe("80386 instruction fetch", () => {
       eip: 0x00000003
     });
   });
+
+  it("executes the remaining dword F7 register arithmetic forms", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0xf7],
+      [0x00000002, 0xd3],
+      [0x00000003, 0x66],
+      [0x00000004, 0xf7],
+      [0x00000005, 0xdb],
+      [0x00000006, 0x66],
+      [0x00000007, 0xf7],
+      [0x00000008, 0xe3],
+      [0x00000009, 0x66],
+      [0x0000000a, 0xf7],
+      [0x0000000b, 0xeb],
+      [0x0000000c, 0x66],
+      [0x0000000d, 0xf7],
+      [0x0000000e, 0xf3],
+      [0x0000000f, 0x66],
+      [0x00000010, 0xf7],
+      [0x00000011, 0xfb]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    const memory = resetAliasMemory(values);
+
+    state.writeRegister(3, 0x00000000);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0xffffffff }, eip: 0x00000003 });
+
+    state.writeRegister(3, 1);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0xffffffff }, eip: 0x00000006 });
+
+    state.writeEflags(0x00000002);
+    state.writeRegister(0, 0xffffffff);
+    state.writeRegister(3, 2);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0xfffffffe, edx: 0x00000001 },
+      eflags: 0x00000803,
+      eip: 0x00000009
+    });
+
+    state.writeEflags(0x00000002);
+    state.writeRegister(0, 0x40000000);
+    state.writeRegister(3, 0xfffffffe);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x80000000, edx: 0xffffffff },
+      eflags: 0x00000002,
+      eip: 0x0000000c
+    });
+
+    state.writeRegister(0, 0x00000000);
+    state.writeRegister(2, 0x00000001);
+    state.writeRegister(3, 2);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x80000000, edx: 0x00000000 },
+      eip: 0x0000000f
+    });
+
+    state.writeRegister(0, 0xfffffff9);
+    state.writeRegister(2, 0xffffffff);
+    state.writeRegister(3, 3);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0xfffffffe, edx: 0xffffffff },
+      eip: 0x00000012
+    });
+  });
+
+  it("uses 32-bit addressing for dword F7 memory operands", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0x67],
+      [0x00000002, 0xf7],
+      [0x00000003, 0x33],
+      [0x00002000, 0x02],
+      [0x00002001, 0x00],
+      [0x00002002, 0x00],
+      [0x00002003, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(0, 6);
+    state.writeRegister(2, 0);
+    state.writeRegister(3, 0x2000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 3, edx: 0 },
+      eip: 0x00000004
+    });
+  });
+
+  it("delivers a dword F7 divide error through vector zero", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0xf7],
+      [0x0002, 0xf3],
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0xcf],
+      [0x100f, 0x00],
+      [0x2000, 0x56],
+      [0x2001, 0x00],
+      [0x2002, 0x08],
+      [0x2003, 0x00],
+      [0x2004, 0x00],
+      [0x2005, 0x8e],
+      [0x2006, 0x00],
+      [0x2007, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.writeIdtr(0x2000, 0x0007);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    state.writeRegister(3, 0);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000056,
+      cs: { selector: 0x0008, default32: true },
+      registers: { esp: 0x2ff4 }
+    });
+  });
 });

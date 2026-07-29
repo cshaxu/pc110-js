@@ -623,6 +623,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   signed-product overflow classification across both existing address sizes.
 - M2 T2 S3 P229 adds single-operand 32-bit `IMUL r/m32` (`66 F7 /5`), writing
   the complete product to EDX:EAX and classifying 32-bit signed overflow.
+- M2 T2 S3 P230 completes the selected operand-size-overridden dword Group 3
+  arithmetic forms: `NOT`, `NEG`, `MUL`, `IMUL`, `DIV`, and `IDIV`
+  (`66 F7 /2-/7`). The shared execution path accepts both existing effective
+  address sizes, writes implicit EDX:EAX results, and routes zero-divisor or
+  quotient-overflow cases through the existing divide-error delivery boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

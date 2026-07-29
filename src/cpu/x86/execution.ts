@@ -1338,14 +1338,14 @@ function executeDwordGroupOneImmediate(
   state.advanceEip(immediateOffset + immediateBytes);
 }
 
-function executeDwordTestImmediateModRm(
+function executeDwordF7(
   memory: InstructionMemory,
   state: Cpu386State,
   modRmOffset: number,
-  addressSize: 16 | 32
+  addressSize: 16 | 32,
+  faultInstructionPointer: number
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
-  if (modRm.reg !== 0x00) throw new UnsupportedOpcodeError("Unsupported dword F7 opcode form");
   const address: DecodedMemoryAddress | undefined = modRm.registerDirect
     ? undefined
     : addressSize === 16
@@ -1365,9 +1365,84 @@ function executeDwordTestImmediateModRm(
   const operand = modRm.registerDirect
     ? state.readRegister(modRm.rm)
     : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
-  const immediate = fetchCodeUint32(memory, state, modRmOffset + 1 + addressBytes);
-  state.writeLogicFlags32(operand & immediate);
-  state.advanceEip(modRmOffset + 5 + addressBytes);
+  const instructionBytes = modRmOffset + 1 + addressBytes;
+  const writeOperand = (value: number): void => {
+    if (modRm.registerDirect) state.writeRegister(modRm.rm, value);
+    else writeSegmentUint32(memory, state, address!.segment, address!.offset, value, addressSize);
+  };
+
+  switch (modRm.reg) {
+    case 0x00: {
+      const immediate = fetchCodeUint32(memory, state, instructionBytes);
+      state.writeLogicFlags32(operand & immediate);
+      state.advanceEip(instructionBytes + 4);
+      return;
+    }
+    case 0x02:
+      writeOperand(~operand);
+      state.advanceEip(instructionBytes);
+      return;
+    case 0x03:
+      writeOperand(-operand);
+      state.writeCompareFlags32(0, operand);
+      state.advanceEip(instructionBytes);
+      return;
+    case 0x04: {
+      const product = BigInt(state.readRegister(0)) * BigInt(operand);
+      state.writeRegister(0, Number(BigInt.asUintN(32, product)));
+      state.writeRegister(2, Number(BigInt.asUintN(32, product >> 32n)));
+      state.writeMultiplyFlags32(Number(BigInt.asUintN(32, product >> 32n)));
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    case 0x05: {
+      const product =
+        BigInt.asIntN(32, BigInt(state.readRegister(0))) * BigInt.asIntN(32, BigInt(operand));
+      state.writeRegister(0, Number(BigInt.asUintN(32, product)));
+      state.writeRegister(2, Number(BigInt.asUintN(32, product >> 32n)));
+      state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    case 0x06: {
+      const dividend = (BigInt(state.readRegister(2)) << 32n) | BigInt(state.readRegister(0));
+      if (operand === 0) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      const quotient = dividend / BigInt(operand);
+      if (quotient > 0xffffffffn) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      state.writeRegister(0, Number(quotient));
+      state.writeRegister(2, Number(dividend % BigInt(operand)));
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    case 0x07: {
+      const divisor = BigInt.asIntN(32, BigInt(operand));
+      const dividend = BigInt.asIntN(
+        64,
+        (BigInt(state.readRegister(2)) << 32n) | BigInt(state.readRegister(0))
+      );
+      if (divisor === 0n) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      const quotient = dividend / divisor;
+      if (quotient < -0x80000000n || quotient > 0x7fffffffn) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      state.writeRegister(0, Number(BigInt.asUintN(32, quotient)));
+      state.writeRegister(2, Number(BigInt.asUintN(32, dividend % divisor)));
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    default:
+      throw new UnsupportedOpcodeError("Unsupported dword F7 opcode form");
+  }
 }
 
 function executeDwordImmediateImul(
@@ -1406,40 +1481,6 @@ function executeDwordImmediateImul(
   state.writeRegister(modRm.reg, Number(BigInt.asUintN(32, product)));
   state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
   state.advanceEip(immediateOffset + (opcode === 0x69 ? 4 : 1));
-}
-
-function executeDwordSingleImul(
-  memory: InstructionMemory,
-  state: Cpu386State,
-  modRmOffset: number,
-  addressSize: 16 | 32
-): void {
-  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
-  if (modRm.reg !== 0x05) throw new UnsupportedOpcodeError("Unsupported dword F7 opcode form");
-  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
-    ? undefined
-    : addressSize === 16
-      ? decodeModRm16Address(
-          modRm,
-          (index) => state.readRegister16(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        )
-      : decodeModRm32Address(
-          modRm,
-          (index) => state.readRegister(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        );
-  const sibBytes =
-    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
-  const operand = modRm.registerDirect
-    ? state.readRegister(modRm.rm)
-    : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
-  const product =
-    BigInt.asIntN(32, BigInt(state.readRegister(0))) * BigInt.asIntN(32, BigInt(operand));
-  state.writeRegister(0, Number(BigInt.asUintN(32, product)));
-  state.writeRegister(2, Number(BigInt.asUintN(32, product >> 32n)));
-  state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
-  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
 }
 
 function executeDwordImul(
@@ -2261,10 +2302,7 @@ export function stepInstruction(
         return { halted: false, fetched };
       }
       if (opcode === 0xf7) {
-        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
-        if (modRm.reg === 0x00) executeDwordTestImmediateModRm(memory, state, 2, 16);
-        else if (modRm.reg === 0x05) executeDwordSingleImul(memory, state, 2, 16);
-        else throw new UnsupportedOpcodeError("Unsupported dword F7 opcode form");
+        executeDwordF7(memory, state, 2, 16, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       if (opcode === 0x69 || opcode === 0x6b) {
@@ -2533,7 +2571,7 @@ export function stepInstruction(
       if (opcode === 0x67) {
         const overriddenOpcode = fetchCodeByte(memory, state, 2).opcode;
         if (overriddenOpcode === 0xf7) {
-          executeDwordTestImmediateModRm(memory, state, 3, 32);
+          executeDwordF7(memory, state, 3, 32, fetched.instructionPointer);
           return { halted: false, fetched };
         }
         if (overriddenOpcode === 0x69 || overriddenOpcode === 0x6b) {

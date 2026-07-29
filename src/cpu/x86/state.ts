@@ -396,6 +396,12 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeMultiplyFlags32(highDword: number): void {
+    let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_OVERFLOW);
+    if (highDword >>> 0 !== 0) flags |= EFLAGS_CARRY | EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeSignedMultiplyFlags16(overflow: boolean): void {
     let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_OVERFLOW);
     if (overflow) flags |= EFLAGS_CARRY | EFLAGS_OVERFLOW;
