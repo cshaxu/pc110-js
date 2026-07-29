@@ -230,6 +230,19 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeShiftLeftFlags8(value: number): void {
+    const source = value & 0xff;
+    const result = (source << 1) & 0xff;
+    const carry = Boolean(source & 0x80);
+    let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (carry) flags |= EFLAGS_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    if (Boolean(result & 0x80) !== carry) flags |= EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public loadRealModeCodeSegment(selector: number, instructionPointer: number): void {
     this.cs = {
       selector: selector & 0xffff,

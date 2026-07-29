@@ -30,7 +30,8 @@
   reset-ROM path. ModR/M field decoding and register-form MOV/XOR support the
   next observed ROM sequence. Register-byte CMP derives 8-bit subtraction flags
   for following JBE and JNZ conditional branches; byte-register XOR uses the
-  same logic-flag contract.
+  same logic-flag contract. The observed byte shift updates its defined flags,
+  and JCXZ uses the 16-bit count register.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

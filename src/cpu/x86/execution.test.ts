@@ -245,6 +245,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff6);
   });
 
+  it("executes SHL r8, 1 and branches with JCXZ", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xd0],
+      [0x000ffff1, 0xe3],
+      [0x000ffff2, 0xe3],
+      [0x000ffff3, 0x02]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    state.writeRegister8(3, 0x80);
+    state.writeRegister16(1, 0);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0 }, eflags: 0x00000847 });
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x0000fff6);
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],

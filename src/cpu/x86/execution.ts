@@ -184,6 +184,17 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0xd0: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect || modRm.reg !== 0x04)
+        throw new UnsupportedOpcodeError("Unsupported D0 opcode form");
+      const source = state.readRegister8(modRm.rm);
+      const result = (source << 1) & 0xff;
+      state.writeRegister8(modRm.rm, result);
+      state.writeShiftLeftFlags8(source);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0xe9: {
       const displacement = signedWord(fetchCodeUint16(memory, state, 1));
       state.writeEip16(fetched.instructionPointer + 3 + displacement);
@@ -200,6 +211,13 @@ export function stepInstruction(
       state.writeRegister16(1, count);
       if (count === 0) state.advanceEip(2);
       else state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      return { halted: false, fetched };
+    }
+    case 0xe3: {
+      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
+      if (state.readRegister16(1) === 0)
+        state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      else state.advanceEip(2);
       return { halted: false, fetched };
     }
     case 0x75: {

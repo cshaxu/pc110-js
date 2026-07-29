@@ -128,4 +128,11 @@ describe("Cpu386State", () => {
     expect(cpu.zeroFlag()).toBe(false);
     expect(cpu.carryFlag()).toBe(true);
   });
+
+  it("sets carry and overflow for a single-bit left shift", () => {
+    const cpu = new Cpu386State();
+    cpu.writeShiftLeftFlags8(0x80);
+
+    expect(cpu.snapshot().eflags).toBe(0x00000847);
+  });
 });
