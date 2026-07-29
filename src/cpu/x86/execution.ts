@@ -1375,6 +1375,11 @@ export function stepInstruction(
     }
     case 0x66: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode >= 0xb8 && opcode <= 0xbf) {
+        state.writeRegister(opcode - 0xb8, fetchCodeUint32(memory, state, 2));
+        state.advanceEip(6);
+        return { halted: false, fetched };
+      }
       const accumulator = state.readRegister(0);
       const immediate = fetchCodeUint32(memory, state, 2);
       const carry = state.carryFlag() ? 1 : 0;

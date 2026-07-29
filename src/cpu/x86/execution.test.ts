@@ -987,6 +987,34 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffffffff }, eflags: 0x00000046 });
   });
 
+  it("loads complete 32-bit values through operand-size-overridden MOV immediates", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0xb8],
+      [0x00000002, 0x78],
+      [0x00000003, 0x56],
+      [0x00000004, 0x34],
+      [0x00000005, 0x12],
+      [0x00000006, 0x66],
+      [0x00000007, 0xbf],
+      [0x00000008, 0xef],
+      [0x00000009, 0xcd],
+      [0x0000000a, 0xab],
+      [0x0000000b, 0x89]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x12345678, edi: 0x89abcdef },
+      eip: 0x0000000c
+    });
+  });
+
   it("returns from the observed protected-mode sequence through a real-mode far jump", () => {
     const values = new Map<number, number>([
       [0x00002000, 0xb8],
