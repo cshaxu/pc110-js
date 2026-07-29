@@ -521,6 +521,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   directions (`66 11/13/19/1B`), preserving the incoming carry as an explicit
   arithmetic operand and using the established 32-bit flag contracts. The
   regression covers register and memory destinations through both address sizes.
+- M2 T2 S3 P196 extends the same path with PCjs-selected OR, AND, XOR, and CMP
+  directions (`66 09/0B/21/23/31/33/39/3B`). Logical forms use the project
+  dword logic-flag contract; CMP retains both operands and updates comparison
+  flags only.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

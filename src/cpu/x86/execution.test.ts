@@ -2838,6 +2838,60 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("applies 32-bit ModR/M logical and compare operations through both address sizes", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x0b],
+      [0x0002, 0xc3],
+      [0x0003, 0x66],
+      [0x0004, 0x21],
+      [0x0005, 0x06],
+      [0x0006, 0x00],
+      [0x0007, 0x20],
+      [0x0008, 0x66],
+      [0x0009, 0x33],
+      [0x000a, 0xc3],
+      [0x000b, 0x66],
+      [0x000c, 0x3b],
+      [0x000d, 0xc3],
+      [0x000e, 0x66],
+      [0x000f, 0x67],
+      [0x0010, 0x31],
+      [0x0011, 0x06],
+      [0x2000, 0xff],
+      [0x2001, 0xff],
+      [0x2002, 0xff],
+      [0x2003, 0xff],
+      [0x12000, 0x0f],
+      [0x12001, 0x0f],
+      [0x12002, 0x0f],
+      [0x12003, 0x0f]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(0, 0x0000ff00);
+    state.writeRegister(3, 0x0f0f000f);
+    state.writeRegister(6, 0x12000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(0x0f0fff0f);
+    stepInstruction(memory, state);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x2000 + offset))).toEqual([
+      0x0f, 0xff, 0x0f, 0x0f
+    ]);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(0x0000ff00);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x0000ff00 }, eflags: 0x00000093 });
+    stepInstruction(memory, state);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x12000 + offset))).toEqual([
+      0x0f, 0xf0, 0x0f, 0x0f
+    ]);
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
