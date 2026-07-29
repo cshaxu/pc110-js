@@ -243,6 +243,9 @@
   logic-flag contracts.
 - M2 T2 S3 P107 adds the observed `ES:`-overridden `XOR r/m8, r8` form
   (`26 30 /r`) without widening unsupported segment-prefix handling.
+- M2 T2 S3 P108 adds `NOT` and `NEG` for 8-bit and 16-bit F6/F7 group operands
+  used by the DeskPro ROM. `NOT` preserves EFLAGS; `NEG` reuses the established
+  subtraction-flag contracts for `0 - operand`.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

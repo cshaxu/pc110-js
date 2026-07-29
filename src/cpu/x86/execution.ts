@@ -1593,7 +1593,13 @@ export function stepInstruction(
     }
     case 0xf7: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x00 && modRm.reg !== 0x04 && modRm.reg !== 0x06)
+      if (
+        modRm.reg !== 0x00 &&
+        modRm.reg !== 0x02 &&
+        modRm.reg !== 0x03 &&
+        modRm.reg !== 0x04 &&
+        modRm.reg !== 0x06
+      )
         throw new UnsupportedOpcodeError("Unsupported F7 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
       const operand = modRm.registerDirect
@@ -1603,6 +1609,14 @@ export function stepInstruction(
         const immediate = fetchCodeUint16(memory, state, 2 + (address?.displacementBytes ?? 0));
         state.writeLogicFlags16(operand & immediate);
         state.advanceEip(4 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
+      if (modRm.reg === 0x02 || modRm.reg === 0x03) {
+        const result = modRm.reg === 0x02 ? ~operand : -operand;
+        if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+        else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
+        if (modRm.reg === 0x03) state.writeCompareFlags16(0, operand);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }
       if (modRm.reg === 0x04) {
@@ -1630,11 +1644,20 @@ export function stepInstruction(
     }
     case 0xf6: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x00) throw new UnsupportedOpcodeError("Unsupported F6 opcode form");
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x03)
+        throw new UnsupportedOpcodeError("Unsupported F6 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
       const operand = modRm.registerDirect
         ? state.readRegister8(modRm.rm)
         : readSegmentUint8(memory, state, address!.segment, address!.offset);
+      if (modRm.reg === 0x02 || modRm.reg === 0x03) {
+        const result = modRm.reg === 0x02 ? ~operand : -operand;
+        if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+        else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
+        if (modRm.reg === 0x03) state.writeCompareFlags8(0, operand);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
       const immediate = fetchCodeByte(memory, state, 2 + (address?.displacementBytes ?? 0)).opcode;
       state.writeLogicFlags8(operand & immediate);
       state.advanceEip(3 + (address?.displacementBytes ?? 0));

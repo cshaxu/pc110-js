@@ -1759,6 +1759,51 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000086);
   });
 
+  it("NOTs and NEGates byte register and memory operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf6],
+      [0x000ffff1, 0xd0],
+      [0x000ffff2, 0xf6],
+      [0x000ffff3, 0x1e],
+      [0x000ffff4, 0x00],
+      [0x000ffff5, 0x20],
+      [0x00002000, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x0f);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xf0 }, eflags: 0x00000003 });
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(values.get(0x00002000)).toBe(0x80);
+    expect(state.snapshot().eflags).toBe(0x00000883);
+  });
+
+  it("NOTs and NEGates word register and memory operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf7],
+      [0x000ffff1, 0xd3],
+      [0x000ffff2, 0xf7],
+      [0x000ffff3, 0x1e],
+      [0x000ffff4, 0x00],
+      [0x000ffff5, 0x20],
+      [0x00002000, 0x01],
+      [0x00002001, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0x0f0f);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0xf0f0 }, eflags: 0x00000003 });
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect([values.get(0x00002000), values.get(0x00002001)]).toEqual([0xff, 0xff]);
+    expect(state.snapshot().eflags).toBe(0x00000097);
+  });
+
   it("compares byte and word register destinations with ModR/M sources", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x3a],
