@@ -1612,6 +1612,35 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0 }, eip: 0x0000fff6 });
   });
 
+  it("delivers real-mode overflow interrupts through INTO only when OF is set", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xce],
+      [0x00000010, 0x34],
+      [0x00000011, 0x12],
+      [0x00000012, 0x00],
+      [0x00000013, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ eip: 0x0000fff1, registers: { esp: 0x1000 } });
+
+    state.reset();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeEflags(0x00000802);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x2000 },
+      eip: 0x1234,
+      registers: { esp: 0x0ffa },
+      eflags: 0x00000802
+    });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

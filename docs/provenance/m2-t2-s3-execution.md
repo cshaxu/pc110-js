@@ -341,6 +341,10 @@
 - M2 T2 S3 P143 adds `LOOPNE` and `LOOPE` (`E0` and `E1`) from PCjs loop
   behavior: decrement CX, then branch only when the count remains nonzero and
   ZF satisfies the opcode condition. EFLAGS remain unchanged.
+- M2 T2 S3 P144 adds real-mode `INTO` (`CE`) from PCjs overflow-interrupt
+  behavior: advance normally when OF is clear, otherwise deliver vector 4
+  through the existing real-mode IVT path. Protected-mode delivery remains
+  explicitly unsupported.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
