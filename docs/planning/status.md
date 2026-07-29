@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T3 S1: add a project-owned command that serves and starts the selected
-  sibling PCjs machine in a browser.
+- M1 T3 S2: boot the selected PCjs reference machine in a normal local browser
+  and record BIOS, floppy, and DOS markers.
 
 ## Delivery Nodes
 

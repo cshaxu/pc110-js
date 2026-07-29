@@ -1,0 +1,16 @@
+{
+  "name": "pc110-js",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "reference": "npm run build && node dist/reference/reference-server.js --open",
+    "reference:serve": "npm run build && node dist/reference/reference-server.js"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.7.2"
+  }
+}
