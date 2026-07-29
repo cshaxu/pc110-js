@@ -1048,6 +1048,47 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("moves 32-bit operands through address-size overrides in protected mode", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x67],
+      [0x00000001, 0x66],
+      [0x00000002, 0x89],
+      [0x00000003, 0x1d],
+      [0x00000004, 0x00],
+      [0x00000005, 0x20],
+      [0x00000006, 0x01],
+      [0x00000007, 0x00],
+      [0x00000008, 0x66],
+      [0x00000009, 0x67],
+      [0x0000000a, 0x8b],
+      [0x0000000b, 0x0d],
+      [0x0000000c, 0x00],
+      [0x0000000d, 0x20],
+      [0x0000000e, 0x01],
+      [0x0000000f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff);
+    state.writeRegister(3, 0x12345678);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+
+    expect([
+      values.get(0x12000),
+      values.get(0x12001),
+      values.get(0x12002),
+      values.get(0x12003)
+    ]).toEqual([0x78, 0x56, 0x34, 0x12]);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0x12345678, ecx: 0x12345678 },
+      eip: 0x00000010
+    });
+  });
+
   it("returns from the observed protected-mode sequence through a real-mode far jump", () => {
     const values = new Map<number, number>([
       [0x00002000, 0xb8],

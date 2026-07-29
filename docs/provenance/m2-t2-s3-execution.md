@@ -432,6 +432,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   the PCjs selected address-size behavior: it records SIB and displacement
   lengths separately and applies the 80386 default SS selection for EBP/ESP
   bases. Execution integration remains later S3 work.
+- M2 T2 S3 P172 connects `67` plus `66 89/8B` to the project 32-bit address
+  decoder, from PCjs's prefix-selected address and operand-size behavior. The
+  protected-mode regression covers both prefix orders and dword accesses above
+  `0xffff`; real-mode 32-bit offset behavior remains unimplemented pending a
+  focused PCjs comparison.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
