@@ -860,6 +860,23 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0xd4: {
+      const divisor = fetchCodeByte(memory, state, 1).opcode;
+      if (divisor === 0) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+          throw new DivideError("Protected-mode divide-error delivery is not implemented");
+        deliverRealModeInterrupt(memory, state, 0, fetched.instructionPointer);
+        return { halted: false, fetched };
+      }
+      const accumulator = state.readRegister8(0);
+      const quotient = Math.floor(accumulator / divisor);
+      const remainder = accumulator % divisor;
+      state.writeRegister16(0, (quotient << 8) | remainder);
+      state.writeDecimalAdjustFlags8(remainder, false, false);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0x90:
       state.advanceEip(1);
       return { halted: false, fetched };

@@ -321,6 +321,9 @@
 - M2 T2 S3 P136 adds `WAIT/FWAIT` (`9B`) from PCjs `opWAIT`'s no-FPU path.
   The selected DeskPro ROM contains `9B` in its coprocessor state path. Until
   M2 models an FPU device, the instruction advances EIP without changing state.
+- M2 T2 S3 P137 adds `AAM imm8` (`D4 ib`) from PCjs `opAAM`: divide AL into
+  AH quotient and AL remainder, update the PCjs logical result flags, and use
+  the existing real-mode divide-error delivery path for a zero divisor.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
