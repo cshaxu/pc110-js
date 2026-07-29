@@ -777,7 +777,7 @@ function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 
 function executeByteAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  operation: "add" | "sub",
+  operation: "add" | "adc" | "sub" | "sbb",
   destinationIsMemory: boolean
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
@@ -799,12 +799,16 @@ function executeByteAluModRm(
       source = readSegmentUint8(memory, state, address.segment, address.offset);
     }
   }
-  const result = operation === "add" ? destination + source : destination - source;
+  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
+  const result =
+    operation === "add" || operation === "adc"
+      ? destination + source + carry
+      : destination - source - carry;
   if (modRm.registerDirect || !destinationIsMemory)
     state.writeRegister8(destinationRegister, result);
   else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
-  if (operation === "add") state.writeAddFlags8(destination, source);
-  else state.writeCompareFlags8(destination, source);
+  if (operation === "add" || operation === "adc") state.writeAddFlags8(destination, source, carry);
+  else state.writeCompareFlags8(destination, source, carry);
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
@@ -1965,19 +1969,18 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
-    case 0x12: {
-      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
-      const source = modRm.registerDirect
-        ? state.readRegister8(modRm.rm)
-        : readSegmentUint8(memory, state, address!.segment, address!.offset);
-      const destination = state.readRegister8(modRm.reg);
-      const carry = state.carryFlag() ? 1 : 0;
-      state.writeRegister8(modRm.reg, destination + source + carry);
-      state.writeAddFlags8(destination, source, carry);
-      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+    case 0x10:
+      executeByteAluModRm(memory, state, "adc", true);
       return { halted: false, fetched };
-    }
+    case 0x12:
+      executeByteAluModRm(memory, state, "adc", false);
+      return { halted: false, fetched };
+    case 0x18:
+      executeByteAluModRm(memory, state, "sbb", true);
+      return { halted: false, fetched };
+    case 0x1a:
+      executeByteAluModRm(memory, state, "sbb", false);
+      return { halted: false, fetched };
     case 0x14: {
       const accumulator = state.readRegister8(0);
       const immediate = fetchCodeByte(memory, state, 1).opcode;

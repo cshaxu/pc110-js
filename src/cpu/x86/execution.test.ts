@@ -735,6 +735,40 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000093);
   });
 
+  it("applies carry and borrow across all byte ADC and SBB ModR/M directions", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x10],
+      [0x00000001, 0xd8],
+      [0x00000002, 0x12],
+      [0x00000003, 0x1e],
+      [0x00000004, 0x00],
+      [0x00000005, 0x20],
+      [0x00000006, 0x18],
+      [0x00000007, 0xd8],
+      [0x00000008, 0x1a],
+      [0x00000009, 0x1e],
+      [0x0000000a, 0x02],
+      [0x0000000b, 0x20],
+      [0x00002000, 0xff],
+      [0x00002002, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister8(0, 0xff);
+    state.writeRegister8(3, 1);
+    state.writeEflags(0x00000003);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 1 }, eflags: 0x00000013 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 1 }, eflags: 0x00000013 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xff }, eflags: 0x00000097 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0 }, eflags: 0x00000046 });
+  });
+
   it("moves CR0 through register-direct MOV forms", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

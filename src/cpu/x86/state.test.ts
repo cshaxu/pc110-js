@@ -182,6 +182,9 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x00000857);
     cpu.writeMultiplyFlags16(0);
     expect(cpu.snapshot().eflags).toBe(0x00000056);
+
+    cpu.writeAddFlags8(0x01, 0xff, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000013);
   });
 
   it("sets 16-bit comparison flags without modifying operands", () => {
@@ -213,6 +216,9 @@ describe("Cpu386State", () => {
     cpu.writeAddFlags16(0xffff, 0x0000, 1);
 
     expect(cpu.snapshot().eflags).toBe(0x00000057);
+
+    cpu.writeAddFlags16(0x0001, 0xffff, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000013);
   });
 
   it("sets carry and overflow for a single-bit left shift", () => {
