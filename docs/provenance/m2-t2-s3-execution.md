@@ -58,6 +58,8 @@
   the project-owned writable-memory boundary.
 - M2 T2 S3 P28 adds real-mode 16-bit general-register `PUSH` and `POP` through
   the same stack boundary.
+- M2 T2 S3 P29 adds direction-flag control and real-mode `REP STOSW` through
+  the project-owned ES:DI writable-memory boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

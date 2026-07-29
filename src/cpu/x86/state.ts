@@ -47,6 +47,7 @@ const CR0_MSW_ALWAYS_ON = 0x0000fff0;
 const CR0_PROTECTED_MODE = 0x00000001;
 const EFLAGS_STATUS_MASK = 0x000000d5;
 const EFLAGS_INTERRUPT_ENABLE = 0x00000200;
+const EFLAGS_DIRECTION = 0x00000400;
 const EFLAGS_LOGIC_MASK = 0x000008c5;
 const EFLAGS_ARITHMETIC_MASK = 0x000008d5;
 const EFLAGS_CARRY = 0x00000001;
@@ -151,6 +152,18 @@ export class Cpu386State {
 
   public clearInterruptFlag(): void {
     this.eflags = (this.eflags & ~EFLAGS_INTERRUPT_ENABLE) >>> 0;
+  }
+
+  public clearDirectionFlag(): void {
+    this.eflags = (this.eflags & ~EFLAGS_DIRECTION) >>> 0;
+  }
+
+  public setDirectionFlag(): void {
+    this.eflags = (this.eflags | EFLAGS_DIRECTION) >>> 0;
+  }
+
+  public directionFlag(): boolean {
+    return Boolean(this.eflags & EFLAGS_DIRECTION);
   }
 
   public writeLogicFlags8(value: number): void {

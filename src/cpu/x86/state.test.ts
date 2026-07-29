@@ -86,6 +86,14 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x000000d7);
   });
 
+  it("controls the direction flag independently", () => {
+    const cpu = new Cpu386State();
+    cpu.setDirectionFlag();
+    expect(cpu.directionFlag()).toBe(true);
+    cpu.clearDirectionFlag();
+    expect(cpu.directionFlag()).toBe(false);
+  });
+
   it("loads an MSW while preserving protected mode and fixed status bits", () => {
     const cpu = new Cpu386State();
     cpu.writeCr0(0x7fff0001);

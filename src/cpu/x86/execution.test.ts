@@ -520,6 +520,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xbeef, esp: 0x1000 } });
   });
 
+  it("clears direction and repeats STOSW through ES:DI", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xfc],
+      [0x000ffff1, 0xf3],
+      [0x000ffff2, 0xab]
+    ]);
+    const state = new Cpu386State();
+    state.setDirectionFlag();
+    state.writeRegister16(0, 0x1234);
+    state.writeRegister16(1, 2);
+    state.writeRegister16(7, 0x0100);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect([values.get(0x100), values.get(0x101), values.get(0x102), values.get(0x103)]).toEqual([
+      0x34, 0x12, 0x34, 0x12
+    ]);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0, edi: 0x0104 } });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

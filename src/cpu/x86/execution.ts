@@ -62,7 +62,7 @@ function fetchCodeUint16(
 function readSegmentUint16(
   memory: InstructionMemory,
   state: Cpu386State,
-  segment: "cs" | "ds" | "ss",
+  segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
   offset: number
 ): number {
   const snapshot = state.snapshot();
@@ -76,7 +76,7 @@ function readSegmentUint16(
 function readSegmentUint8(
   memory: InstructionMemory,
   state: Cpu386State,
-  segment: "cs" | "ds" | "ss",
+  segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
   offset: number
 ): number {
   const snapshot = state.snapshot();
@@ -91,7 +91,7 @@ function readSegmentUint8(
 function writeSegmentUint16(
   memory: InstructionMemory,
   state: Cpu386State,
-  segment: "cs" | "ds" | "ss",
+  segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
   offset: number,
   value: number
 ): void {
@@ -106,7 +106,7 @@ function writeSegmentUint16(
 function writeSegmentUint8(
   memory: InstructionMemory,
   state: Cpu386State,
-  segment: "cs" | "ds" | "ss",
+  segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
   offset: number,
   value: number
 ): void {
@@ -315,6 +315,14 @@ export function stepInstruction(
       state.advanceEip(1);
       return { halted: false, fetched };
     }
+    case 0xfc:
+      state.clearDirectionFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    case 0xfd:
+      state.setDirectionFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0xea: {
       const snapshot = state.snapshot();
       if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
@@ -329,6 +337,22 @@ export function stepInstruction(
       if (opcode === 0xff) executeMemoryFarJump(memory, state, 2, "cs");
       else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
       else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
+      return { halted: false, fetched };
+    }
+    case 0xf3: {
+      const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode !== 0xab) throw new UnsupportedOpcodeError("Unsupported REP instruction");
+      let count = state.readRegister16(1);
+      let destination = state.readRegister16(7);
+      const step = state.directionFlag() ? -2 : 2;
+      while (count > 0) {
+        writeSegmentUint16(memory, state, "es", destination, state.readRegister16(0));
+        destination = (destination + step) & 0xffff;
+        count -= 1;
+      }
+      state.writeRegister16(7, destination);
+      state.writeRegister16(1, count);
+      state.advanceEip(2);
       return { halted: false, fetched };
     }
     case 0x0f: {
