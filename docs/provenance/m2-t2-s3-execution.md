@@ -505,6 +505,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P190 adds operand-size-overridden general-register `PUSH` and
   `POP` (`66 50-5F`) from the PCjs register-stack opcode family. `PUSH ESP`
   saves the pre-decrement value and `POP ESP` retains the popped value.
+- M2 T2 S3 P191 adds operand-size-overridden general-register `INC` and `DEC`
+  (`66 40-4F`) from PCjs's register arithmetic family. The 32-bit flag helpers
+  update OF, AF, SF, ZF, and PF while preserving CF.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

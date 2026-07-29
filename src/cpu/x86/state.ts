@@ -453,6 +453,18 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeIncrementFlags32(value: number): void {
+    const source = value >>> 0;
+    const result = (source + 1) >>> 0;
+    let flags = this.eflags & ~(EFLAGS_ARITHMETIC_MASK & ~EFLAGS_CARRY);
+    if (source === 0x7fffffff) flags |= EFLAGS_OVERFLOW;
+    if ((source & 0x0f) === 0x0f) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80000000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeIncrementFlags8(value: number): void {
     const source = value & 0xff;
     const result = (source + 1) & 0xff;
@@ -485,6 +497,18 @@ export class Cpu386State {
     if ((source & 0x0f) === 0x00) flags |= EFLAGS_AUXILIARY_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x8000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeDecrementFlags32(value: number): void {
+    const source = value >>> 0;
+    const result = (source - 1) >>> 0;
+    let flags = this.eflags & ~(EFLAGS_ARITHMETIC_MASK & ~EFLAGS_CARRY);
+    if (source === 0x80000000) flags |= EFLAGS_OVERFLOW;
+    if ((source & 0x0f) === 0x00) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80000000) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }

@@ -1602,6 +1602,22 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if (opcode >= 0x40 && opcode <= 0x47) {
+        const register = opcode - 0x40;
+        const value = state.readRegister(register);
+        state.writeRegister(register, value + 1);
+        state.writeIncrementFlags32(value);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
+      if (opcode >= 0x48 && opcode <= 0x4f) {
+        const register = opcode - 0x48;
+        const value = state.readRegister(register);
+        state.writeRegister(register, value - 1);
+        state.writeDecrementFlags32(value);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (opcode === 0x60 || opcode === 0x61) {
         const snapshot = state.snapshot();
         if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)

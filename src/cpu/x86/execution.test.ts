@@ -2674,6 +2674,23 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x12345678, esp: 0x3000 } });
   });
 
+  it("increments and decrements 32-bit registers while preserving carry", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x66],
+      [0x000ffff1, 0x40],
+      [0x000ffff2, 0x66],
+      [0x000ffff3, 0x48]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister(0, 0x7fffffff);
+    state.writeEflags(0x00000003);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80000000 }, eflags: 0x00000897 });
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x7fffffff }, eflags: 0x00000817 });
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
