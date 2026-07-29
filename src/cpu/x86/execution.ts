@@ -1,6 +1,6 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeModRm, decodeModRm16Address } from "./modrm.js";
-import type { Cpu386State, LoadableSegment } from "./state.js";
+import type { Cpu386Snapshot, Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
   readUint8(linearAddress: number): number;
@@ -22,6 +22,14 @@ export interface ExecutionResult {
   readonly halted: boolean;
   readonly fetched?: FetchedOpcode;
 }
+
+export interface InstructionTraceEvent {
+  readonly before: Cpu386Snapshot;
+  readonly after: Cpu386Snapshot;
+  readonly result: ExecutionResult;
+}
+
+export type InstructionTrace = (event: InstructionTraceEvent) => void;
 
 export class UnsupportedOpcodeError extends Error {}
 
@@ -857,4 +865,16 @@ export function stepInstruction(
         `Unsupported opcode 0x${fetched.opcode.toString(16).padStart(2, "0")}`
       );
   }
+}
+
+export function stepInstructionTraced(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  ports?: PortIo,
+  trace?: InstructionTrace
+): ExecutionResult {
+  const before = state.snapshot();
+  const result = stepInstruction(memory, state, ports);
+  trace?.({ before, after: state.snapshot(), result });
+  return result;
 }

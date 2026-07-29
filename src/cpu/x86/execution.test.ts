@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { fetchOpcode, stepInstruction, UnsupportedOpcodeError } from "./execution.js";
+import {
+  fetchOpcode,
+  stepInstruction,
+  stepInstructionTraced,
+  type InstructionTraceEvent,
+  UnsupportedOpcodeError
+} from "./execution.js";
 import { Cpu386State } from "./state.js";
 
 function resetAliasMemory(values: Map<number, number>) {
@@ -33,6 +39,23 @@ describe("80386 instruction fetch", () => {
       fetched: { linearAddress: 0xfffffff0, instructionPointer: 0x0000fff0, opcode: 0x90 }
     });
     expect(state.snapshot().eip).toBe(0x0000fff1);
+  });
+
+  it("emits an instruction trace with the before and after CPU states", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0x90]]);
+    const state = new Cpu386State();
+    const events: InstructionTraceEvent[] = [];
+
+    stepInstructionTraced(resetAliasMemory(values), state, undefined, (event) =>
+      events.push(event)
+    );
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      before: { eip: 0x0000fff0 },
+      after: { eip: 0x0000fff1 },
+      result: { halted: false, fetched: { opcode: 0x90 } }
+    });
   });
 
   it("halts after HLT and does not fetch again until resumed", () => {
