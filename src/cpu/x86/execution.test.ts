@@ -169,6 +169,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff4);
   });
 
+  it("decrements CX and loops while the 16-bit count remains nonzero", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xb9],
+      [0x000ffff1, 0x02],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0xe2],
+      [0x000ffff4, 0xfe]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 1 }, eip: 0x0000fff3 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0 }, eip: 0x0000fff5 });
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],
