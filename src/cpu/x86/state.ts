@@ -402,6 +402,12 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeSignedMultiplyFlags32(overflow: boolean): void {
+    let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_OVERFLOW);
+    if (overflow) flags |= EFLAGS_CARRY | EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeCompareFlags16(left: number, right: number, borrow = 0): void {
     const leftWord = left & 0xffff;
     const rightWord = right & 0xffff;

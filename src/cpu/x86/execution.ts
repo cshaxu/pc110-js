@@ -1370,6 +1370,44 @@ function executeDwordTestImmediateModRm(
   state.advanceEip(modRmOffset + 5 + addressBytes);
 }
 
+function executeDwordImmediateImul(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  opcode: 0x69 | 0x6b,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
+    ? undefined
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
+  const addressBytes = (address?.displacementBytes ?? 0) + sibBytes;
+  const source = modRm.registerDirect
+    ? state.readRegister(modRm.rm)
+    : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
+  const immediateOffset = modRmOffset + 1 + addressBytes;
+  const immediate =
+    opcode === 0x69
+      ? fetchCodeUint32(memory, state, immediateOffset)
+      : signedByte(fetchCodeByte(memory, state, immediateOffset).opcode) >>> 0;
+  const product = BigInt.asIntN(32, BigInt(source)) * BigInt.asIntN(32, BigInt(immediate));
+  state.writeRegister(modRm.reg, Number(BigInt.asUintN(32, product)));
+  state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
+  state.advanceEip(immediateOffset + (opcode === 0x69 ? 4 : 1));
+}
+
 function executeMovImmediateDwordModRm(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2160,6 +2198,10 @@ export function stepInstruction(
         executeDwordTestImmediateModRm(memory, state, 2, 16);
         return { halted: false, fetched };
       }
+      if (opcode === 0x69 || opcode === 0x6b) {
+        executeDwordImmediateImul(memory, state, opcode, 2, 16);
+        return { halted: false, fetched };
+      }
       if (opcode === 0xc7) {
         executeMovImmediateDwordModRm(memory, state, 2, 16);
         return { halted: false, fetched };
@@ -2419,6 +2461,10 @@ export function stepInstruction(
         const overriddenOpcode = fetchCodeByte(memory, state, 2).opcode;
         if (overriddenOpcode === 0xf7) {
           executeDwordTestImmediateModRm(memory, state, 3, 32);
+          return { halted: false, fetched };
+        }
+        if (overriddenOpcode === 0x69 || overriddenOpcode === 0x6b) {
+          executeDwordImmediateImul(memory, state, overriddenOpcode, 3, 32);
           return { halted: false, fetched };
         }
         if (overriddenOpcode === 0xc7) {

@@ -6076,4 +6076,30 @@ describe("80386 instruction fetch", () => {
     expect(() => stepInstruction(memory, state)).toThrow(UnsupportedOpcodeError);
     expect(state.snapshot().eip).toBe(0x0000fff0);
   });
+
+  it("multiplies 32-bit operands by immediate dwords and signed bytes", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0x69],
+      [0x00000002, 0xc3],
+      [0x00000003, 0x03],
+      [0x00000004, 0x00],
+      [0x00000005, 0x00],
+      [0x00000006, 0x00],
+      [0x00000007, 0x66],
+      [0x00000008, 0x6b],
+      [0x00000009, 0xd3],
+      [0x0000000a, 0xfe]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(3, 0x40000000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xc0000000 }, eflags: 0x00000803 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0x80000000 }, eflags: 0x00000002 });
+  });
 });

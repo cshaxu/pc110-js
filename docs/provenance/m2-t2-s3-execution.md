@@ -617,6 +617,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P226 runs the local read-only selected DeskPro ROM through project-owned
   physical memory and CPU stepping. It supplies only deterministic zero-valued port reads
   for classification and does not claim device emulation or a firmware boot result.
+- M2 T2 S3 P227 adds 32-bit `IMUL r32,r/m32,imm32` and `IMUL r32,r/m32,imm8`
+  (`66 69` and `66 6B`) using exact signed-product overflow classification.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
