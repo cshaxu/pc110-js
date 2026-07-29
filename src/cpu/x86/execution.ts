@@ -530,7 +530,8 @@ function loadProtectedModeCodeSegment(
     loaded.selector,
     loaded.base,
     loaded.limit,
-    instructionPointer
+    instructionPointer,
+    loaded.default32
   );
 }
 
@@ -556,7 +557,13 @@ function loadProtectedModeSegment(
     descriptorMemory,
     { gdt: snapshot.gdtr }
   );
-  state.loadProtectedModeSegment(segment, loaded.selector, loaded.base, loaded.limit);
+  state.loadProtectedModeSegment(
+    segment,
+    loaded.selector,
+    loaded.base,
+    loaded.limit,
+    loaded.default32
+  );
 }
 
 function decodeMemoryAddress(

@@ -6,7 +6,8 @@ describe("SegmentRegister", () => {
     const register = new SegmentRegister();
     expect(register.load("real", 0x1234, "read", 0)).toMatchObject({
       base: 0x12340,
-      limit: 0xffff
+      limit: 0xffff,
+      default32: false
     });
     expect(register.load("virtual-8086", 0xf000, "execute", 3)).toMatchObject({ base: 0xf0000 });
   });
@@ -27,6 +28,7 @@ describe("SegmentRegister", () => {
       selector: 8,
       base: 0,
       limit: 0xffffffff,
+      default32: true,
       descriptor: { type: 0x0a, present: true }
     });
   });

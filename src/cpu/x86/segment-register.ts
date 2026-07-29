@@ -12,11 +12,12 @@ export interface LoadedSegment {
   readonly selector: number;
   readonly base: number;
   readonly limit: number;
+  readonly default32: boolean;
   readonly descriptor?: SegmentDescriptor;
 }
 
 export class SegmentRegister {
-  private loaded: LoadedSegment = { selector: 0, base: 0, limit: 0xffff };
+  private loaded: LoadedSegment = { selector: 0, base: 0, limit: 0xffff, default32: false };
 
   public load(
     mode: CpuAddressMode,
@@ -27,7 +28,12 @@ export class SegmentRegister {
     tables?: DescriptorTables
   ): LoadedSegment {
     if (mode === "real" || mode === "virtual-8086") {
-      this.loaded = { selector: selector & 0xffff, base: (selector & 0xffff) << 4, limit: 0xffff };
+      this.loaded = {
+        selector: selector & 0xffff,
+        base: (selector & 0xffff) << 4,
+        limit: 0xffff,
+        default32: false
+      };
       return this.snapshot();
     }
     if (!memory || !tables)
@@ -38,6 +44,7 @@ export class SegmentRegister {
       selector: descriptor.selector,
       base: descriptor.base,
       limit: descriptor.limit,
+      default32: descriptor.default32,
       descriptor
     };
     return this.snapshot();

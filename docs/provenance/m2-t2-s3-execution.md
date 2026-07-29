@@ -442,6 +442,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   and accepted gate types before extracting the gate selector, offset, DPL,
   present bit, size, and interrupt-versus-trap behavior; gate delivery remains
   later S3 work.
+- M2 T2 S3 P174 adds the segment-cache `D/B` attribute from PCjs's selected
+  protected-mode descriptor state. Project segment loads now retain descriptor
+  default32 state for later gate, stack, and control-transfer width selection.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

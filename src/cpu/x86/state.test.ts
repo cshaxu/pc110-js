@@ -15,10 +15,10 @@ describe("Cpu386State", () => {
       cr3: 0,
       gdtr: { base: 0, limit: 0 },
       idtr: { base: 0, limit: 0x3ff },
-      cs: { selector: 0xf000, base: 0xffff0000, limit: 0xffff },
-      ds: { selector: 0, base: 0, limit: 0xffff },
-      fs: { selector: 0, base: 0, limit: 0xffff },
-      gs: { selector: 0, base: 0, limit: 0xffff }
+      cs: { selector: 0xf000, base: 0xffff0000, limit: 0xffff, default32: false },
+      ds: { selector: 0, base: 0, limit: 0xffff, default32: false },
+      fs: { selector: 0, base: 0, limit: 0xffff, default32: false },
+      gs: { selector: 0, base: 0, limit: 0xffff, default32: false }
     });
   });
 
@@ -126,7 +126,23 @@ describe("Cpu386State", () => {
     const cpu = new Cpu386State();
     cpu.loadRealModeSegment("ds", 0x0040);
 
-    expect(cpu.snapshot().ds).toEqual({ selector: 0x0040, base: 0x0400, limit: 0xffff });
+    expect(cpu.snapshot().ds).toEqual({
+      selector: 0x0040,
+      base: 0x0400,
+      limit: 0xffff,
+      default32: false
+    });
+  });
+
+  it("retains protected-mode default operand and stack size in segment caches", () => {
+    const cpu = new Cpu386State();
+    cpu.loadProtectedModeCodeSegment(0x0008, 0x00100000, 0xffffffff, 0x12345678, true);
+    cpu.loadProtectedModeSegment("ss", 0x0010, 0x00200000, 0xffffffff, true);
+
+    expect(cpu.snapshot()).toMatchObject({
+      cs: { selector: 0x0008, base: 0x00100000, limit: 0xffffffff, default32: true },
+      ss: { selector: 0x0010, base: 0x00200000, limit: 0xffffffff, default32: true }
+    });
   });
 
   it("updates logic flags while preserving undefined auxiliary carry state", () => {

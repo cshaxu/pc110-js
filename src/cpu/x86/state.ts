@@ -16,6 +16,7 @@ export interface SegmentState {
   readonly selector: number;
   readonly base: number;
   readonly limit: number;
+  readonly default32: boolean;
 }
 
 export interface DescriptorTableState {
@@ -58,8 +59,18 @@ const EFLAGS_PARITY = 0x00000004;
 const EFLAGS_ZERO = 0x00000040;
 const EFLAGS_SIGN = 0x00000080;
 const EFLAGS_OVERFLOW = 0x00000800;
-const REAL_MODE_SEGMENT: SegmentState = { selector: 0, base: 0, limit: 0xffff };
-const RESET_CS: SegmentState = { selector: 0xf000, base: 0xffff0000, limit: 0xffff };
+const REAL_MODE_SEGMENT: SegmentState = {
+  selector: 0,
+  base: 0,
+  limit: 0xffff,
+  default32: false
+};
+const RESET_CS: SegmentState = {
+  selector: 0xf000,
+  base: 0xffff0000,
+  limit: 0xffff,
+  default32: false
+};
 
 function cloneSegment(segment: SegmentState): SegmentState {
   return { ...segment };
@@ -557,7 +568,8 @@ export class Cpu386State {
     this.cs = {
       selector: selector & 0xffff,
       base: (selector & 0xffff) << 4,
-      limit: 0xffff
+      limit: 0xffff,
+      default32: false
     };
     this.eip = instructionPointer & 0xffff;
   }
@@ -566,9 +578,15 @@ export class Cpu386State {
     selector: number,
     base: number,
     limit: number,
-    instructionPointer: number
+    instructionPointer: number,
+    default32 = false
   ): void {
-    this.cs = { selector: selector & 0xffff, base: base >>> 0, limit: limit >>> 0 };
+    this.cs = {
+      selector: selector & 0xffff,
+      base: base >>> 0,
+      limit: limit >>> 0,
+      default32
+    };
     this.eip = instructionPointer & 0xffff;
   }
 
@@ -577,7 +595,8 @@ export class Cpu386State {
     this[segment] = {
       selector: selector & 0xffff,
       base: (selector & 0xffff) << 4,
-      limit: existing.limit
+      limit: existing.limit,
+      default32: false
     };
   }
 
@@ -585,9 +604,15 @@ export class Cpu386State {
     segment: LoadableSegment,
     selector: number,
     base: number,
-    limit: number
+    limit: number,
+    default32 = false
   ): void {
-    this[segment] = { selector: selector & 0xffff, base: base >>> 0, limit: limit >>> 0 };
+    this[segment] = {
+      selector: selector & 0xffff,
+      base: base >>> 0,
+      limit: limit >>> 0,
+      default32
+    };
   }
 
   public halt(): void {
