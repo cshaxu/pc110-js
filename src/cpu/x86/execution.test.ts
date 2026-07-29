@@ -238,6 +238,20 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff4);
   });
 
+  it("takes JZ when TEST produces a zero result", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xa8],
+      [0x000ffff1, 0x04],
+      [0x000ffff2, 0x74],
+      [0x000ffff3, 0x02]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().eip).toBe(0x0000fff6);
+  });
+
   it("updates AL and status flags through immediate AND, OR, and CMP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x24],

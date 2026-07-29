@@ -451,6 +451,12 @@ export function stepInstruction(
       else state.writeEip16(fetched.instructionPointer + 2 + displacement);
       return { halted: false, fetched };
     }
+    case 0x74: {
+      const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
+      if (state.zeroFlag()) state.writeEip16(fetched.instructionPointer + 2 + displacement);
+      else state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0x76: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       if (state.carryFlag() || state.zeroFlag())

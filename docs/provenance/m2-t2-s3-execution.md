@@ -53,6 +53,7 @@
   16-bit addressing and writable-memory boundaries.
 - M2 T2 S3 P25 adds AL immediate `OR`, `AND`, and `CMP` with the shared 8-bit
   logic and comparison flag contracts used by ROM polling paths.
+- M2 T2 S3 P26 adds `JZ rel8` beside the existing zero-flag branch path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
