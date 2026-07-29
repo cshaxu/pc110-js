@@ -296,7 +296,7 @@
   forms (`D0 /2,/3`), preserving non-rotate flags and matching PCjs CF/OF
   updates.
 - M2 T2 S3 P128 adds observed direct-register `ROL r/m8, CL` and `ROL r/m16,
-  CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
+CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P129 adds observed CMPS and SCAS byte/word forms, including `REPE`
   and `REPNE` termination through DS:SI, ES:DI, CX, direction, and comparison
   flag contracts.
@@ -363,6 +363,10 @@
 - M2 T2 S3 P151 adds `IMUL r16,r/m16` (`0F AF`) from PCjs `fnIMULrw`:
   signed 16-bit multiplication writes the low word and sets CF/OF only when
   the mathematical product cannot fit in a signed 16-bit result.
+- M2 T2 S3 P152 adds `BT`, `BTS`, `BTR`, and `BTC` (`0F A3/AB/B3/BB`) from
+  PCjs `fnBTMem`, `fnBTSMem`, `fnBTRMem`, and `fnBTCMem`: they set CF from
+  the original selected bit, preserve all other flags, and apply full signed
+  register bit indexes when the destination is memory.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

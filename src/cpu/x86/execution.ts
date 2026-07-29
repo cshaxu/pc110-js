@@ -144,6 +144,48 @@ function writeSegmentUint8(
   );
 }
 
+function executeBitTest(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  extension: 0xa3 | 0xab | 0xb3 | 0xbb
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+  const address = modRm.registerDirect
+    ? undefined
+    : decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+      );
+  const source = state.readRegister16(modRm.reg);
+  const signedSource = (source << 16) >> 16;
+  const targetOffset = address
+    ? (address.offset + Math.floor(signedSource / 16) * 2) & 0xffff
+    : undefined;
+  const target = modRm.registerDirect
+    ? state.readRegister16(modRm.rm)
+    : readSegmentUint16(memory, state, address!.segment, targetOffset!);
+  const mask = 1 << (source & 0x0f);
+  if (target & mask) state.setCarryFlag();
+  else state.clearCarryFlag();
+
+  if (extension === 0xab) {
+    const result = target | mask;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+    else writeSegmentUint16(memory, state, address!.segment, targetOffset!, result);
+  } else if (extension === 0xb3) {
+    const result = target & ~mask;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+    else writeSegmentUint16(memory, state, address!.segment, targetOffset!, result);
+  } else if (extension === 0xbb) {
+    const result = target ^ mask;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+    else writeSegmentUint16(memory, state, address!.segment, targetOffset!, result);
+  }
+
+  state.advanceEip(3 + (address?.displacementBytes ?? 0));
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1323,6 +1365,10 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
+      if (extension === 0xa3 || extension === 0xab || extension === 0xb3 || extension === 0xbb) {
+        executeBitTest(memory, state, extension);
+        return { halted: false, fetched };
+      }
       if (extension === 0x20 || extension === 0x22) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
         if (!modRm.registerDirect || modRm.reg !== 0x00) {

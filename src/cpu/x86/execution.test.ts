@@ -1805,6 +1805,90 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000803 });
   });
 
+  it("tests, sets, resets, and complements register bits through 0F bit operations", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0xa3],
+      [0x000ffff2, 0xd8],
+      [0x000ffff3, 0x0f],
+      [0x000ffff4, 0xab],
+      [0x000ffff5, 0xd8],
+      [0x000ffff6, 0x0f],
+      [0x000ffff7, 0xb3],
+      [0x000ffff8, 0xd8],
+      [0x000ffff9, 0x0f],
+      [0x000ffffa, 0xbb],
+      [0x000ffffb, 0xd8]
+    ]);
+    const state = new Cpu386State();
+    state.writeEflags(0x000008d7);
+    state.writeRegister16(0, 0x8001);
+    state.writeRegister16(3, 1);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8001 }, eflags: 0x000008d6 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8003 }, eflags: 0x000008d6 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8001 }, eflags: 0x000008d7 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8003 }, eflags: 0x000008d6 });
+  });
+
+  it("uses full signed register bit indexes for memory bit operations", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0xa3],
+      [0x00000002, 0x0e],
+      [0x00000003, 0x00],
+      [0x00000004, 0x20],
+      [0x00000005, 0x0f],
+      [0x00000006, 0xab],
+      [0x00000007, 0x0e],
+      [0x00000008, 0x00],
+      [0x00000009, 0x20],
+      [0x0000000a, 0x0f],
+      [0x0000000b, 0xb3],
+      [0x0000000c, 0x0e],
+      [0x0000000d, 0x00],
+      [0x0000000e, 0x20],
+      [0x0000000f, 0x0f],
+      [0x00000010, 0xbb],
+      [0x00000011, 0x0e],
+      [0x00000012, 0x00],
+      [0x00000013, 0x20],
+      [0x00002002, 0x02],
+      [0x00002003, 0x00],
+      [0x00001ffe, 0x00],
+      [0x00001fff, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister16(1, 17);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().eflags).toBe(0x00000003);
+    stepInstruction(memory, state);
+    expect([values.get(0x2002), values.get(0x2003)]).toEqual([0x02, 0x00]);
+    stepInstruction(memory, state);
+    expect([values.get(0x2002), values.get(0x2003)]).toEqual([0x00, 0x00]);
+    stepInstruction(memory, state);
+    expect([values.get(0x2002), values.get(0x2003)]).toEqual([0x02, 0x00]);
+
+    state.writeRegister16(1, 0xffff);
+    values.set(0x00000000, 0x0f);
+    values.set(0x00000001, 0xb3);
+    values.set(0x00000002, 0x0e);
+    values.set(0x00000003, 0x00);
+    values.set(0x00000004, 0x20);
+    state.writeEip16(0);
+    stepInstruction(memory, state);
+    expect([values.get(0x1ffe), values.get(0x1fff)]).toEqual([0x00, 0x00]);
+    expect(state.snapshot().eflags).toBe(0x00000003);
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
