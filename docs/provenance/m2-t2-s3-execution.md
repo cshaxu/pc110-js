@@ -127,6 +127,8 @@
   stack descriptor loading; the DeskPro `0x08` data descriptor is covered.
 - M2 T2 S3 P64 adds the observed `ES:`-overridden byte `MOV r/m8, r8` form
   through the shared ModR/M write path and the cached protected ES base.
+- M2 T2 S3 P65 adds the observed operand-size-overridden `AND EAX, imm32`
+  (`66 25 id`) form and a shared 32-bit logic-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

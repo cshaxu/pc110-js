@@ -70,6 +70,20 @@ function fetchCodeUint16(
   return low | (high << 8);
 }
 
+function fetchCodeUint32(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  displacement: number
+): number {
+  return (
+    (fetchCodeByte(memory, state, displacement).opcode |
+      (fetchCodeByte(memory, state, displacement + 1).opcode << 8) |
+      (fetchCodeByte(memory, state, displacement + 2).opcode << 16) |
+      (fetchCodeByte(memory, state, displacement + 3).opcode << 24)) >>>
+    0
+  );
+}
+
 function readSegmentUint16(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -664,6 +678,15 @@ export function stepInstruction(
         );
       }
       state.advanceEip(3 + immediateBytes + address.displacementBytes);
+      return { halted: false, fetched };
+    }
+    case 0x66: {
+      const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode !== 0x25) throw new UnsupportedOpcodeError("Unsupported operand-size override");
+      const result = state.readRegister(0) & fetchCodeUint32(memory, state, 2);
+      state.writeRegister(0, result);
+      state.writeLogicFlags32(result);
+      state.advanceEip(6);
       return { halted: false, fetched };
     }
     case 0xf3: {

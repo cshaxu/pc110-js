@@ -457,6 +457,28 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("ANDs EAX with an immediate value through the observed operand-size override", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x66],
+      [0x000ffff1, 0x25],
+      [0x000ffff2, 0xfe],
+      [0x000ffff3, 0xff],
+      [0x000ffff4, 0xff],
+      [0x000ffff5, 0x7f]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeRegister(0, 0xffffffff);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0000fff6,
+      registers: { eax: 0x7ffffffe },
+      eflags: 0x00000002
+    });
+  });
+
   it("loads GDTR and IDTR through real-mode LGDT and LIDT memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

@@ -250,6 +250,15 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeLogicFlags32(value: number): void {
+    const result = value >>> 0;
+    let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80000000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeCompareFlags8(left: number, right: number): void {
     const leftByte = left & 0xff;
     const rightByte = right & 0xff;
