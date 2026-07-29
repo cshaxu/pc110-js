@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 completion: review the reference baseline gate, then create and verify the
-  immutable `m1` snapshot branch before beginning M2.
+- M1 snapshot transition: create and verify immutable `m1` from this final
+  reference-baseline commit before beginning M2.
 
 ## Delivery Nodes
 
