@@ -1834,6 +1834,26 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { edx: 0x00000000 }, eflags: 0x00000057 });
   });
 
+  it("multiplies and divides byte operands through AX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf6],
+      [0x000ffff1, 0xe3],
+      [0x000ffff2, 0xf6],
+      [0x000ffff3, 0xf1]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x10);
+    state.writeRegister8(3, 0x10);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00000100 }, eflags: 0x00000803 });
+
+    state.writeRegister16(0, 0x0101);
+    state.writeRegister8(1, 0x10);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().registers.eax).toBe(0x00000110);
+  });
+
   it("ANDs byte register destinations through an ES override", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

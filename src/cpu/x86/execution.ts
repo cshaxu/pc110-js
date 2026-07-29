@@ -1728,7 +1728,13 @@ export function stepInstruction(
     }
     case 0xf6: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x03)
+      if (
+        modRm.reg !== 0x00 &&
+        modRm.reg !== 0x02 &&
+        modRm.reg !== 0x03 &&
+        modRm.reg !== 0x04 &&
+        modRm.reg !== 0x06
+      )
         throw new UnsupportedOpcodeError("Unsupported F6 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
       const operand = modRm.registerDirect
@@ -1739,6 +1745,29 @@ export function stepInstruction(
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
         else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
         if (modRm.reg === 0x03) state.writeCompareFlags8(0, operand);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
+      if (modRm.reg === 0x04) {
+        const product = state.readRegister8(0) * operand;
+        state.writeRegister16(0, product);
+        state.writeMultiplyFlags16(product >>> 8);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
+      if (modRm.reg === 0x06) {
+        const divisor = operand;
+        const dividend = state.readRegister16(0);
+        const quotient = Math.floor(dividend / divisor);
+        if (divisor === 0 || quotient > 0xff) {
+          const snapshot = state.snapshot();
+          if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+            throw new DivideError("Protected-mode divide-error delivery is not implemented");
+          deliverRealModeInterrupt(memory, state, 0, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
+        state.writeRegister8(0, quotient);
+        state.writeRegister8(4, dividend % divisor);
         state.advanceEip(2 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }

@@ -259,6 +259,9 @@
   8-bit and 16-bit addition-flag contracts.
 - M2 T2 S3 P113 adds observed accumulator and Group 1 immediate ADC forms
   (`14 ib` and `83 /2 ib`) for DeskPro ROM multiword arithmetic.
+- M2 T2 S3 P114 adds observed 8-bit F6-group unsigned `MUL` and `DIV` forms,
+  using AL/AX implicit operands, the established CF/OF multiply contract, and
+  existing real-mode divide-error delivery.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
