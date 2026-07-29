@@ -154,6 +154,10 @@ export class Cpu386State {
     this.eflags = (this.eflags & ~EFLAGS_INTERRUPT_ENABLE) >>> 0;
   }
 
+  public setInterruptFlag(): void {
+    this.eflags = (this.eflags | EFLAGS_INTERRUPT_ENABLE) >>> 0;
+  }
+
   public clearDirectionFlag(): void {
     this.eflags = (this.eflags & ~EFLAGS_DIRECTION) >>> 0;
   }

@@ -104,6 +104,8 @@
   decoder and existing 8-bit comparison-flag contract.
 - M2 T2 S3 P54 adds unsigned `DIV r/m16` (`F7 /6`), including explicit divide
   fault objects until later S3 exception delivery owns fault injection.
+- M2 T2 S3 P55 adds real-mode `PUSHF`, `POPF`, and `STI` through the shared
+  stack and EFLAGS boundaries while leaving protected-mode privilege rules open.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

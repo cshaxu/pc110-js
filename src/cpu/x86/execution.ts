@@ -436,6 +436,19 @@ export function stepInstruction(
       state.writeStatusFlagsFromAh((state.snapshot().registers.eax >>> 8) & 0xff);
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x9c:
+      pushUint16(memory, state, state.snapshot().eflags & 0xffff);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    case 0x9d: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode POPF is not implemented");
+      }
+      state.writeEflags(popUint16(memory, state));
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0x06:
     case 0x0e:
     case 0x16:
@@ -470,6 +483,14 @@ export function stepInstruction(
       if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
         throw new UnsupportedOpcodeError("Protected-mode CLI is not implemented");
       state.clearInterruptFlag();
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
+    case 0xfb: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+        throw new UnsupportedOpcodeError("Protected-mode STI is not implemented");
+      state.setInterruptFlag();
       state.advanceEip(1);
       return { halted: false, fetched };
     }

@@ -244,6 +244,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eflags: 0x000000d7, eip: 0x0000fff2 });
   });
 
+  it("pushes, restores, and enables real-mode flags through SS:SP", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x9c],
+      [0x000ffff1, 0xfa],
+      [0x000ffff2, 0x9d],
+      [0x000ffff3, 0xfb]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeEflags(0x000002d7);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x000002d7, registers: { esp: 0x1000 } });
+    state.clearInterruptFlag();
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().eflags).toBe(0x000002d7);
+  });
+
   it("executes the reset-ROM register form of LMSW", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

@@ -86,6 +86,14 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x000000d7);
   });
 
+  it("sets the interrupt flag without changing status flags", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEflags(0x000000d7);
+    cpu.setInterruptFlag();
+
+    expect(cpu.snapshot().eflags).toBe(0x000002d7);
+  });
+
   it("controls the direction flag independently", () => {
     const cpu = new Cpu386State();
     cpu.setDirectionFlag();
