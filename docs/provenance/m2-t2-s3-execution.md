@@ -628,6 +628,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   (`66 F7 /2-/7`). The shared execution path accepts both existing effective
   address sizes, writes implicit EDX:EAX results, and routes zero-divisor or
   quotient-overflow cases through the existing divide-error delivery boundary.
+- M2 T2 S3 P231 adds the signed byte and word Group 3 forms: `F6 /5,/7` use
+  AX as the implicit byte-product or dividend register, while `F7 /5,/7` use
+  DX:AX for word products and dividends. Exact signed arithmetic preserves the
+  defined multiply overflow and divide-error range contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

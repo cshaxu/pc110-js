@@ -3810,7 +3810,9 @@ export function stepInstruction(
         modRm.reg !== 0x02 &&
         modRm.reg !== 0x03 &&
         modRm.reg !== 0x04 &&
-        modRm.reg !== 0x06
+        modRm.reg !== 0x05 &&
+        modRm.reg !== 0x06 &&
+        modRm.reg !== 0x07
       )
         throw new UnsupportedOpcodeError("Unsupported F7 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
@@ -3839,6 +3841,35 @@ export function stepInstruction(
         state.advanceEip(2 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }
+      if (modRm.reg === 0x05) {
+        const product =
+          BigInt.asIntN(16, BigInt(state.readRegister16(0))) * BigInt.asIntN(16, BigInt(operand));
+        state.writeRegister16(0, Number(BigInt.asUintN(16, product)));
+        state.writeRegister16(2, Number(BigInt.asUintN(16, product >> 16n)));
+        state.writeSignedMultiplyFlags16(product < -0x8000n || product > 0x7fffn);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
+      if (modRm.reg === 0x07) {
+        const divisor = BigInt.asIntN(16, BigInt(operand));
+        const dividend = BigInt.asIntN(
+          32,
+          (BigInt(state.readRegister16(2)) << 16n) | BigInt(state.readRegister16(0))
+        );
+        if (divisor === 0n) {
+          deliverCpuFault(memory, state, 0, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
+        const quotient = dividend / divisor;
+        if (quotient < -0x8000n || quotient > 0x7fffn) {
+          deliverCpuFault(memory, state, 0, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
+        state.writeRegister16(0, Number(BigInt.asUintN(16, quotient)));
+        state.writeRegister16(2, Number(BigInt.asUintN(16, dividend % divisor)));
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
       const divisor = operand;
       const dividend = ((state.readRegister16(2) << 16) | state.readRegister16(0)) >>> 0;
       const quotient = Math.floor(dividend / divisor);
@@ -3858,7 +3889,9 @@ export function stepInstruction(
         modRm.reg !== 0x02 &&
         modRm.reg !== 0x03 &&
         modRm.reg !== 0x04 &&
-        modRm.reg !== 0x06
+        modRm.reg !== 0x05 &&
+        modRm.reg !== 0x06 &&
+        modRm.reg !== 0x07
       )
         throw new UnsupportedOpcodeError("Unsupported F6 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
@@ -3880,6 +3913,14 @@ export function stepInstruction(
         state.advanceEip(2 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }
+      if (modRm.reg === 0x05) {
+        const product =
+          BigInt.asIntN(8, BigInt(state.readRegister8(0))) * BigInt.asIntN(8, BigInt(operand));
+        state.writeRegister16(0, Number(BigInt.asUintN(16, product)));
+        state.writeSignedMultiplyFlags16(product < -0x80n || product > 0x7fn);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
       if (modRm.reg === 0x06) {
         const divisor = operand;
         const dividend = state.readRegister16(0);
@@ -3890,6 +3931,23 @@ export function stepInstruction(
         }
         state.writeRegister8(0, quotient);
         state.writeRegister8(4, dividend % divisor);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
+      if (modRm.reg === 0x07) {
+        const divisor = BigInt.asIntN(8, BigInt(operand));
+        const dividend = BigInt.asIntN(16, BigInt(state.readRegister16(0)));
+        if (divisor === 0n) {
+          deliverCpuFault(memory, state, 0, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
+        const quotient = dividend / divisor;
+        if (quotient < -0x80n || quotient > 0x7fn) {
+          deliverCpuFault(memory, state, 0, fetched.instructionPointer);
+          return { halted: false, fetched };
+        }
+        state.writeRegister8(0, Number(BigInt.asUintN(8, quotient)));
+        state.writeRegister8(4, Number(BigInt.asUintN(8, dividend % divisor)));
         state.advanceEip(2 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }

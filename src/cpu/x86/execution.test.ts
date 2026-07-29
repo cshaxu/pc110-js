@@ -6296,4 +6296,63 @@ describe("80386 instruction fetch", () => {
       registers: { esp: 0x2ff4 }
     });
   });
+
+  it("executes signed byte Group 3 multiply and divide through AX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf6],
+      [0x000ffff1, 0xeb],
+      [0x000ffff2, 0xf6],
+      [0x000ffff3, 0xfb]
+    ]);
+    const state = new Cpu386State();
+    const memory = resetAliasMemory(values);
+
+    state.writeRegister16(0, 0x0080);
+    state.writeRegister8(3, 2);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x0000ff00 },
+      eflags: 0x00000803,
+      eip: 0x0000fff2
+    });
+
+    state.writeEflags(0x00000002);
+    state.writeRegister16(0, 0xfff9);
+    state.writeRegister8(3, 3);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x0000fffe },
+      eip: 0x0000fff4
+    });
+  });
+
+  it("executes signed word Group 3 multiply and divide through DX:AX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf7],
+      [0x000ffff1, 0xeb],
+      [0x000ffff2, 0xf7],
+      [0x000ffff3, 0xfb]
+    ]);
+    const state = new Cpu386State();
+    const memory = resetAliasMemory(values);
+
+    state.writeRegister16(0, 0x8000);
+    state.writeRegister16(3, 2);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x00000000, edx: 0x0000ffff },
+      eflags: 0x00000803,
+      eip: 0x0000fff2
+    });
+
+    state.writeEflags(0x00000002);
+    state.writeRegister16(0, 0xfff9);
+    state.writeRegister16(2, 0xffff);
+    state.writeRegister16(3, 3);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x0000fffe, edx: 0x0000ffff },
+      eip: 0x0000fff4
+    });
+  });
 });
