@@ -235,6 +235,9 @@
 - M2 T2 S3 P104 refactors the `CMP r, r/m` read path behind a narrow shared
   helper and adds observed CS-overridden byte and word forms (`2E 3A/3B /r`)
   without widening unsupported prefix behavior.
+- M2 T2 S3 P105 adds `AND r/m8, r8` (`20 /r`) for observed DeskPro ROM
+  byte-state updates, using the shared ModR/M writable-memory and 8-bit
+  logic-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
