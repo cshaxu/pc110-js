@@ -1165,6 +1165,29 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0xa4:
+    case 0xa5:
+    case 0xaa:
+    case 0xab: {
+      const word = fetched.opcode === 0xa5 || fetched.opcode === 0xab;
+      const copy = fetched.opcode === 0xa4 || fetched.opcode === 0xa5;
+      const step = state.directionFlag() ? (word ? -2 : -1) : word ? 2 : 1;
+      const source = state.readRegister16(6);
+      const destination = state.readRegister16(7);
+      if (word) {
+        const value = copy
+          ? readSegmentUint16(memory, state, "ds", source)
+          : state.readRegister16(0);
+        writeSegmentUint16(memory, state, "es", destination, value);
+      } else {
+        const value = copy ? readSegmentUint8(memory, state, "ds", source) : state.readRegister8(0);
+        writeSegmentUint8(memory, state, "es", destination, value);
+      }
+      if (copy) state.writeRegister16(6, (source + step) & 0xffff);
+      state.writeRegister16(7, (destination + step) & 0xffff);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0xac: {
       const source = state.readRegister16(6);
       state.writeRegister8(0, readSegmentUint8(memory, state, "ds", source));

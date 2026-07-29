@@ -270,6 +270,8 @@
   signed-byte conversion paths, with the required arithmetic shift flags.
 - M2 T2 S3 P118 adds observed `REP MOVSB` and `REP STOSB` forms, extending the
   existing word-string execution path with byte width and direction handling.
+- M2 T2 S3 P119 adds observed unprefixed `MOVSB`, `MOVSW`, `STOSB`, and `STOSW`
+  forms as single iterations of the established string-operation semantics.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
