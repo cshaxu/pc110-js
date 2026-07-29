@@ -1098,6 +1098,18 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0xf6: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.reg !== 0x00) throw new UnsupportedOpcodeError("Unsupported F6 opcode form");
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const operand = modRm.registerDirect
+        ? state.readRegister8(modRm.rm)
+        : readSegmentUint8(memory, state, address!.segment, address!.offset);
+      const immediate = fetchCodeByte(memory, state, 2 + (address?.displacementBytes ?? 0)).opcode;
+      state.writeLogicFlags8(operand & immediate);
+      state.advanceEip(3 + (address?.displacementBytes ?? 0));
+      return { halted: false, fetched };
+    }
     case 0xff:
       {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
