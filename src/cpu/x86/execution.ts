@@ -426,6 +426,38 @@ function executeMemoryFarCall(
   state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
 }
 
+function executeNearCall(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  segmentOverride?: "cs" | "ds" | "ss"
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x02) throw new UnsupportedOpcodeError("Unsupported FF opcode form");
+  if (modRm.registerDirect) {
+    pushUint16(memory, state, (state.snapshot().eip + modRmOffset + 1) & 0xffff);
+    state.writeEip16(state.readRegister16(modRm.rm));
+    return;
+  }
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  const target = readSegmentUint16(
+    memory,
+    state,
+    segmentOverride ?? address.segment,
+    address.offset
+  );
+  pushUint16(
+    memory,
+    state,
+    (state.snapshot().eip + modRmOffset + 1 + address.displacementBytes) & 0xffff
+  );
+  state.writeEip16(target);
+}
+
 function executeMovReg16FromModRm(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -741,8 +773,12 @@ export function stepInstruction(
     }
     case 0x2e: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
-      if (opcode === 0xff) executeMemoryFarJump(memory, state, 2, "cs");
-      else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
+      if (opcode === 0xff) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.reg === 0x05) executeMemoryFarJump(memory, state, 2, "cs");
+        else if (modRm.reg === 0x02) executeNearCall(memory, state, 2, "cs");
+        else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
+      } else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
       else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       return { halted: false, fetched };
     }
@@ -1303,6 +1339,7 @@ export function stepInstruction(
         } else if (modRm.reg === 0x05) {
           executeMemoryFarJump(memory, state, 1);
         } else if (modRm.reg === 0x03) executeMemoryFarCall(memory, state, 1);
+        else if (modRm.reg === 0x02) executeNearCall(memory, state, 1);
         else throw new UnsupportedOpcodeError("Unsupported FF opcode form");
       }
       return { halted: false, fetched };

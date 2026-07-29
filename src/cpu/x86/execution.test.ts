@@ -355,6 +355,41 @@ describe("80386 instruction fetch", () => {
     ]).toEqual([0xf4, 0xff, 0x00, 0xf0]);
   });
 
+  it("calls near register and CS-overridden memory targets through FF /2", () => {
+    const registerValues = new Map<number, number>([
+      [0x000ffff0, 0xff],
+      [0x000ffff1, 0xd3]
+    ]);
+    const registerState = new Cpu386State();
+    registerState.loadRealModeSegment("ss", 0);
+    registerState.writeRegister16(4, 0x1000);
+    registerState.writeRegister16(3, 0x1234);
+    const registerMemory = resetAliasMemory(registerValues);
+
+    stepInstruction(registerMemory, registerState);
+    expect(registerState.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0x0ffe } });
+    expect([registerValues.get(0x0ffe), registerValues.get(0x0fff)]).toEqual([0xf2, 0xff]);
+
+    const memoryValues = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0xff],
+      [0x000ffff2, 0x94],
+      [0x000ffff3, 0x34],
+      [0x000ffff4, 0x12],
+      [0x000f1234, 0x78],
+      [0x000f1235, 0x56]
+    ]);
+    const memoryState = new Cpu386State();
+    memoryState.loadRealModeSegment("ss", 0);
+    memoryState.writeRegister16(4, 0x1000);
+    memoryState.writeRegister16(6, 0x0000);
+    const memory = resetAliasMemory(memoryValues);
+
+    stepInstruction(memory, memoryState);
+    expect(memoryState.snapshot()).toMatchObject({ eip: 0x5678, registers: { esp: 0x0ffe } });
+    expect([memoryValues.get(0x0ffe), memoryValues.get(0x0fff)]).toEqual([0xf5, 0xff]);
+  });
+
   it("loads 16-bit immediate values into the selected register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xbb],

@@ -178,6 +178,9 @@
 - M2 T2 S3 P83 adds real-mode `RETF` and `RETF imm16` (`CB` and `CA iw`) for
   observed DeskPro ROM far-call return paths, restoring CS:IP and applying the
   optional caller-stack adjustment through SS:SP.
+- M2 T2 S3 P84 adds real-mode `CALL r/m16` (`FF /2`) for observed DeskPro
+  CS-overridden function-table calls, saving the prefix-inclusive return IP
+  through SS:SP while retaining the current code segment.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
