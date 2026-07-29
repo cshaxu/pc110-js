@@ -2099,6 +2099,29 @@ export function stepInstruction(
       }
       if (opcode === 0x0f) {
         const extension = fetchCodeByte(memory, state, 2).opcode;
+        if (extension === 0x01) {
+          const modRm = decodeModRm(fetchCodeByte(memory, state, 3).opcode);
+          if (!modRm.registerDirect && (modRm.reg === 0x02 || modRm.reg === 0x03)) {
+            const address = decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 2 + offset).opcode
+            );
+            const limit = readSegmentUint16(memory, state, address.segment, address.offset);
+            const base =
+              readSegmentUint8(memory, state, address.segment, (address.offset + 2) & 0xffff) |
+              (readSegmentUint8(memory, state, address.segment, (address.offset + 3) & 0xffff) <<
+                8) |
+              (readSegmentUint8(memory, state, address.segment, (address.offset + 4) & 0xffff) <<
+                16) |
+              (readSegmentUint8(memory, state, address.segment, (address.offset + 5) & 0xffff) <<
+                24);
+            if (modRm.reg === 0x02) state.writeGdtr(base, limit);
+            else state.writeIdtr(base, limit);
+            state.advanceEip(4 + address.displacementBytes);
+            return { halted: false, fetched };
+          }
+        }
         if (extension === 0xbc || extension === 0xbd) {
           executeBitScanDwordModRm(memory, state, extension, 3);
           return { halted: false, fetched };

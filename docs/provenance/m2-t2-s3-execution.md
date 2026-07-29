@@ -576,6 +576,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P210 adds PCjs-selected operand-size-overridden `BSF` and `BSR`
   (`66 0F BC/BD /r`). Nonzero dword sources select the lowest or highest set
   bit; zero sources preserve the destination and set ZF.
+- M2 T2 S3 P211 adds the 80386 operand-size-overridden `LGDT` and `LIDT`
+  forms (`66 0F 01 /2,/3`). They load the six-byte pseudo-descriptor's 16-bit
+  limit and full 32-bit base; the existing default-operand-size forms retain
+  their architecturally required 24-bit base truncation.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
