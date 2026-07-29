@@ -1,5 +1,5 @@
 import { addressMode, translateSegmentOffset } from "./address-translation.js";
-import type { Cpu386State } from "./state.js";
+import type { Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
   readUint8(linearAddress: number): number;
@@ -64,6 +64,23 @@ function signedWord(value: number): number {
   return (value << 16) >> 16;
 }
 
+function segmentForMove(index: number): LoadableSegment | undefined {
+  switch (index) {
+    case 0:
+      return "es";
+    case 2:
+      return "ss";
+    case 3:
+      return "ds";
+    case 4:
+      return "fs";
+    case 5:
+      return "gs";
+    default:
+      return undefined;
+  }
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -112,6 +129,19 @@ export function stepInstruction(
       throw new UnsupportedOpcodeError(
         `Unsupported 0F opcode 0x${extension.toString(16).padStart(2, "0")}`
       );
+    }
+    case 0x8e: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+        throw new UnsupportedOpcodeError("Protected-mode segment loads are not implemented");
+      const modRm = fetchCodeByte(memory, state, 1).opcode;
+      if ((modRm & 0xc0) !== 0xc0)
+        throw new UnsupportedOpcodeError("Memory-form segment loads are not implemented");
+      const segment = segmentForMove((modRm >>> 3) & 0x07);
+      if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
+      state.loadRealModeSegment(segment, state.readRegister16(modRm & 0x07));
+      state.advanceEip(2);
+      return { halted: false, fetched };
     }
     case 0xe9: {
       const displacement = signedWord(fetchCodeUint16(memory, state, 1));

@@ -93,4 +93,11 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().cr0).toBe(0x7ffffff1);
   });
+
+  it("loads real-mode data segments while preserving their cached limits", () => {
+    const cpu = new Cpu386State();
+    cpu.loadRealModeSegment("ds", 0x0040);
+
+    expect(cpu.snapshot().ds).toEqual({ selector: 0x0040, base: 0x0400, limit: 0xffff });
+  });
 });

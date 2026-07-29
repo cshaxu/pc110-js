@@ -116,6 +116,25 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
   });
 
+  it("loads a real-mode data segment from a general register", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xb8],
+      [0x000ffff1, 0x40],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0x8e],
+      [0x000ffff4, 0xd8]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      ds: { selector: 0x0040, base: 0x0400, limit: 0xffff },
+      eip: 0x0000fff5
+    });
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],

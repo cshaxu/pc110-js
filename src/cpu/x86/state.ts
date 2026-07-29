@@ -1,4 +1,5 @@
 export type GeneralRegister = "eax" | "ebx" | "ecx" | "edx" | "esp" | "ebp" | "esi" | "edi";
+export type LoadableSegment = "es" | "ss" | "ds" | "fs" | "gs";
 
 const GENERAL_REGISTER_ORDER: readonly GeneralRegister[] = [
   "eax",
@@ -162,6 +163,10 @@ export class Cpu386State {
     this.registers[register] = ((this.registers[register] & 0xffff0000) | (value & 0xffff)) >>> 0;
   }
 
+  public readRegister16(index: number): number {
+    return this.registers[this.generalRegisterAt(index)] & 0xffff;
+  }
+
   public writeRegister8(index: number, value: number): void {
     const normalizedValue = value & 0xff;
     const registerIndex = index & 0x03;
@@ -179,6 +184,15 @@ export class Cpu386State {
       limit: this.cs.limit
     };
     this.eip = instructionPointer & 0xffff;
+  }
+
+  public loadRealModeSegment(segment: LoadableSegment, selector: number): void {
+    const existing = this[segment];
+    this[segment] = {
+      selector: selector & 0xffff,
+      base: (selector & 0xffff) << 4,
+      limit: existing.limit
+    };
   }
 
   public halt(): void {
