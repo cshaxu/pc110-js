@@ -33,6 +33,8 @@ export type InstructionTrace = (event: InstructionTraceEvent) => void;
 
 export class UnsupportedOpcodeError extends Error {}
 
+export class DivideError extends Error {}
+
 export function fetchOpcode(memory: InstructionMemory, state: Cpu386State): FetchedOpcode {
   return fetchCodeByte(memory, state, 0);
 }
@@ -855,6 +857,22 @@ export function stepInstruction(
         state,
         fetchCodeByte(memory, state, 2 + displacementBytes).opcode
       );
+      return { halted: false, fetched };
+    }
+    case 0xf7: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.reg !== 0x06) throw new UnsupportedOpcodeError("Unsupported F7 opcode form");
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const divisor = modRm.registerDirect
+        ? state.readRegister16(modRm.rm)
+        : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      if (divisor === 0) throw new DivideError("Unsigned word division by zero");
+      const dividend = ((state.readRegister16(2) << 16) | state.readRegister16(0)) >>> 0;
+      const quotient = Math.floor(dividend / divisor);
+      if (quotient > 0xffff) throw new DivideError("Unsigned word division quotient overflow");
+      state.writeRegister16(0, quotient);
+      state.writeRegister16(2, dividend % divisor);
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
     case 0xff:

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DivideError,
   fetchOpcode,
   stepInstruction,
   stepInstructionTraced,
@@ -651,6 +652,26 @@ describe("80386 instruction fetch", () => {
 
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x0040 } });
     expect([values.get(0x00001234), values.get(0x00001235)]).toEqual([0x02, 0x00]);
+  });
+
+  it("divides DX:AX by word register operands and reports divide faults", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf7],
+      [0x000ffff1, 0xf3]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(2, 0x0001);
+    state.writeRegister16(0, 0x0000);
+    state.writeRegister16(3, 0x0002);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000, edx: 0x0000 } });
+
+    state.reset();
+    expect(() => stepInstruction(resetAliasMemory(values), state)).toThrow(DivideError);
+
+    state.writeRegister16(3, 0x0001);
+    expect(() => stepInstruction(resetAliasMemory(values), state)).toThrow(DivideError);
   });
 
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {

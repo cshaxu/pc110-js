@@ -102,6 +102,8 @@
   through the existing shared ModR/M memory-load path.
 - M2 T2 S3 P53 adds `CMP r/m8, r8` (`38 /r`) through the shared ModR/M
   decoder and existing 8-bit comparison-flag contract.
+- M2 T2 S3 P54 adds unsigned `DIV r/m16` (`F7 /6`), including explicit divide
+  fault objects until later S3 exception delivery owns fault injection.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
