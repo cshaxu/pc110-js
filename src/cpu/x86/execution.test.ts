@@ -1781,6 +1781,30 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("multiplies signed register and memory operands through IMUL", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0xaf],
+      [0x000ffff2, 0xd8],
+      [0x000ffff3, 0x0f],
+      [0x000ffff4, 0xaf],
+      [0x000ffff5, 0x06],
+      [0x000ffff6, 0x00],
+      [0x000ffff7, 0x20],
+      [0x00002000, 0x00],
+      [0x00002001, 0x40]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 3);
+    state.writeRegister16(0, 0xfffe);
+    const memory = resetAliasMemory(values);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0xfffa }, eflags: 0x00000002 });
+    state.writeRegister16(0, 2);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000803 });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

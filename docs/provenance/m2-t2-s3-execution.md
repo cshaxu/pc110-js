@@ -360,6 +360,9 @@
 - M2 T2 S3 P150 adds real-mode memory `BOUND` (`62`) from PCjs `fnBOUND`:
   signed index/lower/upper comparison advances on success and delivers vector 5
   with the faulting instruction pointer on range failure.
+- M2 T2 S3 P151 adds `IMUL r16,r/m16` (`0F AF`) from PCjs `fnIMULrw`:
+  signed 16-bit multiplication writes the low word and sets CF/OF only when
+  the mathematical product cannot fit in a signed 16-bit result.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
