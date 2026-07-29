@@ -18,8 +18,9 @@
 
 ## Migration
 
-- Imported behavior: 80386 mode selection and PDE/PTE address derivation.
+- Imported behavior: 80386 mode selection, PDE/PTE address derivation, and
+  eight-byte descriptor field decoding.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
 - Intentional behavior changes: none.
-- Incomplete behavior: descriptor loads, full privilege checking, fault state,
+- Incomplete behavior: full descriptor loads, privilege checking, fault state,
   accessed/dirty bits, and TLB caching remain in this active subtask.
