@@ -271,6 +271,10 @@ export class Cpu386State {
     this.eip = value & 0xffff;
   }
 
+  public writeEip(value: number): void {
+    this.eip = value >>> 0;
+  }
+
   public writeRegister(index: number, value: number): void {
     const register = this.generalRegisterAt(index);
     this.registers[register] = value >>> 0;

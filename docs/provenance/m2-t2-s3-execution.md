@@ -492,6 +492,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `opCWD`: it sign-extends EAX into EDX without changing flags.
 - M2 T2 S3 P186 adds operand-size-overridden `CWDE` (`66 98`) from PCjs
   `opCBW`: it sign-extends AX into EAX without changing flags.
+- M2 T2 S3 P187 adds operand-size-overridden near `CALL` and `RET` (`66 E8`
+  and `66 C3`) from PCjs `opCALL` and `opRET`. The implementation uses the
+  existing 32-bit protected-mode SS:ESP stack contract; 16-bit stack behavior
+  remains later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
