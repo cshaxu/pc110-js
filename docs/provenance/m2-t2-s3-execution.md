@@ -593,6 +593,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   existing protected-mode segment loader after reading the selector through
   the prior stack segment. The implemented 16-bit forms therefore share the
   same descriptor validation as `MOV Sreg, r/m16`.
+- M2 T2 S3 P216 adds CPL-zero 16-bit protected-mode `POPF` (`9D`). It restores
+  the popped low EFLAGS word while preserving the current high word, matching
+  the selected 80386 `POPF` behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

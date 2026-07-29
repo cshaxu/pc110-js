@@ -1317,6 +1317,28 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("pops the low protected-mode EFLAGS word through the current stack", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x9d],
+      [0x00002000, 0x57],
+      [0x00002001, 0x04]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff);
+    state.writeRegister16(4, 0x2000);
+    state.writeEflags(0x00100002);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000001,
+      eflags: 0x00100457,
+      registers: { esp: 0x00002002 }
+    });
+  });
+
   it("loads a real-mode data segment from a direct memory operand", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x8e],

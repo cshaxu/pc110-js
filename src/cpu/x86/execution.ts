@@ -1795,10 +1795,12 @@ export function stepInstruction(
       return { halted: false, fetched };
     case 0x9d: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode POPF is not implemented");
-      }
-      state.writeEflags(popUint16(memory, state));
+      const flags = popUint16(memory, state);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "protected") {
+        if ((snapshot.cs.selector & 0x03) !== 0)
+          throw new UnsupportedOpcodeError("Protected-mode POPF requires CPL zero");
+        state.writeEflags((snapshot.eflags & ~0xffff) | flags);
+      } else state.writeEflags(flags);
       state.advanceEip(1);
       return { halted: false, fetched };
     }
