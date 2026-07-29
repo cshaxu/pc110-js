@@ -4,6 +4,7 @@
 
 - M0: Governance And Project Foundation.
 - M0 T3 S1 P2: owner-authorized four-node delivery-model correction.
+- M0 T3 S1 P3: durable root agent guidance for long-running execution.
 
 ## Next Eligible Work
 

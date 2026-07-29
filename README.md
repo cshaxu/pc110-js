@@ -30,6 +30,7 @@ M0 establishes governance before these delivery nodes. M5 packages the verified 
 
 ## Project Documents
 
+- [Agent instructions](AGENTS.md)
 - [Contribution and engineering rules](CONTRIBUTING.md)
 - [Architecture direction](docs/architecture/direction.md)
 - [Canonical project breakdown](docs/planning/breakdown.md)
