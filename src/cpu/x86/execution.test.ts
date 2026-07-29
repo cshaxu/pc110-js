@@ -549,6 +549,25 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("translates AL through the DS:BX table with 16-bit offset wrapping", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xd7],
+      [0x00000000, 0x5a]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0xffff);
+    state.writeRegister8(0, 0x01);
+    state.writeEflags(0x000008d7);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x5a, ebx: 0xffff },
+      eflags: 0x000008d7,
+      eip: 0x0000fff1
+    });
+  });
+
   it("performs AAA and AAS while preserving non-adjust flags", () => {
     const aaaValues = new Map<number, number>([[0x000ffff0, 0x37]]);
     const aaaState = new Cpu386State();

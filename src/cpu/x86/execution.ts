@@ -887,6 +887,12 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0xd7: {
+      const offset = (state.readRegister16(3) + state.readRegister8(0)) & 0xffff;
+      state.writeRegister8(0, readSegmentUint8(memory, state, "ds", offset));
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0xd4: {
       const divisor = fetchCodeByte(memory, state, 1).opcode;
       if (divisor === 0) {

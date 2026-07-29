@@ -327,6 +327,9 @@
 - M2 T2 S3 P138 adds `AAA` and `AAS` (`37` and `3F`) from PCjs `opAAA` and
   `opAAS`: adjust packed AX low digits, update only CF/AF, and preserve other
   flags. AAA includes the PCjs 80286+ carry propagation into AH.
+- M2 T2 S3 P139 adds `XLAT` (`D7`) from PCjs `opXLAT` through the project-owned
+  DS byte-read boundary. The current 16-bit execution path wraps `BX + AL`
+  before real-mode address translation and preserves EFLAGS.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
