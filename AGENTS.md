@@ -67,8 +67,10 @@ Do not treat this file as a substitute for those canonical documents.
 - Preserve every established runnable or boot baseline.
 - Record deferred work only as `TODO(High)`, `TODO(Medium)`, or `TODO(Low)` as
   defined in `CONTRIBUTING.md`. Never hide an active blocker behind a TODO.
-- Milestone completion does not authorize the next milestone. In particular,
-  a goal that authorizes M1 must not begin M2 merely because M1 completes.
+- Milestone completion does not authorize the next milestone unless the goal
+  explicitly names that next milestone. A goal that authorizes M1 through M2
+  may begin M2 only after the M1 completion gate and milestone snapshot process
+  both pass.
 
 ## Verification, Commits, And Pushes
 
@@ -90,6 +92,10 @@ Do not treat this file as a substitute for those canonical documents.
 
 - Keep parts small and reviewable. A verified completed subtask must be pushed
   promptly to the canonical remote.
+- When M1 through M5 completes, create and push the corresponding immutable
+  snapshot branch `m<milestone>` from the final verified `main` commit before
+  beginning the next milestone. Continue development on `main`, never on a
+  snapshot branch.
 - If a stop or escalation condition is reached, preserve the last known-good
   state, record the evidence, and ask the owner for direction instead of
   broadening the implementation.

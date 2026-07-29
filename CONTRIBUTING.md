@@ -183,6 +183,26 @@ M4 T2 S2 P1: add PC110 audio device variant
 - Do not record protected media content, credentials, machine-specific paths, or
   long narrative progress reports.
 
+## Milestone Snapshots
+
+- M1 through M5 each end with an immutable snapshot branch named `m1` through
+  `m5`.
+- After a milestone completion gate passes, push the final verified `main`
+  commit, create the matching snapshot branch from that exact commit, and push
+  the branch to `origin` before beginning the next milestone.
+- Verify that `main`, the local snapshot branch, and `origin/m<milestone>`
+  resolve to the same commit at snapshot creation time.
+- Record the branch name and successful remote push in the active task tracking
+  section and milestone verification record. Git ref equality is the authority
+  for the snapshot commit identity; a literal SHA may be recorded only in the
+  first post-snapshot transition commit on `main` and must not move the snapshot.
+- Snapshot branches are preservation references. Do not develop on them, merge
+  into them, force-push them, or move them after creation without explicit owner
+  authorization.
+- Development continues on `main`. A goal may enter the next milestone only
+  when it explicitly authorizes that transition and the preceding snapshot is
+  verified and pushed.
+
 ## Assets And Licensing
 
 - Follow [the asset policy](docs/governance/asset-policy.md).

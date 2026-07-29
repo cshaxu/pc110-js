@@ -7,6 +7,7 @@
 - M0 T3 S1 P3: durable root agent guidance for long-running execution.
 - M0 T3 S1 P4: task tracking protocol and initial M0 T3 record.
 - M0 T3 S1 P5: M1 browser reference-run completion gate.
+- M0 T3 S1 P6: M1-M5 milestone snapshot-branch protocol.
 
 ## Next Eligible Work
 

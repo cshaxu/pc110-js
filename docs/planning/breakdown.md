@@ -70,13 +70,14 @@ Goal: make autonomous execution bounded, reproducible, legally traceable, and re
 
 ### T3: Pre-Goal Setup Audit
 
-- S1: Correct planning conflicts and missing governance artifacts, apply the owner-authorized four-node direction correction, add durable root agent guidance, add task tracking, and require an M1 browser reference run.
+- S1: Correct planning conflicts and missing governance artifacts, apply the owner-authorized four-node direction correction, add durable root agent guidance, add task tracking, require an M1 browser reference run, and add milestone snapshot branches.
 
 Completion gate:
 
 - Governance, license, third-party notices, baseline records, templates, canonical breakdown, and status record are committed.
 - No protected image or emulator implementation source is tracked.
 - M0-M5 identifiers are frozen.
+- M1-M5 snapshot-branch rules are committed.
 
 ## M1: PCjs Reference Integration
 

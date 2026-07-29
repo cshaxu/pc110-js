@@ -46,6 +46,27 @@ A subtask is complete only when:
 
 Push is a completion action, not a separate product subtask.
 
+## Milestone Snapshot Branches
+
+M1 through M5 each require a preservation snapshot before work begins on the
+next milestone.
+
+1. Complete and verify the milestone completion gate on `main`.
+2. Push the final verified `main` commit to `origin`.
+3. Create `m<milestone>` from that exact `main` commit and push it to `origin`.
+4. Verify that `main`, `m<milestone>`, and `origin/m<milestone>` resolve to the
+   same commit.
+5. Record the branch, remote push, and verification result in the active task
+   tracking section and milestone verification record. Git ref equality is the
+   authority for commit identity; a literal SHA may be recorded in the first
+   post-snapshot transition commit on `main` without moving the snapshot.
+6. Continue development on `main` only.
+
+Snapshot branches are immutable preservation references. Do not move, merge
+into, or develop on them without explicit owner authorization. A goal may enter
+the next milestone only when it explicitly authorizes that transition and the
+preceding snapshot process has completed.
+
 ## Boot Baselines
 
 - Before M1 completes, no boot baseline is claimed.
