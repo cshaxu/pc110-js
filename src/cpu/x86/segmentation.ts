@@ -130,15 +130,31 @@ export function validateDescriptorAccess(
 }
 
 export function validateDescriptorOffset(descriptor: SegmentDescriptor, offset: number): void {
+  validateDescriptorRange(descriptor, offset, 1);
+}
+
+export function validateDescriptorRange(
+  descriptor: SegmentDescriptor,
+  offset: number,
+  length: number
+): void {
+  if (!Number.isSafeInteger(length) || length < 1)
+    throw new SegmentDescriptorError("Segment access length must be positive");
   const unsignedOffset = offset >>> 0;
+  const endOffset = unsignedOffset + length - 1;
+  if (endOffset > 0xffffffff) throw new SegmentDescriptorError("Segment limit exceeded");
   const isCode = Boolean(descriptor.type & 0x08);
   const expandDown = !isCode && Boolean(descriptor.type & 0x04);
-  if (!expandDown && unsignedOffset > descriptor.limit) {
+  if (!expandDown && (unsignedOffset > descriptor.limit || endOffset > descriptor.limit)) {
     throw new SegmentDescriptorError("Segment limit exceeded");
   }
   if (expandDown) {
     const upperBound = descriptor.default32 ? 0xffffffff : 0xffff;
-    if (unsignedOffset <= descriptor.limit || unsignedOffset > upperBound) {
+    if (
+      unsignedOffset <= descriptor.limit ||
+      unsignedOffset > upperBound ||
+      endOffset > upperBound
+    ) {
       throw new SegmentDescriptorError("Expand-down segment limit exceeded");
     }
   }

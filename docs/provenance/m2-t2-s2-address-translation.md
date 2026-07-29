@@ -22,7 +22,8 @@
   descriptor field decoding, segment access predicates, and GDT-resident LDT
   descriptor validation, including protected-mode stack-segment privilege
   checks, plus GDTR/IDTR state and 32-bit CR0 state writes.
-  Normalized EFLAGS state writes support virtual-8086 mode selection.
+  Normalized EFLAGS state writes support virtual-8086 mode selection, with
+  multi-byte segment-range validation.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
 - Intentional behavior changes: none.
 - Incomplete behavior: descriptor-table loading, gates, tasks, and CPU exception

@@ -4,7 +4,8 @@ import {
   loadLocalDescriptorTable,
   SegmentDescriptorError,
   validateDescriptorAccess,
-  validateDescriptorOffset
+  validateDescriptorOffset,
+  validateDescriptorRange
 } from "./segmentation.js";
 
 describe("80386 descriptor decoding", () => {
@@ -66,11 +67,15 @@ describe("80386 descriptor decoding", () => {
     expect(() => validateDescriptorAccess(data, 3, "stack")).not.toThrow();
     expect(() => validateDescriptorOffset(data, 0x1000)).not.toThrow();
     expect(() => validateDescriptorOffset(data, 0x0fff)).toThrow("Expand-down");
+    expect(() => validateDescriptorRange(data, 0x1000, 2)).not.toThrow();
     expect(() => validateDescriptorAccess({ ...data, type: 0x0a }, 3, "write")).toThrow(
       "not writable"
     );
     expect(() => validateDescriptorAccess({ ...data, selector: 0x10 }, 3, "stack")).toThrow(
       "Stack segment privilege"
+    );
+    expect(() => validateDescriptorRange({ ...data, type: 0x02 }, 0x0fff, 2)).toThrow(
+      "Segment limit"
     );
   });
 });
