@@ -514,6 +514,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P193 adds operand-size-overridden near `JMP` (`66 E9 cd`) from PCjs
   `opJMP`, applying a signed dword displacement to the 32-bit post-instruction
   EIP.
+- M2 T2 S3 P194 adds operand-size-overridden ModR/M ADD and SUB directions
+  (`66 01/03/29/2B`) as a project-native dword ALU foundation. It shares the
+  existing 16-bit and 32-bit address decoders and dword segmented memory path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

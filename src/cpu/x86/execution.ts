@@ -1062,6 +1062,50 @@ function executeWordAluModRm(
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
+function executeDwordAluModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  operation: "add" | "sub",
+  destinationIsRegister: boolean,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
+    ? undefined
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
+  const addressBytes = (address?.displacementBytes ?? 0) + sibBytes;
+  const destination = destinationIsRegister
+    ? state.readRegister(modRm.reg)
+    : modRm.registerDirect
+      ? state.readRegister(modRm.rm)
+      : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
+  const source = destinationIsRegister
+    ? modRm.registerDirect
+      ? state.readRegister(modRm.rm)
+      : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize)
+    : state.readRegister(modRm.reg);
+  const result = operation === "add" ? destination + source : destination - source;
+  if (destinationIsRegister) state.writeRegister(modRm.reg, result);
+  else if (modRm.registerDirect) state.writeRegister(modRm.rm, result);
+  else writeSegmentUint32(memory, state, address!.segment, address!.offset, result, addressSize);
+  if (operation === "add") state.writeAddFlags32(destination, source);
+  else state.writeCompareFlags32(destination, source);
+  state.advanceEip(modRmOffset + 1 + addressBytes);
+}
+
 function executeShiftWord(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1602,6 +1646,17 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if (opcode === 0x01 || opcode === 0x03 || opcode === 0x29 || opcode === 0x2b) {
+        executeDwordAluModRm(
+          memory,
+          state,
+          opcode === 0x01 || opcode === 0x03 ? "add" : "sub",
+          opcode === 0x03 || opcode === 0x2b,
+          2,
+          16
+        );
+        return { halted: false, fetched };
+      }
       if (opcode === 0x0f) {
         const extension = fetchCodeByte(memory, state, 2).opcode;
         if (extension < 0x80 || extension > 0x8f)
@@ -1753,6 +1808,22 @@ export function stepInstruction(
       }
       if (opcode === 0x67) {
         const overriddenOpcode = fetchCodeByte(memory, state, 2).opcode;
+        if (
+          overriddenOpcode === 0x01 ||
+          overriddenOpcode === 0x03 ||
+          overriddenOpcode === 0x29 ||
+          overriddenOpcode === 0x2b
+        ) {
+          executeDwordAluModRm(
+            memory,
+            state,
+            overriddenOpcode === 0x01 || overriddenOpcode === 0x03 ? "add" : "sub",
+            overriddenOpcode === 0x03 || overriddenOpcode === 0x2b,
+            3,
+            32
+          );
+          return { halted: false, fetched };
+        }
         if (overriddenOpcode === 0x62) {
           executeBound32(memory, state, 3, 32, fetched.instructionPointer);
           return { halted: false, fetched };

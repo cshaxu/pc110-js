@@ -2743,6 +2743,50 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x00000006);
   });
 
+  it("adds and subtracts 32-bit ModR/M operands through both address sizes", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x03],
+      [0x0002, 0xc3],
+      [0x0003, 0x66],
+      [0x0004, 0x29],
+      [0x0005, 0x06],
+      [0x0006, 0x00],
+      [0x0007, 0x20],
+      [0x0008, 0x66],
+      [0x0009, 0x67],
+      [0x000a, 0x01],
+      [0x000b, 0x06],
+      [0x2000, 0x10],
+      [0x2001, 0x00],
+      [0x2002, 0x00],
+      [0x2003, 0x00],
+      [0x12000, 0x01],
+      [0x12001, 0x00],
+      [0x12002, 0x00],
+      [0x12003, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(0, 3);
+    state.writeRegister(3, 4);
+    state.writeRegister(6, 0x12000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(7);
+    stepInstruction(memory, state);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x2000 + offset))).toEqual([
+      0x09, 0x00, 0x00, 0x00
+    ]);
+    stepInstruction(memory, state);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x12000 + offset))).toEqual([
+      0x08, 0x00, 0x00, 0x00
+    ]);
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
