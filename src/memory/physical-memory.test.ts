@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { stepInstruction } from "../cpu/x86/execution.js";
+import { Cpu386State } from "../cpu/x86/state.js";
 import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory, PhysicalMemoryError } from "./physical-memory.js";
 
@@ -41,5 +43,20 @@ describe("PC/AT physical memory", () => {
     expect(() =>
       memory.mapRom(createRomImage("second-rom", new Uint8Array([0x90])), 0xf0000)
     ).toThrow(PhysicalMemoryError);
+  });
+
+  it("preserves the existing reset-ROM far-jump table trace through mapped ROM", () => {
+    const bytes = new Uint8Array(0x10000);
+    bytes.set([0x2e, 0xff, 0x2e, 0xfd, 0xf8], 0xfff0);
+    bytes.set([0x34, 0x12, 0x00, 0xf0], 0xf8fd);
+    const memory = new PhysicalMemory({ ramBytes: 0xa0000 });
+    memory.mapRom(createRomImage("system-rom", bytes), 0xf0000);
+    const state = new Cpu386State();
+
+    expect(stepInstruction(memory, state).halted).toBe(false);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff }
+    });
   });
 });
