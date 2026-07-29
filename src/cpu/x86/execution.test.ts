@@ -500,6 +500,27 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("sign-extends AX into DX through CWD without changing EFLAGS", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x99],
+      [0x000ffff1, 0x99]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x8001);
+    state.writeEflags(0x000008d7);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x8001, edx: 0xffff },
+      eflags: 0x000008d7,
+      eip: 0x0000fff1
+    });
+
+    state.writeRegister16(0, 0x7fff);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0 }, eip: 0x0000fff2 });
+  });
+
   it("pushes, restores, and enables real-mode flags through SS:SP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x9c],

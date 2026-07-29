@@ -316,6 +316,8 @@
   advancing EIP past the decoded instruction.
 - M2 T2 S3 P134 adds `LAHF` (`9F`) from PCjs `opLAHF`: copy the current low
   EFLAGS byte to AH while preserving EFLAGS and all other register bits.
+- M2 T2 S3 P135 adds `CWD` (`99`) from PCjs `opCWD` 16-bit behavior: sign-
+  extend AX into DX without changing EFLAGS or AX.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
