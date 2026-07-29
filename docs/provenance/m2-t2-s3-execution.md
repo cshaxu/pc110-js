@@ -604,6 +604,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   the existing protected-mode code-segment loader.
 - M2 T2 S3 P220 adds same-privilege protected-mode `CALL FAR ptr16:16` (`9A`)
   through the existing descriptor loader and 16-bit stack frame path.
+- M2 T2 S3 P221 adds same-privilege protected-mode `CALL FAR m16:16` (`FF /3`)
+  through the existing descriptor loader and 16-bit stack frame path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

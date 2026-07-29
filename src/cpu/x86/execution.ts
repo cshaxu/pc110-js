@@ -805,9 +805,6 @@ function executeMemoryFarCall(
   modRmOffset: number
 ): void {
   const snapshot = state.snapshot();
-  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-    throw new UnsupportedOpcodeError("Protected-mode far CALL is not implemented");
-  }
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.reg !== 0x03 || modRm.registerDirect) {
     throw new UnsupportedOpcodeError("Unsupported FF opcode form");
@@ -820,9 +817,22 @@ function executeMemoryFarCall(
   const pointer = readFarPointer(memory, state, address.segment, address.offset);
   const returnInstructionPointer =
     (snapshot.eip + modRmOffset + 1 + address.displacementBytes) & 0xffff;
-  pushUint16(memory, state, snapshot.cs.selector);
-  pushUint16(memory, state, returnInstructionPointer);
-  state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
+  if (addressMode(snapshot.cr0, snapshot.eflags) === "real") {
+    pushUint16(memory, state, snapshot.cs.selector);
+    pushUint16(memory, state, returnInstructionPointer);
+    state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
+  } else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected") {
+    const loaded = resolveProtectedModeCodeSegment(memory, state, pointer.selector);
+    if ((loaded.selector & 0x03) !== (snapshot.cs.selector & 0x03))
+      throw new UnsupportedOpcodeError(
+        "Protected-mode far CALL stack switching is not implemented"
+      );
+    pushUint16(memory, state, snapshot.cs.selector);
+    pushUint16(memory, state, returnInstructionPointer);
+    applyProtectedModeCodeSegment(state, loaded, pointer.instructionPointer);
+  } else {
+    throw new UnsupportedOpcodeError("Virtual-8086 far CALL is not implemented");
+  }
 }
 
 function executeNearCall(
