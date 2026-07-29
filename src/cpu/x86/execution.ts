@@ -526,6 +526,16 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     default:
+      if (fetched.opcode >= 0x50 && fetched.opcode <= 0x57) {
+        pushUint16(memory, state, state.readRegister16(fetched.opcode - 0x50));
+        state.advanceEip(1);
+        return { halted: false, fetched };
+      }
+      if (fetched.opcode >= 0x58 && fetched.opcode <= 0x5f) {
+        state.writeRegister16(fetched.opcode - 0x58, popUint16(memory, state));
+        state.advanceEip(1);
+        return { halted: false, fetched };
+      }
       if (fetched.opcode >= 0xb0 && fetched.opcode <= 0xb7) {
         state.writeRegister8(fetched.opcode - 0xb0, fetchCodeByte(memory, state, 1).opcode);
         state.advanceEip(2);

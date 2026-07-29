@@ -503,6 +503,23 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eip: 0x0000fff3, registers: { esp: 0x1000 } });
   });
 
+  it("pushes and pops 16-bit general registers through SS:SP", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x53],
+      [0x000ffff1, 0x59]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0xbeef);
+    state.writeRegister16(4, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0xef, 0xbe]);
+    state.writeRegister16(3, 0);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xbeef, esp: 0x1000 } });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

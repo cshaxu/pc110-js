@@ -56,6 +56,8 @@
 - M2 T2 S3 P26 adds `JZ rel8` beside the existing zero-flag branch path.
 - M2 T2 S3 P27 adds real-mode near `CALL rel16` and `RET` using SS:SP through
   the project-owned writable-memory boundary.
+- M2 T2 S3 P28 adds real-mode 16-bit general-register `PUSH` and `POP` through
+  the same stack boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
