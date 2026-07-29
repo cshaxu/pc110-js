@@ -175,6 +175,9 @@
 - M2 T2 S3 P82 adds real-mode `CALL FAR m16:16` (`FF /3`) for observed DeskPro
   ROM function-pointer paths, saving CS:IP through SS:SP and rejecting other
   unimplemented FF forms instead of silently treating them as far jumps.
+- M2 T2 S3 P83 adds real-mode `RETF` and `RETF imm16` (`CB` and `CA iw`) for
+  observed DeskPro ROM far-call return paths, restoring CS:IP and applying the
+  optional caller-stack adjustment through SS:SP.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

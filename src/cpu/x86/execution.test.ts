@@ -1176,6 +1176,45 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("returns from real-mode far calls with optional stack cleanup", () => {
+    const plainValues = new Map<number, number>([
+      [0x000ffff0, 0xff],
+      [0x000ffff1, 0x1e],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x00001234, 0x78],
+      [0x00001235, 0x56],
+      [0x00001236, 0x00],
+      [0x00001237, 0xf0],
+      [0x000f5678, 0xcb]
+    ]);
+    const plainState = new Cpu386State();
+    plainState.loadRealModeSegment("ss", 0);
+    plainState.writeRegister16(4, 0x1000);
+    const plainMemory = resetAliasMemory(plainValues);
+
+    stepInstruction(plainMemory, plainState);
+    stepInstruction(plainMemory, plainState);
+    expect(plainState.snapshot()).toMatchObject({
+      eip: 0xfff4,
+      cs: { selector: 0xf000, base: 0x000f0000 },
+      registers: { esp: 0x1000 }
+    });
+
+    const cleanupValues = new Map(plainValues);
+    cleanupValues.set(0x000f5678, 0xca);
+    cleanupValues.set(0x000f5679, 0x02);
+    cleanupValues.set(0x000f567a, 0x00);
+    const cleanupState = new Cpu386State();
+    cleanupState.loadRealModeSegment("ss", 0);
+    cleanupState.writeRegister16(4, 0x1000);
+    const cleanupMemory = resetAliasMemory(cleanupValues);
+
+    stepInstruction(cleanupMemory, cleanupState);
+    stepInstruction(cleanupMemory, cleanupState);
+    expect(cleanupState.snapshot()).toMatchObject({ eip: 0xfff4, registers: { esp: 0x1002 } });
+  });
+
   it("loads AL from DS:SI and respects the direction flag", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xfd],

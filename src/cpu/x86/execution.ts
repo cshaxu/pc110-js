@@ -1321,6 +1321,19 @@ export function stepInstruction(
     case 0xc3:
       state.writeEip16(popUint16(memory, state));
       return { halted: false, fetched };
+    case 0xcb:
+    case 0xca: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode far RET is not implemented");
+      }
+      const stackAdjustment = fetched.opcode === 0xca ? fetchCodeUint16(memory, state, 1) : 0;
+      const instructionPointer = popUint16(memory, state);
+      const selector = popUint16(memory, state);
+      if (stackAdjustment) state.writeRegister16(4, state.readRegister16(4) + stackAdjustment);
+      state.loadRealModeCodeSegment(selector, instructionPointer);
+      return { halted: false, fetched };
+    }
     case 0xcd: {
       const snapshot = state.snapshot();
       if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
