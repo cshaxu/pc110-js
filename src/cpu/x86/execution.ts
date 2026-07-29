@@ -863,6 +863,31 @@ function executeDwordMemoryFarCall(
   applyProtectedModeCodeSegment(state, loaded, instructionPointer);
 }
 
+function executeDwordMemoryFarJump(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number
+): void {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
+    throw new UnsupportedOpcodeError("32-bit memory far JMP is only implemented in protected mode");
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x05 || modRm.registerDirect)
+    throw new UnsupportedOpcodeError("Unsupported dword FF opcode form");
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  const instructionPointer = readSegmentUint32(memory, state, address.segment, address.offset);
+  const selector = readSegmentUint16(memory, state, address.segment, (address.offset + 4) & 0xffff);
+  applyProtectedModeCodeSegment(
+    state,
+    resolveProtectedModeCodeSegment(memory, state, selector),
+    instructionPointer
+  );
+}
+
 function executeNearCall(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2336,7 +2361,10 @@ export function stepInstruction(
         return { halted: false, fetched };
       }
       if (opcode === 0xff) {
-        executeDwordMemoryFarCall(memory, state, 2);
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.reg === 0x03) executeDwordMemoryFarCall(memory, state, 2);
+        else if (modRm.reg === 0x05) executeDwordMemoryFarJump(memory, state, 2);
+        else throw new UnsupportedOpcodeError("Unsupported dword FF opcode form");
         return { halted: false, fetched };
       }
       if (opcode === 0xcb || opcode === 0xca) {

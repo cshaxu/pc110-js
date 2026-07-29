@@ -322,6 +322,41 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("jumps through a protected-mode 32-bit memory far pointer", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0xff],
+      [0x00000002, 0x2e],
+      [0x00000003, 0x00],
+      [0x00000004, 0x20],
+      [0x00002000, 0x78],
+      [0x00002001, 0x56],
+      [0x00002002, 0x34],
+      [0x00002003, 0x12],
+      [0x00002004, 0x10],
+      [0x00002005, 0x00],
+      [0x00001010, 0xff],
+      [0x00001011, 0xff],
+      [0x00001012, 0x00],
+      [0x00001013, 0x00],
+      [0x00001014, 0x00],
+      [0x00001015, 0x9a],
+      [0x00001016, 0xcf],
+      [0x00001017, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x00001000, 0x00000017);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x12345678,
+      cs: { selector: 0x0010, base: 0, limit: 0xffffffff, default32: true }
+    });
+  });
+
   it("calls a same-privilege protected-mode memory far pointer through a 16-bit frame", () => {
     const values = new Map<number, number>([
       [0x00000000, 0xff],
