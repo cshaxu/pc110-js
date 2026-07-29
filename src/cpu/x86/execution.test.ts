@@ -4147,6 +4147,23 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x5a, esi: 0x1200 } });
   });
 
+  it("loads AX from DS:SI and respects the direction flag", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xfd],
+      [0x000ffff1, 0xad],
+      [0x00001600, 0x34],
+      [0x00001601, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ds", 0x0040);
+    state.writeRegister16(6, 0x1200);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x1234, esi: 0x11fe } });
+  });
+
   it("ORs byte registers and memory sources while updating logic flags", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0a],
