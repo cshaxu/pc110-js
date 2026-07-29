@@ -1,0 +1,11 @@
+{
+  "assets": [
+    {
+      "id": "dos-floppy",
+      "relativePath": "local-assets/dos-floppy.img",
+      "expectedBytes": 1474560,
+      "sha256": "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5",
+      "required": true
+    }
+  ]
+}

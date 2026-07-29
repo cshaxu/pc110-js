@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T1 S5: define local asset configuration with relative paths, size, and
-  SHA-256 validation.
+- M2 T1 S6: register the generic `pc-at-386` profile as the default M2 machine
+  family.
 
 ## Delivery Nodes
 
