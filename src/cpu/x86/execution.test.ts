@@ -1544,6 +1544,27 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("restores BP and SP through LEAVE without changing EFLAGS", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xc9],
+      [0x00002000, 0x34],
+      [0x00002001, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeRegister16(5, 0x2000);
+    state.writeEflags(0x000008d7);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebp: 0x1234, esp: 0x2002 },
+      eflags: 0x000008d7,
+      eip: 0x0000fff1
+    });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

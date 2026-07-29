@@ -901,6 +901,11 @@ export function stepInstruction(
       state.advanceEip(1);
       return { halted: false, fetched };
     }
+    case 0xc9:
+      state.writeRegister16(4, state.readRegister16(5));
+      state.writeRegister16(5, popUint16(memory, state));
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0xd4: {
       const divisor = fetchCodeByte(memory, state, 1).opcode;
       if (divisor === 0) {

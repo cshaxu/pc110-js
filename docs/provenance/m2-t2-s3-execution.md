@@ -333,6 +333,8 @@
 - M2 T2 S3 P140 adds `PUSH imm16` and `PUSH imm8` (`68` and `6A`) through the
   existing SS:SP word-stack boundary. The byte immediate is sign-extended to
   match PCjs 16-bit operand behavior.
+- M2 T2 S3 P141 adds `LEAVE` (`C9`) from PCjs stack-frame behavior: assign BP
+  to SP, then restore BP through the project-owned SS:SP word-stack boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
