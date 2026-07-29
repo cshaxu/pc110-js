@@ -167,6 +167,10 @@ export class Cpu386State {
     this.cr0 = value >>> 0;
   }
 
+  public clearTaskSwitchedFlag(): void {
+    this.cr0 = (this.cr0 & ~0x00000008) >>> 0;
+  }
+
   public loadMachineStatusWord(value: number): void {
     const machineStatusWord =
       (value | (this.cr0 & CR0_PROTECTED_MODE) | CR0_MSW_ALWAYS_ON) & 0xffff;

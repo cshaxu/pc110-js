@@ -656,6 +656,19 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
   });
 
+  it("clears CR0 task-switched through CLTS", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x06]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x80000009);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ cr0: 0x80000001, eip: 0x0000fff2 });
+  });
+
   it("loads the machine-status word from a ModR/M memory operand", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

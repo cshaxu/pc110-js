@@ -2511,6 +2511,17 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
+      if (extension === 0x06) {
+        const snapshot = state.snapshot();
+        if (
+          addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+          (snapshot.cs.selector & 0x03) !== 0
+        )
+          throw new UnsupportedOpcodeError("CLTS requires CPL zero");
+        state.clearTaskSwitchedFlag();
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (extension === 0x0b) {
         deliverCpuFault(memory, state, 6, fetched.instructionPointer);
         return { halted: false, fetched };

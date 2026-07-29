@@ -599,6 +599,7 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P217 extends `LMSW r/m16` (`0F 01 /6`) from its observed register
   form to the generic ModR/M memory form while preserving the existing CR0
   machine-status normalization.
+- M2 T2 S3 P218 adds `CLTS` (`0F 06`) at CPL zero, clearing only CR0.TS.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
