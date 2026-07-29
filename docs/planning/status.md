@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T5 S5: record PCjs license boundaries and excluded archival assets for M2
-  assimilation.
+- M1 completion: review the reference baseline gate, then create and verify the
+  immutable `m1` snapshot branch before beginning M2.
 
 ## Delivery Nodes
 
