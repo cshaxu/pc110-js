@@ -1012,23 +1012,31 @@ export function stepInstruction(
     }
     case 0xf3: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
-      if (opcode !== 0xab && opcode !== 0xa5)
+      if (opcode !== 0xaa && opcode !== 0xab && opcode !== 0xa4 && opcode !== 0xa5)
         throw new UnsupportedOpcodeError("Unsupported REP instruction");
+      const word = opcode === 0xab || opcode === 0xa5;
+      const copy = opcode === 0xa4 || opcode === 0xa5;
       let count = state.readRegister16(1);
       let source = state.readRegister16(6);
       let destination = state.readRegister16(7);
-      const step = state.directionFlag() ? -2 : 2;
+      const step = state.directionFlag() ? (word ? -2 : -1) : word ? 2 : 1;
       while (count > 0) {
-        const value =
-          opcode === 0xab
-            ? state.readRegister16(0)
-            : readSegmentUint16(memory, state, "ds", source);
-        writeSegmentUint16(memory, state, "es", destination, value);
-        source = (source + step) & 0xffff;
+        if (word) {
+          const value = copy
+            ? readSegmentUint16(memory, state, "ds", source)
+            : state.readRegister16(0);
+          writeSegmentUint16(memory, state, "es", destination, value);
+        } else {
+          const value = copy
+            ? readSegmentUint8(memory, state, "ds", source)
+            : state.readRegister8(0);
+          writeSegmentUint8(memory, state, "es", destination, value);
+        }
+        if (copy) source = (source + step) & 0xffff;
         destination = (destination + step) & 0xffff;
         count -= 1;
       }
-      if (opcode === 0xa5) state.writeRegister16(6, source);
+      if (copy) state.writeRegister16(6, source);
       state.writeRegister16(7, destination);
       state.writeRegister16(1, count);
       state.advanceEip(2);

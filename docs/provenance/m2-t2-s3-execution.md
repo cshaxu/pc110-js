@@ -268,6 +268,8 @@
   paths, preserving the existing flags and upper EAX bits.
 - M2 T2 S3 P117 adds observed direct-register `SAR r/m8, 1` (`D0 /7`) for ROM
   signed-byte conversion paths, with the required arithmetic shift flags.
+- M2 T2 S3 P118 adds observed `REP MOVSB` and `REP STOSB` forms, extending the
+  existing word-string execution path with byte width and direction handling.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
