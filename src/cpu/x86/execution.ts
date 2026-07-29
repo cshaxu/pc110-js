@@ -1616,6 +1616,15 @@ export function stepInstruction(
         else state.advanceEip(7);
         return { halted: false, fetched };
       }
+      if (opcode === 0xe9) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.cs.default32)
+          throw new UnsupportedOpcodeError(
+            "32-bit near jumps require the implemented protected-mode code path"
+          );
+        state.writeEip(snapshot.eip + 6 + (fetchCodeUint32(memory, state, 2) | 0));
+        return { halted: false, fetched };
+      }
       if (opcode >= 0x40 && opcode <= 0x47) {
         const register = opcode - 0x40;
         const value = state.readRegister(register);

@@ -2717,6 +2717,32 @@ describe("80386 instruction fetch", () => {
     expect(notTakenState.snapshot().eip).toBe(0x00000007);
   });
 
+  it("follows signed 32-bit near jumps through operand-size overrides", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0xe9],
+      [0x0002, 0x02],
+      [0x0003, 0x00],
+      [0x0004, 0x00],
+      [0x0005, 0x00],
+      [0x0008, 0x66],
+      [0x0009, 0xe9],
+      [0x000a, 0xf8],
+      [0x000b, 0xff],
+      [0x000c, 0xff],
+      [0x000d, 0xff]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x00000008);
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x00000006);
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
