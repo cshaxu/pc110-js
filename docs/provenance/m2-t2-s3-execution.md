@@ -157,6 +157,9 @@
 - M2 T2 S3 P76 adds `OR r16, r/m16` (`0B /r`) for observed DeskPro ROM
   state tests, using the existing ModR/M source and word-width logic-flag
   contracts without modifying the source operand.
+- M2 T2 S3 P77 adds `OR r/m16, imm16` (`81 /1 iw`) for observed DeskPro ROM
+  state-word updates, preserving the existing `/7` comparison form and using
+  the existing writable-memory and word-width logic-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1076,19 +1076,26 @@ export function stepInstruction(
     }
     case 0x81: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x07) throw new UnsupportedOpcodeError("Unsupported 81 opcode form");
+      if (modRm.reg !== 0x01 && modRm.reg !== 0x07)
+        throw new UnsupportedOpcodeError("Unsupported 81 opcode form");
       if (modRm.registerDirect) {
         const immediate = fetchCodeUint16(memory, state, 2);
-        state.writeCompareFlags16(state.readRegister16(modRm.rm), immediate);
+        if (modRm.reg === 0x01) {
+          const result = state.readRegister16(modRm.rm) | immediate;
+          state.writeRegister16(modRm.rm, result);
+          state.writeLogicFlags16(result);
+        } else state.writeCompareFlags16(state.readRegister16(modRm.rm), immediate);
         state.advanceEip(4);
         return { halted: false, fetched };
       }
       const address = decodeMemoryAddress(memory, state, modRm);
       const immediate = fetchCodeUint16(memory, state, 2 + address.displacementBytes);
-      state.writeCompareFlags16(
-        readSegmentUint16(memory, state, address.segment, address.offset),
-        immediate
-      );
+      const destination = readSegmentUint16(memory, state, address.segment, address.offset);
+      if (modRm.reg === 0x01) {
+        const result = destination | immediate;
+        writeSegmentUint16(memory, state, address.segment, address.offset, result);
+        state.writeLogicFlags16(result);
+      } else state.writeCompareFlags16(destination, immediate);
       state.advanceEip(4 + address.displacementBytes);
       return { halted: false, fetched };
     }
