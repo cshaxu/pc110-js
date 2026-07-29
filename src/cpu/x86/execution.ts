@@ -1810,6 +1810,22 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if (opcode === 0x68 || opcode === 0x6a) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
+          throw new UnsupportedOpcodeError(
+            "32-bit immediate PUSH requires the implemented protected-mode stack path"
+          );
+        pushUint32(
+          memory,
+          state,
+          opcode === 0x68
+            ? fetchCodeUint32(memory, state, 2)
+            : signedByte(fetchCodeByte(memory, state, 2).opcode)
+        );
+        state.advanceEip(opcode === 0x68 ? 6 : 3);
+        return { halted: false, fetched };
+      }
       if (opcode === 0xf7) {
         executeDwordTestImmediateModRm(memory, state, 2, 16);
         return { halted: false, fetched };

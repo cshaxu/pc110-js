@@ -3003,6 +3003,37 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("pushes 32-bit immediate operands through the protected stack path", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x68],
+      [0x0002, 0x78],
+      [0x0003, 0x56],
+      [0x0004, 0x34],
+      [0x0005, 0x12],
+      [0x0006, 0x66],
+      [0x0007, 0x6a],
+      [0x0008, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x200);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.esp).toBe(0x1fc);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x1fc + offset))).toEqual([
+      0x78, 0x56, 0x34, 0x12
+    ]);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.esp).toBe(0x1f8);
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x1f8 + offset))).toEqual([
+      0x80, 0xff, 0xff, 0xff
+    ]);
+  });
+
   it("executes every 32-bit Group 1 immediate operation through both address sizes", () => {
     const code = [
       0x66, 0x81, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x66, 0x81, 0xc8, 0x02, 0x00, 0x00, 0x00, 0x66,
