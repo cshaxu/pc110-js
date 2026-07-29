@@ -67,6 +67,25 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x5678 }, eip: 0x0000fff3 });
   });
 
+  it("loads 8-bit register immediates and writes AL to immediate ports", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xb0],
+      [0x000ffff1, 0xa5],
+      [0x000ffff2, 0xe6],
+      [0x000ffff3, 0x84]
+    ]);
+    const writes: Array<[number, number]> = [];
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    const ports = { writePort8: (port: number, value: number) => writes.push([port, value]) };
+
+    stepInstruction(memory, state, ports);
+    stepInstruction(memory, state, ports);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xa5 }, eip: 0x0000fff4 });
+    expect(writes).toEqual([[0x84, 0xa5]]);
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],

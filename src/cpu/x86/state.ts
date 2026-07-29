@@ -143,6 +143,16 @@ export class Cpu386State {
     this.registers[register] = ((this.registers[register] & 0xffff0000) | (value & 0xffff)) >>> 0;
   }
 
+  public writeRegister8(index: number, value: number): void {
+    const normalizedValue = value & 0xff;
+    const registerIndex = index & 0x03;
+    const register = this.generalRegisterAt(registerIndex);
+    const shift = index < 4 ? 0 : 8;
+    const mask = ~(0xff << shift);
+    this.registers[register] =
+      ((this.registers[register] & mask) | (normalizedValue << shift)) >>> 0;
+  }
+
   public loadRealModeCodeSegment(selector: number, instructionPointer: number): void {
     this.cs = {
       selector: selector & 0xffff,

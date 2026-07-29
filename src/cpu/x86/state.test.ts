@@ -67,4 +67,13 @@ describe("Cpu386State", () => {
       eip: 0x2345
     });
   });
+
+  it("writes low and high 8-bit register halves independently", () => {
+    const cpu = new Cpu386State();
+    cpu.writeRegister(0, 0xface0000);
+    cpu.writeRegister8(0, 0x12);
+    cpu.writeRegister8(4, 0x34);
+
+    expect(cpu.snapshot().registers.eax).toBe(0xface3412);
+  });
 });

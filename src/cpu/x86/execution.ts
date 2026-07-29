@@ -5,6 +5,10 @@ export interface InstructionMemory {
   readUint8(linearAddress: number): number;
 }
 
+export interface PortWriter {
+  writePort8(port: number, value: number): void;
+}
+
 export interface FetchedOpcode {
   readonly linearAddress: number;
   readonly instructionPointer: number;
@@ -60,7 +64,11 @@ function signedWord(value: number): number {
   return (value << 16) >> 16;
 }
 
-export function stepInstruction(memory: InstructionMemory, state: Cpu386State): ExecutionResult {
+export function stepInstruction(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  ports?: PortWriter
+): ExecutionResult {
   if (state.snapshot().halted) return { halted: true };
 
   const fetched = fetchOpcode(memory, state);
@@ -91,7 +99,19 @@ export function stepInstruction(memory: InstructionMemory, state: Cpu386State): 
       state.writeEip16(fetched.instructionPointer + 2 + displacement);
       return { halted: false, fetched };
     }
+    case 0xe6: {
+      if (!ports) throw new UnsupportedOpcodeError("OUT requires a port writer");
+      const port = fetchCodeByte(memory, state, 1).opcode;
+      ports.writePort8(port, state.snapshot().registers.eax & 0xff);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     default:
+      if (fetched.opcode >= 0xb0 && fetched.opcode <= 0xb7) {
+        state.writeRegister8(fetched.opcode - 0xb0, fetchCodeByte(memory, state, 1).opcode);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (fetched.opcode >= 0xb8 && fetched.opcode <= 0xbf) {
         state.writeRegister16(fetched.opcode - 0xb8, fetchCodeUint16(memory, state, 1));
         state.advanceEip(3);
