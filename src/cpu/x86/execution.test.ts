@@ -2691,6 +2691,32 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x7fffffff }, eflags: 0x00000817 });
   });
 
+  it("takes and skips 32-bit near conditional jumps through operand-size overrides", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x0f],
+      [0x0002, 0x84],
+      [0x0003, 0x01],
+      [0x0004, 0x00],
+      [0x0005, 0x00],
+      [0x0006, 0x00]
+    ]);
+    const takenState = new Cpu386State();
+    takenState.writeCr0(0x00000001);
+    takenState.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    takenState.writeEflags(0x00000042);
+
+    stepInstruction(resetAliasMemory(values), takenState);
+    expect(takenState.snapshot().eip).toBe(0x00000008);
+
+    const notTakenState = new Cpu386State();
+    notTakenState.writeCr0(0x00000001);
+    notTakenState.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    notTakenState.writeEflags(0x00000002);
+    stepInstruction(resetAliasMemory(values), notTakenState);
+    expect(notTakenState.snapshot().eip).toBe(0x00000007);
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

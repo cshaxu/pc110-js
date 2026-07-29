@@ -508,6 +508,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P191 adds operand-size-overridden general-register `INC` and `DEC`
   (`66 40-4F`) from PCjs's register arithmetic family. The 32-bit flag helpers
   update OF, AF, SF, ZF, and PF while preserving CF.
+- M2 T2 S3 P192 adds operand-size-overridden near `Jcc` (`66 0F 80-8F cd`)
+  from PCjs's 80386 conditional-jump family. It reuses the project condition
+  predicates and applies a signed dword displacement to 32-bit EIP.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

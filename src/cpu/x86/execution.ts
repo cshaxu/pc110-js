@@ -1602,6 +1602,20 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
+      if (opcode === 0x0f) {
+        const extension = fetchCodeByte(memory, state, 2).opcode;
+        if (extension < 0x80 || extension > 0x8f)
+          throw new UnsupportedOpcodeError("Unsupported operand-size-overridden 0F opcode");
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.cs.default32)
+          throw new UnsupportedOpcodeError(
+            "32-bit near conditional jumps require the implemented protected-mode code path"
+          );
+        if (shortJumpCondition(state, extension & 0x0f))
+          state.writeEip(snapshot.eip + 7 + (fetchCodeUint32(memory, state, 3) | 0));
+        else state.advanceEip(7);
+        return { halted: false, fetched };
+      }
       if (opcode >= 0x40 && opcode <= 0x47) {
         const register = opcode - 0x40;
         const value = state.readRegister(register);
