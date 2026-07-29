@@ -262,6 +262,8 @@
 - M2 T2 S3 P114 adds observed 8-bit F6-group unsigned `MUL` and `DIV` forms,
   using AL/AX implicit operands, the established CF/OF multiply contract, and
   existing real-mode divide-error delivery.
+- M2 T2 S3 P115 adds the observed accumulator-word `TEST` form (`A9 iw`),
+  using the existing 16-bit logical-flag contract without modifying AX.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

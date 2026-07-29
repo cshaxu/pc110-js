@@ -801,6 +801,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff4);
   });
 
+  it("tests AX against an immediate word without changing AX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xa9],
+      [0x000ffff1, 0x00],
+      [0x000ffff2, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x8001);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x8001 },
+      eip: 0x0000fff3,
+      eflags: 0x0086
+    });
+  });
+
   it("takes JZ when TEST produces a zero result", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xa8],

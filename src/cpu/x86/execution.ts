@@ -1909,6 +1909,12 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0xa9: {
+      const immediate = fetchCodeUint16(memory, state, 1);
+      state.writeLogicFlags16(state.readRegister16(0) & immediate);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x0c: {
       const result = state.readRegister8(0) | fetchCodeByte(memory, state, 1).opcode;
       state.writeRegister8(0, result);
