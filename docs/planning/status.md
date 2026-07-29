@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T1 S2: verify the pinned PCjs commit and read-only sibling path.
+- M1 T1 S2: in progress; verify the pinned PCjs commit and read-only sibling
+  path.
 
 ## Delivery Nodes
 
