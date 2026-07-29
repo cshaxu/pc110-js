@@ -135,6 +135,8 @@
   the return-path `LIDT` sequence.
 - M2 T2 S3 P68 enables `CLI` and `STI` at protected-mode CPL 0 for the observed
   ROM path while retaining explicit nonzero-CPL fault boundaries.
+- M2 T2 S3 P69 adds byte and word register-destination XOR memory forms through
+  shared ModR/M, segment, and logic-flag paths.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

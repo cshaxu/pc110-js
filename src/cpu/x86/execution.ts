@@ -888,12 +888,14 @@ export function stepInstruction(
     }
     case 0x33: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect)
-        throw new UnsupportedOpcodeError("Memory-form XOR is not implemented");
-      const result = state.readRegister16(modRm.reg) ^ state.readRegister16(modRm.rm);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const source = modRm.registerDirect
+        ? state.readRegister16(modRm.rm)
+        : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      const result = state.readRegister16(modRm.reg) ^ source;
       state.writeRegister16(modRm.reg, result);
       state.writeLogicFlags16(result);
-      state.advanceEip(2);
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
     case 0x0a: {
@@ -948,12 +950,14 @@ export function stepInstruction(
     }
     case 0x32: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect)
-        throw new UnsupportedOpcodeError("Memory-form XOR is not implemented");
-      const result = state.readRegister8(modRm.reg) ^ state.readRegister8(modRm.rm);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const source = modRm.registerDirect
+        ? state.readRegister8(modRm.rm)
+        : readSegmentUint8(memory, state, address!.segment, address!.offset);
+      const result = state.readRegister8(modRm.reg) ^ source;
       state.writeRegister8(modRm.reg, result);
       state.writeLogicFlags8(result);
-      state.advanceEip(2);
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
     case 0x80: {

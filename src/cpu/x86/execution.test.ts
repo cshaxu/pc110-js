@@ -796,6 +796,33 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("XORs byte and word registers with direct memory operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x32],
+      [0x000ffff1, 0x06],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x000ffff4, 0x33],
+      [0x000ffff5, 0x1e],
+      [0x000ffff6, 0x36],
+      [0x000ffff7, 0x12],
+      [0x00001234, 0xf0],
+      [0x00001236, 0x0f],
+      [0x00001237, 0xf0]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister(0, 0x0000aa55);
+    state.writeRegister16(3, 0xaaaa);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x0000aaa5, ebx: 0x5aa5 },
+      eip: 0x0000fff8
+    });
+  });
+
   it("loads a 16-bit register from direct and BP-based memory operands", () => {
     const directValues = new Map<number, number>([
       [0x000ffff0, 0x8b],
