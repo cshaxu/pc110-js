@@ -70,7 +70,7 @@ Goal: make autonomous execution bounded, reproducible, legally traceable, and re
 
 ### T3: Pre-Goal Setup Audit
 
-- S1: Correct planning conflicts and missing governance artifacts, apply the owner-authorized four-node direction correction, add durable root agent guidance, and add task tracking.
+- S1: Correct planning conflicts and missing governance artifacts, apply the owner-authorized four-node direction correction, add durable root agent guidance, add task tracking, and require an M1 browser reference run.
 
 Completion gate:
 
@@ -80,7 +80,7 @@ Completion gate:
 
 ## M1: PCjs Reference Integration
 
-Goal: make this project reproducibly run and validate the pinned sibling PCjs implementation through relative references, without copying or modifying PCjs runtime source.
+Goal: make this project reproducibly launch, run, and validate the pinned sibling PCjs implementation in a browser through relative references, without copying or modifying PCjs runtime source.
 
 ### T1: Reference Contract
 
@@ -99,7 +99,7 @@ Goal: make this project reproducibly run and validate the pinned sibling PCjs im
 
 ### T3: Project-Owned Reference Runner
 
-- S1: Add a TypeScript project runner or project-owned command that starts the selected sibling PCjs machine.
+- S1: Add a TypeScript project runner or project-owned command that serves and starts the selected sibling PCjs machine in a browser.
 - S2: Resolve `../pcjs` and local media through relative configuration.
 - S3: Fail clearly when the sibling commit, required source, or local assets do not match.
 - S4: Keep the sibling checkout read-only during every run.
@@ -111,6 +111,7 @@ Goal: make this project reproducibly run and validate the pinned sibling PCjs im
 - S3: Reach the DOS prompt in the browser.
 - S4: Record deterministic or observable boot markers.
 - S5: Capture compact manual browser proof and exact commands.
+- S6: Add and manually verify `docs/quickstart/m1-reference.md`.
 
 ### T5: Reference Mapping
 
@@ -122,9 +123,11 @@ Goal: make this project reproducibly run and validate the pinned sibling PCjs im
 
 Completion gate:
 
-- A command owned by pc110-js runs the pinned sibling PCjs implementation.
-- The selected complete 80386 PC/AT machine boots the known-good DOS floppy to a prompt.
+- A command owned by pc110-js serves and opens the pinned sibling PCjs implementation in a browser.
+- The selected complete 80386 PC/AT machine boots the known-good DOS floppy to a visible DOS prompt in that browser.
 - The complete configured hardware and source dependency closure is recorded.
+- The owner can reproduce the reference-mode browser run by following the
+  manually verified `docs/quickstart/m1-reference.md` procedure.
 - No PCjs runtime source was copied or modified.
 - The result is named the M1 PCjs reference baseline, not the pc110-js golden implementation.
 

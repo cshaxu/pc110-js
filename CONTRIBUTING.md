@@ -24,6 +24,8 @@ These rules are project constraints.
 - Use project-owned commands or a harness to refer to `../pcjs` through relative paths.
 - Select PCx86 v2 and a complete minimal 80386 PC/AT machine.
 - Boot the known-good DOS floppy without modifying or copying PCjs runtime source.
+- Provide a browser-accessible PCjs reference-mode run through a pc110-js-owned
+  command and a manually verified concise procedure.
 - Record the machine, dependency closure, assets, commands, and observable result.
 - Call this the PCjs reference baseline, not the pc110-js golden implementation.
 

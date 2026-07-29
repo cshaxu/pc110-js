@@ -40,5 +40,6 @@ M0 establishes governance before these delivery nodes. M5 packages the verified 
 - [Evidence policy](docs/governance/evidence-policy.md)
 - [Asset policy](docs/governance/asset-policy.md)
 - [Quick Start requirement](docs/requirements/quick-start.md)
+- [M1 browser reference-run requirement](docs/requirements/m1-reference-browser-run.md)
 
 Protected ROM and media images are not part of this repository. Local assets are identified by hashes and loaded through ignored local configuration.

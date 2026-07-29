@@ -41,6 +41,8 @@ Do not treat this file as a substitute for those canonical documents.
   `CONTRIBUTING.md`.
 - M1 may run JavaScript from the read-only sibling PCjs checkout. M1 must not
   copy PCjs runtime source into this repository.
+- M1 must expose its selected PCjs reference machine through a pc110-js-owned
+  browser launch path and document the manual reference-mode procedure.
 - M2 must provide the standalone project-owned TypeScript implementation and
   must not depend on sibling PCjs code at runtime.
 - Do not add fake BIOS, DOS, PCDOS, filesystem, boot-repair, guest-service, or
