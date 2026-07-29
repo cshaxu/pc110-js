@@ -229,6 +229,9 @@
   contracts.
 - M2 T2 S3 P102 adds the observed `ES:`-overridden `AND r8, r/m8` form
   (`26 22 /r`) without widening unsupported segment-prefix handling.
+- M2 T2 S3 P103 adds `CMP r8, r/m8` and `CMP r16, r/m16` (`3A` and `3B /r`)
+  for observed DeskPro ROM decision paths, using existing ModR/M source and
+  subtraction-flag contracts without writing either source operand.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
