@@ -12,12 +12,12 @@
 
 ## Next Eligible Work
 
-- M1 snapshot transition: create and verify immutable `m1` from this final
-  reference-baseline commit before beginning M2.
+- M2 T1 S1: pin the standalone TypeScript build, test, lint, and formatting
+  toolchain.
 
 ## Delivery Nodes
 
-- M1 PCjs reference integration: not established.
+- M1 PCjs reference integration: complete at immutable `m1` snapshot.
 - M2 standalone TypeScript 386 golden baseline: not established.
 - M3 high-ROI PC110 integration: not established.
 - M4 medium- and low-ROI PC110 integration: not established.

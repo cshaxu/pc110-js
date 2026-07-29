@@ -2,7 +2,7 @@
 
 ## Result
 
-Pass, pending immutable snapshot-branch creation.
+Pass.
 
 ## Baseline
 
@@ -25,3 +25,9 @@ Pass, pending immutable snapshot-branch creation.
 
 This is the M1 PCjs reference baseline. It is not the standalone pc110-js
 implementation or M2 golden baseline.
+
+## Immutable Snapshot
+
+`m1` was created and pushed from
+`26bbf1c5a2eaf73dec4729e70fc23b80dafb5183`. At verification time, `main`,
+local `m1`, and `origin/m1` resolved to that exact commit.
