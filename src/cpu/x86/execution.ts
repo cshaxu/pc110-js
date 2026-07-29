@@ -418,6 +418,20 @@ function deliverProtectedModeInterrupt(
   loadProtectedModeCodeSegment(memory, state, gate.selector, gate.offset);
 }
 
+function deliverCpuFault(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  vector: number,
+  faultInstructionPointer: number
+): void {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+    deliverRealModeInterrupt(memory, state, vector, faultInstructionPointer);
+  else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
+    deliverProtectedModeInterrupt(memory, state, vector, faultInstructionPointer);
+  else throw new UnsupportedOpcodeError("Virtual-8086 fault delivery is not implemented");
+}
+
 export function serviceExternalInterrupt(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1222,10 +1236,7 @@ export function stepInstruction(
     case 0xd4: {
       const divisor = fetchCodeByte(memory, state, 1).opcode;
       if (divisor === 0) {
-        const snapshot = state.snapshot();
-        if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-          throw new DivideError("Protected-mode divide-error delivery is not implemented");
-        deliverRealModeInterrupt(memory, state, 0, fetched.instructionPointer);
+        deliverCpuFault(memory, state, 0, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       const accumulator = state.readRegister8(0);
@@ -1701,12 +1712,7 @@ export function stepInstruction(
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
       if (extension === 0x0b) {
-        const snapshot = state.snapshot();
-        if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-          throw new UnsupportedOpcodeError(
-            "Protected-mode invalid-opcode delivery is not implemented"
-          );
-        deliverRealModeInterrupt(memory, state, 6, fetched.instructionPointer);
+        deliverCpuFault(memory, state, 6, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       if (extension === 0xa0 || extension === 0xa8) {
@@ -2730,10 +2736,7 @@ export function stepInstruction(
       const dividend = ((state.readRegister16(2) << 16) | state.readRegister16(0)) >>> 0;
       const quotient = Math.floor(dividend / divisor);
       if (divisor === 0 || quotient > 0xffff) {
-        const snapshot = state.snapshot();
-        if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-          throw new DivideError("Protected-mode divide-error delivery is not implemented");
-        deliverRealModeInterrupt(memory, state, 0, fetched.instructionPointer);
+        deliverCpuFault(memory, state, 0, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       state.writeRegister16(0, quotient);
@@ -2775,10 +2778,7 @@ export function stepInstruction(
         const dividend = state.readRegister16(0);
         const quotient = Math.floor(dividend / divisor);
         if (divisor === 0 || quotient > 0xff) {
-          const snapshot = state.snapshot();
-          if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-            throw new DivideError("Protected-mode divide-error delivery is not implemented");
-          deliverRealModeInterrupt(memory, state, 0, fetched.instructionPointer);
+          deliverCpuFault(memory, state, 0, fetched.instructionPointer);
           return { halted: false, fetched };
         }
         state.writeRegister8(0, quotient);

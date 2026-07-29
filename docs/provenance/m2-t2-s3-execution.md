@@ -463,6 +463,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   the PCjs selected far-transfer model. It validates the target descriptor
   before creating the EIP/CS frame and retains explicit boundaries for call
   gates, privilege stack switching, 16-bit frames, and virtual-8086 behavior.
+- M2 T2 S3 P179 routes no-error-code CPU faults through the existing real-mode
+  IVT or protected-mode IDT gate path according to PCjs fault semantics. UD2
+  and supported divide errors now preserve their faulting EIP; fault error-code
+  frames, privilege stack switching, and virtual-8086 delivery remain later S3
+  work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

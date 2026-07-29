@@ -2289,6 +2289,91 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("delivers protected-mode UD2 through a 32-bit IDT gate with the faulting EIP", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x0f],
+      [0x0001, 0x0b],
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0xcf],
+      [0x100f, 0x00],
+      [0x2030, 0x34],
+      [0x2031, 0x00],
+      [0x2032, 0x08],
+      [0x2033, 0x00],
+      [0x2034, 0x00],
+      [0x2035, 0x8e],
+      [0x2036, 0x00],
+      [0x2037, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.writeIdtr(0x2000, 0x0037);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    state.writeEflags(0x00000302);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000034,
+      cs: { selector: 0x0008, default32: true },
+      registers: { esp: 0x2ff4 },
+      eflags: 0x00000002
+    });
+    expect(Array.from({ length: 12 }, (_, offset) => values.get(0x2ff4 + offset))).toEqual([
+      0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00
+    ]);
+  });
+
+  it("delivers a protected-mode divide error through vector zero with the faulting EIP", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0xf6],
+      [0x0001, 0xf0],
+      [0x1008, 0xff],
+      [0x1009, 0xff],
+      [0x100a, 0x00],
+      [0x100b, 0x00],
+      [0x100c, 0x00],
+      [0x100d, 0x9a],
+      [0x100e, 0xcf],
+      [0x100f, 0x00],
+      [0x2000, 0x56],
+      [0x2001, 0x00],
+      [0x2002, 0x08],
+      [0x2003, 0x00],
+      [0x2004, 0x00],
+      [0x2005, 0x8e],
+      [0x2006, 0x00],
+      [0x2007, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x1000, 0x000f);
+    state.writeIdtr(0x2000, 0x0007);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    state.writeRegister8(0, 0);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00000056,
+      cs: { selector: 0x0008, default32: true },
+      registers: { esp: 0x2ff4 }
+    });
+    expect(Array.from({ length: 4 }, (_, offset) => values.get(0x2ff4 + offset))).toEqual([
+      0x00, 0x00, 0x00, 0x00
+    ]);
+  });
+
   it("checks signed BOUND memory limits and faults through vector five", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x62],
