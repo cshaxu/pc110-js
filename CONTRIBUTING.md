@@ -28,8 +28,11 @@ This project is a browser-first IBM Palm Top PC 110 emulator. These guidelines a
 - PC110-EMU is a behavioral oracle, not an architecture template.
 - PC110-EMU may be used to understand expected behavior, ROM boot paths, register values, hardware observations, and device quirks.
 - Do not copy PC110-EMU hacks, fake DOS or PCDOS layers, temporary bypasses, or broad control-flow structure into this project.
+- Previous pc110js attempts are historical references, not architectural defaults.
+- `pc110js-v2` has higher reference priority than `pc110js-v1` because it may contain useful analysis from deeper hardware investigations, even where its implementation direction should not be reused directly.
 - NXVM is a source-organization reference, not an implementation source.
 - NXVM may guide module boundaries such as core machine, devices, platform, debugger, and tools, but its C implementation should not be ported unless explicitly approved for a narrow reason.
+- Reference priority for implementation decisions is: PCjs, PC110-EMU, pc110js-v2, pc110js-v1, NXVM.
 - Every meaningful milestone must preserve a bootable baseline.
 - Do not accept a state where future PC110 accuracy breaks the known-good DOS boot path.
 - Prefer breadth-first progress over depth-first hardware archaeology.
@@ -170,4 +173,5 @@ M5 T3 S2 P1: add minimal device registry
 - ROMs, BIOS dumps, disk images, ISO images, VHDs, VMDKs, and other protected media must not be committed by default.
 - Any committed media asset requires explicit provenance, license or permission notes, and a reason it belongs in the repository.
 - Local asset paths may be documented, but protected media should remain outside Git unless explicitly approved.
+
 

@@ -6,6 +6,16 @@
 
 PCjs is the primary implementation source for mature PC/AT-compatible emulator behavior. The project will migrate PCjs behavior into the pc110js source layout in controlled subsystem-sized steps.
 
+Reference priority for implementation decisions is:
+
+1. PCjs.
+2. PC110-EMU.
+3. pc110js-v2.
+4. pc110js-v1.
+5. NXVM.
+
+`pc110js-v2` may contain useful analysis from deeper hardware investigations. Treat it as a reference for lessons and evidence, not as a direction to inherit wholesale.
+
 The migration goal is not to preserve PCjs file layout. The goal is to preserve useful behavior while making the resulting codebase natural for this project.
 
 ## Early Machine Target
@@ -49,3 +59,4 @@ This layout is a starting point, not a fixed contract. It should evolve only whe
 - Keep behavior changes separate from mechanical TypeScript adaptation.
 - Add tests and smoke checks around each migrated subsystem as soon as practical.
 - Keep PCjs license and attribution requirements visible.
+
