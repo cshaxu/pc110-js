@@ -184,6 +184,23 @@ function segmentForStore(index: number): "cs" | LoadableSegment | undefined {
   }
 }
 
+function segmentForPop(index: number): LoadableSegment | undefined {
+  switch (index) {
+    case 0:
+      return "es";
+    case 2:
+      return "ss";
+    case 3:
+      return "ds";
+    case 4:
+      return "fs";
+    case 5:
+      return "gs";
+    default:
+      return undefined;
+  }
+}
+
 function readFarPointer(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -368,6 +385,35 @@ export function stepInstruction(
       state.writeStatusFlagsFromAh((state.snapshot().registers.eax >>> 8) & 0xff);
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x06:
+    case 0x0e:
+    case 0x16:
+    case 0x1e: {
+      const segment =
+        fetched.opcode === 0x06
+          ? "es"
+          : fetched.opcode === 0x0e
+            ? "cs"
+            : fetched.opcode === 0x16
+              ? "ss"
+              : "ds";
+      pushUint16(memory, state, state.snapshot()[segment].selector);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
+    case 0x07:
+    case 0x17:
+    case 0x1f: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode POP segment is not implemented");
+      }
+      const segment = segmentForPop((fetched.opcode - 0x07) >>> 3);
+      if (!segment) throw new UnsupportedOpcodeError("Unsupported POP segment opcode");
+      state.loadRealModeSegment(segment, popUint16(memory, state));
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0xfa: {
       const snapshot = state.snapshot();
       if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")

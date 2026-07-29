@@ -313,6 +313,26 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x00001634), values.get(0x00001635)]).toEqual([0x40, 0x00]);
   });
 
+  it("pushes and pops real-mode segment selectors through SS:SP", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x06],
+      [0x000ffff1, 0x1f]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("es", 0x0040);
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    state.loadRealModeSegment("ds", 0);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      ds: { selector: 0x0040, base: 0x0400, limit: 0xffff },
+      registers: { esp: 0x1000 }
+    });
+  });
+
   it("reads a port, tests AL, and follows JNZ from the reset-ROM path", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xe4],

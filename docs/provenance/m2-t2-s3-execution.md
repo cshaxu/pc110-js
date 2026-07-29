@@ -90,6 +90,8 @@
   option-ROM dispatch.
 - M2 T2 S3 P47 adds 8-bit and 16-bit `XCHG r/m, r` through the shared ModR/M
   and writable-memory boundaries without changing EFLAGS.
+- M2 T2 S3 P48 adds real-mode `PUSH Sreg` and `POP Sreg` through SS:SP,
+  preserving the explicit protected-mode boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
