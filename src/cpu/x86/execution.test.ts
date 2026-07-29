@@ -1026,6 +1026,32 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x00002000), values.get(0x00002001)]).toEqual([0x01, 0xf0]);
   });
 
+  it("ORs byte registers into register and memory destinations", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x08],
+      [0x000ffff1, 0xc8],
+      [0x000ffff2, 0x08],
+      [0x000ffff3, 0x2e],
+      [0x000ffff4, 0x10],
+      [0x000ffff5, 0x00],
+      [0x00000010, 0x01]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x80);
+    state.writeRegister8(1, 0x01);
+    state.writeRegister8(5, 0x40);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x00000081, ecx: 0x00004001 },
+      eflags: 0x00000086
+    });
+    stepInstruction(memory, state);
+    expect(state.snapshot().eflags).toBe(0x00000006);
+    expect(values.get(0x00000010)).toBe(0x41);
+  });
+
   it("XORs byte and word registers with direct memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x32],
