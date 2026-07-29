@@ -154,6 +154,17 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x00000892);
   });
 
+  it("includes carry in 8-bit addition flags and updates word multiply flags", () => {
+    const cpu = new Cpu386State();
+    cpu.writeAddFlags8(0xff, 0x00, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000057);
+
+    cpu.writeMultiplyFlags16(1);
+    expect(cpu.snapshot().eflags).toBe(0x00000857);
+    cpu.writeMultiplyFlags16(0);
+    expect(cpu.snapshot().eflags).toBe(0x00000056);
+  });
+
   it("sets 16-bit comparison flags without modifying operands", () => {
     const cpu = new Cpu386State();
     cpu.writeCompareFlags16(0x0000, 0x0001);

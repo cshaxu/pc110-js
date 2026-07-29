@@ -627,6 +627,30 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x01, edx: 0x331 } });
   });
 
+  it("executes immediate ADC and unsigned word multiply through accumulator registers", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x80],
+      [0x000ffff1, 0xd2],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0xf7],
+      [0x000ffff4, 0xe3]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(2, 0xff);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0x0300 }, eflags: 0x00000057 });
+    state.writeRegister16(0, 0x1000);
+    state.writeRegister16(3, 0x0010);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x0000, edx: 0x0001 },
+      eflags: 0x00000857
+    });
+  });
+
   it("compares byte register sources with register and memory destinations", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x38],

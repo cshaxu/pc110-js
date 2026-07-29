@@ -106,6 +106,8 @@
   fault objects until later S3 exception delivery owns fault injection.
 - M2 T2 S3 P55 adds real-mode `PUSHF`, `POPF`, and `STI` through the shared
   stack and EFLAGS boundaries while leaving protected-mode privilege rules open.
+- M2 T2 S3 P56 adds byte `ADC` through `80 /2` and unsigned `MUL r/m16`
+  (`F7 /4`) with the PCjs-defined CF/OF result boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

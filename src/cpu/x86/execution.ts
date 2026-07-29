@@ -795,7 +795,7 @@ export function stepInstruction(
     }
     case 0x80: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x00 && modRm.reg !== 0x05 && modRm.reg !== 0x07) {
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x05 && modRm.reg !== 0x07) {
         throw new UnsupportedOpcodeError("Unsupported 80 opcode form");
       }
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
@@ -803,11 +803,12 @@ export function stepInstruction(
       const destination = modRm.registerDirect
         ? state.readRegister8(modRm.rm)
         : readSegmentUint8(memory, state, address!.segment, address!.offset);
-      if (modRm.reg === 0x00) {
-        const result = destination + immediate;
+      if (modRm.reg === 0x00 || modRm.reg === 0x02) {
+        const carry = modRm.reg === 0x02 && state.carryFlag() ? 1 : 0;
+        const result = destination + immediate + carry;
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
         else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
-        state.writeAddFlags8(destination, immediate);
+        state.writeAddFlags8(destination, immediate, carry);
       } else if (modRm.reg === 0x05) {
         const result = destination - immediate;
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
@@ -882,11 +883,21 @@ export function stepInstruction(
     }
     case 0xf7: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x06) throw new UnsupportedOpcodeError("Unsupported F7 opcode form");
+      if (modRm.reg !== 0x04 && modRm.reg !== 0x06)
+        throw new UnsupportedOpcodeError("Unsupported F7 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
-      const divisor = modRm.registerDirect
+      const operand = modRm.registerDirect
         ? state.readRegister16(modRm.rm)
         : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      if (modRm.reg === 0x04) {
+        const product = state.readRegister16(0) * operand;
+        state.writeRegister16(0, product);
+        state.writeRegister16(2, product >>> 16);
+        state.writeMultiplyFlags16(product >>> 16);
+        state.advanceEip(2 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
+      const divisor = operand;
       if (divisor === 0) throw new DivideError("Unsigned word division by zero");
       const dividend = ((state.readRegister16(2) << 16) | state.readRegister16(0)) >>> 0;
       const quotient = Math.floor(dividend / divisor);

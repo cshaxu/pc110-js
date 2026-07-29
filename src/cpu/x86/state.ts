@@ -255,18 +255,25 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
-  public writeAddFlags8(left: number, right: number): void {
+  public writeAddFlags8(left: number, right: number, carry = 0): void {
     const leftByte = left & 0xff;
     const rightByte = right & 0xff;
-    const sum = leftByte + rightByte;
+    const effectiveRight = (rightByte + carry) & 0xff;
+    const sum = leftByte + rightByte + carry;
     const result = sum & 0xff;
     let flags = this.eflags & ~EFLAGS_ARITHMETIC_MASK;
     if (sum > 0xff) flags |= EFLAGS_CARRY;
-    if ((leftByte ^ rightByte ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
+    if ((leftByte ^ effectiveRight ^ result) & 0x10) flags |= EFLAGS_AUXILIARY_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
-    if (~(leftByte ^ rightByte) & (leftByte ^ result) & 0x80) flags |= EFLAGS_OVERFLOW;
+    if (~(leftByte ^ effectiveRight) & (leftByte ^ result) & 0x80) flags |= EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeMultiplyFlags16(highWord: number): void {
+    let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_OVERFLOW);
+    if ((highWord & 0xffff) !== 0) flags |= EFLAGS_CARRY | EFLAGS_OVERFLOW;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
