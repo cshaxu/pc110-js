@@ -184,6 +184,8 @@
 - M2 T2 S3 P85 adds `PUSH r/m16` (`FF /6`) for observed DeskPro ROM stack-save
   paths, including default SS selection for BP-based sources and the existing
   SS:SP writable-memory boundary.
+- M2 T2 S3 P86 adds the observed ES-overridden `PUSH r/m16` (`26 FF /6`),
+  preserving ES as the source segment while keeping stack writes on SS:SP.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1239,6 +1239,26 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("pushes ES-overridden memory words through FF /6", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x26],
+      [0x000ffff1, 0xff],
+      [0x000ffff2, 0x35],
+      [0x00002010, 0xef],
+      [0x00002011, 0xbe]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("es", 0x0200);
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeRegister16(7, 0x0010);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x0ffe }, eip: 0x0000fff3 });
+    expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0xef, 0xbe]);
+  });
+
   it("returns from real-mode far calls with optional stack cleanup", () => {
     const plainValues = new Map<number, number>([
       [0x000ffff0, 0xff],

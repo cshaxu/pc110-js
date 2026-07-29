@@ -461,7 +461,8 @@ function executeNearCall(
 function executePushModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  modRmOffset: number
+  modRmOffset: number,
+  segmentOverride?: "cs" | "ds" | "es" | "ss"
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.reg !== 0x06) throw new UnsupportedOpcodeError("Unsupported FF opcode form");
@@ -475,7 +476,11 @@ function executePushModRm(
     (index) => state.readRegister16(index),
     (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
   );
-  pushUint16(memory, state, readSegmentUint16(memory, state, address.segment, address.offset));
+  pushUint16(
+    memory,
+    state,
+    readSegmentUint16(memory, state, segmentOverride ?? address.segment, address.offset)
+  );
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
@@ -811,6 +816,10 @@ export function stepInstruction(
       }
       if (opcode === 0x88) {
         executeMov8FromModRm(memory, state, true, 2, "es");
+        return { halted: false, fetched };
+      }
+      if (opcode === 0xff) {
+        executePushModRm(memory, state, 2, "es");
         return { halted: false, fetched };
       }
       if (opcode !== 0xc6 && opcode !== 0xc7)
