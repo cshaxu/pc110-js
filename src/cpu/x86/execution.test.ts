@@ -173,6 +173,24 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("writes through the protected ES cache with the observed byte MOV form", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x26],
+      [0x000ffff1, 0x88],
+      [0x000ffff2, 0x1d]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeSegment("es", 0x0008, 0x00100000, 0x0000ffff);
+    state.writeRegister16(7, 0x0020);
+    state.writeRegister8(3, 0xa5);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(values.get(0x00100020)).toBe(0xa5);
+    expect(state.snapshot().eip).toBe(0x0000fff3);
+  });
+
   it("follows the reset-ROM CS-overridden far jump table entry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x2e],

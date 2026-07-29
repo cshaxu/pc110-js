@@ -364,31 +364,37 @@ function executeMovSegmentFromModRm(
 function executeMov8FromModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  destinationIsMemory: boolean
+  destinationIsMemory: boolean,
+  modRmOffset = 1,
+  segmentOverride?: "cs" | "ds" | "es" | "ss" | "fs" | "gs"
 ): void {
-  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.registerDirect) {
     const source = state.readRegister8(destinationIsMemory ? modRm.reg : modRm.rm);
     state.writeRegister8(destinationIsMemory ? modRm.rm : modRm.reg, source);
-    state.advanceEip(2);
+    state.advanceEip(modRmOffset + 1);
     return;
   }
-  const address = decodeMemoryAddress(memory, state, modRm);
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
   if (destinationIsMemory) {
     writeSegmentUint8(
       memory,
       state,
-      address.segment,
+      segmentOverride ?? address.segment,
       address.offset,
       state.readRegister8(modRm.reg)
     );
   } else {
     state.writeRegister8(
       modRm.reg,
-      readSegmentUint8(memory, state, address.segment, address.offset)
+      readSegmentUint8(memory, state, segmentOverride ?? address.segment, address.offset)
     );
   }
-  state.advanceEip(2 + address.displacementBytes);
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
 function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 8 | 16): void {
@@ -617,6 +623,10 @@ export function stepInstruction(
       const opcode = fetchCodeByte(memory, state, 1).opcode;
       if (opcode === 0x8b) {
         executeMovReg16FromModRm(memory, state, 2, "es");
+        return { halted: false, fetched };
+      }
+      if (opcode === 0x88) {
+        executeMov8FromModRm(memory, state, true, 2, "es");
         return { halted: false, fetched };
       }
       if (opcode !== 0xc6 && opcode !== 0xc7)
