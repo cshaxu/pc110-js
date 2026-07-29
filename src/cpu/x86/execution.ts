@@ -587,6 +587,18 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0xec: {
+      if (!ports?.readPort8) throw new UnsupportedOpcodeError("IN requires a port reader");
+      state.writeRegister8(0, ports.readPort8(state.readRegister16(2)));
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
+    case 0xee: {
+      if (!ports?.writePort8) throw new UnsupportedOpcodeError("OUT requires a port writer");
+      ports.writePort8(state.readRegister16(2), state.readRegister8(0));
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     default:
       if (fetched.opcode >= 0x50 && fetched.opcode <= 0x57) {
         pushUint16(memory, state, state.readRegister16(fetched.opcode - 0x50));

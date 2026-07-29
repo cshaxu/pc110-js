@@ -137,6 +137,25 @@ describe("80386 instruction fetch", () => {
     expect(writes).toEqual([[0x84, 0xa5]]);
   });
 
+  it("reads and writes AL through DX-addressed ports", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xec],
+      [0x000ffff1, 0xee]
+    ]);
+    const writes: Array<[number, number]> = [];
+    const state = new Cpu386State();
+    state.writeRegister16(2, 0x0064);
+    const ports = {
+      readPort8: (port: number) => (port === 0x64 ? 0xa5 : 0),
+      writePort8: (port: number, value: number) => writes.push([port, value])
+    };
+
+    stepInstruction(resetAliasMemory(values), state, ports);
+    stepInstruction(resetAliasMemory(values), state, ports);
+    expect(state.snapshot().registers.eax).toBe(0xa5);
+    expect(writes).toEqual([[0x64, 0xa5]]);
+  });
+
   it("executes SAHF and real-mode CLI with the expected EFLAGS changes", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x9e],

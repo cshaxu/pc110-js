@@ -63,6 +63,8 @@
 - M2 T2 S3 P30 adds real-mode `REP MOVSW` through DS:SI and ES:DI.
 - M2 T2 S3 P31 adds real-mode `INT imm8` delivery through the IVT and SS:SP.
 - M2 T2 S3 P32 adds real-mode `IRET` state restoration through SS:SP.
+- M2 T2 S3 P33 adds `IN AL, DX` and `OUT DX, AL` through the existing narrow
+  port-I/O contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
