@@ -96,6 +96,8 @@
   contract for observed BIOS memory-probe arithmetic.
 - M2 T2 S3 P50 adds byte `ADD` and `SUB` ModR/M forms plus `80 /0`, `/5`, and
   `/7` immediate forms through the shared byte arithmetic and memory boundaries.
+- M2 T2 S3 P51 adds 16-bit `SHL r/m16, 1` and `SHL r/m16, imm8` (`D1 /4` and
+  `C1 /4`) using the PCjs 80386 count-mask and logic-flag behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -399,6 +399,21 @@ function executeByteAluModRm(
   state.advanceEip(2 + (address?.displacementBytes ?? 0));
 }
 
+function executeShiftLeftWord(memory: InstructionMemory, state: Cpu386State, count: number): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+  if (modRm.reg !== 0x04) throw new UnsupportedOpcodeError("Unsupported word shift opcode form");
+  const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+  const source = modRm.registerDirect
+    ? state.readRegister16(modRm.rm)
+    : readSegmentUint16(memory, state, address!.segment, address!.offset);
+  const normalizedCount = count & 0x1f;
+  const result = normalizedCount > 16 ? 0 : (source << normalizedCount) & 0xffff;
+  if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+  else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
+  state.writeShiftLeftFlags16(source, count);
+  state.advanceEip(2 + (address?.displacementBytes ?? 0) + (count === 1 ? 0 : 1));
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -811,6 +826,21 @@ export function stepInstruction(
       state.writeRegister8(modRm.rm, result);
       state.writeShiftLeftFlags8(source);
       state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0xd1:
+      executeShiftLeftWord(memory, state, 1);
+      return { halted: false, fetched };
+    case 0xc1: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const displacementBytes = modRm.registerDirect
+        ? 0
+        : decodeMemoryAddress(memory, state, modRm).displacementBytes;
+      executeShiftLeftWord(
+        memory,
+        state,
+        fetchCodeByte(memory, state, 2 + displacementBytes).opcode
+      );
       return { halted: false, fetched };
     }
     case 0xff:

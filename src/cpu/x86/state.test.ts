@@ -169,4 +169,13 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().eflags).toBe(0x00000847);
   });
+
+  it("sets 16-bit left-shift flags with the 80386 count mask", () => {
+    const cpu = new Cpu386State();
+    cpu.writeShiftLeftFlags16(0x8001, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000803);
+
+    cpu.writeShiftLeftFlags16(0x0001, 6);
+    expect(cpu.snapshot().eflags).toBe(0x00000002);
+  });
 });
