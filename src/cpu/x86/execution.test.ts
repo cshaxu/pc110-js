@@ -6102,4 +6102,38 @@ describe("80386 instruction fetch", () => {
     stepInstruction(memory, state);
     expect(state.snapshot()).toMatchObject({ registers: { edx: 0x80000000 }, eflags: 0x00000002 });
   });
+
+  it("multiplies 32-bit register and 32-bit-addressed memory operands through IMUL", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x66],
+      [0x00000001, 0x0f],
+      [0x00000002, 0xaf],
+      [0x00000003, 0xc3],
+      [0x00000004, 0x66],
+      [0x00000005, 0x67],
+      [0x00000006, 0x0f],
+      [0x00000007, 0xaf],
+      [0x00000008, 0x15],
+      [0x00000009, 0x00],
+      [0x0000000a, 0x20],
+      [0x0000000b, 0x00],
+      [0x0000000c, 0x00],
+      [0x00002000, 0x01],
+      [0x00002001, 0x00],
+      [0x00002002, 0x00],
+      [0x00002003, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(0, 0x40000000);
+    state.writeRegister(3, 3);
+    state.writeRegister(2, 0x40000000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xc0000000 }, eflags: 0x00000803 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { edx: 0x40000000 }, eflags: 0x00000002 });
+  });
 });

@@ -1408,6 +1408,38 @@ function executeDwordImmediateImul(
   state.advanceEip(immediateOffset + (opcode === 0x69 ? 4 : 1));
 }
 
+function executeDwordImul(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
+    ? undefined
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
+  const source = modRm.registerDirect
+    ? state.readRegister(modRm.rm)
+    : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
+  const product =
+    BigInt.asIntN(32, BigInt(state.readRegister(modRm.reg))) * BigInt.asIntN(32, BigInt(source));
+  state.writeRegister(modRm.reg, Number(BigInt.asUintN(32, product)));
+  state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
+  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
+}
+
 function executeMovImmediateDwordModRm(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2299,6 +2331,10 @@ export function stepInstruction(
           executeBitScanDwordModRm(memory, state, extension, 3);
           return { halted: false, fetched };
         }
+        if (extension === 0xaf) {
+          executeDwordImul(memory, state, 3, 16);
+          return { halted: false, fetched };
+        }
         if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
           executeMovExtendDwordModRm(memory, state, extension, 3, 16);
           return { halted: false, fetched };
@@ -2480,6 +2516,10 @@ export function stepInstruction(
             extension === 0xbf
           ) {
             executeMovExtendDwordModRm(memory, state, extension, 4, 32);
+            return { halted: false, fetched };
+          }
+          if (extension === 0xaf) {
+            executeDwordImul(memory, state, 4, 32);
             return { halted: false, fetched };
           }
         }
