@@ -541,6 +541,28 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x00000082 });
   });
 
+  it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x86],
+      [0x000ffff1, 0xfb],
+      [0x000ffff2, 0x87],
+      [0x000ffff3, 0x1e],
+      [0x000ffff4, 0x34],
+      [0x000ffff5, 0x12],
+      [0x00001234, 0xef],
+      [0x00001235, 0xbe]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0x1234);
+    state.writeEflags(0x00000ad7);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x3412 }, eflags: 0x00000ad7 });
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0xbeef }, eflags: 0x00000ad7 });
+    expect([values.get(0x00001234), values.get(0x00001235)]).toEqual([0x12, 0x34]);
+  });
+
   it("compares 16-bit register and memory operands with sign-extended bytes", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x83],

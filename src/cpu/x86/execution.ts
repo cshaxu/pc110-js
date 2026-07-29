@@ -314,6 +314,40 @@ function executeMov8FromModRm(
   state.advanceEip(2 + address.displacementBytes);
 }
 
+function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 8 | 16): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+  if (modRm.registerDirect) {
+    if (width === 8) {
+      const register = state.readRegister8(modRm.reg);
+      state.writeRegister8(modRm.reg, state.readRegister8(modRm.rm));
+      state.writeRegister8(modRm.rm, register);
+    } else {
+      const register = state.readRegister16(modRm.reg);
+      state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
+      state.writeRegister16(modRm.rm, register);
+    }
+    state.advanceEip(2);
+    return;
+  }
+  const address = decodeMemoryAddress(memory, state, modRm);
+  if (width === 8) {
+    const register = state.readRegister8(modRm.reg);
+    state.writeRegister8(
+      modRm.reg,
+      readSegmentUint8(memory, state, address.segment, address.offset)
+    );
+    writeSegmentUint8(memory, state, address.segment, address.offset, register);
+  } else {
+    const register = state.readRegister16(modRm.reg);
+    state.writeRegister16(
+      modRm.reg,
+      readSegmentUint16(memory, state, address.segment, address.offset)
+    );
+    writeSegmentUint16(memory, state, address.segment, address.offset, register);
+  }
+  state.advanceEip(2 + address.displacementBytes);
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -486,6 +520,12 @@ export function stepInstruction(
       return { halted: false, fetched };
     case 0x8a:
       executeMov8FromModRm(memory, state, false);
+      return { halted: false, fetched };
+    case 0x86:
+      executeXchgModRm(memory, state, 8);
+      return { halted: false, fetched };
+    case 0x87:
+      executeXchgModRm(memory, state, 16);
       return { halted: false, fetched };
     case 0x8b: {
       executeMovReg16FromModRm(memory, state, 1);

@@ -88,6 +88,8 @@
 - M2 T2 S3 P45 adds a focused PCjs DeskPro 386 reset-path regression fixture,
   with controlled port responses, from the reset vector through the `E000:0003`
   option-ROM dispatch.
+- M2 T2 S3 P47 adds 8-bit and 16-bit `XCHG r/m, r` through the shared ModR/M
+  and writable-memory boundaries without changing EFLAGS.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
