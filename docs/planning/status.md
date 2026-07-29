@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T4 S2: record BIOS startup and boot-sector loading through the selected
-  PCjs reference hardware path.
+- M1 T4 S3: record the visible DOS prompt from the selected PCjs reference
+  machine in a local browser.
 
 ## Delivery Nodes
 
