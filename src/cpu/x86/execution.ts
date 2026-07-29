@@ -1343,14 +1343,18 @@ export function stepInstruction(
     }
     case 0x83: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x05 && modRm.reg !== 0x07)
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x05 && modRm.reg !== 0x07)
         throw new UnsupportedOpcodeError("Unsupported 83 opcode form");
       const immediate = signedByte(fetchCodeByte(memory, state, 2).opcode) & 0xffff;
       if (modRm.registerDirect) {
         const destination = state.readRegister16(modRm.rm);
-        if (modRm.reg === 0x05) state.writeRegister16(modRm.rm, destination - immediate);
-        if (modRm.reg === 0x05) state.writeCompareFlags16(destination, immediate);
-        else state.writeCompareFlags16(destination, immediate);
+        if (modRm.reg === 0x00) {
+          state.writeRegister16(modRm.rm, destination + immediate);
+          state.writeAddFlags16(destination, immediate);
+        } else if (modRm.reg === 0x05) {
+          state.writeRegister16(modRm.rm, destination - immediate);
+          state.writeCompareFlags16(destination, immediate);
+        } else state.writeCompareFlags16(destination, immediate);
         state.advanceEip(3);
         return { halted: false, fetched };
       }
@@ -1358,7 +1362,16 @@ export function stepInstruction(
       const destination = readSegmentUint16(memory, state, address.segment, address.offset);
       const memoryImmediate =
         signedByte(fetchCodeByte(memory, state, 2 + address.displacementBytes).opcode) & 0xffff;
-      if (modRm.reg === 0x05)
+      if (modRm.reg === 0x00) {
+        writeSegmentUint16(
+          memory,
+          state,
+          address.segment,
+          address.offset,
+          destination + memoryImmediate
+        );
+        state.writeAddFlags16(destination, memoryImmediate);
+      } else if (modRm.reg === 0x05) {
         writeSegmentUint16(
           memory,
           state,
@@ -1366,7 +1379,8 @@ export function stepInstruction(
           address.offset,
           destination - memoryImmediate
         );
-      state.writeCompareFlags16(destination, memoryImmediate);
+        state.writeCompareFlags16(destination, memoryImmediate);
+      } else state.writeCompareFlags16(destination, memoryImmediate);
       state.advanceEip(3 + address.displacementBytes);
       return { halted: false, fetched };
     }
