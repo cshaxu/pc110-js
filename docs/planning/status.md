@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T2 S1: implement the PCjs-supported 80386 CPU state and reset model in
-  TypeScript.
+- M2 T2 S2: implement real, protected, virtual-8086, and paging behavior
+  required by the PCjs-supported 80386 model.
 
 ## Delivery Nodes
 
