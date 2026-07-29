@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { fetchOpcode, stepInstruction, UnsupportedOpcodeError } from "./execution.js";
 import { Cpu386State } from "./state.js";
 
-function resetAliasMemory(values: ReadonlyMap<number, number>) {
+function resetAliasMemory(values: Map<number, number>) {
   return {
     readUint8: (address: number) =>
-      values.get(address >= 0xffff0000 ? address & 0xfffff : address) ?? 0
+      values.get(address >= 0xffff0000 ? address & 0xfffff : address) ?? 0,
+    writeUint8: (address: number, value: number) =>
+      values.set(address >= 0xffff0000 ? address & 0xfffff : address, value & 0xff)
   };
 }
 
@@ -299,6 +301,30 @@ describe("80386 instruction fetch", () => {
     stackState.writeRegister16(5, 0x2000);
     stepInstruction(resetAliasMemory(stackValues), stackState);
     expect(stackState.snapshot()).toMatchObject({ registers: { eax: 0x9abc }, eip: 0x0000fff3 });
+  });
+
+  it("stores a 16-bit register through direct and BP-based memory operands", () => {
+    const directValues = new Map<number, number>([
+      [0x000ffff0, 0x89],
+      [0x000ffff1, 0x1e],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12]
+    ]);
+    const directState = new Cpu386State();
+    directState.writeRegister16(3, 0x5678);
+    stepInstruction(resetAliasMemory(directValues), directState);
+    expect([directValues.get(0x1234), directValues.get(0x1235)]).toEqual([0x78, 0x56]);
+
+    const stackValues = new Map<number, number>([
+      [0x000ffff0, 0x89],
+      [0x000ffff1, 0x4e],
+      [0x000ffff2, 0x02]
+    ]);
+    const stackState = new Cpu386State();
+    stackState.writeRegister16(1, 0x9abc);
+    stackState.writeRegister16(5, 0x2000);
+    stepInstruction(resetAliasMemory(stackValues), stackState);
+    expect([stackValues.get(0x2002), stackValues.get(0x2003)]).toEqual([0xbc, 0x9a]);
   });
 
   it("loads a 16-bit register through the observed CS-overridden ROM address", () => {

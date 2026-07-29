@@ -4,6 +4,7 @@ import type { Cpu386State, LoadableSegment } from "./state.js";
 
 export interface InstructionMemory {
   readUint8(linearAddress: number): number;
+  writeUint8?(linearAddress: number, value: number): void;
 }
 
 export interface PortIo {
@@ -70,6 +71,21 @@ function readSegmentUint16(
   const lowAddress = translateSegmentOffset(mode, selected, offset);
   const highAddress = translateSegmentOffset(mode, selected, (offset + 1) & 0xffff);
   return (memory.readUint8(lowAddress) & 0xff) | ((memory.readUint8(highAddress) & 0xff) << 8);
+}
+
+function writeSegmentUint16(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds" | "ss",
+  offset: number,
+  value: number
+): void {
+  if (!memory.writeUint8) throw new UnsupportedOpcodeError("Memory does not support writes");
+  const snapshot = state.snapshot();
+  const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  const selected = { ...snapshot[segment], present: true };
+  memory.writeUint8(translateSegmentOffset(mode, selected, offset), value & 0xff);
+  memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 1) & 0xffff), value >>> 8);
 }
 
 function signedByte(value: number): number {
@@ -255,6 +271,19 @@ export function stepInstruction(
     }
     case 0x8e: {
       executeMovSegmentFromModRm(memory, state, 1);
+      return { halted: false, fetched };
+    }
+    case 0x89: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const source = state.readRegister16(modRm.reg);
+      if (modRm.registerDirect) {
+        state.writeRegister16(modRm.rm, source);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
+      const address = decodeMemoryAddress(memory, state, modRm);
+      writeSegmentUint16(memory, state, address.segment, address.offset, source);
+      state.advanceEip(2 + address.displacementBytes);
       return { halted: false, fetched };
     }
     case 0x8b: {

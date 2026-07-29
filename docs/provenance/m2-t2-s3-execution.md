@@ -46,6 +46,9 @@
   form and shares its 16-bit ModR/M path with the default-segment instruction.
 - M2 T2 S3 P22 extends real-mode `MOV Sreg, r/m16` to direct and computed
   memory operands through the same project-native ModR/M decoder.
+- M2 T2 S3 P23 adds `MOV r/m16, r16` through an optional writable-memory
+  boundary. Address translation stays in the CPU path while writable or
+  immutable region policy remains owned by physical memory.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
