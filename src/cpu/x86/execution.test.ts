@@ -541,6 +541,30 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0, edi: 0x0104 } });
   });
 
+  it("repeats MOVSW from DS:SI to ES:DI", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf3],
+      [0x000ffff1, 0xa5],
+      [0x00002000, 0x34],
+      [0x00002001, 0x12],
+      [0x00002002, 0x78],
+      [0x00002003, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(1, 2);
+    state.writeRegister16(6, 0x2000);
+    state.writeRegister16(7, 0x3000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect([
+      values.get(0x3000),
+      values.get(0x3001),
+      values.get(0x3002),
+      values.get(0x3003)
+    ]).toEqual([0x34, 0x12, 0x78, 0x56]);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0, esi: 0x2004, edi: 0x3004 } });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

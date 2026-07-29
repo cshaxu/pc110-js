@@ -341,15 +341,23 @@ export function stepInstruction(
     }
     case 0xf3: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
-      if (opcode !== 0xab) throw new UnsupportedOpcodeError("Unsupported REP instruction");
+      if (opcode !== 0xab && opcode !== 0xa5)
+        throw new UnsupportedOpcodeError("Unsupported REP instruction");
       let count = state.readRegister16(1);
+      let source = state.readRegister16(6);
       let destination = state.readRegister16(7);
       const step = state.directionFlag() ? -2 : 2;
       while (count > 0) {
-        writeSegmentUint16(memory, state, "es", destination, state.readRegister16(0));
+        const value =
+          opcode === 0xab
+            ? state.readRegister16(0)
+            : readSegmentUint16(memory, state, "ds", source);
+        writeSegmentUint16(memory, state, "es", destination, value);
+        source = (source + step) & 0xffff;
         destination = (destination + step) & 0xffff;
         count -= 1;
       }
+      if (opcode === 0xa5) state.writeRegister16(6, source);
       state.writeRegister16(7, destination);
       state.writeRegister16(1, count);
       state.advanceEip(2);
