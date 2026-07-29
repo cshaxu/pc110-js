@@ -819,6 +819,20 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("sign-extends AL into AX with CBW without changing flags", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0x98]]);
+    const state = new Cpu386State();
+    state.writeRegister(0, 0x12340080);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x1234ff80 },
+      eip: 0x0000fff1,
+      eflags: 0x0002
+    });
+  });
+
   it("takes JZ when TEST produces a zero result", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xa8],

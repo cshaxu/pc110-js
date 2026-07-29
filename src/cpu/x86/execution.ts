@@ -778,6 +778,12 @@ export function stepInstruction(
     case 0x90:
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x98: {
+      const value = state.readRegister8(0);
+      state.writeRegister16(0, value & 0x80 ? value | 0xff00 : value);
+      state.advanceEip(1);
+      return { halted: false, fetched };
+    }
     case 0xf4:
       state.advanceEip(1);
       state.halt();

@@ -264,6 +264,8 @@
   existing real-mode divide-error delivery.
 - M2 T2 S3 P115 adds the observed accumulator-word `TEST` form (`A9 iw`),
   using the existing 16-bit logical-flag contract without modifying AX.
+- M2 T2 S3 P116 adds observed `CBW` (`98`) sign extension for ROM conversion
+  paths, preserving the existing flags and upper EAX bits.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
