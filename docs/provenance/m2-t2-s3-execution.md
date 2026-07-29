@@ -544,6 +544,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P202 adds PCjs-selected operand-size-overridden `LEA r32,m`
   (`66 8D /r`). It writes the decoded effective offset without dereferencing
   memory and accepts the established 16-bit and 32-bit address decoders.
+- M2 T2 S3 P203 adds project-native 80386 task-register state: selector,
+  cached base and limit, and TSS size attribute. This is a state-model
+  prerequisite for later LTR, task, and privilege-stack behavior; it does not
+  implement those instructions or behaviors yet.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

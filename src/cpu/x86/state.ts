@@ -24,6 +24,13 @@ export interface DescriptorTableState {
   readonly limit: number;
 }
 
+export interface TaskRegisterState {
+  readonly selector: number;
+  readonly base: number;
+  readonly limit: number;
+  readonly default32: boolean;
+}
+
 export interface Cpu386Snapshot {
   readonly registers: Readonly<Record<GeneralRegister, number>>;
   readonly eip: number;
@@ -34,6 +41,7 @@ export interface Cpu386Snapshot {
   readonly cr3: number;
   readonly gdtr: DescriptorTableState;
   readonly idtr: DescriptorTableState;
+  readonly tr: TaskRegisterState;
   readonly cs: SegmentState;
   readonly ds: SegmentState;
   readonly es: SegmentState;
@@ -80,6 +88,10 @@ function cloneDescriptorTable(table: DescriptorTableState): DescriptorTableState
   return { ...table };
 }
 
+function cloneTaskRegister(taskRegister: TaskRegisterState): TaskRegisterState {
+  return { ...taskRegister };
+}
+
 export class Cpu386State {
   private registers: Record<GeneralRegister, number> = this.emptyRegisters();
   private eip = 0;
@@ -90,6 +102,7 @@ export class Cpu386State {
   private cr3 = 0;
   private gdtr: DescriptorTableState = { base: 0, limit: 0 };
   private idtr: DescriptorTableState = { base: 0, limit: 0x3ff };
+  private tr: TaskRegisterState = { selector: 0, base: 0, limit: 0, default32: false };
   private cs: SegmentState = cloneSegment(RESET_CS);
   private ds: SegmentState = cloneSegment(REAL_MODE_SEGMENT);
   private es: SegmentState = cloneSegment(REAL_MODE_SEGMENT);
@@ -112,6 +125,7 @@ export class Cpu386State {
     this.cr3 = 0;
     this.gdtr = { base: 0, limit: 0 };
     this.idtr = { base: 0, limit: 0x3ff };
+    this.tr = { selector: 0, base: 0, limit: 0, default32: false };
     this.cs = cloneSegment(RESET_CS);
     this.ds = cloneSegment(REAL_MODE_SEGMENT);
     this.es = cloneSegment(REAL_MODE_SEGMENT);
@@ -131,6 +145,7 @@ export class Cpu386State {
       cr3: this.cr3,
       gdtr: cloneDescriptorTable(this.gdtr),
       idtr: cloneDescriptorTable(this.idtr),
+      tr: cloneTaskRegister(this.tr),
       cs: cloneSegment(this.cs),
       ds: cloneSegment(this.ds),
       es: cloneSegment(this.es),
@@ -661,6 +676,15 @@ export class Cpu386State {
 
   public writeIdtr(base: number, limit: number): void {
     this.idtr = { base: base >>> 0, limit: limit & 0xffff };
+  }
+
+  public loadTaskRegister(selector: number, base: number, limit: number, default32: boolean): void {
+    this.tr = {
+      selector: selector & 0xffff,
+      base: base >>> 0,
+      limit: limit >>> 0,
+      default32
+    };
   }
 
   public recordPageFault(linearAddress: number): void {

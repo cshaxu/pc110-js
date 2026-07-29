@@ -15,6 +15,7 @@ describe("Cpu386State", () => {
       cr3: 0,
       gdtr: { base: 0, limit: 0 },
       idtr: { base: 0, limit: 0x3ff },
+      tr: { selector: 0, base: 0, limit: 0, default32: false },
       cs: { selector: 0xf000, base: 0xffff0000, limit: 0xffff, default32: false },
       ds: { selector: 0, base: 0, limit: 0xffff, default32: false },
       fs: { selector: 0, base: 0, limit: 0xffff, default32: false },
@@ -40,6 +41,22 @@ describe("Cpu386State", () => {
       gdtr: { base: 0x12345000, limit: 0x2345 },
       idtr: { base: 0xfffff000, limit: 0x6789 }
     });
+  });
+
+  it("stores the cached task-register state independently", () => {
+    const cpu = new Cpu386State();
+    cpu.loadTaskRegister(0x0028, 0x00123000, 0x00000067, true);
+    const snapshot = cpu.snapshot();
+    (snapshot.tr as { base: number }).base = 0;
+
+    expect(cpu.snapshot().tr).toEqual({
+      selector: 0x0028,
+      base: 0x00123000,
+      limit: 0x00000067,
+      default32: true
+    });
+    cpu.reset();
+    expect(cpu.snapshot().tr).toEqual({ selector: 0, base: 0, limit: 0, default32: false });
   });
 
   it("stores 32-bit CR0 values for later mode-transition handling", () => {
