@@ -1481,6 +1481,22 @@ export function stepInstruction(
       }
       if (extension === 0x01) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (modRm.reg === 0x04) {
+          const machineStatusWord = state.snapshot().cr0 & 0xffff;
+          if (modRm.registerDirect) state.writeRegister16(modRm.rm, machineStatusWord);
+          else {
+            const address = decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+            );
+            writeSegmentUint16(memory, state, address.segment, address.offset, machineStatusWord);
+            state.advanceEip(3 + address.displacementBytes);
+            return { halted: false, fetched };
+          }
+          state.advanceEip(3);
+          return { halted: false, fetched };
+        }
         if (modRm.registerDirect && modRm.reg === 0x06 && modRm.rm === 0x00) {
           state.loadMachineStatusWord(state.snapshot().registers.eax & 0xffff);
           state.advanceEip(3);

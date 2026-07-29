@@ -656,6 +656,34 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
   });
 
+  it("stores the CR0 machine-status word through SMSW register and memory forms", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0x01],
+      [0x00000002, 0xe0],
+      [0x00000003, 0x0f],
+      [0x00000004, 0x01],
+      [0x00000005, 0x26],
+      [0x00000006, 0x00],
+      [0x00000007, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeCr0(0x12345678);
+    state.writeEflags(0x000008d7);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x5678 },
+      cr0: 0x12345678,
+      eflags: 0x000008d7,
+      eip: 8
+    });
+    expect([values.get(0x2000), values.get(0x2001)]).toEqual([0x78, 0x56]);
+  });
+
   it("moves CR0 through register-direct MOV forms", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

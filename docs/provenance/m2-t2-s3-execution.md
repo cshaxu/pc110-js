@@ -384,6 +384,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `opPUSHFS`, `opPOPFS`, `opPUSHGS`, and `opPOPGS`: selectors traverse the
   shared SS:SP boundary and POP restores the segment through the existing
   mode-aware loader.
+- M2 T2 S3 P158 adds `SMSW r/m16` (`0F 01 /4`) from PCjs `fnSMSW`: the low
+  16 bits of the existing CR0 state write through the project-native ModR/M
+  register or memory boundary without changing CPU flags or control state.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
