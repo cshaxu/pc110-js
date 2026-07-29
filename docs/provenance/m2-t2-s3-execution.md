@@ -83,6 +83,8 @@
   index advancement.
 - M2 T2 S3 P43 adds `OR r8, r/m8` (`0A`) through the shared ModR/M decoder
   with the existing 8-bit logic-flag contract.
+- M2 T2 S3 P44 adds the compare form of `83 /7 ib`, sign-extending the byte
+  immediate into the shared 16-bit comparison-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

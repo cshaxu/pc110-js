@@ -470,6 +470,28 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x00000082 });
   });
 
+  it("compares 16-bit register and memory operands with sign-extended bytes", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x83],
+      [0x000ffff1, 0xfa],
+      [0x000ffff2, 0x20],
+      [0x000ffff3, 0x83],
+      [0x000ffff4, 0x3e],
+      [0x000ffff5, 0x34],
+      [0x000ffff6, 0x12],
+      [0x000ffff7, 0xff],
+      [0x00001234, 0xff],
+      [0x00001235, 0xff]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(2, 0x0020);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.zeroFlag()).toBe(true);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.zeroFlag()).toBe(true);
+  });
+
   it("writes immediate byte and word values through ModR/M memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xc6],

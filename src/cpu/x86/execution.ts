@@ -625,6 +625,23 @@ export function stepInstruction(
       state.advanceEip(4 + address.displacementBytes);
       return { halted: false, fetched };
     }
+    case 0x83: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.reg !== 0x07) throw new UnsupportedOpcodeError("Unsupported 83 opcode form");
+      const immediate = signedByte(fetchCodeByte(memory, state, 2).opcode) & 0xffff;
+      if (modRm.registerDirect) {
+        state.writeCompareFlags16(state.readRegister16(modRm.rm), immediate);
+        state.advanceEip(3);
+        return { halted: false, fetched };
+      }
+      const address = decodeMemoryAddress(memory, state, modRm);
+      state.writeCompareFlags16(
+        readSegmentUint16(memory, state, address.segment, address.offset),
+        signedByte(fetchCodeByte(memory, state, 2 + address.displacementBytes).opcode) & 0xffff
+      );
+      state.advanceEip(3 + address.displacementBytes);
+      return { halted: false, fetched };
+    }
     case 0xd0: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect || modRm.reg !== 0x04)
