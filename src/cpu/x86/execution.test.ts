@@ -36,6 +36,24 @@ describe("80386 instruction fetch", () => {
     expect(stepInstruction(memory, state)).toEqual({ halted: true });
   });
 
+  it("follows a real-mode far jump from the reset vector", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xea],
+      [0x000ffff1, 0x34],
+      [0x000ffff2, 0x12],
+      [0x000ffff3, 0x00],
+      [0x000ffff4, 0xf0]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+
+    expect(stepInstruction(memory, state).halted).toBe(false);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff }
+    });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = { readUint8: (address: number) => values.get(address) ?? 0 };

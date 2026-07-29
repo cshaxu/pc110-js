@@ -20,9 +20,11 @@
 
 - Imported behavior: opcode fetch begins at the current linear instruction
   address derived from CS:EIP; NOP advances EIP and HLT stops instruction
-  execution until an interrupt resumes the CPU.
+  execution until an interrupt resumes the CPU; a real-mode far jump loads a
+  new CS selector and 16-bit instruction pointer.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
 - Incomplete behavior: paging hookup, prefetch, general decode, exceptions,
-  interrupt wakeup, and remaining instruction behavior remain later S3 work.
+  interrupt wakeup, protected-mode far jumps, and remaining instruction
+  behavior remain later S3 work.

@@ -118,6 +118,15 @@ export class Cpu386State {
     this.eip = (this.eip + bytes) >>> 0;
   }
 
+  public loadRealModeCodeSegment(selector: number, instructionPointer: number): void {
+    this.cs = {
+      selector: selector & 0xffff,
+      base: (selector & 0xffff) << 4,
+      limit: this.cs.limit
+    };
+    this.eip = instructionPointer & 0xffff;
+  }
+
   public halt(): void {
     this.halted = true;
   }
