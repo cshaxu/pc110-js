@@ -19,9 +19,10 @@
 ## Migration
 
 - Imported behavior: opcode fetch begins at the current linear instruction
-  address derived from CS:EIP.
+  address derived from CS:EIP; NOP advances EIP and HLT stops instruction
+  execution until an interrupt resumes the CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
-- Incomplete behavior: paging hookup, prefetch, decode, execution, exceptions,
-  and interrupts remain later S3 work.
+- Incomplete behavior: paging hookup, prefetch, general decode, exceptions,
+  interrupt wakeup, and remaining instruction behavior remain later S3 work.

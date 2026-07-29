@@ -14,6 +14,7 @@ export interface DescriptorTableState {
 export interface Cpu386Snapshot {
   readonly registers: Readonly<Record<GeneralRegister, number>>;
   readonly eip: number;
+  readonly halted: boolean;
   readonly eflags: number;
   readonly cr0: number;
   readonly cr2: number;
@@ -44,6 +45,7 @@ function cloneDescriptorTable(table: DescriptorTableState): DescriptorTableState
 export class Cpu386State {
   private registers: Record<GeneralRegister, number> = this.emptyRegisters();
   private eip = 0;
+  private halted = false;
   private eflags = RESET_EFLAGS;
   private cr0 = RESET_CR0;
   private cr2 = 0;
@@ -65,6 +67,7 @@ export class Cpu386State {
     this.registers = this.emptyRegisters();
     this.registers.edx = 0x00000300;
     this.eip = 0x0000fff0;
+    this.halted = false;
     this.eflags = RESET_EFLAGS;
     this.cr0 = RESET_CR0;
     this.cr2 = 0;
@@ -83,6 +86,7 @@ export class Cpu386State {
     return {
       registers: { ...this.registers },
       eip: this.eip,
+      halted: this.halted,
       eflags: this.eflags,
       cr0: this.cr0,
       cr2: this.cr2,
@@ -108,6 +112,18 @@ export class Cpu386State {
 
   public writeEflags(value: number): void {
     this.eflags = (value | RESET_EFLAGS) >>> 0;
+  }
+
+  public advanceEip(bytes: number): void {
+    this.eip = (this.eip + bytes) >>> 0;
+  }
+
+  public halt(): void {
+    this.halted = true;
+  }
+
+  public resume(): void {
+    this.halted = false;
   }
 
   public writeGdtr(base: number, limit: number): void {
