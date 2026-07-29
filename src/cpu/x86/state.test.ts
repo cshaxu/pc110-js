@@ -13,6 +13,7 @@ describe("Cpu386State", () => {
       cr0: 0x7ffffff0,
       cr2: 0,
       cr3: 0,
+      gdtr: { base: 0, limit: 0 },
       idtr: { base: 0, limit: 0x3ff },
       cs: { selector: 0xf000, base: 0xffff0000, limit: 0xffff },
       ds: { selector: 0, base: 0, limit: 0xffff },
@@ -28,5 +29,16 @@ describe("Cpu386State", () => {
     copiedRegisters.eax = 0x1234;
 
     expect(cpu.snapshot().registers.eax).toBe(0);
+  });
+
+  it("stores 80386 descriptor-table register values independently", () => {
+    const cpu = new Cpu386State();
+    cpu.writeGdtr(0x12345000, 0x12345);
+    cpu.writeIdtr(0xfffff000, 0x56789);
+
+    expect(cpu.snapshot()).toMatchObject({
+      gdtr: { base: 0x12345000, limit: 0x2345 },
+      idtr: { base: 0xfffff000, limit: 0x6789 }
+    });
   });
 });
