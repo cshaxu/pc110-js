@@ -27,7 +27,7 @@ export interface SegmentDescriptor {
 
 export class SegmentDescriptorError extends Error {}
 
-export type SegmentAccess = "read" | "write" | "execute";
+export type SegmentAccess = "read" | "write" | "execute" | "stack";
 
 export function loadDescriptor(
   memory: DescriptorMemory,
@@ -107,7 +107,8 @@ export function validateDescriptorAccess(
   const conformingOrExpandDown = Boolean(descriptor.type & 0x04);
 
   if (isCode) {
-    if (access === "write") throw new SegmentDescriptorError("Code segments are not writable");
+    if (access === "write" || access === "stack")
+      throw new SegmentDescriptorError("Code segments are not writable stack segments");
     if (access === "read" && !readableOrWritable)
       throw new SegmentDescriptorError("Code segment is execute-only");
     if (conformingOrExpandDown) {
@@ -120,8 +121,10 @@ export function validateDescriptorAccess(
   }
 
   if (access === "execute") throw new SegmentDescriptorError("Data segments are not executable");
-  if (access === "write" && !readableOrWritable)
+  if ((access === "write" || access === "stack") && !readableOrWritable)
     throw new SegmentDescriptorError("Data segment is read-only");
+  if (access === "stack" && (cpl !== descriptor.dpl || rpl !== cpl))
+    throw new SegmentDescriptorError("Stack segment privilege violation");
   if (Math.max(cpl, rpl) > descriptor.dpl)
     throw new SegmentDescriptorError("Data segment privilege violation");
 }

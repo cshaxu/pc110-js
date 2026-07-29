@@ -20,7 +20,8 @@
 
 - Imported behavior: 80386 mode selection, PDE/PTE address derivation,
   descriptor field decoding, segment access predicates, and GDT-resident LDT
-  descriptor validation.
+  descriptor validation, including protected-mode stack-segment privilege
+  checks.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
 - Intentional behavior changes: none.
 - Incomplete behavior: descriptor-table loading, gates, tasks, and CPU exception

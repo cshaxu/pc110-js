@@ -63,10 +63,14 @@ describe("80386 descriptor decoding", () => {
     };
 
     expect(() => validateDescriptorAccess(data, 3, "write")).not.toThrow();
+    expect(() => validateDescriptorAccess(data, 3, "stack")).not.toThrow();
     expect(() => validateDescriptorOffset(data, 0x1000)).not.toThrow();
     expect(() => validateDescriptorOffset(data, 0x0fff)).toThrow("Expand-down");
     expect(() => validateDescriptorAccess({ ...data, type: 0x0a }, 3, "write")).toThrow(
       "not writable"
+    );
+    expect(() => validateDescriptorAccess({ ...data, selector: 0x10 }, 3, "stack")).toThrow(
+      "Stack segment privilege"
     );
   });
 });
