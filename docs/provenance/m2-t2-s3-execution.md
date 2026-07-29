@@ -345,6 +345,8 @@
   behavior: advance normally when OF is clear, otherwise deliver vector 4
   through the existing real-mode IVT path. Protected-mode delivery remains
   explicitly unsupported.
+- M2 T2 S3 P145 adds 16-bit `MOVZX/MOVSX` (`0F B6/B7/BE/BF`) from PCjs
+  extension-opcode behavior through existing ModR/M register and memory reads.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

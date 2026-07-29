@@ -1641,6 +1641,29 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("zero- and sign-extends 8-bit sources through 0F MOVZX and MOVSX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0xb6],
+      [0x000ffff2, 0xd8],
+      [0x000ffff3, 0x0f],
+      [0x000ffff4, 0xbe],
+      [0x000ffff5, 0x06],
+      [0x000ffff6, 0x00],
+      [0x000ffff7, 0x20],
+      [0x00002000, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0xff);
+    const memory = resetAliasMemory(values);
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebx: 0x00ff, eax: 0xff80 },
+      eip: 0x0000fff8
+    });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
