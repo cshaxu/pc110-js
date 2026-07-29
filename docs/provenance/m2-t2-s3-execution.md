@@ -42,6 +42,8 @@
 - M2 T2 S3 P20 adds `CMP r/m16, imm16` (`81 /7 iw`) for register and memory
   operands with complete 16-bit subtraction flags, covering the reset-ROM
   extension signature check after `XOR BX, BX`.
+- M2 T2 S3 P21 adds the observed CS-overridden memory-source `MOV r16, r/m16`
+  form and shares its 16-bit ModR/M path with the default-segment instruction.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -283,6 +283,22 @@ describe("80386 instruction fetch", () => {
     expect(stackState.snapshot()).toMatchObject({ registers: { eax: 0x9abc }, eip: 0x0000fff3 });
   });
 
+  it("loads a 16-bit register through the observed CS-overridden ROM address", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0x8b],
+      [0x000ffff2, 0xb7],
+      [0x000ffff3, 0xe7],
+      [0x000ffff4, 0xf8],
+      [0x000ff8e7, 0x95],
+      [0x000ff8e8, 0xba]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { esi: 0xba95 }, eip: 0x0000fff5 });
+  });
+
   it("compares a register byte with an immediate value through 80 /7", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x80],

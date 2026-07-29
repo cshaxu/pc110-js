@@ -144,6 +144,30 @@ function executeMemoryFarJump(
   state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
 }
 
+function executeMovReg16FromModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  segmentOverride?: "cs" | "ds" | "ss"
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.registerDirect) {
+    state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
+    state.advanceEip(modRmOffset + 1);
+    return;
+  }
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  state.writeRegister16(
+    modRm.reg,
+    readSegmentUint16(memory, state, segmentOverride ?? address.segment, address.offset)
+  );
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -183,8 +207,9 @@ export function stepInstruction(
     }
     case 0x2e: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
-      if (opcode !== 0xff) throw new UnsupportedOpcodeError("Unsupported CS override instruction");
-      executeMemoryFarJump(memory, state, 2, "cs");
+      if (opcode === 0xff) executeMemoryFarJump(memory, state, 2, "cs");
+      else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
+      else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       return { halted: false, fetched };
     }
     case 0x0f: {
@@ -213,18 +238,7 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0x8b: {
-      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.registerDirect) {
-        state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
-        state.advanceEip(2);
-        return { halted: false, fetched };
-      }
-      const address = decodeMemoryAddress(memory, state, modRm);
-      state.writeRegister16(
-        modRm.reg,
-        readSegmentUint16(memory, state, address.segment, address.offset)
-      );
-      state.advanceEip(2 + address.displacementBytes);
+      executeMovReg16FromModRm(memory, state, 1);
       return { halted: false, fetched };
     }
     case 0x33: {
