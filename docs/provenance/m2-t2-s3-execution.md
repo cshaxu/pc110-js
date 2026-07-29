@@ -589,6 +589,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   behavior that ignores the ModR/M `MOD` bits, and normalizes CR3 to its
   page-directory base alignment. Full nonzero-CPL `#GP(0)` delivery remains
   coupled to the later error-code exception path.
+- M2 T2 S3 P215 extends `POP ES`, `POP SS`, and `POP DS` (`07/17/1F`) to the
+  existing protected-mode segment loader after reading the selector through
+  the prior stack segment. The implemented 16-bit forms therefore share the
+  same descriptor validation as `MOV Sreg, r/m16`.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

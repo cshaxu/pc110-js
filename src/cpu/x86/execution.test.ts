@@ -1288,6 +1288,35 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("pops protected data segments through the existing descriptor loader", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x1f],
+      [0x00001008, 0xff],
+      [0x00001009, 0xff],
+      [0x0000100a, 0x00],
+      [0x0000100b, 0x00],
+      [0x0000100c, 0xc0],
+      [0x0000100d, 0x92],
+      [0x0000100e, 0x00],
+      [0x0000100f, 0x80],
+      [0x00002000, 0x08],
+      [0x00002001, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x00001000, 0x0000000f);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff);
+    state.writeRegister16(4, 0x2000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0000fff1,
+      ds: { selector: 0x0008, base: 0x80c00000, limit: 0x0000ffff },
+      registers: { esp: 0x00002002 }
+    });
+  });
+
   it("loads a real-mode data segment from a direct memory operand", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x8e],

@@ -1822,12 +1822,12 @@ export function stepInstruction(
     case 0x17:
     case 0x1f: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode POP segment is not implemented");
-      }
       const segment = segmentForPop((fetched.opcode - 0x07) >>> 3);
       if (!segment) throw new UnsupportedOpcodeError("Unsupported POP segment opcode");
-      state.loadRealModeSegment(segment, popUint16(memory, state));
+      const selector = popUint16(memory, state);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+        state.loadRealModeSegment(segment, selector);
+      else loadProtectedModeSegment(memory, state, segment, selector);
       state.advanceEip(1);
       return { halted: false, fetched };
     }
