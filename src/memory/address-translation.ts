@@ -48,7 +48,7 @@ export function translateSegmentOffset(
   if (mode === "real" || mode === "virtual-8086") {
     if (unsignedOffset > 0xffff)
       throw new AddressTranslationError("Real-mode offset exceeds 16 bits");
-    return ((segment.selector << 4) + unsignedOffset) >>> 0;
+    return (segment.base + unsignedOffset) >>> 0;
   }
   if (!segment.present) throw new AddressTranslationError("Protected-mode segment is not present");
   if (unsignedOffset > segment.limit)

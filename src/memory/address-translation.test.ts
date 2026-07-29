@@ -17,9 +17,20 @@ describe("80386 address translation", () => {
     expect(addressMode(CR0_PROTECTED_MODE, EFLAGS_VIRTUAL_8086)).toBe("virtual-8086");
   });
 
-  it("translates real and protected segment offsets", () => {
+  it("uses cached real-mode segment bases and protected segment offsets", () => {
     expect(
-      translateSegmentOffset("real", { selector: 0xf000, base: 0, limit: 0, present: true }, 0xfff0)
+      translateSegmentOffset(
+        "real",
+        { selector: 0xf000, base: 0xffff0000, limit: 0xffff, present: true },
+        0xfff0
+      )
+    ).toBe(0xfffffff0);
+    expect(
+      translateSegmentOffset(
+        "real",
+        { selector: 0xf000, base: 0x000f0000, limit: 0xffff, present: true },
+        0xfff0
+      )
     ).toBe(0xffff0);
     expect(
       translateSegmentOffset(

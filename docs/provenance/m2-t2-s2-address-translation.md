@@ -25,6 +25,9 @@
   Normalized EFLAGS state writes support virtual-8086 mode selection, with
   multi-byte segment-range validation.
 - Mechanical adaptation: explicit pure functions and a memory-reader interface.
-- Intentional behavior changes: none.
+- Intentional behavior changes: M2 T2 S4 P6 corrected real and virtual-8086
+  translation to use the architectural cached segment base. This preserves the
+  80386 reset CS hidden base and produces the high reset vector `0xfffffff0`;
+  ordinary real-mode segment loads retain the same selector-derived base.
 - Incomplete behavior: descriptor-table loading, gates, tasks, and CPU exception
   delivery remain in later bounded CPU work.

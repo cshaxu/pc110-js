@@ -46,11 +46,11 @@ describe("PC/AT physical memory", () => {
   });
 
   it("preserves the existing reset-ROM far-jump table trace through mapped ROM", () => {
-    const bytes = new Uint8Array(0x10000);
-    bytes.set([0x2e, 0xff, 0x2e, 0xfd, 0xf8], 0xfff0);
-    bytes.set([0x34, 0x12, 0x00, 0xf0], 0xf8fd);
-    const memory = new PhysicalMemory({ ramBytes: 0xa0000 });
-    memory.mapRom(createRomImage("system-rom", bytes), 0xf0000);
+    const bytes = new Uint8Array(0x8000);
+    bytes.set([0x2e, 0xff, 0x2e, 0xfd, 0xf8], 0x7ff0);
+    bytes.set([0x34, 0x12, 0x00, 0xf0], 0x78fd);
+    const memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+    memory.mapRom(createRomImage("system-rom", bytes), 0xffff8000, [0xf8000, 0xf0000, 0xffff0000]);
     const state = new Cpu386State();
 
     expect(stepInstruction(memory, state).halted).toBe(false);

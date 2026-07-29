@@ -2,13 +2,20 @@ import { describe, expect, it } from "vitest";
 import { fetchOpcode, stepInstruction, UnsupportedOpcodeError } from "./execution.js";
 import { Cpu386State } from "./state.js";
 
+function resetAliasMemory(values: ReadonlyMap<number, number>) {
+  return {
+    readUint8: (address: number) =>
+      values.get(address >= 0xffff0000 ? address & 0xfffff : address) ?? 0
+  };
+}
+
 describe("80386 instruction fetch", () => {
   it("fetches the reset-vector opcode through the current CS:EIP state", () => {
     const values = new Map<number, number>([[0x000ffff0, 0xea]]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
 
     expect(fetchOpcode(memory, new Cpu386State())).toEqual({
-      linearAddress: 0x000ffff0,
+      linearAddress: 0xfffffff0,
       instructionPointer: 0x0000fff0,
       opcode: 0xea
     });
@@ -16,19 +23,19 @@ describe("80386 instruction fetch", () => {
 
   it("executes NOP and advances EIP only after a supported opcode commits", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x90]]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     expect(stepInstruction(memory, state)).toEqual({
       halted: false,
-      fetched: { linearAddress: 0x000ffff0, instructionPointer: 0x0000fff0, opcode: 0x90 }
+      fetched: { linearAddress: 0xfffffff0, instructionPointer: 0x0000fff0, opcode: 0x90 }
     });
     expect(state.snapshot().eip).toBe(0x0000fff1);
   });
 
   it("halts after HLT and does not fetch again until resumed", () => {
     const values = new Map<number, number>([[0x000ffff0, 0xf4]]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     expect(stepInstruction(memory, state).halted).toBe(true);
@@ -44,7 +51,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff3, 0x00],
       [0x000ffff4, 0xf0]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     expect(stepInstruction(memory, state).halted).toBe(false);
@@ -66,7 +73,7 @@ describe("80386 instruction fetch", () => {
       [0x000ff8ff, 0x00],
       [0x000ff900, 0xf0]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     stepInstruction(memory, state);
@@ -82,7 +89,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff1, 0x78],
       [0x000ffff2, 0x56]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     stepInstruction(memory, state);
@@ -97,7 +104,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff3, 0x84]
     ]);
     const writes: Array<[number, number]> = [];
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     const ports = { writePort8: (port: number, value: number) => writes.push([port, value]) };
 
@@ -113,7 +120,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff0, 0x9e],
       [0x000ffff1, 0xfa]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     state.writeRegister(0, 0x0000d500);
     state.writeEflags(0x00000202);
@@ -130,7 +137,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff1, 0x01],
       [0x000ffff2, 0xf0]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     state.writeRegister16(0, 0xfff0);
 
@@ -146,7 +153,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff3, 0x8e],
       [0x000ffff4, 0xd8]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     stepInstruction(memory, state);
@@ -166,7 +173,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff4, 0x75],
       [0x000ffff5, 0x02]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     const ports = { readPort8: (port: number) => (port === 0x64 ? 0x04 : 0) };
 
@@ -183,7 +190,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff2, 0x75],
       [0x000ffff3, 0x02]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     stepInstruction(memory, state);
@@ -199,7 +206,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff3, 0xe2],
       [0x000ffff4, 0xfe]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     stepInstruction(memory, state);
@@ -216,7 +223,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff2, 0x33],
       [0x000ffff3, 0xdb]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     state.writeRegister16(0, 0x1234);
 
@@ -236,7 +243,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff1, 0xfb],
       [0x000ffff2, 0x09]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     state.writeRegister8(3, 0x09);
 
@@ -255,7 +262,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff2, 0x76],
       [0x000ffff3, 0x02]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     state.writeRegister8(7, 0x55);
     state.writeCompareFlags8(0x08, 0x09);
@@ -274,7 +281,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff2, 0xe3],
       [0x000ffff3, 0x02]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
     state.writeRegister8(3, 0x80);
     state.writeRegister16(1, 0);
@@ -293,7 +300,7 @@ describe("80386 instruction fetch", () => {
       [0x000ffff7, 0xf7],
       [0x000ffff8, 0xff]
     ]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     stepInstruction(memory, state);
@@ -304,7 +311,7 @@ describe("80386 instruction fetch", () => {
 
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
-    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const memory = resetAliasMemory(values);
     const state = new Cpu386State();
 
     expect(() => stepInstruction(memory, state)).toThrow(UnsupportedOpcodeError);
