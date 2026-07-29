@@ -1065,7 +1065,7 @@ function executeWordAluModRm(
 function executeDwordAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  operation: "add" | "sub",
+  operation: "add" | "adc" | "sub" | "sbb",
   destinationIsRegister: boolean,
   modRmOffset: number,
   addressSize: 16 | 32
@@ -1097,12 +1097,16 @@ function executeDwordAluModRm(
       ? state.readRegister(modRm.rm)
       : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize)
     : state.readRegister(modRm.reg);
-  const result = operation === "add" ? destination + source : destination - source;
+  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
+  const result =
+    operation === "add" || operation === "adc"
+      ? destination + source + carry
+      : destination - source - carry;
   if (destinationIsRegister) state.writeRegister(modRm.reg, result);
   else if (modRm.registerDirect) state.writeRegister(modRm.rm, result);
   else writeSegmentUint32(memory, state, address!.segment, address!.offset, result, addressSize);
-  if (operation === "add") state.writeAddFlags32(destination, source);
-  else state.writeCompareFlags32(destination, source);
+  if (operation === "add" || operation === "adc") state.writeAddFlags32(destination, source, carry);
+  else state.writeCompareFlags32(destination, source, carry);
   state.advanceEip(modRmOffset + 1 + addressBytes);
 }
 
@@ -1646,12 +1650,27 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
-      if (opcode === 0x01 || opcode === 0x03 || opcode === 0x29 || opcode === 0x2b) {
+      if (
+        opcode === 0x01 ||
+        opcode === 0x03 ||
+        opcode === 0x11 ||
+        opcode === 0x13 ||
+        opcode === 0x19 ||
+        opcode === 0x1b ||
+        opcode === 0x29 ||
+        opcode === 0x2b
+      ) {
         executeDwordAluModRm(
           memory,
           state,
-          opcode === 0x01 || opcode === 0x03 ? "add" : "sub",
-          opcode === 0x03 || opcode === 0x2b,
+          opcode === 0x01 || opcode === 0x03
+            ? "add"
+            : opcode === 0x11 || opcode === 0x13
+              ? "adc"
+              : opcode === 0x19 || opcode === 0x1b
+                ? "sbb"
+                : "sub",
+          opcode === 0x03 || opcode === 0x13 || opcode === 0x1b || opcode === 0x2b,
           2,
           16
         );
@@ -1811,14 +1830,27 @@ export function stepInstruction(
         if (
           overriddenOpcode === 0x01 ||
           overriddenOpcode === 0x03 ||
+          overriddenOpcode === 0x11 ||
+          overriddenOpcode === 0x13 ||
+          overriddenOpcode === 0x19 ||
+          overriddenOpcode === 0x1b ||
           overriddenOpcode === 0x29 ||
           overriddenOpcode === 0x2b
         ) {
           executeDwordAluModRm(
             memory,
             state,
-            overriddenOpcode === 0x01 || overriddenOpcode === 0x03 ? "add" : "sub",
-            overriddenOpcode === 0x03 || overriddenOpcode === 0x2b,
+            overriddenOpcode === 0x01 || overriddenOpcode === 0x03
+              ? "add"
+              : overriddenOpcode === 0x11 || overriddenOpcode === 0x13
+                ? "adc"
+                : overriddenOpcode === 0x19 || overriddenOpcode === 0x1b
+                  ? "sbb"
+                  : "sub",
+            overriddenOpcode === 0x03 ||
+              overriddenOpcode === 0x13 ||
+              overriddenOpcode === 0x1b ||
+              overriddenOpcode === 0x2b,
             3,
             32
           );

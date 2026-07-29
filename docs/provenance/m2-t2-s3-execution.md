@@ -517,6 +517,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P194 adds operand-size-overridden ModR/M ADD and SUB directions
   (`66 01/03/29/2B`) as a project-native dword ALU foundation. It shares the
   existing 16-bit and 32-bit address decoders and dword segmented memory path.
+- M2 T2 S3 P195 extends that project-native dword ALU path with ADC and SBB
+  directions (`66 11/13/19/1B`), preserving the incoming carry as an explicit
+  arithmetic operand and using the established 32-bit flag contracts. The
+  regression covers register and memory destinations through both address sizes.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
