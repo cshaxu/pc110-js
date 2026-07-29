@@ -252,7 +252,7 @@ function executeMovReg16FromModRm(
   memory: InstructionMemory,
   state: Cpu386State,
   modRmOffset: number,
-  segmentOverride?: "cs" | "ds" | "ss"
+  segmentOverride?: "cs" | "ds" | "es" | "ss" | "fs" | "gs"
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.registerDirect) {
@@ -505,6 +505,10 @@ export function stepInstruction(
     }
     case 0x26: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode === 0x8b) {
+        executeMovReg16FromModRm(memory, state, 2, "es");
+        return { halted: false, fetched };
+      }
       if (opcode !== 0xc6 && opcode !== 0xc7)
         throw new UnsupportedOpcodeError("Unsupported ES override instruction");
       const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);

@@ -98,6 +98,8 @@
   `/7` immediate forms through the shared byte arithmetic and memory boundaries.
 - M2 T2 S3 P51 adds 16-bit `SHL r/m16, 1` and `SHL r/m16, imm8` (`D1 /4` and
   `C1 /4`) using the PCjs 80386 count-mask and logic-flag behavior.
+- M2 T2 S3 P52 adds the observed `ES:`-overridden `MOV r16, r/m16` (`26 8B`)
+  through the existing shared ModR/M memory-load path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
