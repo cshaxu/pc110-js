@@ -3034,6 +3034,31 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("loads 32-bit effective addresses without reading memory through both address sizes", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x8d],
+      [0x0002, 0x40],
+      [0x0003, 0x10],
+      [0x0004, 0x66],
+      [0x0005, 0x67],
+      [0x0006, 0x8d],
+      [0x0007, 0x46],
+      [0x0008, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister16(3, 0x1000);
+    state.writeRegister(6, 0x12340000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(0x1010);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(0x12340020);
+  });
+
   it("executes every 32-bit Group 1 immediate operation through both address sizes", () => {
     const code = [
       0x66, 0x81, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x66, 0x81, 0xc8, 0x02, 0x00, 0x00, 0x00, 0x66,

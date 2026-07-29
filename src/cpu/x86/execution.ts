@@ -1270,6 +1270,32 @@ function executeMovImmediateDwordModRm(
   state.advanceEip(modRmOffset + 5 + addressBytes);
 }
 
+function executeLeaDwordModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.registerDirect) throw new UnsupportedOpcodeError("LEA requires a memory operand");
+  const address =
+    addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in address && typeof address.sibBytes === "number" ? address.sibBytes : 0;
+  state.writeRegister(modRm.reg, address.offset);
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes + sibBytes);
+}
+
 function executeShiftWord(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1834,6 +1860,10 @@ export function stepInstruction(
         executeMovImmediateDwordModRm(memory, state, 2, 16);
         return { halted: false, fetched };
       }
+      if (opcode === 0x8d) {
+        executeLeaDwordModRm(memory, state, 2, 16);
+        return { halted: false, fetched };
+      }
       if (opcode === 0x81 || opcode === 0x83) {
         executeDwordGroupOneImmediate(memory, state, 2, 16, opcode === 0x81 ? 4 : 1);
         return { halted: false, fetched };
@@ -2047,6 +2077,10 @@ export function stepInstruction(
         }
         if (overriddenOpcode === 0xc7) {
           executeMovImmediateDwordModRm(memory, state, 3, 32);
+          return { halted: false, fetched };
+        }
+        if (overriddenOpcode === 0x8d) {
+          executeLeaDwordModRm(memory, state, 3, 32);
           return { halted: false, fetched };
         }
         if (overriddenOpcode === 0x81 || overriddenOpcode === 0x83) {

@@ -541,6 +541,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P201 adds PCjs-selected operand-size-overridden immediate stack
   pushes: `66 68 id` and `66 6A ib`. The byte form is sign-extended and both
   forms reuse the existing protected-mode SS:ESP dword stack contract.
+- M2 T2 S3 P202 adds PCjs-selected operand-size-overridden `LEA r32,m`
+  (`66 8D /r`). It writes the decoded effective offset without dereferencing
+  memory and accepts the established 16-bit and 32-bit address decoders.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
