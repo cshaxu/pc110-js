@@ -2394,6 +2394,15 @@ export function stepInstruction(
         const extension = fetchCodeByte(memory, state, 2).opcode;
         if (extension === 0x01) {
           const modRm = decodeModRm(fetchCodeByte(memory, state, 3).opcode);
+          const snapshot = state.snapshot();
+          if (
+            (modRm.reg === 0x02 || modRm.reg === 0x03 || modRm.reg === 0x06) &&
+            addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+            (snapshot.cs.selector & 0x03) !== 0
+          ) {
+            deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+            return { halted: false, fetched };
+          }
           if (!modRm.registerDirect && (modRm.reg === 0x00 || modRm.reg === 0x01)) {
             executeStoreDescriptorTable(memory, state, 3);
             return { halted: false, fetched };
@@ -2940,6 +2949,15 @@ export function stepInstruction(
       }
       if (extension === 0x01) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        const snapshot = state.snapshot();
+        if (
+          (modRm.reg === 0x02 || modRm.reg === 0x03 || modRm.reg === 0x06) &&
+          addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+          (snapshot.cs.selector & 0x03) !== 0
+        ) {
+          deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+          return { halted: false, fetched };
+        }
         if (!modRm.registerDirect && (modRm.reg === 0x00 || modRm.reg === 0x01)) {
           executeStoreDescriptorTable(memory, state, 2);
           return { halted: false, fetched };
