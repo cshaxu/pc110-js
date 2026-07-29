@@ -521,6 +521,16 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { edx: 0 }, eip: 0x0000fff2 });
   });
 
+  it("advances through WAIT when no FPU device is attached", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0x9b]]);
+    const state = new Cpu386State();
+    state.writeEflags(0x000008d7);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ eip: 0x0000fff1, eflags: 0x000008d7 });
+  });
+
   it("pushes, restores, and enables real-mode flags through SS:SP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x9c],

@@ -887,6 +887,9 @@ export function stepInstruction(
       state.writeRegister16(2, state.readRegister16(0) & 0x8000 ? 0xffff : 0);
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x9b:
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0xf4:
       state.advanceEip(1);
       state.halt();

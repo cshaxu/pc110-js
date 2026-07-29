@@ -318,6 +318,9 @@
   EFLAGS byte to AH while preserving EFLAGS and all other register bits.
 - M2 T2 S3 P135 adds `CWD` (`99`) from PCjs `opCWD` 16-bit behavior: sign-
   extend AX into DX without changing EFLAGS or AX.
+- M2 T2 S3 P136 adds `WAIT/FWAIT` (`9B`) from PCjs `opWAIT`'s no-FPU path.
+  The selected DeskPro ROM contains `9B` in its coprocessor state path. Until
+  M2 models an FPU device, the instruction advances EIP without changing state.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
