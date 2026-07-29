@@ -192,6 +192,44 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("calls a same-privilege protected-mode code segment through a 16-bit frame", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x9a],
+      [0x00000001, 0x34],
+      [0x00000002, 0x12],
+      [0x00000003, 0x10],
+      [0x00000004, 0x00],
+      [0x00001010, 0xff],
+      [0x00001011, 0xff],
+      [0x00001012, 0x00],
+      [0x00001013, 0x00],
+      [0x00001014, 0x00],
+      [0x00001015, 0x9a],
+      [0x00001016, 0x00],
+      [0x00001017, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x00001000, 0x00000017);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0);
+    state.loadProtectedModeSegment("ss", 0x0018, 0, 0xffffffff);
+    state.writeRegister16(4, 0x3000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x00001234,
+      cs: { selector: 0x0010, base: 0, limit: 0x0000ffff },
+      registers: { esp: 0x00002ffc }
+    });
+    expect([
+      values.get(0x2ffc),
+      values.get(0x2ffd),
+      values.get(0x2ffe),
+      values.get(0x2fff)
+    ]).toEqual([0x05, 0x00, 0x08, 0x00]);
+  });
+
   it("loads the DeskPro-style protected data descriptor into ES", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x8e],

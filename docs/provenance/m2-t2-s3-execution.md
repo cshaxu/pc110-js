@@ -602,6 +602,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P218 adds `CLTS` (`0F 06`) at CPL zero, clearing only CR0.TS.
 - M2 T2 S3 P219 adds operand-size-overridden `JMP FAR ptr16:32` (`66 EA`) for
   the existing protected-mode code-segment loader.
+- M2 T2 S3 P220 adds same-privilege protected-mode `CALL FAR ptr16:16` (`9A`)
+  through the existing descriptor loader and 16-bit stack frame path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1759,14 +1759,24 @@ export function stepInstruction(
       return { halted: false, fetched };
     case 0x9a: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-        throw new UnsupportedOpcodeError("Protected-mode far CALL is not implemented");
-      }
       const instructionPointer = fetchCodeUint16(memory, state, 1);
       const selector = fetchCodeUint16(memory, state, 3);
-      pushUint16(memory, state, snapshot.cs.selector);
-      pushUint16(memory, state, (snapshot.eip + 5) & 0xffff);
-      state.loadRealModeCodeSegment(selector, instructionPointer);
+      if (addressMode(snapshot.cr0, snapshot.eflags) === "real") {
+        pushUint16(memory, state, snapshot.cs.selector);
+        pushUint16(memory, state, (snapshot.eip + 5) & 0xffff);
+        state.loadRealModeCodeSegment(selector, instructionPointer);
+      } else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected") {
+        const loaded = resolveProtectedModeCodeSegment(memory, state, selector);
+        if ((loaded.selector & 0x03) !== (snapshot.cs.selector & 0x03))
+          throw new UnsupportedOpcodeError(
+            "Protected-mode far CALL stack switching is not implemented"
+          );
+        pushUint16(memory, state, snapshot.cs.selector);
+        pushUint16(memory, state, (snapshot.eip + 5) & 0xffff);
+        applyProtectedModeCodeSegment(state, loaded, instructionPointer);
+      } else {
+        throw new UnsupportedOpcodeError("Virtual-8086 far CALL is not implemented");
+      }
       return { halted: false, fetched };
     }
     case 0x9b:
