@@ -2906,6 +2906,55 @@ describe("80386 instruction fetch", () => {
     }
   });
 
+  it("delivers protected-mode POPF and POPFD privilege faults before consuming the stack", () => {
+    for (const instruction of [[0x9d], [0x66, 0x9d]]) {
+      const values = new Map<number, number>([
+        ...instruction.map((value, index) => [index, value] as const),
+        [0x1008, 0xff],
+        [0x1009, 0xff],
+        [0x100a, 0x00],
+        [0x100b, 0x00],
+        [0x100c, 0x00],
+        [0x100d, 0xfa],
+        [0x100e, 0xcf],
+        [0x100f, 0x00],
+        [0x2068, 0x56],
+        [0x2069, 0x00],
+        [0x206a, 0x0b],
+        [0x206b, 0x00],
+        [0x206c, 0x00],
+        [0x206d, 0x8e],
+        [0x206e, 0x00],
+        [0x206f, 0x00],
+        [0x3000, 0xff],
+        [0x3001, 0xff],
+        [0x3002, 0xff],
+        [0x3003, 0xff]
+      ]);
+      const state = new Cpu386State();
+      state.writeCr0(0x00000001);
+      state.writeGdtr(0x1000, 0x000f);
+      state.writeIdtr(0x2000, 0x006f);
+      state.loadProtectedModeCodeSegment(0x000b, 0, 0xffffffff, 0, true);
+      state.loadProtectedModeSegment("ss", 0x0013, 0, 0xffffffff, true);
+      state.writeRegister(4, 0x3000);
+
+      stepInstruction(resetAliasMemory(values), state);
+
+      expect(state.snapshot()).toMatchObject({
+        eip: 0x00000056,
+        registers: { esp: 0x2ff0 },
+        eflags: 0x00000002
+      });
+      expect(Array.from({ length: 4 }, (_, offset) => values.get(0x2ff0 + offset))).toEqual([
+        0x00, 0x00, 0x00, 0x00
+      ]);
+      expect(Array.from({ length: 4 }, (_, offset) => values.get(0x3000 + offset))).toEqual([
+        0xff, 0xff, 0xff, 0xff
+      ]);
+    }
+  });
+
   it("checks signed BOUND memory limits and faults through vector five", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x62],

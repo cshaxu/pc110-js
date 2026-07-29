@@ -2018,12 +2018,14 @@ export function stepInstruction(
       return { halted: false, fetched };
     case 0x9d: {
       const snapshot = state.snapshot();
-      const flags = popUint16(memory, state);
       if (addressMode(snapshot.cr0, snapshot.eflags) === "protected") {
-        if ((snapshot.cs.selector & 0x03) !== 0)
-          throw new UnsupportedOpcodeError("Protected-mode POPF requires CPL zero");
+        if ((snapshot.cs.selector & 0x03) !== 0) {
+          deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+          return { halted: false, fetched };
+        }
+        const flags = popUint16(memory, state);
         state.writeEflags((snapshot.eflags & ~0xffff) | flags);
-      } else state.writeEflags(flags);
+      } else state.writeEflags(popUint16(memory, state));
       state.advanceEip(1);
       return { halted: false, fetched };
     }
@@ -2273,8 +2275,10 @@ export function stepInstruction(
           throw new UnsupportedOpcodeError(
             "32-bit flags stack operations require the implemented protected-mode stack path"
           );
-        if ((snapshot.cs.selector & 0x03) !== 0)
-          throw new UnsupportedOpcodeError("Protected-mode POPFD requires CPL zero");
+        if ((snapshot.cs.selector & 0x03) !== 0) {
+          deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+          return { halted: false, fetched };
+        }
         if (opcode === 0x9c) pushUint32(memory, state, snapshot.eflags & ~0x00030000);
         else {
           const flags = popUint32(memory, state);

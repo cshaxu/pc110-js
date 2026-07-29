@@ -640,6 +640,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   transfer attempts. Both route to `#GP(0)` before changing architectural state.
 - M2 T2 S3 P234 adds default-segment `LODSW` (`AD`), reading DS:SI into AX and
   advancing or retreating SI by one word according to the direction flag.
+- M2 T2 S3 P235 routes nonzero-CPL `POPF` and `POPFD` to `#GP(0)` before either
+  operation reads the stack, preserving the pre-fault stack for the error frame.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
