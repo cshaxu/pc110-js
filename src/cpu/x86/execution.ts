@@ -962,7 +962,13 @@ export function stepInstruction(
     }
     case 0x80: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x05 && modRm.reg !== 0x07) {
+      if (
+        modRm.reg !== 0x00 &&
+        modRm.reg !== 0x02 &&
+        modRm.reg !== 0x04 &&
+        modRm.reg !== 0x05 &&
+        modRm.reg !== 0x07
+      ) {
         throw new UnsupportedOpcodeError("Unsupported 80 opcode form");
       }
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
@@ -976,6 +982,11 @@ export function stepInstruction(
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
         else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
         state.writeAddFlags8(destination, immediate, carry);
+      } else if (modRm.reg === 0x04) {
+        const result = destination & immediate;
+        if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+        else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
+        state.writeLogicFlags8(result);
       } else if (modRm.reg === 0x05) {
         const result = destination - immediate;
         if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);

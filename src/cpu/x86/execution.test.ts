@@ -757,6 +757,28 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x1b }, eflags: 0x00000002 });
   });
 
+  it("ANDs byte registers and direct memory through 80 /4", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x80],
+      [0x000ffff1, 0xe4],
+      [0x000ffff2, 0xc0],
+      [0x000ffff3, 0x80],
+      [0x000ffff4, 0x26],
+      [0x000ffff5, 0x34],
+      [0x000ffff6, 0x12],
+      [0x000ffff7, 0x0f],
+      [0x00001234, 0xf3]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(4, 0xa5);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00008000 } });
+    expect(values.get(0x00001234)).toBe(0x03);
+  });
+
   it("decrements CX and loops while the 16-bit count remains nonzero", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xb9],

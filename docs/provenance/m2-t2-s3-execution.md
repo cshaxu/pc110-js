@@ -137,6 +137,8 @@
   ROM path while retaining explicit nonzero-CPL fault boundaries.
 - M2 T2 S3 P69 adds byte and word register-destination XOR memory forms through
   shared ModR/M, segment, and logic-flag paths.
+- M2 T2 S3 P70 adds `80 /4` byte AND forms for the observed ROM immediate
+  masking path through the existing byte-memory and logic-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
