@@ -1,6 +1,6 @@
 # Quick Start Requirement
 
-M3 T3 must add and manually verify a root-level `QUICKSTART.md` immediately after the minimal migrated PCjs machine boots DOS in the browser.
+M2 T6 must add and manually verify a root-level `QUICKSTART.md` when the standalone TypeScript 80386 PC/AT machine boots DOS in the browser.
 
 ## Audience
 
@@ -25,7 +25,7 @@ Do not include architecture explanation, project history, feature marketing, or 
 
 ## Manual Acceptance Checklist
 
-The M3 verifier must follow the document from a fresh checkout state and confirm:
+The M2 verifier must follow the document from a fresh checkout state and confirm:
 
 - dependency installation succeeds;
 - no absolute local path is required;

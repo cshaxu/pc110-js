@@ -4,4 +4,4 @@ The canonical milestone, task, and subtask definitions are maintained in [breakd
 
 Current execution state is maintained in [status.md](status.md), and completion rules are maintained in [execution-policy.md](execution-policy.md).
 
-Milestone identifiers are frozen when implementation begins. New work must not renumber completed or active milestones.
+The owner-authorized pre-implementation direction correction replaced the previous M1-M13 roadmap with M0-M5. These identifiers are now frozen. New work must not renumber completed or active milestones.

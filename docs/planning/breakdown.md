@@ -12,7 +12,20 @@ Commit subjects use:
 M<milestone> T<task> S<subtask> P<part>: <description>
 ```
 
-Parts are implementation commits within a subtask and are numbered when work begins. Milestone, task, and subtask identifiers are frozen once implementation starts. Completion is governed by [execution-policy.md](execution-policy.md), and current state is recorded in [status.md](status.md).
+Parts are implementation commits within a subtask. Completion is governed by [execution-policy.md](execution-policy.md), and current state is recorded in [status.md](status.md).
+
+## Direction Rebaseline
+
+Before emulator implementation began, the owner corrected the delivery model. The previous M1-M13 roadmap is superseded by the four primary delivery nodes below. This owner-authorized correction is recorded as M0 T3 S1 P2. M0-M5 identifiers are frozen after that commit.
+
+Primary delivery nodes:
+
+1. M1: PCjs Reference Integration.
+2. M2: Standalone TypeScript 386 Golden Baseline.
+3. M3: High-ROI PC110 Integration.
+4. M4: Medium- And Low-ROI PC110 Integration.
+
+M0 provides governance. M5 provides preservation-grade release packaging.
 
 ## Reference And Evidence Rules
 
@@ -31,7 +44,7 @@ Goal: make autonomous execution bounded, reproducible, legally traceable, and re
 ### T0: Project Rules
 
 - S1: Define English-only artifact rules.
-- S2: Define TypeScript-first implementation and temporary PCjs JavaScript staging rules.
+- S2: Define TypeScript runtime implementation rules.
 - S3: Define the M/T/S/P commit hierarchy.
 - S4: Define verified-subtask commit and push rules.
 - S5: Define prioritized TODO rules.
@@ -51,409 +64,289 @@ Goal: make autonomous execution bounded, reproducible, legally traceable, and re
 
 - S1: Define the standalone product boundary.
 - S2: Define domain-specific source authority.
-- S3: Define boot-preserving vertical PCjs migration.
+- S3: Define the PCjs reference-to-TypeScript assimilation path.
 - S4: Define the canonical milestone roadmap.
 - S5: Define provenance, evidence, and PCjs change-report templates.
 
 ### T3: Pre-Goal Setup Audit
 
-- S1: Correct planning conflicts and missing governance artifacts, then freeze identifiers for implementation.
+- S1: Correct planning conflicts and missing governance artifacts, then apply the owner-authorized four-node direction correction.
 
 Completion gate:
 
 - Governance, license, third-party notices, baseline records, templates, canonical breakdown, and status record are committed.
-- No protected image is tracked.
-- The repository contains no emulator implementation yet.
+- No protected image or emulator implementation source is tracked.
+- M0-M5 identifiers are frozen.
 
-## M1: Unmodified PCjs Golden Baseline
+## M1: PCjs Reference Integration
 
-Goal: prove the pinned upstream implementation boots the known-good DOS disk before migration.
+Goal: make this project reproducibly run and validate the pinned sibling PCjs implementation through relative references, without copying or modifying PCjs runtime source.
 
-### T1: Golden Machine Definition
+### T1: Reference Contract
 
-- S1: Select PCjs PCx86 v2 as the source generation.
-- S2: Record that the supported generic CPU target is 80386, not complete 80486.
-- S3: Select one existing PCjs 80386 PC/AT machine configuration with the minimum required devices.
-- S4: Inventory its source, ROM, machine-configuration, and runtime dependencies.
+- S1: Select PCjs PCx86 v2 as the implementation reference generation.
+- S2: Verify the pinned PCjs commit and read-only sibling path.
+- S3: Record that the highest supported generic CPU model is 80386.
+- S4: Define the project-owned reference-run boundary and relative path resolution.
 
-### T2: Unmodified Browser Boot
+### T2: Minimal Complete 386 Machine Selection
 
-- S1: Document an exact command that starts the pinned sibling PCjs checkout.
-- S2: Attach the known-good DOS floppy read-only by local path or browser selection.
-- S3: Reach the DOS prompt without modifying PCjs source.
-- S4: Capture machine identity, asset hashes, browser result, and compact proof.
+- S1: Select one existing PCjs 80386 PC/AT machine configuration.
+- S2: Inventory every configured hardware device and required source module.
+- S3: Inventory BIOS, ROM, disk, configuration, browser, and build dependencies.
+- S4: Reject machine candidates that require unrelated PCjs website or archive content.
+- S5: Record the exact reference machine contract that M2 must implement.
 
-### T3: Golden Regression Contract
+### T3: Project-Owned Reference Runner
 
-- S1: Define observable boot markers that do not depend only on elapsed wall time.
-- S2: Record expected display or trace markers and failure diagnostics.
-- S3: Record a manual rerun procedure.
-- S4: Publish the golden-baseline verification record.
+- S1: Add a TypeScript project runner or project-owned command that starts the selected sibling PCjs machine.
+- S2: Resolve `../pcjs` and local media through relative configuration.
+- S3: Fail clearly when the sibling commit, required source, or local assets do not match.
+- S4: Keep the sibling checkout read-only during every run.
 
-Completion gate:
+### T4: Reference DOS Boot
 
-- Unmodified PCjs at the pinned commit reaches a DOS prompt with the recorded floppy.
-- Another run can reproduce the result from the documented machine identity and commands.
-- No pc110-js emulator source has been copied yet.
+- S1: Attach the known-good DOS floppy read-only.
+- S2: Reach BIOS startup and boot-sector loading.
+- S3: Reach the DOS prompt in the browser.
+- S4: Record deterministic or observable boot markers.
+- S5: Capture compact manual browser proof and exact commands.
 
-## M2: Standalone TypeScript Runtime Shell
+### T5: Reference Mapping
 
-Goal: establish project-owned tooling and runtime boundaries without inventing emulator behavior.
-
-### T1: Reproducible Toolchain
-
-- S1: Select and pin the Node.js and package-manager contract.
-- S2: Add `package.json`, lockfile, and strict TypeScript configuration.
-- S3: Add build and development-server commands.
-- S4: Add unit-test, lint, format, and type-check commands.
-- S5: Add CI using the same commands as local verification.
-
-### T2: Runtime Boundaries
-
-- S1: Add browser and headless entry points.
-- S2: Add a shared machine lifecycle shell with run, pause, reset, and deterministic step operations.
-- S3: Isolate wall-clock scheduling from emulated time.
-- S4: Add profile and local-asset configuration loading.
-- S5: Add clear missing-asset and hash-mismatch errors.
-
-### T3: Minimal Browser Surface
-
-- S1: Add the emulator screen surface.
-- S2: Add run, pause, reset, and media controls.
-- S3: Add compact machine status and trace output.
-- S4: Add browser and headless shell smoke tests.
+- S1: Map PCjs CPU and instruction modules to M2 destinations.
+- S2: Map memory, bus, machine, and timing modules.
+- S3: Map chipset, interrupt, timer, DMA, RTC, and system-port modules.
+- S4: Map storage, video, keyboard, and browser integration modules.
+- S5: Record license boundaries and excluded archival assets.
 
 Completion gate:
 
-- A clean clone can install, build, type-check, test, and open the shell.
-- The shell contains no fabricated PC hardware behavior.
-- No runtime path depends on an absolute developer-machine path.
+- A command owned by pc110-js runs the pinned sibling PCjs implementation.
+- The selected complete 80386 PC/AT machine boots the known-good DOS floppy to a prompt.
+- The complete configured hardware and source dependency closure is recorded.
+- No PCjs runtime source was copied or modified.
+- The result is named the M1 PCjs reference baseline, not the pc110-js golden implementation.
 
-## M3: Minimal Bootable PCjs Vertical Migration
+## M2: Standalone TypeScript 386 Golden Baseline
 
-Goal: move the smallest complete PCjs PC/AT runtime into the standalone project and preserve the M1 DOS result immediately.
+Goal: implement a clean, complete, standalone TypeScript version of the selected 80386 PC/AT machine inside this repository and boot the same DOS floppy without a runtime dependency on PCjs.
 
-### T1: Dependency Closure And Provenance
+### T1: Architecture And Variant Foundation
 
-- S1: Derive the complete runtime dependency closure from the M1 golden machine.
-- S2: Create provenance records and third-party notice entries before import.
-- S3: Import only required PCjs runtime source under `src/pcjs/`.
-- S4: Retain verbatim notices and document every temporary JavaScript exception.
-- S5: Verify that no PCjs archival ROM, disk, image, or unrelated website content was copied.
+- S1: Pin the Node.js, package-manager, TypeScript, build, test, lint, and format toolchain.
+- S2: Add browser and headless entry points using the same machine core.
+- S3: Define machine profile, device registry, device interface, and device variant contracts.
+- S4: Define deterministic emulated time and host scheduling boundaries.
+- S5: Define relative local-asset configuration with size and SHA-256 validation.
+- S6: Register the generic `pc-at-386` profile as the default machine family.
 
-### T2: Standalone Machine Boot
+### T2: TypeScript CPU, Memory, And Bus
 
-- S1: Adapt PCjs startup to the project-owned browser shell.
-- S2: Resolve configuration and asset paths through relative local configuration.
-- S3: Boot the known-good DOS floppy read-only.
-- S4: Match the M1 boot markers and reach the DOS prompt.
-- S5: Add automated smoke coverage around the manual browser result.
+- S1: Implement the PCjs-supported 80386 CPU state and reset model in TypeScript.
+- S2: Implement real, protected, virtual-8086, and paging behavior required by the PCjs-supported 80386 model.
+- S3: Implement all supported opcode families, exceptions, interrupts, and privilege behavior with focused conformance coverage.
+- S4: Implement physical memory, RAM, ROM, shadowing where selected, A20, and memory access contracts.
+- S5: Implement I/O port dispatch, machine reset, deterministic stepping, and trace hooks.
+- S6: Compare focused CPU and memory behavior against the M1 reference.
 
-### T3: Manual Quick Start
+### T3: TypeScript Core PC/AT Hardware
 
-- S1: Add root-level `QUICKSTART.md` using the approved requirement.
-- S2: Verify the Quick Start from a fresh checkout state with local protected assets.
-- S3: Verify install, start, browser URL, media attachment, controls, and DOS prompt manually.
-- S4: Record the Quick Start verification result.
+- S1: Implement master and slave 8259A-compatible PIC variants.
+- S2: Implement 8253/8254-compatible PIT and speaker timing.
+- S3: Implement 8237-compatible DMA controllers and page registers.
+- S4: Implement RTC/CMOS and selected-machine configuration state.
+- S5: Implement system ports, NMI, reset, and A20 glue.
+- S6: Implement the selected 8042 and keyboard-controller behavior.
+- S7: Verify BIOS POST checkpoints through real device paths.
 
-Completion gate:
+### T4: TypeScript Storage Hardware
 
-- The standalone repository boots DOS in a browser from a documented command.
-- `QUICKSTART.md` is short, complete, and manually verified.
-- M1 and M3 boot results are observably equivalent for the defined markers.
-- Temporary imported JavaScript is fully inventoried and has removal conditions.
+- S1: Implement the selected floppy controller and drive behavior.
+- S2: Implement raw floppy image attachment without filesystem or DOS knowledge.
+- S3: Implement selected fixed-storage hardware if present in the M1 machine contract.
+- S4: Implement IRQ, DMA, command, result, error, and write-protect behavior required by the selected devices.
+- S5: Verify BIOS boot-sector reads through emulated hardware.
 
-## M4: TypeScript Migration And Stable Device Boundaries
+### T5: TypeScript Video, Input, And Platform Presentation
 
-Goal: convert the migrated PCjs closure mechanically while keeping the whole machine bootable.
+- S1: Implement the selected VGA or display hardware and video memory behavior.
+- S2: Render the hardware framebuffer through a browser-owned presentation layer.
+- S3: Implement keyboard scan-code and controller delivery through the selected hardware path.
+- S4: Map browser input without placing browser assumptions in device cores.
+- S5: Implement every additional configured M1 device without placeholders.
+- S6: Add structured trace, status, and error presentation.
 
-### T1: Mechanical Conversion Order
+### T6: Whole-Machine Golden Acceptance
 
-- S1: Record the dependency-aware module conversion order.
-- S2: Convert shared utilities and lifecycle modules.
-- S3: Convert CPU, memory, and bus modules without behavior changes.
-- S4: Convert chipset and storage modules without behavior changes.
-- S5: Convert video, input, and remaining runtime modules without behavior changes.
+- S1: Assemble the complete `pc-at-386` profile entirely from TypeScript runtime modules.
+- S2: Boot the known-good DOS floppy to a prompt in headless and browser-capable workflows where feasible.
+- S3: Match the defined M1 reference boot markers.
+- S4: Add generic whole-machine regression commands.
+- S5: Verify no runtime import or path depends on `../pcjs`.
+- S6: Add and manually verify root-level `QUICKSTART.md`.
+- S7: Record the golden baseline proof, limitations, and performance envelope.
 
-### T2: Typed Integration Boundaries
+### T7: Assimilation And License Audit
 
-- S1: Type machine lifecycle and profile contracts.
-- S2: Type memory, I/O port, IRQ, DMA, timer, reset, and trace contracts.
-- S3: Add adapters only where PCjs assumptions cross project-owned boundaries.
-- S4: Keep the generic PC/AT profile independent from PC110 variants.
-
-### T3: Conversion Regression
-
-- S1: Rerun the DOS boot after each coherent module conversion.
-- S2: Compare selected CPU and device behavior with the pinned PCjs baseline.
-- S3: Remove temporary JavaScript exceptions when their modules are converted.
-- S4: Record any intentional PCjs behavior change in a one-page report.
-
-Completion gate:
-
-- Emulator runtime source is TypeScript except for documented unavoidable exceptions.
-- The browser Quick Start and DOS regression remain green.
-- Device boundaries are based on working integration, not speculative framework design.
-
-## M5: Stable PC/AT Baseline And PC110 CPU Delta
-
-Goal: freeze the reusable generic baseline and add only the PC110-required 486SX/SL CPU differences.
-
-### T1: Generic Baseline Stabilization
-
-- S1: Stabilize deterministic headless stepping and browser scheduling.
-- S2: Add reset, boot-sector, interrupt, storage, display, and input regression markers.
-- S3: Record expected performance without making timing host-dependent.
-- S4: Publish the stable generic PC/AT verification record.
-
-### T2: PC110 CPU Requirements
-
-- S1: Inventory 486SX/SL reset-state differences required by PC110 firmware.
-- S2: Inventory firmware-reached 486 instructions missing from PCjs.
-- S3: Define conformance tests for every accepted CPU delta.
-- S4: Keep complete 80486 conformance explicitly out of scope unless separately approved.
-
-### T3: CPU Delta Implementation
-
-- S1: Implement reset alias and reset register behavior.
-- S2: Implement only trace-backed 486 instructions and semantics.
-- S3: Add a PCjs change report for each intentional core behavior change.
-- S4: Verify both generic PC/AT and PC110 CPU-delta tests.
+- S1: Complete a provenance record for every PCjs-derived subsystem.
+- S2: Verify runtime implementation files are TypeScript except documented unavoidable tooling exceptions.
+- S3: Verify project-native module names, boundaries, lifecycle, and contracts.
+- S4: Verify PCjs copyright, MIT license, and third-party notices.
+- S5: Verify no PCjs archival programs, ROMs, disks, images, or third-party documentation were copied.
 
 Completion gate:
 
-- Generic PC/AT DOS boot remains unchanged.
-- Every 486SX/SL delta has evidence and a focused test.
-- Documentation does not claim complete 80486 support.
+- The complete selected 80386 PC/AT machine is implemented inside pc110-js in TypeScript.
+- Every configured hardware device has a real hardware model; no placeholder or guest-service shortcut is active.
+- The machine boots the known-good DOS floppy to a prompt.
+- The runtime has no dependency on `../pcjs` or copied PCjs JavaScript.
+- Generic devices are registered as selectable default variants.
+- The M1 reference result remains reproducible for comparison.
+- `QUICKSTART.md` is short, complete, and manually verified in a browser.
+- M2 becomes the pc110-js golden regression baseline.
 
-## M6: PC110 Profile And ROM Skeleton
+## M3: High-ROI PC110 Integration
 
-Goal: add the PC110 machine identity and load real firmware without requiring complete POST.
+Goal: add all PC110 behavior needed for real ROM execution, POST, boot, display, input, and basic browser usability while preserving the complete M2 generic machine.
 
-### T1: PC110 Profile
+### T1: PC110 Profile And ROM Boundary
 
-- S1: Define CPU, RAM, firmware, display, input, storage, and platform requirements.
-- S2: Define PC110 memory and I/O ownership without speculative behavior.
-- S3: Add profile-level generic and PC110 device selection.
-- S4: Keep the generic PC/AT profile isolated.
+- S1: Define the PC110 machine profile, ROM identities, RAM, memory map, I/O ownership, and wiring.
+- S2: Add local firmware loading with size and SHA-256 validation.
+- S3: Map the PC110 BIOS, reset alias, and required ROM windows.
+- S4: Verify reset-vector bytes and the first firmware control transfer.
+- S5: Keep the M2 `pc-at-386` profile independently runnable.
 
-### T2: Firmware Loading
+### T2: PC110 CPU And Boot Platform Variants
 
-- S1: Define ignored local firmware placement and hashes.
-- S2: Load and map the PC110 BIOS and reset alias.
-- S3: Verify reset-vector bytes and first control transfer.
-- S4: Produce clear missing-asset and mismatch diagnostics.
+- S1: Define evidence-backed 486SX/SL reset-state and instruction differences.
+- S2: Add a PC110 CPU variant or bounded delta without claiming complete 80486 support.
+- S3: Add high-ROI memory, chipset, CMOS, reset, A20, interrupt, timer, and DMA variants.
+- S4: Register every variant beside its M2 generic implementation.
+- S5: Add focused evidence, conformance, and generic-regression tests.
 
-### T3: Registry And Trace Skeleton
+### T3: PC110 Boot Storage Variants
 
-- S1: Add the device variant registry required by real profile differences.
-- S2: Add structured CPU, memory, I/O, IRQ, DMA, and reset trace categories.
-- S3: Leave unknown behavior explicit and traceable.
-- S4: Record deferred behavior with prioritized TODOs.
+- S1: Identify the ROM-visible floppy, fixed, removable, and PCMCIA boot paths.
+- S2: Add high-ROI controller, socket, bridge, and storage variants.
+- S3: Reach hardware-issued boot-sector access without BIOS or DOS shortcuts.
+- S4: Keep generic M2 FDC and storage implementations selectable.
+- S5: Record unresolved nonblocking storage behavior for M4.
 
-Completion gate:
+### T4: PC110 Display And Input Variants
 
-- The real PC110 BIOS starts executing from verified bytes.
-- The first firmware control transfer is captured.
-- Generic PC/AT boot still passes.
+- S1: Add the display behavior required for ROM progress and usable output.
+- S2: Add keyboard, pointer, and controller behavior required for boot and basic use.
+- S3: Keep browser presentation and events outside hardware variants.
+- S4: Keep generic M2 display and input implementations selectable.
+- S5: Add framebuffer, keyboard, pointer, and ROM-checkpoint tests.
 
-## M7: PC110 ROM Trace Bring-Up
+### T5: PC110 Boot And Usability Acceptance
 
-Goal: advance real firmware by classifying one boot blocker at a time.
-
-### T1: Bounded Trace Tools
-
-- S1: Add deterministic instruction and cycle budgets.
-- S2: Add focused I/O, memory, interrupt, DMA, and reset traces.
-- S3: Add trace filtering, export, and stable checkpoint markers.
-- S4: Prevent unbounded console output and wall-clock-only success criteria.
-
-### T2: First POST Frontier
-
-- S1: Run firmware until the first reproducible blocker.
-- S2: Classify the blocker by device and evidence level.
-- S3: Compare PCjs behavior, firmware context, PC110-EMU, prior attempts, and available hardware evidence.
-- S4: Define the smallest evidence-producing next change.
-
-### T3: Bring-Up Queue
-
-- S1: Convert only demonstrated blockers into implementation subtasks.
-- S2: Separate boot blockers from nonblocking research leads.
-- S3: Record high, medium, and low TODOs with activation conditions.
-- S4: Preserve generic PC/AT and prior PC110 checkpoints.
+- S1: Advance real firmware through POST using one classified blocker at a time.
+- S2: Reach firmware boot-device selection and boot-sector loading.
+- S3: Reach the DOS prompt through emulated PC110 hardware.
+- S4: Add deterministic PC110 boot markers and a noninteractive smoke command where feasible.
+- S5: Add profile switching to `QUICKSTART.md` and verify both generic and PC110 procedures.
+- S6: Capture compact manual browser proof.
 
 Completion gate:
 
-- The first blocker and evidence are reproducible.
-- The next implementation step is bounded.
-- No guessed device behavior is accepted.
+- All high-ROI PC110 modules required for boot and basic use are integrated as variants.
+- The PC110 profile boots DOS through real firmware and hardware paths.
+- Every replaced device can be switched back to the M2 generic implementation through profile configuration.
+- The generic M2 golden regression remains green.
+- Unknown medium- and low-ROI behavior remains explicit and traceable.
 
-## M8: Boot-Blocking PC110 Platform Behavior
+## M4: Medium- And Low-ROI PC110 Integration
 
-Goal: implement the minimum evidence-backed platform behavior needed to move POST and firmware boot forward.
+Goal: complete remaining PC110 hardware by evidence and value while proving that the profile and variant architecture remains suitable for future machines.
 
-### T1: Platform Blockers
+### T1: Extended Storage And PCMCIA
 
-- S1: Implement trace-backed chipset or board registers.
-- S2: Implement required reset, A20, CMOS, timer, interrupt, or DMA differences.
-- S3: Add focused contract and regression tests.
-- S4: Rerun firmware to the next checkpoint.
+- S1: Complete non-boot-critical PCMCIA controller, socket, card, and memory-window behavior.
+- S2: Expand removable and fixed-storage compatibility.
+- S3: Add hot-plug, write, error, and edge-case behavior where hardware supports it.
+- S4: Preserve generic and M3 boot regressions.
 
-### T2: Display And Input Blockers
+### T2: Audio And Speaker
 
-- S1: Implement only firmware-blocking display setup behavior.
-- S2: Implement only firmware-blocking keyboard or pointing-controller behavior.
-- S3: Keep browser input and rendering outside hardware cores.
-- S4: Preserve trace evidence and generic regressions.
+- S1: Complete PC speaker behavior required beyond M2.
+- S2: Add PC110 audio-controller and compatible sound variants.
+- S3: Keep Web Audio presentation outside hardware cores.
+- S4: Add register, timing, and browser-output checks.
 
-### T3: Storage Discovery Blockers
+### T3: Power And Platform Features
 
-- S1: Identify the firmware-visible PC110 boot storage path.
-- S2: Implement controller and platform behavior without guest-service shortcuts.
-- S3: Verify hardware-visible sector access.
-- S4: Record unresolved PCMCIA or storage questions without speculative completion.
+- S1: Add power-management and status-controller behavior.
+- S2: Add suspend, resume, battery, and setup behavior supported by evidence.
+- S3: Add save and restore after deterministic state boundaries are proven.
+- S4: Add platform tests and real-hardware comparisons.
 
-Completion gate:
+### T4: Optional PC110 Devices And Controls
 
-- Each accepted behavior removes a demonstrated blocker.
-- Every change has evidence, focused tests, and prior-baseline regression coverage.
+- S1: Add infrared behavior.
+- S2: Add modem behavior.
+- S3: Add memo-pad and special input behavior.
+- S4: Add remaining documented PC110 devices by evidence and ROI.
 
-## M9: PC110 Bootable Baseline
+### T5: Real Hardware Validation
 
-Goal: boot real guest media through the PC110 profile and hardware path.
+- S1: Define reproducible emulator-versus-hardware observation records.
+- S2: Validate boot, reset, storage, display, input, audio, and platform behavior.
+- S3: Track confirmed differences with evidence levels.
+- S4: Resolve release-blocking differences and document remaining limitations.
 
-### T1: Firmware Boot Path
+### T6: Future Machine Extensibility
 
-- S1: Reach firmware boot-device selection.
-- S2: Reach hardware-issued boot-sector access.
-- S3: Load a valid boot sector without synthetic BIOS or DOS services.
-- S4: Reach DOS startup and then the prompt.
-
-### T2: PC110 Regression Contract
-
-- S1: Add deterministic firmware and DOS checkpoint markers.
-- S2: Add a noninteractive PC110 smoke command where feasible.
-- S3: Preserve the generic PC/AT smoke command.
-- S4: Record required local assets by identity only.
-- S5: Capture compact manual browser proof.
-
-Completion gate:
-
-- The PC110 profile reaches a DOS prompt through emulated hardware.
-- Generic PC/AT DOS boot still passes.
-- No protected media or guest-service shortcut is committed.
-
-## M10: PC110 Browser Usability
-
-Goal: make the bootable machine practical for interactive browser use.
-
-### T1: Display
-
-- S1: Implement PC110-relevant display behavior required for usable output.
-- S2: Present a deterministic framebuffer in the browser.
-- S3: Add screenshot or framebuffer checks.
-- S4: Document visual limitations.
-
-### T2: Input
-
-- S1: Implement keyboard behavior required for normal operation.
-- S2: Implement pointing and special input by usability value and evidence.
-- S3: Add browser event mapping and focused tests.
-- S4: Document input limitations.
-
-### T3: Runtime Experience
-
-- S1: Finalize run, pause, reset, and media controls.
-- S2: Expose useful machine, asset, and trace status.
-- S3: Keep advanced diagnostics unobtrusive during normal use.
-- S4: Update and manually verify `QUICKSTART.md`.
+- S1: Audit interfaces for accidental PC110-specific assumptions.
+- S2: Verify ROM, memory map, I/O ownership, wiring, and variants are profile-selected.
+- S3: Verify generic and PC110 profiles can coexist in one build.
+- S4: Document how a future machine profile adds ROMs and hardware variants.
+- S5: Avoid implementing a speculative third machine solely to prove abstraction.
 
 Completion gate:
 
-- A user can start, boot, view, and control the PC110 profile from the Quick Start alone.
+- Medium- and low-ROI PC110 modules are integrated or explicitly documented as unsupported with evidence.
+- Generic and PC110 variants remain selectable and independently testable.
+- Interfaces contain no avoidable PC110 assumptions.
+- Real-hardware validation and known limitations are documented.
+- Future machine profiles can add ROMs, wiring, and variants without replacing existing implementations.
 
-## M11: PC110 Feature Expansion
+## M5: Release And Preservation Documentation
 
-Goal: expand compatibility in ROI order after the bootable baseline is secure.
-
-### T1: Storage And PCMCIA
-
-- S1: Expand PC110 storage compatibility.
-- S2: Implement PCMCIA behavior from hardware and firmware evidence.
-- S3: Add tests, traces, and compatibility notes.
-
-### T2: Power And Platform Features
-
-- S1: Add power-management behavior by observed value.
-- S2: Add setup and platform behavior by observed value.
-- S3: Add save and restore only after deterministic state boundaries exist.
-
-### T3: Optional Devices
-
-- S1: Add sound support.
-- S2: Add infrared or modem support.
-- S3: Add memo-pad and special input support.
-- S4: Add other nonblocking devices by evidence and user value.
-
-Completion gate:
-
-- Each feature is isolated by a device or profile boundary, has evidence and tests, and preserves both boot baselines.
-
-## M12: Real Hardware Validation
-
-Goal: compare emulator behavior with real PC110 machines and community research.
-
-### T1: Observation Protocol
-
-- S1: Define reproducible real-hardware observation records.
-- S2: Define emulator-versus-hardware comparison records.
-- S3: Define trace attachment, citation, and privacy conventions.
-- S4: Identify tests that can be repeated by multiple machines or owners.
-
-### T2: Validation Runs
-
-- S1: Validate boot and reset behavior.
-- S2: Validate storage behavior.
-- S3: Validate display and input behavior.
-- S4: Validate platform register behavior.
-- S5: Convert confirmed differences into bounded future subtasks.
-
-Completion gate:
-
-- Important compatibility claims cite reproducible hardware observations.
-- Known differences are prioritized and documented.
-
-## M13: Release And Preservation Documentation
-
-Goal: make the project independently buildable, inspectable, and distributable.
+Goal: make the verified project independently buildable, inspectable, and distributable.
 
 ### T1: User Documentation
 
-- S1: Finalize Quick Start, build, asset, run, and troubleshooting guides.
+- S1: Finalize Quick Start, build, asset, run, profile-selection, and troubleshooting guides.
 - S2: Document supported browsers, profiles, media, and limitations.
-- S3: Verify a fresh-clone browser run.
+- S3: Verify fresh-clone generic and PC110 browser runs.
 
 ### T2: Developer Documentation
 
-- S1: Document architecture and device interfaces.
-- S2: Publish the provenance and PCjs change-report indexes.
+- S1: Document architecture, profiles, registry, interfaces, and variants.
+- S2: Publish provenance, evidence, and PCjs change-report indexes.
 - S3: Document tracing, testing, and hardware-validation workflows.
+- S4: Document the future machine-profile workflow.
 
 ### T3: License And Attribution
 
 - S1: Audit PCjs attribution and MIT notice preservation.
 - S2: Audit third-party source and asset licensing.
-- S3: Verify that protected media is absent.
+- S3: Verify protected media is absent.
 - S4: Complete the release checklist.
 
 ### T4: Release Packaging
 
-- S1: Verify clean install, build, tests, and browser demo.
-- S2: Verify generic PC/AT and PC110 regressions.
+- S1: Verify clean install, build, tests, and browser demos.
+- S2: Verify M1 reference, M2 generic, and M3/M4 PC110 regressions.
 - S3: Produce versioned release notes and known limitations.
 - S4: Tag the verified release.
 
 Completion gate:
 
 - A fresh clone can build and run using only documented local asset placement.
-- License, attribution, provenance, and known limitations are complete.
+- Generic 386 and PC110 profiles are selectable from the same project.
+- License, attribution, provenance, evidence, and known limitations are complete.

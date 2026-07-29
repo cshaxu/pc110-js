@@ -1,5 +1,7 @@
 # M0 T3 S1 Governance Correction Verification
 
+Historical note: this record verified the initial M1-M13 roadmap. The owner superseded that roadmap before implementation in M0 T3 S1 P2. See `m0-t3-s1-four-node-direction.md` for the active structure verification.
+
 - Date: 2026-07-28
 - Scope: pre-goal governance, architecture, planning, baseline, license, evidence, asset, and Quick Start requirements
 - Protected assets required: none

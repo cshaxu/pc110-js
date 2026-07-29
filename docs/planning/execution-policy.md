@@ -43,9 +43,10 @@ Push is a completion action, not a separate product subtask.
 ## Boot Baselines
 
 - Before M1 completes, no boot baseline is claimed.
-- M1 establishes the unmodified PCjs golden baseline.
-- M3 establishes the standalone migrated PC/AT baseline.
-- M9 establishes the PC110 boot baseline.
+- M1 establishes the sibling PCjs reference baseline.
+- M2 establishes the standalone TypeScript 80386 PC/AT golden baseline.
+- M3 establishes the high-ROI PC110 boot and usability baseline.
+- M4 establishes the expanded PC110 hardware baseline.
 - Each later subtask preserves every applicable established baseline.
 
 ## Breadth-First Rules
@@ -72,4 +73,6 @@ Stop and request owner direction when:
 
 - Do not renumber completed or active milestone, task, or subtask identifiers.
 - Add newly discovered work at the end of the closest suitable task or as a new task.
+- The owner-authorized pre-implementation correction in M0 T3 S1 P2 supersedes the earlier M1-M13 roadmap.
+- M0-M5 identifiers are frozen after that correction.
 - Update [status.md](status.md) whenever active work or milestone state changes.

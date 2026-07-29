@@ -3,20 +3,22 @@
 ## Completed
 
 - M0: Governance And Project Foundation.
+- M0 T3 S1 P2: owner-authorized four-node delivery-model correction.
 
 ## Next Eligible Work
 
-- M1 T1 S1: Select PCjs PCx86 v2 as the source generation for the golden baseline.
+- M1 T1 S1: select PCjs PCx86 v2 as the implementation reference generation.
 
-## Established Baselines
+## Delivery Nodes
 
-- Governance baseline: established.
-- Unmodified PCjs DOS boot: not established.
-- Standalone migrated PC/AT DOS boot: not established.
-- PC110 DOS boot: not established.
+- M1 PCjs reference integration: not established.
+- M2 standalone TypeScript 386 golden baseline: not established.
+- M3 high-ROI PC110 integration: not established.
+- M4 medium- and low-ROI PC110 integration: not established.
+- M5 release and preservation documentation: not started.
 
 ## Implementation State
 
-No emulator implementation source has been imported. Protected ROM and disk images are not tracked.
+No emulator implementation source has been added. Protected ROM and disk images are not tracked.
 
-Milestone, task, and subtask identifiers in [breakdown.md](breakdown.md) are frozen for implementation.
+The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

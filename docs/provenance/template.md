@@ -21,8 +21,8 @@
 
 - Imported behavior:
 - Mechanical adaptations:
-- TypeScript conversion status:
-- Temporary JavaScript exception and removal condition:
+- TypeScript implementation status:
+- Runtime JavaScript exception and justification:
 - Intentional behavior changes:
 - Related PCjs change reports:
 
@@ -36,6 +36,7 @@
 ## Verification
 
 - Focused tests:
-- Golden boot regression:
+- M1 PCjs reference comparison:
+- M2 TypeScript golden boot regression:
 - Manual browser verification:
 - Known differences:
