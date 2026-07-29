@@ -950,6 +950,18 @@ export function stepInstruction(
       state.writeRegister16(2, state.readRegister16(0) & 0x8000 ? 0xffff : 0);
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x9a: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode far CALL is not implemented");
+      }
+      const instructionPointer = fetchCodeUint16(memory, state, 1);
+      const selector = fetchCodeUint16(memory, state, 3);
+      pushUint16(memory, state, snapshot.cs.selector);
+      pushUint16(memory, state, (snapshot.eip + 5) & 0xffff);
+      state.loadRealModeCodeSegment(selector, instructionPointer);
+      return { halted: false, fetched };
+    }
     case 0x9b:
       state.advanceEip(1);
       return { halted: false, fetched };

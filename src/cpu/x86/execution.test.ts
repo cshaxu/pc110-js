@@ -1565,6 +1565,33 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("performs a real-mode immediate far call with RETF-compatible stack order", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x9a],
+      [0x000ffff1, 0x34],
+      [0x000ffff2, 0x12],
+      [0x000ffff3, 0x00],
+      [0x000ffff4, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x2000, base: 0x20000 },
+      eip: 0x1234,
+      registers: { esp: 0x0ffc }
+    });
+    expect([
+      values.get(0x0ffc),
+      values.get(0x0ffd),
+      values.get(0x0ffe),
+      values.get(0x0fff)
+    ]).toEqual([0xf5, 0xff, 0x00, 0xf0]);
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

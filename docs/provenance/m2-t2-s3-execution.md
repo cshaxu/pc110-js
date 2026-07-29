@@ -335,6 +335,9 @@
   match PCjs 16-bit operand behavior.
 - M2 T2 S3 P141 adds `LEAVE` (`C9`) from PCjs stack-frame behavior: assign BP
   to SP, then restore BP through the project-owned SS:SP word-stack boundary.
+- M2 T2 S3 P142 adds real-mode immediate far CALL (`9A`) from PCjs `opCALLF`:
+  push CS and return IP in RETF-compatible order, then load the target CS:IP.
+  Protected-mode far calls remain explicitly unsupported pending privilege work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
