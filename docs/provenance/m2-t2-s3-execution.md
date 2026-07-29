@@ -292,6 +292,9 @@
 - M2 T2 S3 P126 adds observed byte `DEC r/m8` forms (`FE /1`) for register and
   BP-default-SS memory operands, preserving CF through the 8-bit decrement
   flag contract.
+- M2 T2 S3 P127 adds observed direct-register single-bit `RCL` and `RCR`
+  forms (`D0 /2,/3`), preserving non-rotate flags and matching PCjs CF/OF
+  updates.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

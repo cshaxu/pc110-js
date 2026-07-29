@@ -1711,13 +1711,24 @@ export function stepInstruction(
     }
     case 0xd0: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect || (modRm.reg !== 0x04 && modRm.reg !== 0x07))
+      if (
+        !modRm.registerDirect ||
+        (modRm.reg !== 0x02 && modRm.reg !== 0x03 && modRm.reg !== 0x04 && modRm.reg !== 0x07)
+      )
         throw new UnsupportedOpcodeError("Unsupported D0 opcode form");
       const source = state.readRegister8(modRm.rm);
       const result =
-        modRm.reg === 0x04 ? (source << 1) & 0xff : ((source >> 1) | (source & 0x80)) & 0xff;
+        modRm.reg === 0x02
+          ? ((source << 1) | (state.carryFlag() ? 1 : 0)) & 0xff
+          : modRm.reg === 0x03
+            ? ((source >>> 1) | (state.carryFlag() ? 0x80 : 0)) & 0xff
+            : modRm.reg === 0x04
+              ? (source << 1) & 0xff
+              : ((source >> 1) | (source & 0x80)) & 0xff;
       state.writeRegister8(modRm.rm, result);
-      if (modRm.reg === 0x04) state.writeShiftLeftFlags8(source);
+      if (modRm.reg === 0x02) state.writeRotateFlags8(result, Boolean(source & 0x80));
+      else if (modRm.reg === 0x03) state.writeRotateFlags8(result, Boolean(source & 0x01));
+      else if (modRm.reg === 0x04) state.writeShiftLeftFlags8(source);
       else state.writeArithmeticShiftRightFlags8(source);
       state.advanceEip(2);
       return { halted: false, fetched };

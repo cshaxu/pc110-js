@@ -2090,6 +2090,31 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("rotates 8-bit registers through carry by one", () => {
+    const rclValues = new Map<number, number>([
+      [0x000ffff0, 0xd0],
+      [0x000ffff1, 0xd0]
+    ]);
+    const rclState = new Cpu386State();
+    rclState.writeRegister8(0, 0x80);
+    rclState.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(rclValues), rclState);
+
+    expect(rclState.snapshot()).toMatchObject({ registers: { eax: 0x01 }, eflags: 0x0803 });
+
+    const rcrValues = new Map<number, number>([
+      [0x000ffff0, 0xd0],
+      [0x000ffff1, 0xdc]
+    ]);
+    const rcrState = new Cpu386State();
+    rcrState.writeRegister8(4, 0x01);
+
+    stepInstruction(resetAliasMemory(rcrValues), rcrState);
+
+    expect(rcrState.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x0803 });
+  });
+
   it("compares byte register sources with register and memory destinations", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x38],

@@ -452,6 +452,13 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeRotateFlags8(result: number, carry: boolean): void {
+    let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_OVERFLOW);
+    if (carry) flags |= EFLAGS_CARRY;
+    if (Boolean(result & 0x80) !== carry) flags |= EFLAGS_OVERFLOW;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeShiftRightFlags16(value: number, count: number): void {
     const source = value & 0xffff;
     const normalizedCount = count & 0x1f;
