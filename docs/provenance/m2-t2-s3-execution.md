@@ -251,6 +251,9 @@
   matching PCjs `fnSBB` arithmetic behavior.
 - M2 T2 S3 P110 adds the observed `SBB r16, r/m16` form (`1B /r`) and the
   corresponding 16-bit borrow-aware subtraction-flag contract.
+- M2 T2 S3 P111 adds observed accumulator-immediate SBB forms (`1C ib` and
+  `1D iw`) for DeskPro ROM arithmetic, using the established borrow-aware
+  subtraction-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

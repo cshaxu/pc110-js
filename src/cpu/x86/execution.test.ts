@@ -1768,6 +1768,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00000001 }, eflags: 0x00000002 });
   });
 
+  it("subtracts immediate values and carry from AL and AX", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x1c],
+      [0x000ffff1, 0x27],
+      [0x000ffff2, 0x1d],
+      [0x000ffff3, 0x00],
+      [0x000ffff4, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x30);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x08 }, eflags: 0x00000012 });
+
+    state.writeRegister16(0, 0x0000);
+    state.setCarryFlag();
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffff }, eflags: 0x00000097 });
+  });
+
   it("ANDs byte register destinations through an ES override", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

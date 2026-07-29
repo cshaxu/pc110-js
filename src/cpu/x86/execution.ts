@@ -1344,6 +1344,24 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0x1c: {
+      const accumulator = state.readRegister8(0);
+      const immediate = fetchCodeByte(memory, state, 1).opcode;
+      const borrow = state.carryFlag() ? 1 : 0;
+      state.writeRegister8(0, accumulator - immediate - borrow);
+      state.writeCompareFlags8(accumulator, immediate, borrow);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0x1d: {
+      const accumulator = state.readRegister16(0);
+      const immediate = fetchCodeUint16(memory, state, 1);
+      const borrow = state.carryFlag() ? 1 : 0;
+      state.writeRegister16(0, accumulator - immediate - borrow);
+      state.writeCompareFlags16(accumulator, immediate, borrow);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x2a:
       executeByteAluModRm(memory, state, "sub", false);
       return { halted: false, fetched };
