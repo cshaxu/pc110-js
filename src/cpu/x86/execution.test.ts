@@ -1716,6 +1716,37 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("creates local and nested ENTER stack frames", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xc8],
+      [0x000ffff1, 0x04],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0x00],
+      [0x000ffff4, 0xc8],
+      [0x000ffff5, 0x02],
+      [0x000ffff6, 0x00],
+      [0x000ffff7, 0x02],
+      [0x00001ffe, 0xaa],
+      [0x00001fff, 0xbb]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x2000);
+    state.writeRegister16(5, 0x3000);
+    const memory = resetAliasMemory(values);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebp: 0x1ffe, esp: 0x1ffa },
+      eip: 0x0000fff4
+    });
+    state.writeRegister16(5, 0x2000);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebp: 0x1ff8, esp: 0x1ff2 },
+      eip: 0x0000fff8
+    });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

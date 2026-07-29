@@ -906,6 +906,24 @@ export function stepInstruction(
       state.writeRegister16(5, popUint16(memory, state));
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0xc8: {
+      const localBytes = fetchCodeUint16(memory, state, 1);
+      let level = fetchCodeByte(memory, state, 3).opcode & 0x1f;
+      pushUint16(memory, state, state.readRegister16(5));
+      const frame = state.readRegister16(4);
+      if (level > 0) {
+        let basePointer = state.readRegister16(5);
+        while (--level) {
+          basePointer = (basePointer - 2) & 0xffff;
+          pushUint16(memory, state, readSegmentUint16(memory, state, "ss", basePointer));
+        }
+        pushUint16(memory, state, frame);
+      }
+      state.writeRegister16(5, frame);
+      state.writeRegister16(4, (state.readRegister16(4) - localBytes) & 0xffff);
+      state.advanceEip(4);
+      return { halted: false, fetched };
+    }
     case 0xd4: {
       const divisor = fetchCodeByte(memory, state, 1).opcode;
       if (divisor === 0) {

@@ -354,6 +354,9 @@
   preserving every other EFLAGS bit.
 - M2 T2 S3 P148 adds real-mode `INT3` (`CC`) through the existing vector-3
   IVT path, using the next instruction as the stacked return address.
+- M2 T2 S3 P149 adds 16-bit `ENTER imm16, imm8` (`C8`) from PCjs `opENTER`:
+  preserve BP, copy nested SS frame links, push the frame pointer, then allocate
+  local bytes below the new frame.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
