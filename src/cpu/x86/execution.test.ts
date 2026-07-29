@@ -503,6 +503,31 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eip: 0x0000fff3, registers: { esp: 0x1000 } });
   });
 
+  it("delivers a real-mode software interrupt through the IVT and stack", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xcd],
+      [0x000ffff1, 0x10],
+      [0x00000040, 0x34],
+      [0x00000041, 0x12],
+      [0x00000042, 0x00],
+      [0x00000043, 0xf0]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(4, 0x1000);
+    state.writeEflags(0x00000202);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      eflags: 0x00000002,
+      cs: { selector: 0xf000, base: 0x000f0000 },
+      registers: { esp: 0x0ffa }
+    });
+    expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf2, 0xff]);
+    expect([values.get(0x0ffc), values.get(0x0ffd)]).toEqual([0x00, 0xf0]);
+    expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0x02, 0x02]);
+  });
+
   it("pushes and pops 16-bit general registers through SS:SP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x53],

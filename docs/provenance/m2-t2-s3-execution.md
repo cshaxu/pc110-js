@@ -61,6 +61,7 @@
 - M2 T2 S3 P29 adds direction-flag control and real-mode `REP STOSW` through
   the project-owned ES:DI writable-memory boundary.
 - M2 T2 S3 P30 adds real-mode `REP MOVSW` through DS:SI and ES:DI.
+- M2 T2 S3 P31 adds real-mode `INT imm8` delivery through the IVT and SS:SP.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

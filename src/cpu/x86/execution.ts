@@ -480,6 +480,24 @@ export function stepInstruction(
     case 0xc3:
       state.writeEip16(popUint16(memory, state));
       return { halted: false, fetched };
+    case 0xcd: {
+      const snapshot = state.snapshot();
+      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+        throw new UnsupportedOpcodeError("Protected-mode INT is not implemented");
+      }
+      const vector = fetchCodeByte(memory, state, 1).opcode;
+      const vectorAddress = vector << 2;
+      const instructionPointer =
+        memory.readUint8(vectorAddress) | (memory.readUint8(vectorAddress + 1) << 8);
+      const selector =
+        memory.readUint8(vectorAddress + 2) | (memory.readUint8(vectorAddress + 3) << 8);
+      pushUint16(memory, state, snapshot.eflags & 0xffff);
+      pushUint16(memory, state, snapshot.cs.selector);
+      pushUint16(memory, state, (fetched.instructionPointer + 2) & 0xffff);
+      state.clearInterruptFlag();
+      state.loadRealModeCodeSegment(selector, instructionPointer);
+      return { halted: false, fetched };
+    }
     case 0xeb: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       state.writeEip16(fetched.instructionPointer + 2 + displacement);
