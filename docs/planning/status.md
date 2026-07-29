@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T4 S4: record compact observable M1 reference boot markers.
+- M1 T4 S5: capture compact manual browser proof and exact M1 reference-run
+  commands.
 
 ## Delivery Nodes
 
