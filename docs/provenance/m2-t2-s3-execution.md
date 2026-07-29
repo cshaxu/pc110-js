@@ -407,6 +407,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P164 adds `SUB r/m8,r8` and `SUB r/m16,r16` (`28` and `29`) from
   PCjs `opSUBmb` and `opSUBmw`: register and memory destinations use the
   project ModR/M arithmetic boundaries and existing subtraction flags.
+- M2 T2 S3 P165 adds `AND r16,r/m16` (`23 /r`) from PCjs `opANDrw`: register
+  destinations accept register or memory sources through the project 16-bit
+  logic-flag boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

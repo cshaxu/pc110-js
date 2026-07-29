@@ -793,6 +793,29 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eflags).toBe(0x00000006);
   });
 
+  it("ands 16-bit register destinations from register and memory sources", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x23],
+      [0x00000001, 0xc3],
+      [0x00000002, 0x23],
+      [0x00000003, 0x06],
+      [0x00000004, 0x00],
+      [0x00000005, 0x20],
+      [0x00002000, 0xff],
+      [0x00002001, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeRegister16(0, 0xf0f0);
+    state.writeRegister16(3, 0x0ff0);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00f0 }, eflags: 0x00000006 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00f0 }, eflags: 0x00000006 });
+  });
+
   it("moves CR0 through register-direct MOV forms", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],
