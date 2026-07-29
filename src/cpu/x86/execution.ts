@@ -1591,6 +1591,12 @@ export function stepInstruction(
     }
     case 0x66: {
       const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode === 0x98) {
+        const value = state.readRegister16(0);
+        state.writeRegister(0, value & 0x8000 ? value | 0xffff0000 : value);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (opcode === 0x99) {
         state.writeRegister(2, state.readRegister(0) & 0x80000000 ? 0xffffffff : 0);
         state.advanceEip(2);

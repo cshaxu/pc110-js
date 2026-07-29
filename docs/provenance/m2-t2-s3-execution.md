@@ -490,6 +490,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   same signed dword limits and vector-five fault contract as P183.
 - M2 T2 S3 P185 adds operand-size-overridden `CDQ` (`66 99`) from PCjs
   `opCWD`: it sign-extends EAX into EDX without changing flags.
+- M2 T2 S3 P186 adds operand-size-overridden `CWDE` (`66 98`) from PCjs
+  `opCBW`: it sign-extends AX into EAX without changing flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

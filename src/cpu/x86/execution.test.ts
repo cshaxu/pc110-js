@@ -2521,6 +2521,23 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { edx: 0 }, eip: 0x0000fff4 });
   });
 
+  it("sign-extends AX into EAX through operand-size-overridden CWDE", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x66],
+      [0x000ffff1, 0x98],
+      [0x000ffff2, 0x66],
+      [0x000ffff3, 0x98]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister(0, 0x12348000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffff8000 }, eip: 0x0000fff2 });
+    state.writeRegister(0, 0xabcd7fff);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x00007fff }, eip: 0x0000fff4 });
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
