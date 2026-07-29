@@ -1644,12 +1644,14 @@ export function stepInstruction(
     }
     case 0xd0: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect || modRm.reg !== 0x04)
+      if (!modRm.registerDirect || (modRm.reg !== 0x04 && modRm.reg !== 0x07))
         throw new UnsupportedOpcodeError("Unsupported D0 opcode form");
       const source = state.readRegister8(modRm.rm);
-      const result = (source << 1) & 0xff;
+      const result =
+        modRm.reg === 0x04 ? (source << 1) & 0xff : ((source >> 1) | (source & 0x80)) & 0xff;
       state.writeRegister8(modRm.rm, result);
-      state.writeShiftLeftFlags8(source);
+      if (modRm.reg === 0x04) state.writeShiftLeftFlags8(source);
+      else state.writeArithmeticShiftRightFlags8(source);
       state.advanceEip(2);
       return { halted: false, fetched };
     }

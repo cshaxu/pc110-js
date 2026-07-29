@@ -266,6 +266,8 @@
   using the existing 16-bit logical-flag contract without modifying AX.
 - M2 T2 S3 P116 adds observed `CBW` (`98`) sign extension for ROM conversion
   paths, preserving the existing flags and upper EAX bits.
+- M2 T2 S3 P117 adds observed direct-register `SAR r/m8, 1` (`D0 /7`) for ROM
+  signed-byte conversion paths, with the required arithmetic shift flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

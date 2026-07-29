@@ -833,6 +833,23 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("arithmetically shifts an 8-bit register right by one", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xd0],
+      [0x000ffff1, 0xfc]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(4, 0x81);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0xc000 },
+      eip: 0x0000fff2,
+      eflags: 0x0087
+    });
+  });
+
   it("takes JZ when TEST produces a zero result", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xa8],
