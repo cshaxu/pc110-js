@@ -257,6 +257,8 @@
 - M2 T2 S3 P112 adds observed register-destination ModR/M ADC forms (`12` and
   `13 /r`) for DeskPro ROM multiword arithmetic, using the established carry-in
   8-bit and 16-bit addition-flag contracts.
+- M2 T2 S3 P113 adds observed accumulator and Group 1 immediate ADC forms
+  (`14 ib` and `83 /2 ib`) for DeskPro ROM multiword arithmetic.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

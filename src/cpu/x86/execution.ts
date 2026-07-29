@@ -1357,6 +1357,15 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0x14: {
+      const accumulator = state.readRegister8(0);
+      const immediate = fetchCodeByte(memory, state, 1).opcode;
+      const carry = state.carryFlag() ? 1 : 0;
+      state.writeRegister8(0, accumulator + immediate + carry);
+      state.writeAddFlags8(accumulator, immediate, carry);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0x13: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
@@ -1572,7 +1581,7 @@ export function stepInstruction(
     }
     case 0x83: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x00 && modRm.reg !== 0x05 && modRm.reg !== 0x07)
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x05 && modRm.reg !== 0x07)
         throw new UnsupportedOpcodeError("Unsupported 83 opcode form");
       const immediate = signedByte(fetchCodeByte(memory, state, 2).opcode) & 0xffff;
       if (modRm.registerDirect) {
@@ -1580,6 +1589,10 @@ export function stepInstruction(
         if (modRm.reg === 0x00) {
           state.writeRegister16(modRm.rm, destination + immediate);
           state.writeAddFlags16(destination, immediate);
+        } else if (modRm.reg === 0x02) {
+          const carry = state.carryFlag() ? 1 : 0;
+          state.writeRegister16(modRm.rm, destination + immediate + carry);
+          state.writeAddFlags16(destination, immediate, carry);
         } else if (modRm.reg === 0x05) {
           state.writeRegister16(modRm.rm, destination - immediate);
           state.writeCompareFlags16(destination, immediate);
@@ -1600,6 +1613,16 @@ export function stepInstruction(
           destination + memoryImmediate
         );
         state.writeAddFlags16(destination, memoryImmediate);
+      } else if (modRm.reg === 0x02) {
+        const carry = state.carryFlag() ? 1 : 0;
+        writeSegmentUint16(
+          memory,
+          state,
+          address.segment,
+          address.offset,
+          destination + memoryImmediate + carry
+        );
+        state.writeAddFlags16(destination, memoryImmediate, carry);
       } else if (modRm.reg === 0x05) {
         writeSegmentUint16(
           memory,
