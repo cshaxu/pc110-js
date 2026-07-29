@@ -585,16 +585,24 @@ export function stepInstruction(
     }
     case 0xfa: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-        throw new UnsupportedOpcodeError("Protected-mode CLI is not implemented");
+      if (
+        addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+        (snapshot.cs.selector & 0x03) !== 0
+      ) {
+        throw new UnsupportedOpcodeError("Protected-mode CLI requires exception delivery");
+      }
       state.clearInterruptFlag();
       state.advanceEip(1);
       return { halted: false, fetched };
     }
     case 0xfb: {
       const snapshot = state.snapshot();
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-        throw new UnsupportedOpcodeError("Protected-mode STI is not implemented");
+      if (
+        addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+        (snapshot.cs.selector & 0x03) !== 0
+      ) {
+        throw new UnsupportedOpcodeError("Protected-mode STI requires exception delivery");
+      }
       state.setInterruptFlag();
       state.advanceEip(1);
       return { halted: false, fetched };

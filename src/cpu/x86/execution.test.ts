@@ -451,6 +451,32 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x80000001, eip: 0x0000fff6 });
   });
 
+  it("executes CLI and STI at protected-mode privilege level zero", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xfa],
+      [0x000ffff1, 0xfb]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeEflags(0x00000202);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().eflags).toBe(0x00000002);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x00000202, eip: 0x0000fff2 });
+  });
+
+  it("leaves nonzero protected-mode CLI privilege faults explicit", () => {
+    const values = new Map<number, number>([[0x0000fff0, 0xfa]]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x000b, 0, 0xffffffff, 0x0000fff0);
+
+    expect(() => stepInstruction(resetAliasMemory(values), state)).toThrow(
+      "requires exception delivery"
+    );
+  });
+
   it("ORs AX with an immediate value for the protected-mode transition", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0d],

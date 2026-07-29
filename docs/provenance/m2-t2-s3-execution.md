@@ -133,6 +133,8 @@
   return sequence through CR0 and its real-mode far jump.
 - M2 T2 S3 P67 adds the observed 16-bit `JMP r/m16` (`FF /4`) form used after
   the return-path `LIDT` sequence.
+- M2 T2 S3 P68 enables `CLI` and `STI` at protected-mode CPL 0 for the observed
+  ROM path while retaining explicit nonzero-CPL fault boundaries.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
