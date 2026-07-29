@@ -3560,10 +3560,68 @@ export function stepInstruction(
         const selector =
           (snapshot.ss.default32 ? popUint32(memory, state) : popUint16(memory, state)) & 0xffff;
         const flags = snapshot.ss.default32 ? popUint32(memory, state) : popUint16(memory, state);
-        if ((selector & 0x03) !== (snapshot.cs.selector & 0x03))
-          throw new UnsupportedOpcodeError("Protected-mode privilege return is not implemented");
-        state.writeEflags(flags);
-        loadProtectedModeCodeSegment(memory, state, selector, instructionPointer);
+        const currentPrivilege = snapshot.cs.selector & 0x03;
+        const returnPrivilege = selector & 0x03;
+        if (returnPrivilege < currentPrivilege)
+          throw new UnsupportedOpcodeError("Protected-mode IRET cannot return to higher privilege");
+        if (returnPrivilege === currentPrivilege) {
+          state.writeEflags(flags);
+          loadProtectedModeCodeSegment(memory, state, selector, instructionPointer);
+        } else {
+          if (!snapshot.ss.default32)
+            throw new UnsupportedOpcodeError(
+              "16-bit protected-mode privilege return is not implemented"
+            );
+          const descriptorMemory = {
+            readUint32: (address: number) =>
+              (memory.readUint8(address) & 0xff) |
+              ((memory.readUint8((address + 1) >>> 0) & 0xff) << 8) |
+              ((memory.readUint8((address + 2) >>> 0) & 0xff) << 16) |
+              ((memory.readUint8((address + 3) >>> 0) & 0xff) << 24)
+          };
+          const codeDescriptor = loadDescriptor(descriptorMemory, snapshot.gdtr, selector);
+          if (
+            !codeDescriptor.system ||
+            !(codeDescriptor.type & 0x08) ||
+            Boolean(codeDescriptor.type & 0x04) ||
+            !codeDescriptor.present ||
+            codeDescriptor.dpl !== returnPrivilege
+          )
+            throw new UnsupportedOpcodeError(
+              "Protected-mode IRET return selector is not a valid code segment"
+            );
+          const stackPointer = popUint32(memory, state);
+          const stackSelector = popUint32(memory, state) & 0xffff;
+          const stackDescriptor = loadDescriptor(descriptorMemory, snapshot.gdtr, stackSelector);
+          if (
+            !stackDescriptor.system ||
+            Boolean(stackDescriptor.type & 0x08) ||
+            !(stackDescriptor.type & 0x02) ||
+            !stackDescriptor.present ||
+            stackDescriptor.dpl !== returnPrivilege ||
+            (stackSelector & 0x03) !== returnPrivilege ||
+            !stackDescriptor.default32
+          )
+            throw new UnsupportedOpcodeError(
+              "Protected-mode IRET return selector is not a valid stack segment"
+            );
+          state.writeEflags(flags);
+          state.loadProtectedModeCodeSegment(
+            selector,
+            codeDescriptor.base,
+            codeDescriptor.limit,
+            instructionPointer,
+            codeDescriptor.default32
+          );
+          state.loadProtectedModeSegment(
+            "ss",
+            stackSelector,
+            stackDescriptor.base,
+            stackDescriptor.limit,
+            true
+          );
+          state.writeRegister(4, stackPointer);
+        }
       } else throw new UnsupportedOpcodeError("Virtual-8086 IRET is not implemented");
       return { halted: false, fetched };
     }

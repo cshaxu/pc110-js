@@ -558,6 +558,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   creates the documented old-SS/old-ESP/EFLAGS/CS/EIP frame. Privilege-return
   IRET, 16-bit frames, conforming targets, and virtual-8086 entry remain later
   S3 work.
+- M2 T2 S3 P206 adds 32-bit protected-mode IRET from a higher-privilege frame
+  back to a lower-privilege nonconforming code segment. It validates and loads
+  the returned code and stack descriptors, restores EIP/EFLAGS/SS/ESP, and
+  completes the frame contract established by P205. 16-bit, conforming, and
+  virtual-8086 returns remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
