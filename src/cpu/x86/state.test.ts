@@ -41,4 +41,11 @@ describe("Cpu386State", () => {
       idtr: { base: 0xfffff000, limit: 0x6789 }
     });
   });
+
+  it("stores 32-bit CR0 values for later mode-transition handling", () => {
+    const cpu = new Cpu386State();
+    cpu.writeCr0(0x80000001);
+
+    expect(cpu.snapshot().cr0).toBe(0x80000001);
+  });
 });

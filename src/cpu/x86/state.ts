@@ -102,6 +102,10 @@ export class Cpu386State {
     this.cr3 = value & 0xfffff000;
   }
 
+  public writeCr0(value: number): void {
+    this.cr0 = value >>> 0;
+  }
+
   public writeGdtr(base: number, limit: number): void {
     this.gdtr = { base: base >>> 0, limit: limit & 0xffff };
   }
