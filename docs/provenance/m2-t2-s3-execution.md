@@ -563,6 +563,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   the returned code and stack descriptors, restores EIP/EFLAGS/SS/ESP, and
   completes the frame contract established by P205. 16-bit, conforming, and
   virtual-8086 returns remain later S3 work.
+- M2 T2 S3 P207 adds an integrated regression for the P205/P206 contract: an
+  external interrupt enters a higher-privilege handler through the TSS stack,
+  then executes IRET and restores the original lower-privilege code, stack,
+  instruction pointer, and flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
