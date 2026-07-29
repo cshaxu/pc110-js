@@ -531,6 +531,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P198 adds PCjs-selected `TEST r/m32,imm32` (`66 F7 /0 id`) with
   the same no-writeback contract. It accepts default and address-size-overridden
   effective addresses while consuming the full dword immediate.
+- M2 T2 S3 P199 adds PCjs-selected `MOV r/m32,imm32` (`66 C7 /0 id`) through
+  the project-native dword memory path. The register and address-size-overridden
+  memory forms preserve the established ModR/M and segmented-access contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

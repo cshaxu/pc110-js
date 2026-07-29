@@ -1164,6 +1164,36 @@ function executeDwordTestImmediateModRm(
   state.advanceEip(modRmOffset + 5 + addressBytes);
 }
 
+function executeMovImmediateDwordModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x00) throw new UnsupportedOpcodeError("Unsupported dword C7 opcode form");
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
+    ? undefined
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
+  const addressBytes = (address?.displacementBytes ?? 0) + sibBytes;
+  const immediate = fetchCodeUint32(memory, state, modRmOffset + 1 + addressBytes);
+  if (modRm.registerDirect) state.writeRegister(modRm.rm, immediate);
+  else writeSegmentUint32(memory, state, address!.segment, address!.offset, immediate, addressSize);
+  state.advanceEip(modRmOffset + 5 + addressBytes);
+}
+
 function executeShiftWord(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1708,6 +1738,10 @@ export function stepInstruction(
         executeDwordTestImmediateModRm(memory, state, 2, 16);
         return { halted: false, fetched };
       }
+      if (opcode === 0xc7) {
+        executeMovImmediateDwordModRm(memory, state, 2, 16);
+        return { halted: false, fetched };
+      }
       if (
         opcode === 0x01 ||
         opcode === 0x03 ||
@@ -1913,6 +1947,10 @@ export function stepInstruction(
         const overriddenOpcode = fetchCodeByte(memory, state, 2).opcode;
         if (overriddenOpcode === 0xf7) {
           executeDwordTestImmediateModRm(memory, state, 3, 32);
+          return { halted: false, fetched };
+        }
+        if (overriddenOpcode === 0xc7) {
+          executeMovImmediateDwordModRm(memory, state, 3, 32);
           return { halted: false, fetched };
         }
         if (
