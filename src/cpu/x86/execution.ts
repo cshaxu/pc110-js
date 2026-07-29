@@ -2663,9 +2663,19 @@ export function stepInstruction(
           state.advanceEip(3);
           return { halted: false, fetched };
         }
-        if (modRm.registerDirect && modRm.reg === 0x06 && modRm.rm === 0x00) {
-          state.loadMachineStatusWord(state.snapshot().registers.eax & 0xffff);
-          state.advanceEip(3);
+        if (modRm.reg === 0x06) {
+          const address = modRm.registerDirect
+            ? undefined
+            : decodeModRm16Address(
+                modRm,
+                (index) => state.readRegister16(index),
+                (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+              );
+          const source = modRm.registerDirect
+            ? state.readRegister16(modRm.rm)
+            : readSegmentUint16(memory, state, address!.segment, address!.offset);
+          state.loadMachineStatusWord(source);
+          state.advanceEip(3 + (address?.displacementBytes ?? 0));
           return { halted: false, fetched };
         }
         if (!modRm.registerDirect && (modRm.reg === 0x02 || modRm.reg === 0x03)) {

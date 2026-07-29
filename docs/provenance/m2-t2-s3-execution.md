@@ -596,6 +596,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P216 adds CPL-zero 16-bit protected-mode `POPF` (`9D`). It restores
   the popped low EFLAGS word while preserving the current high word, matching
   the selected 80386 `POPF` behavior.
+- M2 T2 S3 P217 extends `LMSW r/m16` (`0F 01 /6`) from its observed register
+  form to the generic ModR/M memory form while preserving the existing CR0
+  machine-status normalization.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

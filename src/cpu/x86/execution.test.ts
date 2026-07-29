@@ -656,6 +656,23 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
   });
 
+  it("loads the machine-status word from a ModR/M memory operand", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0x36],
+      [0x000ffff3, 0x00],
+      [0x000ffff4, 0x20],
+      [0x00002000, 0x01],
+      [0x00002001, 0x00]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff1, eip: 0x0000fff5 });
+  });
+
   it("stores the CR0 machine-status word through SMSW register and memory forms", () => {
     const values = new Map<number, number>([
       [0x00000000, 0x0f],
