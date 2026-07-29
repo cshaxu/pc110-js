@@ -746,6 +746,32 @@ describe("80386 instruction fetch", () => {
     expect(values.get(0x00002000)).toBe(0xf0);
   });
 
+  it("tests immediate word operands without changing the register or memory source", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf7],
+      [0x000ffff1, 0xc6],
+      [0x000ffff2, 0x00],
+      [0x000ffff3, 0xf0],
+      [0x000ffff4, 0xf7],
+      [0x000ffff5, 0x06],
+      [0x000ffff6, 0x00],
+      [0x000ffff7, 0x20],
+      [0x000ffff8, 0x0f],
+      [0x000ffff9, 0x00],
+      [0x00002000, 0xf0],
+      [0x00002001, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(6, 0x8001);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esi: 0x8001 }, eflags: 0x00000086 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esi: 0x8001 }, eflags: 0x00000046 });
+    expect([values.get(0x00002000), values.get(0x00002001)]).toEqual([0xf0, 0x00]);
+  });
+
   it("controls carry and takes JC", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xf9],

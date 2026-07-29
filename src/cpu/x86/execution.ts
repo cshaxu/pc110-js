@@ -1074,12 +1074,18 @@ export function stepInstruction(
     }
     case 0xf7: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (modRm.reg !== 0x04 && modRm.reg !== 0x06)
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x04 && modRm.reg !== 0x06)
         throw new UnsupportedOpcodeError("Unsupported F7 opcode form");
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
       const operand = modRm.registerDirect
         ? state.readRegister16(modRm.rm)
         : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      if (modRm.reg === 0x00) {
+        const immediate = fetchCodeUint16(memory, state, 2 + (address?.displacementBytes ?? 0));
+        state.writeLogicFlags16(operand & immediate);
+        state.advanceEip(4 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
       if (modRm.reg === 0x04) {
         const product = state.readRegister16(0) * operand;
         state.writeRegister16(0, product);
