@@ -1632,6 +1632,25 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x0000 }, eflags: 0x00000097 });
   });
 
+  it("XORs AL with immediate bytes using logic flags", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x34],
+      [0x000ffff1, 0xff],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0xf0);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x0f }, eflags: 0x00000006 });
+
+    state.writeRegister8(0, 0x80);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x00000082 });
+  });
+
   it("executes byte add and subtract forms through registers, memory, and 80 groups", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x00],

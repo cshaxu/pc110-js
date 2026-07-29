@@ -222,6 +222,8 @@
 - M2 T2 S3 P99 adds `ADC AX, imm16` for the observed DeskPro ROM arithmetic
   path and extends the shared 16-bit addition-flag contract with an explicit
   carry input, matching the PCjs `fnADCw` behavior.
+- M2 T2 S3 P100 adds `XOR AL, imm8` for observed DeskPro ROM byte-state
+  manipulation, using the existing 8-bit logic-flag contract.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
