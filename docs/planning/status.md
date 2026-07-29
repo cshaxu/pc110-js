@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T2 S1: in progress; select one existing PCjs 80386 PC/AT machine
-  configuration.
+- M1 T2 S2: inventory every configured hardware device and required source
+  module.
 
 ## Delivery Nodes
 
