@@ -197,6 +197,8 @@
 - M2 T2 S3 P90 adds default-segment `POP r/m16` (`8F /0`) for observed DeskPro
   ROM stack-restoration paths, reading through SS:SP before writing the decoded
   ModR/M destination.
+- M2 T2 S3 P91 adds the observed ES-overridden `POP r/m16` (`26 8F /0`),
+  preserving SS:SP stack reads while selecting ES for the destination write.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

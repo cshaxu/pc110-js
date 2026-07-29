@@ -484,7 +484,12 @@ function executePushModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
-function executePopModRm(memory: InstructionMemory, state: Cpu386State, modRmOffset: number): void {
+function executePopModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  segmentOverride?: "cs" | "ds" | "es" | "ss"
+): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.reg !== 0x00) throw new UnsupportedOpcodeError("Unsupported 8F opcode form");
   if (modRm.registerDirect) {
@@ -498,7 +503,7 @@ function executePopModRm(memory: InstructionMemory, state: Cpu386State, modRmOff
     (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
   );
   const value = popUint16(memory, state);
-  writeSegmentUint16(memory, state, address.segment, address.offset, value);
+  writeSegmentUint16(memory, state, segmentOverride ?? address.segment, address.offset, value);
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
@@ -863,6 +868,10 @@ export function stepInstruction(
       }
       if (opcode === 0xff) {
         executePushModRm(memory, state, 2, "es");
+        return { halted: false, fetched };
+      }
+      if (opcode === 0x8f) {
+        executePopModRm(memory, state, 2, "es");
         return { halted: false, fetched };
       }
       if (opcode !== 0xc6 && opcode !== 0xc7)
