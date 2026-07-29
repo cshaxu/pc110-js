@@ -891,6 +891,10 @@ export function stepInstruction(
       state.writeStatusFlagsFromAh((state.snapshot().registers.eax >>> 8) & 0xff);
       state.advanceEip(1);
       return { halted: false, fetched };
+    case 0x9f:
+      state.writeRegister8(4, state.snapshot().eflags & 0xff);
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0x9c:
       pushUint16(memory, state, state.snapshot().eflags & 0xffff);
       state.advanceEip(1);

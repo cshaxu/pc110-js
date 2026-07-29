@@ -485,6 +485,21 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eflags: 0x000000d7, eip: 0x0000fff2 });
   });
 
+  it("loads the low EFLAGS byte into AH through LAHF", () => {
+    const values = new Map<number, number>([[0x000ffff0, 0x9f]]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x1200);
+    state.writeEflags(0x00000ad7);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0xd700 },
+      eflags: 0x00000ad7,
+      eip: 0x0000fff1
+    });
+  });
+
   it("pushes, restores, and enables real-mode flags through SS:SP", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x9c],
