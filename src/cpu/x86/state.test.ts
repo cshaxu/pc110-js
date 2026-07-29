@@ -137,6 +137,15 @@ describe("Cpu386State", () => {
     expect(cpu.carryFlag()).toBe(true);
   });
 
+  it("sets 8-bit addition flags for carry and signed overflow", () => {
+    const cpu = new Cpu386State();
+    cpu.writeAddFlags8(0xff, 0x01);
+    expect(cpu.snapshot().eflags).toBe(0x00000057);
+
+    cpu.writeAddFlags8(0x7f, 0x01);
+    expect(cpu.snapshot().eflags).toBe(0x00000892);
+  });
+
   it("sets 16-bit comparison flags without modifying operands", () => {
     const cpu = new Cpu386State();
     cpu.writeCompareFlags16(0x0000, 0x0001);

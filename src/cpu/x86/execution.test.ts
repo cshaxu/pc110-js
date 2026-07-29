@@ -575,6 +575,36 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000896 });
   });
 
+  it("executes byte add and subtract forms through registers, memory, and 80 groups", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x00],
+      [0x000ffff1, 0x16],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x000ffff4, 0x02],
+      [0x000ffff5, 0xc1],
+      [0x000ffff6, 0x2a],
+      [0x000ffff7, 0xc1],
+      [0x000ffff8, 0x80],
+      [0x000ffff9, 0xc2],
+      [0x000ffffa, 0x30],
+      [0x00001234, 0xff]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x01);
+    state.writeRegister8(1, 0x02);
+    state.writeRegister8(2, 0x01);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(values.get(0x00001234)).toBe(0x00);
+    expect(state.snapshot().eflags).toBe(0x00000057);
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x01, edx: 0x331 } });
+  });
+
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x86],

@@ -365,6 +365,40 @@ function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 
   state.advanceEip(2 + address.displacementBytes);
 }
 
+function executeByteAluModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  operation: "add" | "sub",
+  destinationIsMemory: boolean
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+  const destinationRegister = destinationIsMemory ? modRm.rm : modRm.reg;
+  const sourceRegister = destinationIsMemory ? modRm.reg : modRm.rm;
+  let destination: number;
+  let source: number;
+  let address: ReturnType<typeof decodeMemoryAddress> | undefined;
+  if (modRm.registerDirect) {
+    destination = state.readRegister8(destinationRegister);
+    source = state.readRegister8(sourceRegister);
+  } else {
+    address = decodeMemoryAddress(memory, state, modRm);
+    if (destinationIsMemory) {
+      destination = readSegmentUint8(memory, state, address.segment, address.offset);
+      source = state.readRegister8(sourceRegister);
+    } else {
+      destination = state.readRegister8(destinationRegister);
+      source = readSegmentUint8(memory, state, address.segment, address.offset);
+    }
+  }
+  const result = operation === "add" ? destination + source : destination - source;
+  if (modRm.registerDirect || !destinationIsMemory)
+    state.writeRegister8(destinationRegister, result);
+  else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
+  if (operation === "add") state.writeAddFlags8(destination, source);
+  else state.writeCompareFlags8(destination, source);
+  state.advanceEip(2 + (address?.displacementBytes ?? 0));
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -680,6 +714,12 @@ export function stepInstruction(
       state.advanceEip(2 + displacementBytes);
       return { halted: false, fetched };
     }
+    case 0x00:
+      executeByteAluModRm(memory, state, "add", true);
+      return { halted: false, fetched };
+    case 0x02:
+      executeByteAluModRm(memory, state, "add", false);
+      return { halted: false, fetched };
     case 0x05: {
       const accumulator = state.readRegister16(0);
       const immediate = fetchCodeUint16(memory, state, 1);
@@ -688,6 +728,9 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0x2a:
+      executeByteAluModRm(memory, state, "sub", false);
+      return { halted: false, fetched };
     case 0x32: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)
@@ -700,13 +743,28 @@ export function stepInstruction(
     }
     case 0x80: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect || modRm.reg !== 0x07)
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x05 && modRm.reg !== 0x07) {
         throw new UnsupportedOpcodeError("Unsupported 80 opcode form");
-      state.writeCompareFlags8(
-        state.readRegister8(modRm.rm),
-        fetchCodeByte(memory, state, 2).opcode
-      );
-      state.advanceEip(3);
+      }
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const immediate = fetchCodeByte(memory, state, 2 + (address?.displacementBytes ?? 0)).opcode;
+      const destination = modRm.registerDirect
+        ? state.readRegister8(modRm.rm)
+        : readSegmentUint8(memory, state, address!.segment, address!.offset);
+      if (modRm.reg === 0x00) {
+        const result = destination + immediate;
+        if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+        else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
+        state.writeAddFlags8(destination, immediate);
+      } else if (modRm.reg === 0x05) {
+        const result = destination - immediate;
+        if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+        else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
+        state.writeCompareFlags8(destination, immediate);
+      } else {
+        state.writeCompareFlags8(destination, immediate);
+      }
+      state.advanceEip(3 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
     case 0x81: {

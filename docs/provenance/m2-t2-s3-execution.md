@@ -94,6 +94,8 @@
   preserving the explicit protected-mode boundary.
 - M2 T2 S3 P49 adds `ADD AX, imm16` (`05`) and a shared 16-bit addition-flag
   contract for observed BIOS memory-probe arithmetic.
+- M2 T2 S3 P50 adds byte `ADD` and `SUB` ModR/M forms plus `80 /0`, `/5`, and
+  `/7` immediate forms through the shared byte arithmetic and memory boundaries.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
