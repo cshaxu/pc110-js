@@ -194,6 +194,9 @@
 - M2 T2 S3 P89 adds `AND r/m16, r16` (`21 /r`) for observed DeskPro ROM
   work-area masking through the existing ModR/M destination, writable-memory,
   and word-width logic-flag contracts.
+- M2 T2 S3 P90 adds default-segment `POP r/m16` (`8F /0`) for observed DeskPro
+  ROM stack-restoration paths, reading through SS:SP before writing the decoded
+  ModR/M destination.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

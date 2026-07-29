@@ -1308,6 +1308,25 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x0ffe), values.get(0x0fff)]).toEqual([0xef, 0xbe]);
   });
 
+  it("pops stack words into default-segment ModR/M destinations", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x8f],
+      [0x000ffff1, 0x46],
+      [0x000ffff2, 0x00],
+      [0x00001000, 0x34],
+      [0x00001001, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeRegister16(5, 0x2000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x1002 }, eip: 0x0000fff3 });
+    expect([values.get(0x00002000), values.get(0x00002001)]).toEqual([0x34, 0x12]);
+  });
+
   it("adds word register and memory operands in both ModR/M directions", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x03],
