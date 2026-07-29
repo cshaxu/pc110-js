@@ -157,6 +157,24 @@ function popUint16(memory: InstructionMemory, state: Cpu386State): number {
   return value;
 }
 
+function deliverRealModeInterrupt(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  vector: number,
+  returnInstructionPointer: number
+): void {
+  const snapshot = state.snapshot();
+  const vectorAddress = (vector & 0xff) << 2;
+  const instructionPointer =
+    memory.readUint8(vectorAddress) | (memory.readUint8(vectorAddress + 1) << 8);
+  const selector = memory.readUint8(vectorAddress + 2) | (memory.readUint8(vectorAddress + 3) << 8);
+  pushUint16(memory, state, snapshot.eflags & 0xffff);
+  pushUint16(memory, state, snapshot.cs.selector);
+  pushUint16(memory, state, returnInstructionPointer & 0xffff);
+  state.clearInterruptAndTrapFlags();
+  state.loadRealModeCodeSegment(selector, instructionPointer);
+}
+
 function signedByte(value: number): number {
   return (value << 24) >> 24;
 }
@@ -1204,10 +1222,15 @@ export function stepInstruction(
         return { halted: false, fetched };
       }
       const divisor = operand;
-      if (divisor === 0) throw new DivideError("Unsigned word division by zero");
       const dividend = ((state.readRegister16(2) << 16) | state.readRegister16(0)) >>> 0;
       const quotient = Math.floor(dividend / divisor);
-      if (quotient > 0xffff) throw new DivideError("Unsigned word division quotient overflow");
+      if (divisor === 0 || quotient > 0xffff) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
+          throw new DivideError("Protected-mode divide-error delivery is not implemented");
+        deliverRealModeInterrupt(memory, state, 0, fetched.instructionPointer);
+        return { halted: false, fetched };
+      }
       state.writeRegister16(0, quotient);
       state.writeRegister16(2, dividend % divisor);
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
@@ -1260,16 +1283,7 @@ export function stepInstruction(
         throw new UnsupportedOpcodeError("Protected-mode INT is not implemented");
       }
       const vector = fetchCodeByte(memory, state, 1).opcode;
-      const vectorAddress = vector << 2;
-      const instructionPointer =
-        memory.readUint8(vectorAddress) | (memory.readUint8(vectorAddress + 1) << 8);
-      const selector =
-        memory.readUint8(vectorAddress + 2) | (memory.readUint8(vectorAddress + 3) << 8);
-      pushUint16(memory, state, snapshot.eflags & 0xffff);
-      pushUint16(memory, state, snapshot.cs.selector);
-      pushUint16(memory, state, (fetched.instructionPointer + 2) & 0xffff);
-      state.clearInterruptFlag();
-      state.loadRealModeCodeSegment(selector, instructionPointer);
+      deliverRealModeInterrupt(memory, state, vector, fetched.instructionPointer + 2);
       return { halted: false, fetched };
     }
     case 0xcf: {

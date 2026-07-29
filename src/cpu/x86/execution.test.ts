@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  DivideError,
   fetchOpcode,
   stepInstruction,
   stepInstructionTraced,
@@ -1320,10 +1319,14 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x0800 }, eflags: 0x00000002 });
   });
 
-  it("divides DX:AX by word register operands and reports divide faults", () => {
+  it("divides DX:AX by word register operands and delivers real-mode divide faults", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xf7],
-      [0x000ffff1, 0xf3]
+      [0x000ffff1, 0xf3],
+      [0x00000000, 0x34],
+      [0x00000001, 0x12],
+      [0x00000002, 0x00],
+      [0x00000003, 0xf0]
     ]);
     const state = new Cpu386State();
     state.writeRegister16(2, 0x0001);
@@ -1334,10 +1337,26 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000, edx: 0x0000 } });
 
     state.reset();
-    expect(() => stepInstruction(resetAliasMemory(values), state)).toThrow(DivideError);
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    state.writeEflags(0x00000302);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { esp: 0x0ffa },
+      eip: 0x1234,
+      cs: { selector: 0xf000, base: 0x000f0000 },
+      eflags: 0x00000002
+    });
+    expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf0, 0xff]);
 
+    state.reset();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
     state.writeRegister16(3, 0x0001);
-    expect(() => stepInstruction(resetAliasMemory(values), state)).toThrow(DivideError);
+    state.writeRegister16(2, 0x0001);
+    state.writeRegister16(0, 0x0000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0x0ffa } });
   });
 
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {

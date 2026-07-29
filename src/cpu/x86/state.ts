@@ -47,6 +47,7 @@ const CR0_MSW_ALWAYS_ON = 0x0000fff0;
 const CR0_PROTECTED_MODE = 0x00000001;
 const EFLAGS_STATUS_MASK = 0x000000d5;
 const EFLAGS_INTERRUPT_ENABLE = 0x00000200;
+const EFLAGS_TRAP = 0x00000100;
 const EFLAGS_DIRECTION = 0x00000400;
 const EFLAGS_VIRTUAL_8086 = 0x00020000;
 const EFLAGS_LOGIC_MASK = 0x000008c5;
@@ -153,6 +154,10 @@ export class Cpu386State {
 
   public clearInterruptFlag(): void {
     this.eflags = (this.eflags & ~EFLAGS_INTERRUPT_ENABLE) >>> 0;
+  }
+
+  public clearInterruptAndTrapFlags(): void {
+    this.eflags = (this.eflags & ~(EFLAGS_INTERRUPT_ENABLE | EFLAGS_TRAP)) >>> 0;
   }
 
   public setInterruptFlag(): void {

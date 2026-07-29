@@ -166,6 +166,9 @@
 - M2 T2 S3 P79 adds `OR r/m8, r8` (`08 /r`) for observed DeskPro ROM
   state-byte updates, using the existing ModR/M destination and writable-memory
   contracts with byte-width logic-flag results.
+- M2 T2 S3 P80 introduces a shared real-mode IVT delivery path for software
+  interrupts and 80386 divide-error faults. `INT` saves its following IP while
+  divide errors save the faulting IP, matching the pinned PCjs fault distinction.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
