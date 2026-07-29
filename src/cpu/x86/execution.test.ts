@@ -1209,6 +1209,35 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("stores full 80386 descriptor-table bases through SGDT and SIDT", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0x06],
+      [0x000ffff3, 0x34],
+      [0x000ffff4, 0x12],
+      [0x000ffff5, 0x66],
+      [0x000ffff6, 0x0f],
+      [0x000ffff7, 0x01],
+      [0x000ffff8, 0x0e],
+      [0x000ffff9, 0x3a],
+      [0x000ffffa, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeGdtr(0x8a560123, 0x4567);
+    state.writeIdtr(0xcd123456, 0x89ab);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(Array.from({ length: 6 }, (_, index) => values.get(0x00001234 + index))).toEqual([
+      0x67, 0x45, 0x23, 0x01, 0x56, 0x8a
+    ]);
+    expect(Array.from({ length: 6 }, (_, index) => values.get(0x0000123a + index))).toEqual([
+      0xab, 0x89, 0x56, 0x34, 0x12, 0xcd
+    ]);
+  });
+
   it("loads a real-mode data segment from a general register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xb8],

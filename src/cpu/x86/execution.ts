@@ -1430,6 +1430,33 @@ function executeBitScanDwordModRm(
   state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0));
 }
 
+function executeStoreDescriptorTable(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.registerDirect || (modRm.reg !== 0x00 && modRm.reg !== 0x01))
+    throw new UnsupportedOpcodeError("Unsupported descriptor-table store form");
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  const descriptorTable = modRm.reg === 0x00 ? state.snapshot().gdtr : state.snapshot().idtr;
+  writeSegmentUint16(memory, state, address.segment, address.offset, descriptorTable.limit);
+  for (let index = 0; index < 4; index += 1) {
+    writeSegmentUint8(
+      memory,
+      state,
+      address.segment,
+      (address.offset + 2 + index) & 0xffff,
+      descriptorTable.base >>> (index * 8)
+    );
+  }
+  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
 function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386State): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
@@ -2101,6 +2128,10 @@ export function stepInstruction(
         const extension = fetchCodeByte(memory, state, 2).opcode;
         if (extension === 0x01) {
           const modRm = decodeModRm(fetchCodeByte(memory, state, 3).opcode);
+          if (!modRm.registerDirect && (modRm.reg === 0x00 || modRm.reg === 0x01)) {
+            executeStoreDescriptorTable(memory, state, 3);
+            return { halted: false, fetched };
+          }
           if (!modRm.registerDirect && (modRm.reg === 0x02 || modRm.reg === 0x03)) {
             const address = decodeModRm16Address(
               modRm,
@@ -2598,6 +2629,10 @@ export function stepInstruction(
       }
       if (extension === 0x01) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (!modRm.registerDirect && (modRm.reg === 0x00 || modRm.reg === 0x01)) {
+          executeStoreDescriptorTable(memory, state, 2);
+          return { halted: false, fetched };
+        }
         if (modRm.reg === 0x04) {
           const machineStatusWord = state.snapshot().cr0 & 0xffff;
           if (modRm.registerDirect) state.writeRegister16(modRm.rm, machineStatusWord);

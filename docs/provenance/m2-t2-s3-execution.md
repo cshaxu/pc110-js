@@ -580,6 +580,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   forms (`66 0F 01 /2,/3`). They load the six-byte pseudo-descriptor's 16-bit
   limit and full 32-bit base; the existing default-operand-size forms retain
   their architecturally required 24-bit base truncation.
+- M2 T2 S3 P212 adds `SGDT` and `SIDT` (`0F 01 /0,/1`) for both implemented
+  operand-size dispatch paths. Each stores the 16-bit limit and all four
+  little-endian base bytes, matching the observed 80386 behavior described by
+  PCjs rather than assuming the load instruction's truncation rule applies.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
