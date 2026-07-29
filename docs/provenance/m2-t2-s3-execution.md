@@ -567,6 +567,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   external interrupt enters a higher-privilege handler through the TSS stack,
   then executes IRET and restores the original lower-privilege code, stack,
   instruction pointer, and flags.
+- M2 T2 S3 P208 adds PCjs-selected operand-size-overridden MOVZX and MOVSX
+  forms (`66 0F B6/B7/BE/BF /r`). Byte and word sources use the existing 16-bit
+  ModR/M decoder and extend into the full destination register without flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -3003,6 +3003,41 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("zero- and sign-extends byte and word operands into 32-bit registers", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x0f],
+      [0x0002, 0xb6],
+      [0x0003, 0xc3],
+      [0x0004, 0x66],
+      [0x0005, 0x0f],
+      [0x0006, 0xbe],
+      [0x0007, 0xcb],
+      [0x0008, 0x66],
+      [0x0009, 0x0f],
+      [0x000a, 0xb7],
+      [0x000b, 0xc3],
+      [0x000c, 0x66],
+      [0x000d, 0x0f],
+      [0x000e, 0xbf],
+      [0x000f, 0xd3]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(3, 0x1234ff80);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(0x00000080);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.ecx).toBe(0xffffff80);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.eax).toBe(0x0000ff80);
+    stepInstruction(memory, state);
+    expect(state.snapshot().registers.edx).toBe(0xffffff80);
+  });
+
   it("pushes 32-bit immediate operands through the protected stack path", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

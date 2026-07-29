@@ -1363,6 +1363,37 @@ function executeLeaDwordModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes + sibBytes);
 }
 
+function executeMovExtendDwordModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  extension: number,
+  modRmOffset: number
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const byteSource = extension === 0xb6 || extension === 0xbe;
+  const signedSource = extension === 0xbe || extension === 0xbf;
+  const address = modRm.registerDirect
+    ? undefined
+    : decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+      );
+  const source = byteSource
+    ? modRm.registerDirect
+      ? state.readRegister8(modRm.rm)
+      : readSegmentUint8(memory, state, address!.segment, address!.offset)
+    : modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset);
+  const result =
+    signedSource && source & (byteSource ? 0x80 : 0x8000)
+      ? source | (byteSource ? 0xffffff00 : 0xffff0000)
+      : source;
+  state.writeRegister(modRm.reg, result);
+  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0));
+}
+
 function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386State): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
@@ -2032,6 +2063,10 @@ export function stepInstruction(
       }
       if (opcode === 0x0f) {
         const extension = fetchCodeByte(memory, state, 2).opcode;
+        if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
+          executeMovExtendDwordModRm(memory, state, extension, 3);
+          return { halted: false, fetched };
+        }
         if (extension < 0x80 || extension > 0x8f)
           throw new UnsupportedOpcodeError("Unsupported operand-size-overridden 0F opcode");
         const snapshot = state.snapshot();
