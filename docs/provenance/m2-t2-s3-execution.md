@@ -496,6 +496,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   and `66 C3`) from PCjs `opCALL` and `opRET`. The implementation uses the
   existing 32-bit protected-mode SS:ESP stack contract; 16-bit stack behavior
   remains later S3 work.
+- M2 T2 S3 P188 adds operand-size-overridden near `RET imm16` (`66 C2 iw`)
+  from PCjs `opRETn`: after restoring EIP from the same 32-bit frame, it adds
+  the unsigned immediate cleanup count to ESP.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

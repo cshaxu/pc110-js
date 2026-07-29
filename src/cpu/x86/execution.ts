@@ -1602,7 +1602,7 @@ export function stepInstruction(
         state.advanceEip(2);
         return { halted: false, fetched };
       }
-      if (opcode === 0xe8 || opcode === 0xc3) {
+      if (opcode === 0xe8 || opcode === 0xc2 || opcode === 0xc3) {
         const snapshot = state.snapshot();
         if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected" || !snapshot.ss.default32)
           throw new UnsupportedOpcodeError(
@@ -1612,7 +1612,12 @@ export function stepInstruction(
           const returnInstructionPointer = (snapshot.eip + 6) >>> 0;
           pushUint32(memory, state, returnInstructionPointer);
           state.writeEip(returnInstructionPointer + (fetchCodeUint32(memory, state, 2) | 0));
-        } else state.writeEip(popUint32(memory, state));
+        } else {
+          const instructionPointer = popUint32(memory, state);
+          if (opcode === 0xc2)
+            state.writeRegister(4, state.readRegister(4) + fetchCodeUint16(memory, state, 2));
+          state.writeEip(instructionPointer);
+        }
         return { halted: false, fetched };
       }
       if (opcode === 0x62) {

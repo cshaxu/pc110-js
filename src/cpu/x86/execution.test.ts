@@ -2566,6 +2566,36 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eip: 0x00000006, registers: { esp: 0x3000 } });
   });
 
+  it("cleans caller arguments through a 32-bit protected-mode near return", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0xe8],
+      [0x0002, 0x00],
+      [0x0003, 0x00],
+      [0x0004, 0x00],
+      [0x0005, 0x00],
+      [0x0006, 0x66],
+      [0x0007, 0xc2],
+      [0x0008, 0x04],
+      [0x0009, 0x00],
+      [0x3000, 0xef],
+      [0x3001, 0xbe],
+      [0x3002, 0xad],
+      [0x3003, 0xde]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({ eip: 0x00000006, registers: { esp: 0x3004 } });
+  });
+
   it("checks 32-bit BOUND limits through operand and address-size overrides", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
