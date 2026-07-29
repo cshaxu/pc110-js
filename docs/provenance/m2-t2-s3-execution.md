@@ -636,6 +636,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   error code and routes nonzero-CPL `CLI` and `STI` through `#GP(0)`. The error
   code is pushed after the return frame, preserving all existing no-error-code
   interrupt and fault frames.
+- M2 T2 S3 P233 uses that boundary for nonzero-CPL `CLTS` and control-register
+  transfer attempts. Both route to `#GP(0)` before changing architectural state.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

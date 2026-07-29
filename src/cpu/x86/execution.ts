@@ -2789,8 +2789,10 @@ export function stepInstruction(
         if (
           addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
           (snapshot.cs.selector & 0x03) !== 0
-        )
-          throw new UnsupportedOpcodeError("CLTS requires CPL zero");
+        ) {
+          deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+          return { halted: false, fetched };
+        }
         state.clearTaskSwitchedFlag();
         state.advanceEip(2);
         return { halted: false, fetched };
@@ -2910,7 +2912,8 @@ export function stepInstruction(
           addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
           (snapshot.cs.selector & 0x03) !== 0
         ) {
-          throw new UnsupportedOpcodeError("Control-register MOV requires CPL zero");
+          deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+          return { halted: false, fetched };
         }
         if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x03) {
           throw new UnsupportedOpcodeError("Unsupported control-register MOV form");
