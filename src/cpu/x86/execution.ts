@@ -1368,6 +1368,23 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
+      if (extension >= 0x90 && extension <= 0x9f) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        const value = shortJumpCondition(state, extension & 0x0f) ? 1 : 0;
+        if (modRm.registerDirect) {
+          state.writeRegister8(modRm.rm, value);
+          state.advanceEip(3);
+        } else {
+          const address = decodeModRm16Address(
+            modRm,
+            (index) => state.readRegister16(index),
+            (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+          );
+          writeSegmentUint8(memory, state, address.segment, address.offset, value);
+          state.advanceEip(3 + address.displacementBytes);
+        }
+        return { halted: false, fetched };
+      }
       if (extension === 0xa3 || extension === 0xab || extension === 0xb3 || extension === 0xbb) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
         executeBitTest(memory, state, extension, state.readRegister16(modRm.reg), true, 3);

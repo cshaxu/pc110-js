@@ -371,6 +371,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   (`0F BA /4-/7 ib`) from PCjs `aOpGrp8` and the corresponding `fnBT` family:
   immediate indexes use the low four bits of a 16-bit operand and do not
   extend a memory operand into a neighboring word.
+- M2 T2 S3 P154 adds the full `SETcc r/m8` family (`0F 90-9F`) from PCjs
+  `helpSETcc` and the `fnSET*` functions. The project-native condition mapping
+  supplies each result; register and memory writes leave EFLAGS unchanged.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1930,6 +1930,69 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000002 });
   });
 
+  it("writes every SETcc condition result without changing EFLAGS", () => {
+    const conditions = [
+      [0x90, 0x0800, 0x0000],
+      [0x91, 0x0000, 0x0800],
+      [0x92, 0x0001, 0x0000],
+      [0x93, 0x0000, 0x0001],
+      [0x94, 0x0040, 0x0000],
+      [0x95, 0x0000, 0x0040],
+      [0x96, 0x0001, 0x0000],
+      [0x97, 0x0000, 0x0001],
+      [0x98, 0x0080, 0x0000],
+      [0x99, 0x0000, 0x0080],
+      [0x9a, 0x0004, 0x0000],
+      [0x9b, 0x0000, 0x0004],
+      [0x9c, 0x0080, 0x0000],
+      [0x9d, 0x0000, 0x0080],
+      [0x9e, 0x0040, 0x0000],
+      [0x9f, 0x0000, 0x0040]
+    ];
+
+    for (const [extension, trueFlags, falseFlags] of conditions) {
+      for (const [flags, expected] of [
+        [trueFlags, 1],
+        [falseFlags, 0]
+      ]) {
+        const state = new Cpu386State();
+        state.loadRealModeCodeSegment(0, 0);
+        state.writeEflags(flags);
+        stepInstruction(
+          resetAliasMemory(
+            new Map<number, number>([
+              [0x00000000, 0x0f],
+              [0x00000001, extension],
+              [0x00000002, 0xc0]
+            ])
+          ),
+          state
+        );
+        expect(state.snapshot()).toMatchObject({
+          registers: { eax: expected },
+          eflags: flags | 0x0002
+        });
+      }
+    }
+  });
+
+  it("writes SETcc results through ModR/M memory operands", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0x9f],
+      [0x00000002, 0x06],
+      [0x00000003, 0x00],
+      [0x00000004, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.writeEflags(0x00000002);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(values.get(0x2000)).toBe(1);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x00000002, eip: 5 });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],
