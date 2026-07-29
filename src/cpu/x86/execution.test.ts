@@ -311,6 +311,29 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
   });
 
+  it("moves CR0 through register-direct MOV forms", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x20],
+      [0x000ffff2, 0xc0],
+      [0x000ffff3, 0x0f],
+      [0x000ffff4, 0x22],
+      [0x000ffff5, 0xc0]
+    ]);
+    const memory = resetAliasMemory(values);
+    const state = new Cpu386State();
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0000fff3,
+      registers: { eax: 0x7ffffff0 }
+    });
+
+    state.writeRegister(0, 0x80000001);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ cr0: 0x80000001, eip: 0x0000fff6 });
+  });
+
   it("loads GDTR and IDTR through real-mode LGDT and LIDT memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

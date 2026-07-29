@@ -116,6 +116,9 @@
   protected-mode sequential EIP remains 32-bit.
 - M2 T2 S3 P59 adds 16-bit-address-size memory `LGDT` and `LIDT` forms
   (`0F 01 /2,/3`) through the existing descriptor-table state boundary.
+- M2 T2 S3 P60 adds register-direct CR0 moves (`0F 20 /0`, `0F 22 /0`) for
+  observed protected-mode transition code; CPL and transition side effects
+  remain later S3 work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

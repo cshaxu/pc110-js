@@ -213,6 +213,10 @@ export class Cpu386State {
     this.registers[register] = value >>> 0;
   }
 
+  public readRegister(index: number): number {
+    return this.registers[this.generalRegisterAt(index)];
+  }
+
   public writeRegister16(index: number, value: number): void {
     const register = this.generalRegisterAt(index);
     this.registers[register] = ((this.registers[register] & 0xffff0000) | (value & 0xffff)) >>> 0;

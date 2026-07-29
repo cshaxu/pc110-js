@@ -622,6 +622,16 @@ export function stepInstruction(
     }
     case 0x0f: {
       const extension = fetchCodeByte(memory, state, 1).opcode;
+      if (extension === 0x20 || extension === 0x22) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        if (!modRm.registerDirect || modRm.reg !== 0x00) {
+          throw new UnsupportedOpcodeError("Unsupported control-register MOV form");
+        }
+        if (extension === 0x20) state.writeRegister(modRm.rm, state.snapshot().cr0);
+        else state.writeCr0(state.readRegister(modRm.rm));
+        state.advanceEip(3);
+        return { halted: false, fetched };
+      }
       if (extension === 0x01) {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
         if (modRm.registerDirect && modRm.reg === 0x06 && modRm.rm === 0x00) {
