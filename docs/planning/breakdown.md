@@ -154,6 +154,15 @@ Goal: implement a clean, complete, standalone TypeScript version of the selected
 - S5: Implement I/O port dispatch, machine reset, deterministic stepping, and trace hooks.
 - S6: Compare focused CPU and memory behavior against the M1 reference.
 
+#### Authorized Dependency Correction (2026-07-29)
+
+M2 T2 S3 paused after P16 because its verified reset-ROM trace reaches a far
+jump into low RAM. The owner authorized a bounded S4 preemption: first record
+the dependency, adopt the project module boundaries, and implement only the
+physical-memory, A20, and ROM-mapping capability needed for that trace. Re-run
+the trace through the new layout before resuming S3. This changes execution
+order only; it does not reduce, replace, or relax any M2 completion criterion.
+
 ### T3: TypeScript Core PC/AT Hardware
 
 - S1: Implement master and slave 8259A-compatible PIC variants.
