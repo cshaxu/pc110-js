@@ -1367,18 +1367,25 @@ function executeMovExtendDwordModRm(
   memory: InstructionMemory,
   state: Cpu386State,
   extension: number,
-  modRmOffset: number
+  modRmOffset: number,
+  addressSize: 16 | 32
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   const byteSource = extension === 0xb6 || extension === 0xbe;
   const signedSource = extension === 0xbe || extension === 0xbf;
-  const address = modRm.registerDirect
+  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
     ? undefined
-    : decodeModRm16Address(
-        modRm,
-        (index) => state.readRegister16(index),
-        (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-      );
+    : addressSize === 16
+      ? decodeModRm16Address(
+          modRm,
+          (index) => state.readRegister16(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        )
+      : decodeModRm32Address(
+          modRm,
+          (index) => state.readRegister(index),
+          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+        );
   const source = byteSource
     ? modRm.registerDirect
       ? state.readRegister8(modRm.rm)
@@ -1390,8 +1397,10 @@ function executeMovExtendDwordModRm(
     signedSource && source & (byteSource ? 0x80 : 0x8000)
       ? source | (byteSource ? 0xffffff00 : 0xffff0000)
       : source;
+  const sibBytes =
+    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
   state.writeRegister(modRm.reg, result);
-  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0));
+  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
 }
 
 function executeTaskRegisterInstruction(memory: InstructionMemory, state: Cpu386State): void {
@@ -2064,7 +2073,7 @@ export function stepInstruction(
       if (opcode === 0x0f) {
         const extension = fetchCodeByte(memory, state, 2).opcode;
         if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
-          executeMovExtendDwordModRm(memory, state, extension, 3);
+          executeMovExtendDwordModRm(memory, state, extension, 3, 16);
           return { halted: false, fetched };
         }
         if (extension < 0x80 || extension > 0x8f)
@@ -2223,6 +2232,18 @@ export function stepInstruction(
         if (overriddenOpcode === 0xc7) {
           executeMovImmediateDwordModRm(memory, state, 3, 32);
           return { halted: false, fetched };
+        }
+        if (overriddenOpcode === 0x0f) {
+          const extension = fetchCodeByte(memory, state, 3).opcode;
+          if (
+            extension === 0xb6 ||
+            extension === 0xb7 ||
+            extension === 0xbe ||
+            extension === 0xbf
+          ) {
+            executeMovExtendDwordModRm(memory, state, extension, 4, 32);
+            return { halted: false, fetched };
+          }
         }
         if (overriddenOpcode === 0x8d) {
           executeLeaDwordModRm(memory, state, 3, 32);

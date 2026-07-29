@@ -570,6 +570,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P208 adds PCjs-selected operand-size-overridden MOVZX and MOVSX
   forms (`66 0F B6/B7/BE/BF /r`). Byte and word sources use the existing 16-bit
   ModR/M decoder and extend into the full destination register without flags.
+- M2 T2 S3 P209 connects those dword MOVZX and MOVSX forms to the existing
+  32-bit ModR/M/SIB address decoder for `66 67 0F B6/B7/BE/BF /r` memory
+  sources. Default-address behavior remains covered by P208.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

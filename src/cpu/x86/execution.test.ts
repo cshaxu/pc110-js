@@ -3038,6 +3038,26 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().registers.edx).toBe(0xffffff80);
   });
 
+  it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
+    const values = new Map<number, number>([
+      [0x0000, 0x66],
+      [0x0001, 0x67],
+      [0x0002, 0x0f],
+      [0x0003, 0xbe],
+      [0x0004, 0x06],
+      [0x12000, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(6, 0x12000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot().registers.eax).toBe(0xffffff80);
+  });
+
   it("pushes 32-bit immediate operands through the protected stack path", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
