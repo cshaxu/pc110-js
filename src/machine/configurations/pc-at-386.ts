@@ -1,4 +1,4 @@
-import type { MachineProfile } from "../machine/contracts.js";
+import type { MachineProfile } from "../contracts.js";
 
 export const pcAt386Profile: MachineProfile = {
   id: "pc-at-386",

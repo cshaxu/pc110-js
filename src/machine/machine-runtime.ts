@@ -1,6 +1,6 @@
 export type MachineRunState = "stopped" | "running" | "paused";
 
-import type { MachineProfile } from "../machine/contracts.js";
+import type { MachineProfile } from "./contracts.js";
 
 export interface MachineSnapshot {
   readonly profileId: string;

@@ -4,7 +4,7 @@ import {
   type PagingAccess,
   translateLinearAddress
 } from "./address-translation.js";
-import type { Cpu386State } from "./state.js";
+import type { Cpu386State } from "../cpu/x86/state.js";
 
 interface CachedTranslation {
   readonly physicalPage: number;

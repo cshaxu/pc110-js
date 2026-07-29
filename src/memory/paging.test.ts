@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CR0_PAGING, PageFaultError, type PageTableMemory } from "./address-translation.js";
 import { PagingTranslator } from "./paging.js";
-import { Cpu386State } from "./state.js";
+import { Cpu386State } from "../cpu/x86/state.js";
 
 describe("PagingTranslator", () => {
   it("flushes cached translations when CR3 changes", () => {

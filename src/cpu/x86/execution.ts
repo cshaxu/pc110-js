@@ -1,4 +1,4 @@
-import { addressMode, translateSegmentOffset } from "./address-translation.js";
+import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeModRm } from "./modrm.js";
 import type { Cpu386State, LoadableSegment } from "./state.js";
 

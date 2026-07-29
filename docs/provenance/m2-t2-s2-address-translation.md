@@ -11,7 +11,7 @@
 ## Paths
 
 - Source paths: `machines/pcx86/modules/v2/cpux86.js` and `segx86.js`.
-- Destination paths: `src/cpu/x86/address-translation.ts` and focused tests.
+- Destination paths: `src/memory/address-translation.ts` and focused tests.
 - Runtime dependency closure: none.
 - Excluded content: PCjs runtime JavaScript, browser code, ROMs, media, and
   archival content.

@@ -1,4 +1,4 @@
-import type { CpuAddressMode } from "./address-translation.js";
+import type { CpuAddressMode } from "../../memory/address-translation.js";
 import {
   loadSelectorDescriptor,
   type DescriptorMemory,

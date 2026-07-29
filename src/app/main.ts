@@ -1,5 +1,5 @@
-import { MachineRuntime, type MachineSnapshot } from "../core/machine-runtime.js";
-import { pcAt386Profile } from "../profiles/pc-at-386.js";
+import { pcAt386Profile } from "../machine/configurations/pc-at-386.js";
+import { MachineRuntime, type MachineSnapshot } from "../machine/machine-runtime.js";
 import "./styles.css";
 
 const root = document.querySelector<HTMLElement>("#app");

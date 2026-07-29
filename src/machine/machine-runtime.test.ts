@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pcAt386Profile } from "../profiles/pc-at-386.js";
+import { pcAt386Profile } from "./configurations/pc-at-386.js";
 import { MachineRuntime } from "./machine-runtime.js";
 
 describe("MachineRuntime", () => {
