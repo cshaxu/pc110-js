@@ -431,7 +431,8 @@ function deliverProtectedModeInterrupt(
   state: Cpu386State,
   vector: number,
   returnInstructionPointer: number,
-  software = false
+  software = false,
+  errorCode?: number
 ): void {
   const snapshot = state.snapshot();
   const descriptorMemory = {
@@ -508,6 +509,7 @@ function deliverProtectedModeInterrupt(
     pushUint32(memory, state, snapshot.eflags);
     pushUint32(memory, state, snapshot.cs.selector);
     pushUint32(memory, state, returnInstructionPointer);
+    if (errorCode !== undefined) pushUint32(memory, state, errorCode);
     if (gate.trap) state.clearTrapFlag();
     else state.clearInterruptAndTrapFlags();
     state.loadProtectedModeCodeSegment(
@@ -524,10 +526,12 @@ function deliverProtectedModeInterrupt(
     pushUint32(memory, state, snapshot.eflags);
     pushUint32(memory, state, snapshot.cs.selector);
     pushUint32(memory, state, returnInstructionPointer);
+    if (errorCode !== undefined) pushUint32(memory, state, errorCode);
   } else {
     pushUint16(memory, state, snapshot.eflags);
     pushUint16(memory, state, snapshot.cs.selector);
     pushUint16(memory, state, returnInstructionPointer);
+    if (errorCode !== undefined) pushUint16(memory, state, errorCode);
   }
   if (gate.trap) state.clearTrapFlag();
   else state.clearInterruptAndTrapFlags();
@@ -538,13 +542,14 @@ function deliverCpuFault(
   memory: InstructionMemory,
   state: Cpu386State,
   vector: number,
-  faultInstructionPointer: number
+  faultInstructionPointer: number,
+  errorCode?: number
 ): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
     deliverRealModeInterrupt(memory, state, vector, faultInstructionPointer);
   else if (addressMode(snapshot.cr0, snapshot.eflags) === "protected")
-    deliverProtectedModeInterrupt(memory, state, vector, faultInstructionPointer);
+    deliverProtectedModeInterrupt(memory, state, vector, faultInstructionPointer, false, errorCode);
   else throw new UnsupportedOpcodeError("Virtual-8086 fault delivery is not implemented");
 }
 
@@ -2057,7 +2062,8 @@ export function stepInstruction(
         addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
         (snapshot.cs.selector & 0x03) !== 0
       ) {
-        throw new UnsupportedOpcodeError("Protected-mode CLI requires exception delivery");
+        deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+        return { halted: false, fetched };
       }
       state.clearInterruptFlag();
       state.advanceEip(1);
@@ -2069,7 +2075,8 @@ export function stepInstruction(
         addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
         (snapshot.cs.selector & 0x03) !== 0
       ) {
-        throw new UnsupportedOpcodeError("Protected-mode STI requires exception delivery");
+        deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+        return { halted: false, fetched };
       }
       state.setInterruptFlag();
       state.advanceEip(1);

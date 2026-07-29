@@ -632,6 +632,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   AX as the implicit byte-product or dividend register, while `F7 /5,/7` use
   DX:AX for word products and dividends. Exact signed arithmetic preserves the
   defined multiply overflow and divide-error range contracts.
+- M2 T2 S3 P232 extends the protected-mode delivery boundary with an optional
+  error code and routes nonzero-CPL `CLI` and `STI` through `#GP(0)`. The error
+  code is pushed after the return frame, preserving all existing no-error-code
+  interrupt and fault frames.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
