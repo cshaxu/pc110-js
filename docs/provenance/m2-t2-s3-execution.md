@@ -338,6 +338,9 @@
 - M2 T2 S3 P142 adds real-mode immediate far CALL (`9A`) from PCjs `opCALLF`:
   push CS and return IP in RETF-compatible order, then load the target CS:IP.
   Protected-mode far calls remain explicitly unsupported pending privilege work.
+- M2 T2 S3 P143 adds `LOOPNE` and `LOOPE` (`E0` and `E1`) from PCjs loop
+  behavior: decrement CX, then branch only when the count remains nonzero and
+  ZF satisfies the opcode condition. EFLAGS remain unchanged.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

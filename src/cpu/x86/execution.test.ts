@@ -1592,6 +1592,26 @@ describe("80386 instruction fetch", () => {
     ]).toEqual([0xf5, 0xff, 0x00, 0xf0]);
   });
 
+  it("uses ZF after decrementing CX for LOOPE and LOOPNE", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xe1],
+      [0x000ffff1, 0x02],
+      [0x000ffff4, 0xe0],
+      [0x000ffff5, 0x02]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(1, 2);
+    state.writeEflags(0x00000042);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 1 }, eip: 0x0000fff4 });
+
+    state.writeEflags(0x00000002);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0 }, eip: 0x0000fff6 });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

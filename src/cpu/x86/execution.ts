@@ -2211,11 +2211,19 @@ export function stepInstruction(
       state.writeEip16(fetched.instructionPointer + 2 + displacement);
       return { halted: false, fetched };
     }
+    case 0xe0:
+    case 0xe1:
     case 0xe2: {
       const displacement = signedByte(fetchCodeByte(memory, state, 1).opcode);
       const count = (state.readRegister16(1) - 1) & 0xffff;
       state.writeRegister16(1, count);
-      if (count === 0) state.advanceEip(2);
+      const continueLoop =
+        fetched.opcode === 0xe0
+          ? !state.zeroFlag()
+          : fetched.opcode === 0xe1
+            ? state.zeroFlag()
+            : true;
+      if (count === 0 || !continueLoop) state.advanceEip(2);
       else state.writeEip16(fetched.instructionPointer + 2 + displacement);
       return { halted: false, fetched };
     }
