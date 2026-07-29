@@ -412,6 +412,32 @@ describe("80386 instruction fetch", () => {
     ]);
   });
 
+  it("writes immediate byte and word values through ModR/M memory operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xc6],
+      [0x000ffff1, 0x06],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x000ffff4, 0xa5],
+      [0x000ffff5, 0xc7],
+      [0x000ffff6, 0x46],
+      [0x000ffff7, 0x02],
+      [0x000ffff8, 0x78],
+      [0x000ffff9, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(5, 0x2000);
+    state.loadRealModeSegment("ss", 0);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect([values.get(0x00001234), values.get(0x00002002), values.get(0x00002003)]).toEqual([
+      0xa5, 0x78, 0x56
+    ]);
+    expect(state.snapshot().eip).toBe(0x0000fffa);
+  });
+
   it("stores a 16-bit register through direct and BP-based memory operands", () => {
     const directValues = new Map<number, number>([
       [0x000ffff0, 0x89],

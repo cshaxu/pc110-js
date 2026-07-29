@@ -73,6 +73,8 @@
   decoder without a memory read.
 - M2 T2 S3 P38 adds all 16-bit-address-size accumulator `MOV moffs` forms
   (`A0` through `A3`) through the DS and writable-memory boundaries.
+- M2 T2 S3 P39 adds `MOV r/m8, imm8` and `MOV r/m16, imm16` (`C6 /0` and
+  `C7 /0`) through the shared ModR/M address and writable-memory boundaries.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -442,6 +442,44 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0xc6: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.reg !== 0) throw new UnsupportedOpcodeError("Unsupported C6 opcode form");
+      if (modRm.registerDirect) {
+        state.writeRegister8(modRm.rm, fetchCodeByte(memory, state, 2).opcode);
+        state.advanceEip(3);
+        return { halted: false, fetched };
+      }
+      const address = decodeMemoryAddress(memory, state, modRm);
+      writeSegmentUint8(
+        memory,
+        state,
+        address.segment,
+        address.offset,
+        fetchCodeByte(memory, state, 2 + address.displacementBytes).opcode
+      );
+      state.advanceEip(3 + address.displacementBytes);
+      return { halted: false, fetched };
+    }
+    case 0xc7: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.reg !== 0) throw new UnsupportedOpcodeError("Unsupported C7 opcode form");
+      if (modRm.registerDirect) {
+        state.writeRegister16(modRm.rm, fetchCodeUint16(memory, state, 2));
+        state.advanceEip(4);
+        return { halted: false, fetched };
+      }
+      const address = decodeMemoryAddress(memory, state, modRm);
+      writeSegmentUint16(
+        memory,
+        state,
+        address.segment,
+        address.offset,
+        fetchCodeUint16(memory, state, 2 + address.displacementBytes)
+      );
+      state.advanceEip(4 + address.displacementBytes);
+      return { halted: false, fetched };
+    }
     case 0x33: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)
