@@ -191,6 +191,9 @@
   ModR/M memory and 16-bit addition-flag contracts.
 - M2 T2 S3 P88 adds `AND r/m16, imm16` (`81 /4 iw`) for observed DeskPro ROM
   status-word masking while retaining the existing `/1` OR and `/7` CMP forms.
+- M2 T2 S3 P89 adds `AND r/m16, r16` (`21 /r`) for observed DeskPro ROM
+  work-area masking through the existing ModR/M destination, writable-memory,
+  and word-width logic-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

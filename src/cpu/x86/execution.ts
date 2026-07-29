@@ -1119,6 +1119,19 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0x21: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const destination = modRm.registerDirect
+        ? state.readRegister16(modRm.rm)
+        : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      const result = destination & state.readRegister16(modRm.reg);
+      if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+      else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
+      state.writeLogicFlags16(result);
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
+      return { halted: false, fetched };
+    }
     case 0x08: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
