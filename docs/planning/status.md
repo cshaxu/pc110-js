@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T3 S2: boot the selected PCjs reference machine in a normal local browser
-  and record BIOS, floppy, and DOS markers.
+- M1 T3 S3: verify clear runner failure diagnostics for source, baseline, and
+  local-media validation failures.
 
 ## Delivery Nodes
 
