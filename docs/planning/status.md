@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T1 S1: pin the standalone TypeScript build, test, lint, and formatting
-  toolchain.
+- M2 T1 S2: add browser and headless entry points sharing one project-native
+  machine core.
 
 ## Delivery Nodes
 

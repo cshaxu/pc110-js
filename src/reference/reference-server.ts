@@ -16,7 +16,7 @@ const CPU_CONTROLS = [
   '<cpu id="cpu386" model="80386">',
   '<control type="button" binding="run">Run</control>',
   '<control type="button" binding="reset">Reset</control>',
-  '</cpu>'
+  "</cpu>"
 ].join("");
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
@@ -80,7 +80,11 @@ function verifyInputs(): Buffer {
 
 function readPinnedResource(pathname: string): Buffer {
   const normalized = pathname.replace(/^\/+/, "");
-  if (!normalized || normalized.includes("\\") || normalized.split("/").some((part) => part === "." || part === "..")) {
+  if (
+    !normalized ||
+    normalized.includes("\\") ||
+    normalized.split("/").some((part) => part === "." || part === "..")
+  ) {
     throw new Error("Invalid PCjs resource path");
   }
   const cached = resourceCache.get(normalized);
@@ -107,15 +111,22 @@ function makeMachineXml(): Buffer {
 
 function contentType(pathname: string): string {
   switch (extname(pathname).toLowerCase()) {
-    case ".css": return "text/css; charset=utf-8";
-    case ".html": return "text/html; charset=utf-8";
-    case ".js": return "text/javascript; charset=utf-8";
+    case ".css":
+      return "text/css; charset=utf-8";
+    case ".html":
+      return "text/html; charset=utf-8";
+    case ".js":
+      return "text/javascript; charset=utf-8";
     case ".json":
-    case ".json5": return "application/json; charset=utf-8";
-    case ".svg": return "image/svg+xml";
+    case ".json5":
+      return "application/json; charset=utf-8";
+    case ".svg":
+      return "image/svg+xml";
     case ".xml":
-    case ".xsl": return "application/xml; charset=utf-8";
-    default: return "application/octet-stream";
+    case ".xsl":
+      return "application/xml; charset=utf-8";
+    default:
+      return "application/octet-stream";
   }
 }
 
