@@ -12,8 +12,7 @@
 
 ## Next Eligible Work
 
-- M1 T2 S4: reject machine candidates that require unrelated PCjs website or
-  archive content.
+- M1 T2 S5: record the exact reference machine contract that M2 must implement.
 
 ## Delivery Nodes
 
