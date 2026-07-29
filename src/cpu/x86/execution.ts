@@ -1853,12 +1853,18 @@ export function stepInstruction(
     }
     case 0xfe: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-      if (!modRm.registerDirect || modRm.reg !== 0x00)
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x01)
         throw new UnsupportedOpcodeError("Unsupported FE opcode form");
-      const source = state.readRegister8(modRm.rm);
-      state.writeRegister8(modRm.rm, source + 1);
-      state.writeIncrementFlags8(source);
-      state.advanceEip(2);
+      const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+      const source = modRm.registerDirect
+        ? state.readRegister8(modRm.rm)
+        : readSegmentUint8(memory, state, address!.segment, address!.offset);
+      const result = modRm.reg === 0x00 ? source + 1 : source - 1;
+      if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+      else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
+      if (modRm.reg === 0x00) state.writeIncrementFlags8(source);
+      else state.writeDecrementFlags8(source);
+      state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
     case 0xff:

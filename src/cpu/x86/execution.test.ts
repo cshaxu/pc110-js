@@ -2820,6 +2820,35 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("decrements byte register and BP-based memory through FE /1", () => {
+    const registerValues = new Map<number, number>([
+      [0x000ffff0, 0xfe],
+      [0x000ffff1, 0xcc]
+    ]);
+    const registerState = new Cpu386State();
+    registerState.writeRegister8(4, 0);
+    registerState.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(registerValues), registerState);
+
+    expect(registerState.snapshot()).toMatchObject({ registers: { eax: 0xff00 }, eflags: 0x0097 });
+
+    const memoryValues = new Map<number, number>([
+      [0x000ffff0, 0xfe],
+      [0x000ffff1, 0x4e],
+      [0x000ffff2, 0x05],
+      [0x00002005, 0]
+    ]);
+    const memoryState = new Cpu386State();
+    memoryState.loadRealModeSegment("ss", 0);
+    memoryState.writeRegister16(5, 0x2000);
+
+    stepInstruction(resetAliasMemory(memoryValues), memoryState);
+
+    expect(memoryValues.get(0x00002005)).toBe(0xff);
+    expect(memoryState.snapshot().eip).toBe(0x0000fff3);
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

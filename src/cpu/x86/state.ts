@@ -374,6 +374,18 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeDecrementFlags8(value: number): void {
+    const source = value & 0xff;
+    const result = (source - 1) & 0xff;
+    let flags = this.eflags & ~(EFLAGS_ARITHMETIC_MASK & ~EFLAGS_CARRY);
+    if (source === 0x80) flags |= EFLAGS_OVERFLOW;
+    if ((source & 0x0f) === 0x00) flags |= EFLAGS_AUXILIARY_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeDecrementFlags16(value: number): void {
     const source = value & 0xffff;
     const result = (source - 1) & 0xffff;
