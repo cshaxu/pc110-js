@@ -36,6 +36,9 @@
 - M2 T2 S3 P18 adds project-native 16-bit ModR/M effective-address decoding
   and the memory-source form of `MOV r16, r/m16`, including direct, indexed,
   displacement, and BP-default-SS addressing.
+- M2 T2 S3 P19 replaces the observed CS-overridden far-jump table special case
+  with a project-native real-mode `FF /5 m16:16` path that shares the 16-bit
+  ModR/M decoder and supports default or CS-overridden pointer segments.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

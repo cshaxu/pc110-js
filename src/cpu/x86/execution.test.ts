@@ -83,6 +83,26 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("follows a default-data-segment far pointer through FF /5", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xff],
+      [0x000ffff1, 0x2e],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12],
+      [0x00001234, 0x78],
+      [0x00001235, 0x56],
+      [0x00001236, 0x00],
+      [0x00001237, 0xf0]
+    ]);
+    const state = new Cpu386State();
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x5678,
+      cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff }
+    });
+  });
+
   it("loads 16-bit immediate values into the selected register", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xbb],

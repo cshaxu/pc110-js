@@ -97,6 +97,41 @@ function segmentForMove(index: number): LoadableSegment | undefined {
   }
 }
 
+function readFarPointer(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds" | "ss",
+  offset: number
+): { instructionPointer: number; selector: number } {
+  return {
+    instructionPointer: readSegmentUint16(memory, state, segment, offset),
+    selector: readSegmentUint16(memory, state, segment, (offset + 2) & 0xffff)
+  };
+}
+
+function executeMemoryFarJump(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  segmentOverride?: "cs" | "ds" | "ss"
+): void {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+    throw new UnsupportedOpcodeError("Protected-mode far jumps are not implemented");
+  }
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x05 || modRm.registerDirect) {
+    throw new UnsupportedOpcodeError("Unsupported FF opcode form");
+  }
+  const address = decodeModRm16Address(
+    modRm,
+    (index) => state.readRegister16(index),
+    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+  );
+  const pointer = readFarPointer(memory, state, segmentOverride ?? address.segment, address.offset);
+  state.loadRealModeCodeSegment(pointer.selector, pointer.instructionPointer);
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -135,17 +170,9 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0x2e: {
-      const snapshot = state.snapshot();
       const opcode = fetchCodeByte(memory, state, 1).opcode;
-      const modRm = fetchCodeByte(memory, state, 2).opcode;
-      if (addressMode(snapshot.cr0, snapshot.eflags) !== "real")
-        throw new UnsupportedOpcodeError("Protected-mode segment overrides are not implemented");
-      if (opcode !== 0xff || modRm !== 0x2e)
-        throw new UnsupportedOpcodeError("Unsupported CS override instruction");
-      const pointerOffset = fetchCodeUint16(memory, state, 3);
-      const instructionPointer = readSegmentUint16(memory, state, "cs", pointerOffset);
-      const selector = readSegmentUint16(memory, state, "cs", pointerOffset + 2);
-      state.loadRealModeCodeSegment(selector, instructionPointer);
+      if (opcode !== 0xff) throw new UnsupportedOpcodeError("Unsupported CS override instruction");
+      executeMemoryFarJump(memory, state, 2, "cs");
       return { halted: false, fetched };
     }
     case 0x0f: {
@@ -234,6 +261,9 @@ export function stepInstruction(
       state.advanceEip(2);
       return { halted: false, fetched };
     }
+    case 0xff:
+      executeMemoryFarJump(memory, state, 1);
+      return { halted: false, fetched };
     case 0xe9: {
       const displacement = signedWord(fetchCodeUint16(memory, state, 1));
       state.writeEip16(fetched.instructionPointer + 3 + displacement);
