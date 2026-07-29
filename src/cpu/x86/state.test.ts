@@ -48,4 +48,11 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().cr0).toBe(0x80000001);
   });
+
+  it("preserves the required EFLAGS bit while storing mode state", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEflags(0x00020000);
+
+    expect(cpu.snapshot().eflags).toBe(0x00020002);
+  });
 });

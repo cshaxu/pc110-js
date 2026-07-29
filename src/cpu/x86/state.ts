@@ -106,6 +106,10 @@ export class Cpu386State {
     this.cr0 = value >>> 0;
   }
 
+  public writeEflags(value: number): void {
+    this.eflags = (value | RESET_EFLAGS) >>> 0;
+  }
+
   public writeGdtr(base: number, limit: number): void {
     this.gdtr = { base: base >>> 0, limit: limit & 0xffff };
   }
