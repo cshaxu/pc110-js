@@ -9,12 +9,14 @@
     "pnpm": "11.9.0"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.json",
-    "test": "vitest run --passWithNoTests",
+    "build": "tsc --project tsconfig.json && vite build",
+    "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --check \"src/**/*.ts\" \"*.{json,mjs,yaml}\"",
-    "reference": "pnpm run build && node dist/reference/reference-server.js --open",
-    "reference:serve": "pnpm run build && node dist/reference/reference-server.js"
+    "dev": "vite",
+    "headless": "pnpm run build && node build/headless/main.js",
+    "reference": "pnpm run build && node build/reference/reference-server.js --open",
+    "reference:serve": "pnpm run build && node build/reference/reference-server.js"
   },
   "devDependencies": {
     "@eslint/js": "9.17.0",

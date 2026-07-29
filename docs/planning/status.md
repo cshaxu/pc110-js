@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T1 S2: add browser and headless entry points sharing one project-native
-  machine core.
+- M2 T1 S3: define machine-profile, device-registry, interface, and variant
+  contracts.
 
 ## Delivery Nodes
 
