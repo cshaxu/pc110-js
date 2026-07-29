@@ -1754,6 +1754,47 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("pushes and pops real-mode FS and GS selectors through SS:SP", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0x0f],
+      [0x00000001, 0xa0],
+      [0x00000002, 0x0f],
+      [0x00000003, 0xa8],
+      [0x00000004, 0x0f],
+      [0x00000005, 0xa9],
+      [0x00000006, 0x0f],
+      [0x00000007, 0xa1]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeCodeSegment(0, 0);
+    state.loadRealModeSegment("ss", 0);
+    state.loadRealModeSegment("fs", 0x1234);
+    state.loadRealModeSegment("gs", 0x5678);
+    state.writeRegister16(4, 0x1000);
+    state.writeEflags(0x000008d7);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect([
+      values.get(0x0ffc),
+      values.get(0x0ffd),
+      values.get(0x0ffe),
+      values.get(0x0fff)
+    ]).toEqual([0x78, 0x56, 0x34, 0x12]);
+    state.loadRealModeSegment("fs", 0);
+    state.loadRealModeSegment("gs", 0);
+    stepInstruction(memory, state);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      fs: { selector: 0x1234, base: 0x12340 },
+      gs: { selector: 0x5678, base: 0x56780 },
+      registers: { esp: 0x1000 },
+      eflags: 0x000008d7,
+      eip: 8
+    });
+  });
+
   it("scans the lowest and highest set bit while preserving the destination for zero", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

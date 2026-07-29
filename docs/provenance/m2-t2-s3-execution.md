@@ -380,6 +380,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P156 adds `LSS`, `LFS`, and `LGS m16:16` (`0F B2/B4/B5`) from PCjs
   `fnLSS`, `fnLFS`, and `fnLGS`: a memory-only far pointer supplies the
   destination word and selector through the existing mode-aware segment loader.
+- M2 T2 S3 P157 adds 16-bit `PUSH/POP FS/GS` (`0F A0/A1/A8/A9`) from PCjs
+  `opPUSHFS`, `opPOPFS`, `opPUSHGS`, and `opPOPGS`: selectors traverse the
+  shared SS:SP boundary and POP restores the segment through the existing
+  mode-aware loader.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
