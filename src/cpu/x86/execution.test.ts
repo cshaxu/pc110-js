@@ -238,6 +238,24 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000fff4);
   });
 
+  it("updates AL and status flags through immediate AND, OR, and CMP", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x24],
+      [0x000ffff1, 0xf3],
+      [0x000ffff2, 0x0c],
+      [0x000ffff3, 0x08],
+      [0x000ffff4, 0x3c],
+      [0x000ffff5, 0x0b]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(0, 0x1f);
+
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x1b }, eflags: 0x00000002 });
+  });
+
   it("decrements CX and loops while the 16-bit count remains nonzero", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xb9],
