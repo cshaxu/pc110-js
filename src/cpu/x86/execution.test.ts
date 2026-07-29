@@ -334,6 +334,25 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x80000001, eip: 0x0000fff6 });
   });
 
+  it("ORs AX with an immediate value for the protected-mode transition", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0d],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0000fff3,
+      registers: { eax: 0x00000001 },
+      eflags: 0x00000002
+    });
+  });
+
   it("loads GDTR and IDTR through real-mode LGDT and LIDT memory operands", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x0f],

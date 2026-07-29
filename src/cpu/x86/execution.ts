@@ -825,6 +825,13 @@ export function stepInstruction(
       state.advanceEip(3);
       return { halted: false, fetched };
     }
+    case 0x0d: {
+      const result = state.readRegister16(0) | fetchCodeUint16(memory, state, 1);
+      state.writeRegister16(0, result);
+      state.writeLogicFlags16(result);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x2a:
       executeByteAluModRm(memory, state, "sub", false);
       return { halted: false, fetched };
