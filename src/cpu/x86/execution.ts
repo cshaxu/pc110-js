@@ -1850,6 +1850,16 @@ export function stepInstruction(
       state.advanceEip(3 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0xfe: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (!modRm.registerDirect || modRm.reg !== 0x00)
+        throw new UnsupportedOpcodeError("Unsupported FE opcode form");
+      const source = state.readRegister8(modRm.rm);
+      state.writeRegister8(modRm.rm, source + 1);
+      state.writeIncrementFlags8(source);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0xff:
       {
         const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);

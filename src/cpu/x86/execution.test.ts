@@ -2787,6 +2787,24 @@ describe("80386 instruction fetch", () => {
     expect(values.get(0x000ffffe)).toBe(0x56);
   });
 
+  it("increments AH through the observed FE /0 form while preserving carry", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xfe],
+      [0x000ffff1, 0xc4]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister8(4, 0xff);
+    state.setCarryFlag();
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0 },
+      eip: 0x0000fff2,
+      eflags: 0x0057
+    });
+  });
+
   it("leaves EIP at the faulting opcode until exception delivery exists", () => {
     const values = new Map<number, number>([[0x000ffff0, 0x0f]]);
     const memory = resetAliasMemory(values);

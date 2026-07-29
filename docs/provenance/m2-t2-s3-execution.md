@@ -281,6 +281,8 @@
   CPU behavior claim or an implementation change.
 - M2 T2 S3 P122 adds the observed CS-overridden byte accumulator moffs forms
   (`2E A0` and `2E A2`) reached by the bounded DeskPro ROM trace at `F000:BAB0`.
+- M2 T2 S3 P123 adds the observed direct-register `INC r/m8` form (`FE /0`)
+  reached at `F000:9BF1`, preserving CF while updating 8-bit increment flags.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
