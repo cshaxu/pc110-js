@@ -92,6 +92,8 @@
   and writable-memory boundaries without changing EFLAGS.
 - M2 T2 S3 P48 adds real-mode `PUSH Sreg` and `POP Sreg` through SS:SP,
   preserving the explicit protected-mode boundary.
+- M2 T2 S3 P49 adds `ADD AX, imm16` (`05`) and a shared 16-bit addition-flag
+  contract for observed BIOS memory-probe arithmetic.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

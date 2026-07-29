@@ -561,6 +561,20 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x00000082 });
   });
 
+  it("adds a 16-bit immediate value to AX with arithmetic flags", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x05],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x7fff);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8000 }, eflags: 0x00000896 });
+  });
+
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x86],

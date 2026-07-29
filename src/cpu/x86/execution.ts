@@ -680,6 +680,14 @@ export function stepInstruction(
       state.advanceEip(2 + displacementBytes);
       return { halted: false, fetched };
     }
+    case 0x05: {
+      const accumulator = state.readRegister16(0);
+      const immediate = fetchCodeUint16(memory, state, 1);
+      state.writeRegister16(0, accumulator + immediate);
+      state.writeAddFlags16(accumulator, immediate);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x32: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)
