@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T4 S6: add and manually verify the concise M1 reference Quick Start.
+- M1 T5 S1: map PCjs CPU and instruction modules to project-native M2
+  destinations.
 
 ## Delivery Nodes
 

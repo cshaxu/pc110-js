@@ -6,8 +6,8 @@
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "build": "tsc --project tsconfig.json",
-    "reference": "npm run build && node dist/reference/reference-server.js --open",
-    "reference:serve": "npm run build && node dist/reference/reference-server.js"
+    "reference": "pnpm run build && node dist/reference/reference-server.js --open",
+    "reference:serve": "pnpm run build && node dist/reference/reference-server.js"
   },
   "devDependencies": {
     "@types/node": "22.10.2",
