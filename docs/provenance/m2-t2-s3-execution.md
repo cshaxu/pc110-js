@@ -297,6 +297,9 @@
   updates.
 - M2 T2 S3 P128 adds observed direct-register `ROL r/m8, CL` and `ROL r/m16,
   CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
+- M2 T2 S3 P129 adds observed CMPS and SCAS byte/word forms, including `REPE`
+  and `REPNE` termination through DS:SI, ES:DI, CX, direction, and comparison
+  flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

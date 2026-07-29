@@ -766,6 +766,40 @@ function executeShiftRightByte(memory: InstructionMemory, state: Cpu386State, co
   state.advanceEip(3 + (address?.displacementBytes ?? 0));
 }
 
+function executeStringComparison(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  opcode: number,
+  repeatWhileZero?: boolean
+): void {
+  const word = opcode === 0xa7 || opcode === 0xaf;
+  const compare = opcode === 0xa6 || opcode === 0xa7;
+  let count = repeatWhileZero === undefined ? 1 : state.readRegister16(1);
+  let source = state.readRegister16(6);
+  let destination = state.readRegister16(7);
+  const step = state.directionFlag() ? (word ? -2 : -1) : word ? 2 : 1;
+  while (count > 0) {
+    if (word) {
+      const left = compare
+        ? readSegmentUint16(memory, state, "ds", source)
+        : state.readRegister16(0);
+      const right = readSegmentUint16(memory, state, "es", destination);
+      state.writeCompareFlags16(left, right);
+    } else {
+      const left = compare ? readSegmentUint8(memory, state, "ds", source) : state.readRegister8(0);
+      const right = readSegmentUint8(memory, state, "es", destination);
+      state.writeCompareFlags8(left, right);
+    }
+    if (compare) source = (source + step) & 0xffff;
+    destination = (destination + step) & 0xffff;
+    count -= 1;
+    if (repeatWhileZero === undefined || state.zeroFlag() !== repeatWhileZero) break;
+  }
+  if (compare) state.writeRegister16(6, source);
+  state.writeRegister16(7, destination);
+  if (repeatWhileZero !== undefined) state.writeRegister16(1, count);
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1048,6 +1082,13 @@ export function stepInstruction(
         sourceSegment = "cs";
         instructionLength = 3;
       }
+      if (opcode === 0xa6 || opcode === 0xa7 || opcode === 0xae || opcode === 0xaf) {
+        if (instructionLength !== 2)
+          throw new UnsupportedOpcodeError("Unsupported REP string prefix");
+        executeStringComparison(memory, state, opcode, true);
+        state.advanceEip(2);
+        return { halted: false, fetched };
+      }
       if (opcode !== 0xaa && opcode !== 0xab && opcode !== 0xa4 && opcode !== 0xa5)
         throw new UnsupportedOpcodeError("Unsupported REP instruction");
       const word = opcode === 0xab || opcode === 0xa5;
@@ -1076,6 +1117,14 @@ export function stepInstruction(
       state.writeRegister16(7, destination);
       state.writeRegister16(1, count);
       state.advanceEip(instructionLength);
+      return { halted: false, fetched };
+    }
+    case 0xf2: {
+      const opcode = fetchCodeByte(memory, state, 1).opcode;
+      if (opcode !== 0xa6 && opcode !== 0xa7 && opcode !== 0xae && opcode !== 0xaf)
+        throw new UnsupportedOpcodeError("Unsupported REPNE instruction");
+      executeStringComparison(memory, state, opcode, false);
+      state.advanceEip(2);
       return { halted: false, fetched };
     }
     case 0x0f: {
@@ -1224,6 +1273,13 @@ export function stepInstruction(
       state.advanceEip(1);
       return { halted: false, fetched };
     }
+    case 0xa6:
+    case 0xa7:
+    case 0xae:
+    case 0xaf:
+      executeStringComparison(memory, state, fetched.opcode);
+      state.advanceEip(1);
+      return { halted: false, fetched };
     case 0xac: {
       const source = state.readRegister16(6);
       state.writeRegister8(0, readSegmentUint8(memory, state, "ds", source));

@@ -2768,6 +2768,64 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { esi: 0x2003, edi: 0x3006 } });
   });
 
+  it("compares and scans unprefixed byte and word string operands", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xa6],
+      [0x000ffff1, 0xaf],
+      [0x00002000, 0x12],
+      [0x00003000, 0x12],
+      [0x00003001, 0x34],
+      [0x00003002, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(6, 0x2000);
+    state.writeRegister16(7, 0x3000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    state.writeRegister16(0, 0x1234);
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { esi: 0x2001, edi: 0x3003 },
+      eflags: 0x0046
+    });
+  });
+
+  it("repeats CMPSW while equal and SCASB while not equal", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf3],
+      [0x000ffff1, 0xa7],
+      [0x000ffff2, 0xf2],
+      [0x000ffff3, 0xae],
+      [0x00002000, 0x01],
+      [0x00002001, 0x00],
+      [0x00002002, 0x02],
+      [0x00002003, 0x00],
+      [0x00003000, 0x01],
+      [0x00003001, 0x00],
+      [0x00003002, 0x03],
+      [0x00003003, 0x00],
+      [0x00004000, 0x01],
+      [0x00004001, 0x02]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(1, 2);
+    state.writeRegister16(6, 0x2000);
+    state.writeRegister16(7, 0x3000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0, esi: 0x2004, edi: 0x3004 } });
+
+    state.writeRegister8(0, 0x02);
+    state.writeRegister16(1, 3);
+    state.writeRegister16(7, 0x4000);
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 1, edi: 0x4002 }, eflags: 0x0046 });
+  });
+
   it("uses CS as the observed source segment for REP MOVSW", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xf3],
