@@ -246,6 +246,31 @@ function loadProtectedModeCodeSegment(
   );
 }
 
+function loadProtectedModeSegment(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: LoadableSegment,
+  selector: number
+): void {
+  const snapshot = state.snapshot();
+  const descriptorMemory = {
+    readUint32: (address: number) =>
+      (memory.readUint8(address) & 0xff) |
+      ((memory.readUint8((address + 1) >>> 0) & 0xff) << 8) |
+      ((memory.readUint8((address + 2) >>> 0) & 0xff) << 16) |
+      ((memory.readUint8((address + 3) >>> 0) & 0xff) << 24)
+  };
+  const loaded = new SegmentRegister().load(
+    "protected",
+    selector,
+    segment === "ss" ? "stack" : "read",
+    snapshot.cs.selector & 0x03,
+    descriptorMemory,
+    { gdt: snapshot.gdtr }
+  );
+  state.loadProtectedModeSegment(segment, loaded.selector, loaded.base, loaded.limit);
+}
+
 function decodeMemoryAddress(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -312,27 +337,28 @@ function executeMovSegmentFromModRm(
   modRmOffset: number
 ): void {
   const snapshot = state.snapshot();
-  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
-    throw new UnsupportedOpcodeError("Protected-mode segment loads are not implemented");
-  }
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   const segment = segmentForMove(modRm.reg);
   if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
+  let selector: number;
+  let displacementBytes = 0;
   if (modRm.registerDirect) {
-    state.loadRealModeSegment(segment, state.readRegister16(modRm.rm));
-    state.advanceEip(modRmOffset + 1);
-    return;
+    selector = state.readRegister16(modRm.rm);
+  } else {
+    const address = decodeModRm16Address(
+      modRm,
+      (index) => state.readRegister16(index),
+      (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+    );
+    selector = readSegmentUint16(memory, state, address.segment, address.offset);
+    displacementBytes = address.displacementBytes;
   }
-  const address = decodeModRm16Address(
-    modRm,
-    (index) => state.readRegister16(index),
-    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-  );
-  state.loadRealModeSegment(
-    segment,
-    readSegmentUint16(memory, state, address.segment, address.offset)
-  );
-  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+  if (addressMode(snapshot.cr0, snapshot.eflags) === "real") {
+    state.loadRealModeSegment(segment, selector);
+  } else {
+    loadProtectedModeSegment(memory, state, segment, selector);
+  }
+  state.advanceEip(modRmOffset + 1 + displacementBytes);
 }
 
 function executeMov8FromModRm(

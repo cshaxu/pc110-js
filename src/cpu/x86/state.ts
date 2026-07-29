@@ -425,6 +425,15 @@ export class Cpu386State {
     };
   }
 
+  public loadProtectedModeSegment(
+    segment: LoadableSegment,
+    selector: number,
+    base: number,
+    limit: number
+  ): void {
+    this[segment] = { selector: selector & 0xffff, base: base >>> 0, limit: limit >>> 0 };
+  }
+
   public halt(): void {
     this.halted = true;
   }

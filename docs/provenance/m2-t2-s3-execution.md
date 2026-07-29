@@ -123,6 +123,8 @@
   contract for the observed PE-bit setup sequence.
 - M2 T2 S3 P62 connects checked GDT code-descriptor loading to 16-bit-offset
   protected-mode far jumps, including the observed memory-pointer form.
+- M2 T2 S3 P63 connects `MOV Sreg, r/m16` to checked protected-mode data and
+  stack descriptor loading; the DeskPro `0x08` data descriptor is covered.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

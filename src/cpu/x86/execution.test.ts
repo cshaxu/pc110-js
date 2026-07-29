@@ -147,6 +147,32 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads the DeskPro-style protected data descriptor into ES", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x8e],
+      [0x000ffff1, 0xc0],
+      [0x00001008, 0xff],
+      [0x00001009, 0xff],
+      [0x0000100a, 0x00],
+      [0x0000100b, 0x00],
+      [0x0000100c, 0xc0],
+      [0x0000100d, 0x92],
+      [0x0000100e, 0x00],
+      [0x0000100f, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x00001000, 0x0000000f);
+    state.writeRegister16(0, 0x0008);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0000fff2,
+      es: { selector: 0x0008, base: 0x80c00000, limit: 0x0000ffff }
+    });
+  });
+
   it("follows the reset-ROM CS-overridden far jump table entry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x2e],
