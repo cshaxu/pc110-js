@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   fetchOpcode,
+  serviceExternalInterrupt,
   stepInstruction,
   stepInstructionTraced,
   type InstructionTraceEvent,
@@ -1357,6 +1358,35 @@ describe("80386 instruction fetch", () => {
     state.writeRegister16(0, 0x0000);
     stepInstruction(resetAliasMemory(values), state);
     expect(state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0x0ffa } });
+  });
+
+  it("accepts maskable external interrupts only when IF is set and wakes HLT", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xf4],
+      [0x00000020, 0x78],
+      [0x00000021, 0x56],
+      [0x00000022, 0x00],
+      [0x00000023, 0xf0]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    expect(serviceExternalInterrupt(memory, state, 0x08)).toBe(false);
+    expect(state.snapshot().eip).toBe(0x0000fff0);
+    stepInstruction(memory, state);
+    expect(state.snapshot().halted).toBe(true);
+    state.setInterruptFlag();
+    expect(serviceExternalInterrupt(memory, state, 0x08)).toBe(true);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x5678,
+      cs: { selector: 0xf000, base: 0x000f0000 },
+      registers: { esp: 0x0ffa },
+      halted: false,
+      eflags: 0x00000002
+    });
+    expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf1, 0xff]);
   });
 
   it("exchanges 8-bit and 16-bit register or memory operands without changing flags", () => {

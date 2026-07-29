@@ -1,4 +1,5 @@
 import {
+  serviceExternalInterrupt,
   stepInstructionTraced,
   type ExecutionResult,
   type InstructionMemory,
@@ -22,6 +23,10 @@ export class CpuStepper {
 
   public step(): ExecutionResult {
     return stepInstructionTraced(this.memory, this.cpu, this.ports, this.trace);
+  }
+
+  public serviceExternalInterrupt(vector: number): boolean {
+    return serviceExternalInterrupt(this.memory, this.cpu, vector);
   }
 
   public run(maxInstructions: number): StepRunResult {

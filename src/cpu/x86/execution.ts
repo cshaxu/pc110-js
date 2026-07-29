@@ -175,6 +175,23 @@ function deliverRealModeInterrupt(
   state.loadRealModeCodeSegment(selector, instructionPointer);
 }
 
+export function serviceExternalInterrupt(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  vector: number
+): boolean {
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "real") {
+    throw new UnsupportedOpcodeError(
+      "Protected-mode external interrupt delivery is not implemented"
+    );
+  }
+  if (!state.interruptFlag()) return false;
+  deliverRealModeInterrupt(memory, state, vector, snapshot.eip);
+  state.resume();
+  return true;
+}
+
 function signedByte(value: number): number {
   return (value << 24) >> 24;
 }

@@ -6,7 +6,9 @@ import { CpuStepper } from "./cpu-stepper.js";
 function resetAliasMemory(values: Map<number, number>) {
   return {
     readUint8: (address: number) =>
-      values.get(address >= 0xffff0000 ? address & 0xfffff : address) ?? 0
+      values.get(address >= 0xffff0000 ? address & 0xfffff : address) ?? 0,
+    writeUint8: (address: number, value: number) =>
+      values.set(address >= 0xffff0000 ? address & 0xfffff : address, value & 0xff)
   };
 }
 
@@ -33,5 +35,22 @@ describe("CPU stepper", () => {
 
     expect(() => stepper.run(-1)).toThrow("Instruction budget");
     expect(cpu.snapshot().eip).toBe(0x0000fff0);
+  });
+
+  it("exposes the device-facing external interrupt service boundary", () => {
+    const values = new Map<number, number>([
+      [0x00000020, 0x00],
+      [0x00000021, 0x10],
+      [0x00000022, 0x00],
+      [0x00000023, 0xf0]
+    ]);
+    const cpu = new Cpu386State();
+    cpu.loadRealModeSegment("ss", 0);
+    cpu.writeRegister16(4, 0x1000);
+    cpu.setInterruptFlag();
+    const stepper = new CpuStepper(resetAliasMemory(values), cpu);
+
+    expect(stepper.serviceExternalInterrupt(0x08)).toBe(true);
+    expect(cpu.snapshot()).toMatchObject({ eip: 0x1000, cs: { selector: 0xf000 } });
   });
 });

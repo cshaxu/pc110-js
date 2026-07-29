@@ -169,6 +169,9 @@
 - M2 T2 S3 P80 introduces a shared real-mode IVT delivery path for software
   interrupts and 80386 divide-error faults. `INT` saves its following IP while
   divide errors save the faulting IP, matching the pinned PCjs fault distinction.
+- M2 T2 S3 P81 exposes a device-facing external-interrupt service boundary.
+  It accepts maskable real-mode interrupts only with IF set, uses the shared IVT
+  frame path, saves the current EIP, and resumes a halted CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
