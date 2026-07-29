@@ -12,7 +12,8 @@
 
 ## Next Eligible Work
 
-- M1 T2 S5: record the exact reference machine contract that M2 must implement.
+- M1 T3 S1: add a project-owned command that serves and starts the selected
+  sibling PCjs machine in a browser.
 
 ## Delivery Nodes
 
