@@ -306,6 +306,10 @@
   derived from PCjs `x86ops.js` and `cpux86.js`: incoming AF and CF select the
   decimal corrections, result flags update PF/ZF/SF, CF/AF are explicit, and
   OF clears. Tests cover dual correction, low-digit subtraction, and CF input.
+- M2 T2 S3 P132 adds observed `AAD imm8` (`D5 ib`). The selected DeskPro ROM
+  contains `D5 0A` at `0x4230` and `0x4E60`. PCjs `opAAD` is the behavior
+  authority: `AL + AH * imm8` becomes AL, AH clears, and byte arithmetic flags
+  derive from that addition. No NXVM behavior or guest-service code was used.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

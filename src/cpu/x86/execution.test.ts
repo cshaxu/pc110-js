@@ -2966,6 +2966,23 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x75 }, eflags: 0x0003 });
   });
 
+  it("performs the observed AAD immediate conversion", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xd5],
+      [0x000ffff1, 0x0a]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x1234);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0xe8 },
+      eip: 0x0000fff2,
+      eflags: 0x0086
+    });
+  });
+
   it("increments AH through the observed FE /0 form while preserving carry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xfe],

@@ -843,6 +843,15 @@ export function stepInstruction(
       state.advanceEip(1);
       return { halted: false, fetched };
     }
+    case 0xd5: {
+      const accumulator = state.readRegister8(0);
+      const multiplicand = state.readRegister8(4) * fetchCodeByte(memory, state, 1).opcode;
+      const result = accumulator + multiplicand;
+      state.writeRegister16(0, result & 0xff);
+      state.writeAddFlags8(accumulator, multiplicand);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
     case 0x90:
       state.advanceEip(1);
       return { halted: false, fetched };
