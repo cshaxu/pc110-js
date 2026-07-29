@@ -327,6 +327,28 @@ describe("80386 instruction fetch", () => {
     expect([stackValues.get(0x2002), stackValues.get(0x2003)]).toEqual([0xbc, 0x9a]);
   });
 
+  it("moves 8-bit values between registers and direct memory operands", () => {
+    const registerValues = new Map<number, number>([
+      [0x000ffff0, 0x8a],
+      [0x000ffff1, 0xe0]
+    ]);
+    const registerState = new Cpu386State();
+    registerState.writeRegister8(0, 0x5a);
+    stepInstruction(resetAliasMemory(registerValues), registerState);
+    expect(registerState.snapshot().registers.eax).toBe(0x5a5a);
+
+    const memoryValues = new Map<number, number>([
+      [0x000ffff0, 0x88],
+      [0x000ffff1, 0x0e],
+      [0x000ffff2, 0x34],
+      [0x000ffff3, 0x12]
+    ]);
+    const memoryState = new Cpu386State();
+    memoryState.writeRegister8(1, 0xa5);
+    stepInstruction(resetAliasMemory(memoryValues), memoryState);
+    expect(memoryValues.get(0x1234)).toBe(0xa5);
+  });
+
   it("loads a 16-bit register through the observed CS-overridden ROM address", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x2e],

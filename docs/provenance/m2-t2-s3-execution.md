@@ -49,6 +49,8 @@
 - M2 T2 S3 P23 adds `MOV r/m16, r16` through an optional writable-memory
   boundary. Address translation stays in the CPU path while writable or
   immutable region policy remains owned by physical memory.
+- M2 T2 S3 P24 adds `MOV r/m8, r8` and `MOV r8, r/m8` through the shared
+  16-bit addressing and writable-memory boundaries.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

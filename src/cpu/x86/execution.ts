@@ -73,6 +73,21 @@ function readSegmentUint16(
   return (memory.readUint8(lowAddress) & 0xff) | ((memory.readUint8(highAddress) & 0xff) << 8);
 }
 
+function readSegmentUint8(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds" | "ss",
+  offset: number
+): number {
+  const snapshot = state.snapshot();
+  const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  return (
+    memory.readUint8(
+      translateSegmentOffset(mode, { ...snapshot[segment], present: true }, offset)
+    ) & 0xff
+  );
+}
+
 function writeSegmentUint16(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -86,6 +101,22 @@ function writeSegmentUint16(
   const selected = { ...snapshot[segment], present: true };
   memory.writeUint8(translateSegmentOffset(mode, selected, offset), value & 0xff);
   memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 1) & 0xffff), value >>> 8);
+}
+
+function writeSegmentUint8(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  segment: "cs" | "ds" | "ss",
+  offset: number,
+  value: number
+): void {
+  if (!memory.writeUint8) throw new UnsupportedOpcodeError("Memory does not support writes");
+  const snapshot = state.snapshot();
+  const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  memory.writeUint8(
+    translateSegmentOffset(mode, { ...snapshot[segment], present: true }, offset),
+    value & 0xff
+  );
 }
 
 function signedByte(value: number): number {
@@ -213,6 +244,36 @@ function executeMovSegmentFromModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
+function executeMov8FromModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  destinationIsMemory: boolean
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+  if (modRm.registerDirect) {
+    const source = state.readRegister8(destinationIsMemory ? modRm.reg : modRm.rm);
+    state.writeRegister8(destinationIsMemory ? modRm.rm : modRm.reg, source);
+    state.advanceEip(2);
+    return;
+  }
+  const address = decodeMemoryAddress(memory, state, modRm);
+  if (destinationIsMemory) {
+    writeSegmentUint8(
+      memory,
+      state,
+      address.segment,
+      address.offset,
+      state.readRegister8(modRm.reg)
+    );
+  } else {
+    state.writeRegister8(
+      modRm.reg,
+      readSegmentUint8(memory, state, address.segment, address.offset)
+    );
+  }
+  state.advanceEip(2 + address.displacementBytes);
+}
+
 export function stepInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -286,6 +347,12 @@ export function stepInstruction(
       state.advanceEip(2 + address.displacementBytes);
       return { halted: false, fetched };
     }
+    case 0x88:
+      executeMov8FromModRm(memory, state, true);
+      return { halted: false, fetched };
+    case 0x8a:
+      executeMov8FromModRm(memory, state, false);
+      return { halted: false, fetched };
     case 0x8b: {
       executeMovReg16FromModRm(memory, state, 1);
       return { halted: false, fetched };
