@@ -1233,6 +1233,22 @@ export function stepInstruction(
       state.advanceEip(2 + (address?.displacementBytes ?? 0));
       return { halted: false, fetched };
     }
+    case 0x2c: {
+      const accumulator = state.readRegister8(0);
+      const immediate = fetchCodeByte(memory, state, 1).opcode;
+      state.writeRegister8(0, accumulator - immediate);
+      state.writeCompareFlags8(accumulator, immediate);
+      state.advanceEip(2);
+      return { halted: false, fetched };
+    }
+    case 0x2d: {
+      const accumulator = state.readRegister16(0);
+      const immediate = fetchCodeUint16(memory, state, 1);
+      state.writeRegister16(0, accumulator - immediate);
+      state.writeCompareFlags16(accumulator, immediate);
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x38: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);

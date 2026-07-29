@@ -208,6 +208,9 @@
 - M2 T2 S3 P94 adds `ADD r/m16, imm8` (`83 /0 ib`) for observed DeskPro ROM
   stack and pointer adjustments, sign-extending the immediate through existing
   writable-memory and 16-bit addition-flag contracts.
+- M2 T2 S3 P95 adds accumulator immediate subtraction (`SUB AL, imm8` and
+  `SUB AX, imm16`) for observed DeskPro ROM character and counter adjustments,
+  using the existing subtraction-flag contracts.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
