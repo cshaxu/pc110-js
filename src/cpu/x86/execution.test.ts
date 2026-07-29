@@ -383,6 +383,35 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x1008 }, eip: 0x0000fff3 });
   });
 
+  it("moves accumulator values through DS direct offsets", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0xa0],
+      [0x000ffff1, 0x34],
+      [0x000ffff2, 0x12],
+      [0x000ffff3, 0xa1],
+      [0x000ffff4, 0x36],
+      [0x000ffff5, 0x12],
+      [0x000ffff6, 0xa2],
+      [0x000ffff7, 0x38],
+      [0x000ffff8, 0x12],
+      [0x000ffff9, 0xa3],
+      [0x000ffffa, 0x3a],
+      [0x000ffffb, 0x12],
+      [0x00001634, 0xa5],
+      [0x00001636, 0x78],
+      [0x00001637, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ds", 0x0040);
+
+    for (let index = 0; index < 4; index += 1) stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x5678 }, eip: 0x0000fffc });
+    expect([values.get(0x00001638), values.get(0x0000163a), values.get(0x0000163b)]).toEqual([
+      0x78, 0x78, 0x56
+    ]);
+  });
+
   it("stores a 16-bit register through direct and BP-based memory operands", () => {
     const directValues = new Map<number, number>([
       [0x000ffff0, 0x89],

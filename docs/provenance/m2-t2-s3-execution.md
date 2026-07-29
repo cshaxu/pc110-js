@@ -71,6 +71,8 @@
 - M2 T2 S3 P36 adds carry control and `JC rel8` control flow.
 - M2 T2 S3 P37 adds 16-bit `LEA r16, m` through the shared ModR/M address
   decoder without a memory read.
+- M2 T2 S3 P38 adds all 16-bit-address-size accumulator `MOV moffs` forms
+  (`A0` through `A3`) through the DS and writable-memory boundaries.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

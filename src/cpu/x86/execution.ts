@@ -418,6 +418,30 @@ export function stepInstruction(
       state.advanceEip(2 + address.displacementBytes);
       return { halted: false, fetched };
     }
+    case 0xa0: {
+      const offset = fetchCodeUint16(memory, state, 1);
+      state.writeRegister8(0, readSegmentUint8(memory, state, "ds", offset));
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
+    case 0xa1: {
+      const offset = fetchCodeUint16(memory, state, 1);
+      state.writeRegister16(0, readSegmentUint16(memory, state, "ds", offset));
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
+    case 0xa2: {
+      const offset = fetchCodeUint16(memory, state, 1);
+      writeSegmentUint8(memory, state, "ds", offset, state.readRegister8(0));
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
+    case 0xa3: {
+      const offset = fetchCodeUint16(memory, state, 1);
+      writeSegmentUint16(memory, state, "ds", offset, state.readRegister16(0));
+      state.advanceEip(3);
+      return { halted: false, fetched };
+    }
     case 0x33: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)
