@@ -1,0 +1,21 @@
+# local artifacts
+node_modules/
+dist/
+build/
+.cache/
+.tmp/
+
+# disk/rom/media assets; keep provenance explicit before committing any image
+*.img
+*.ima
+*.bin
+*.rom
+*.iso
+*.vhd
+*.vmdk
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
