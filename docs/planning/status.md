@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T2 S2: implement real, protected, virtual-8086, and paging behavior
-  required by the PCjs-supported 80386 model.
+- M2 T2 S3: implement supported opcode families, exceptions, interrupts, and
+  privilege behavior with focused conformance coverage.
 
 ## Delivery Nodes
 
