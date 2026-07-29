@@ -1664,6 +1664,31 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("scans the lowest and highest set bit while preserving the destination for zero", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0xbc],
+      [0x000ffff2, 0xd8],
+      [0x000ffff3, 0x0f],
+      [0x000ffff4, 0xbd],
+      [0x000ffff5, 0xd8],
+      [0x000ffff6, 0x0f],
+      [0x000ffff7, 0xbc],
+      [0x000ffff8, 0xd8]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0x8010);
+    state.writeRegister16(3, 0x1234);
+    const memory = resetAliasMemory(values);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 4 }, eflags: 0x00000002 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 15 }, eflags: 0x00000002 });
+    state.writeRegister16(0, 0);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 15 }, eflags: 0x00000042 });
+  });
+
   it("pushes ES-overridden memory words through FF /6", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0x26],

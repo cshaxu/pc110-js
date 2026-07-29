@@ -347,6 +347,9 @@
   explicitly unsupported.
 - M2 T2 S3 P145 adds 16-bit `MOVZX/MOVSX` (`0F B6/B7/BE/BF`) from PCjs
   extension-opcode behavior through existing ModR/M register and memory reads.
+- M2 T2 S3 P146 adds 16-bit `BSF/BSR` (`0F BC/BD`) from PCjs bit-scan
+  behavior: nonzero sources produce the lowest or highest set-bit index, while
+  zero sources preserve the destination and set ZF.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

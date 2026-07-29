@@ -1337,6 +1337,28 @@ export function stepInstruction(
         state.advanceEip(3 + (address?.displacementBytes ?? 0));
         return { halted: false, fetched };
       }
+      if (extension === 0xbc || extension === 0xbd) {
+        const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+        const address = modRm.registerDirect
+          ? undefined
+          : decodeModRm16Address(
+              modRm,
+              (index) => state.readRegister16(index),
+              (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
+            );
+        const source = modRm.registerDirect
+          ? state.readRegister16(modRm.rm)
+          : readSegmentUint16(memory, state, address!.segment, address!.offset);
+        if (source !== 0) {
+          let index = extension === 0xbc ? 0 : 15;
+          if (extension === 0xbc) while (!(source & (1 << index))) index++;
+          else while (!(source & (1 << index))) index--;
+          state.writeRegister16(modRm.reg, index);
+        }
+        state.writeBitScanZeroFlag(source === 0);
+        state.advanceEip(3 + (address?.displacementBytes ?? 0));
+        return { halted: false, fetched };
+      }
       throw new UnsupportedOpcodeError(
         `Unsupported 0F opcode 0x${extension.toString(16).padStart(2, "0")}`
       );

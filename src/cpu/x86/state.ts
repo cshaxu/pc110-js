@@ -210,6 +210,12 @@ export class Cpu386State {
     return Boolean(this.eflags & EFLAGS_ZERO);
   }
 
+  public writeBitScanZeroFlag(sourceIsZero: boolean): void {
+    this.eflags = sourceIsZero
+      ? (this.eflags | EFLAGS_ZERO | RESET_EFLAGS) >>> 0
+      : (this.eflags & ~EFLAGS_ZERO) >>> 0;
+  }
+
   public carryFlag(): boolean {
     return Boolean(this.eflags & EFLAGS_CARRY);
   }
