@@ -42,6 +42,8 @@ export interface Cpu386Snapshot {
 
 const RESET_CR0 = 0x7ffffff0;
 const RESET_EFLAGS = 0x00000002;
+const CR0_MSW_ALWAYS_ON = 0x0000fff0;
+const CR0_PROTECTED_MODE = 0x00000001;
 const EFLAGS_STATUS_MASK = 0x000000d5;
 const EFLAGS_INTERRUPT_ENABLE = 0x00000200;
 const REAL_MODE_SEGMENT: SegmentState = { selector: 0, base: 0, limit: 0xffff };
@@ -121,6 +123,12 @@ export class Cpu386State {
 
   public writeCr0(value: number): void {
     this.cr0 = value >>> 0;
+  }
+
+  public loadMachineStatusWord(value: number): void {
+    const machineStatusWord =
+      (value | (this.cr0 & CR0_PROTECTED_MODE) | CR0_MSW_ALWAYS_ON) & 0xffff;
+    this.cr0 = ((this.cr0 & 0xffff0000) | machineStatusWord) >>> 0;
   }
 
   public writeEflags(value: number): void {

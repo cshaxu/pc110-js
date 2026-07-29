@@ -102,6 +102,20 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ eflags: 0x000000d7, eip: 0x0000fff2 });
   });
 
+  it("executes the reset-ROM register form of LMSW", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x0f],
+      [0x000ffff1, 0x01],
+      [0x000ffff2, 0xf0]
+    ]);
+    const memory = { readUint8: (address: number) => values.get(address) ?? 0 };
+    const state = new Cpu386State();
+    state.writeRegister16(0, 0xfff0);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ cr0: 0x7ffffff0, eip: 0x0000fff3 });
+  });
+
   it("follows signed short and near real-mode jumps", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xeb],

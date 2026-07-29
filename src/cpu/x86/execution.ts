@@ -101,6 +101,18 @@ export function stepInstruction(
       state.loadRealModeCodeSegment(selector, instructionPointer);
       return { halted: false, fetched };
     }
+    case 0x0f: {
+      const extension = fetchCodeByte(memory, state, 1).opcode;
+      const modRm = fetchCodeByte(memory, state, 2).opcode;
+      if (extension === 0x01 && modRm === 0xf0) {
+        state.loadMachineStatusWord(state.snapshot().registers.eax & 0xffff);
+        state.advanceEip(3);
+        return { halted: false, fetched };
+      }
+      throw new UnsupportedOpcodeError(
+        `Unsupported 0F opcode 0x${extension.toString(16).padStart(2, "0")}`
+      );
+    }
     case 0xe9: {
       const displacement = signedWord(fetchCodeUint16(memory, state, 1));
       state.writeEip16(fetched.instructionPointer + 3 + displacement);

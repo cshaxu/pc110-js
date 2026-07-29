@@ -85,4 +85,12 @@ describe("Cpu386State", () => {
 
     expect(cpu.snapshot().eflags).toBe(0x000000d7);
   });
+
+  it("loads an MSW while preserving protected mode and fixed status bits", () => {
+    const cpu = new Cpu386State();
+    cpu.writeCr0(0x7fff0001);
+    cpu.loadMachineStatusWord(0);
+
+    expect(cpu.snapshot().cr0).toBe(0x7ffffff1);
+  });
 });

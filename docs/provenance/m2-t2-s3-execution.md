@@ -24,6 +24,7 @@
   new CS selector and 16-bit instruction pointer; register-immediate and
   relative jumps update architectural state; immediate-port writes pass through
   a project-owned port-writer interface; SAHF and real-mode CLI update flags.
+  The observed register-form LMSW preserves PE and MSW fixed bits.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
@@ -31,4 +32,4 @@
 - Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
 - Incomplete behavior: paging hookup, prefetch, general decode, port dispatch,
   exceptions, interrupt wakeup, protected-mode CLI and far jumps, and remaining
-  instruction behavior remain later S3 work.
+  instruction behavior, including non-register LMSW forms, remain later S3 work.
