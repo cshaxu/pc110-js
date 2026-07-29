@@ -69,6 +69,8 @@
 - M2 T2 S3 P35 adds 16-bit register `INC` and `DEC` with their carry-preserving
   flag behavior.
 - M2 T2 S3 P36 adds carry control and `JC rel8` control flow.
+- M2 T2 S3 P37 adds 16-bit `LEA r16, m` through the shared ModR/M address
+  decoder without a memory read.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

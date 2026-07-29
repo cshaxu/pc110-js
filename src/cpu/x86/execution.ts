@@ -410,6 +410,14 @@ export function stepInstruction(
       executeMovReg16FromModRm(memory, state, 1);
       return { halted: false, fetched };
     }
+    case 0x8d: {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+      if (modRm.registerDirect) throw new UnsupportedOpcodeError("LEA requires a memory operand");
+      const address = decodeMemoryAddress(memory, state, modRm);
+      state.writeRegister16(modRm.reg, address.offset);
+      state.advanceEip(2 + address.displacementBytes);
+      return { halted: false, fetched };
+    }
     case 0x33: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
       if (!modRm.registerDirect)

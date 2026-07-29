@@ -370,6 +370,19 @@ describe("80386 instruction fetch", () => {
     expect(stackState.snapshot()).toMatchObject({ registers: { eax: 0x9abc }, eip: 0x0000fff3 });
   });
 
+  it("loads a 16-bit effective address without reading memory", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x8d],
+      [0x000ffff1, 0x5c],
+      [0x000ffff2, 0x08]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(6, 0x1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x1008 }, eip: 0x0000fff3 });
+  });
+
   it("stores a 16-bit register through direct and BP-based memory operands", () => {
     const directValues = new Map<number, number>([
       [0x000ffff0, 0x89],
