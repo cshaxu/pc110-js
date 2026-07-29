@@ -2058,6 +2058,15 @@ export function stepInstruction(
         state.advanceEip(opcode === 0x68 ? 6 : 3);
         return { halted: false, fetched };
       }
+      if (opcode === 0xea) {
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
+          throw new UnsupportedOpcodeError("32-bit far JMP is only implemented in protected mode");
+        const instructionPointer = fetchCodeUint32(memory, state, 2);
+        const selector = fetchCodeUint16(memory, state, 6);
+        loadProtectedModeCodeSegment(memory, state, selector, instructionPointer);
+        return { halted: false, fetched };
+      }
       if (opcode === 0xf7) {
         executeDwordTestImmediateModRm(memory, state, 2, 16);
         return { halted: false, fetched };
