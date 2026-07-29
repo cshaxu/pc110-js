@@ -893,6 +893,7 @@ export function stepInstruction(
         else if (modRm.reg === 0x02) executeNearCall(memory, state, 2, "cs");
         else throw new UnsupportedOpcodeError("Unsupported CS override instruction");
       } else if (opcode === 0x8b) executeMovReg16FromModRm(memory, state, 2, "cs");
+      else if (opcode === 0x8a) executeMov8FromModRm(memory, state, false, 2, "cs");
       else if (opcode === 0x3a) executeCompareRegFromModRm(memory, state, 8, 2, "cs");
       else if (opcode === 0x3b) executeCompareRegFromModRm(memory, state, 16, 2, "cs");
       else if (opcode === 0xa0) {

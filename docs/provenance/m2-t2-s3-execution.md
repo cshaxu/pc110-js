@@ -287,6 +287,8 @@
   keyboard-controller status response. The CPU path reached an `ES:B800`
   `REP STOSW` write, classifying missing VGA memory as the next planned T5
   hardware boundary rather than a CPU opcode failure.
+- M2 T2 S3 P125 adds the observed CS-overridden byte ModR/M load (`2E 8A /r`)
+  reached by the bounded CPU-only trace at `F000:C7FF`.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

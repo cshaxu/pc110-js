@@ -2787,6 +2787,21 @@ describe("80386 instruction fetch", () => {
     expect(values.get(0x000ffffe)).toBe(0x56);
   });
 
+  it("loads an 8-bit register through the observed CS ModR/M form", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x2e],
+      [0x000ffff1, 0x8a],
+      [0x000ffff2, 0x07],
+      [0x000f2000, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.writeRegister16(3, 0x2000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x56 }, eip: 0x0000fff3 });
+  });
+
   it("increments AH through the observed FE /0 form while preserving carry", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xfe],
