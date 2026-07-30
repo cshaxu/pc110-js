@@ -105,6 +105,23 @@ describe("rebuilt LAR, LSL, and CLTS", () => {
     expect(lsl.state.flags.has(0x40)).toBe(false);
   });
 
+  it("resolves LAR and LSL selectors through the active LDTR", () => {
+    for (const [opcode, expected] of [
+      [0x02, 0x9200],
+      [0x03, 0x0fff]
+    ] as const) {
+      const result = machine([0x0f, opcode, 0xc0]);
+      result.state.writeLdtr({ selector: 0x10, base: 0x200, limit: 0x17, default32: false });
+      result.state.registers.write16(0, 0x0c);
+      [0xff, 0x0f, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+        result.memory.set(0x208 + index, value)
+      );
+      result.step();
+      expect(result.state.flags.has(0x40)).toBe(true);
+      expect(result.state.registers.read16(0)).toBe(expected);
+    }
+  });
+
   it("delivers #GP(0) before CLTS changes CR0.TS at nonzero CPL", () => {
     const clts = machine([0x0f, 0x06]);
     clts.state.writeSegment("cs", {

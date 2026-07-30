@@ -484,3 +484,10 @@ existing path, while TI selectors resolve through active LDTR base and limit.
 Segment loaders and LAR/LSL/VERR/VERW use the shared lookup; GDT-only system
 instructions retain explicit GDT lookup. Tests cover active-LDTR data segment
 loading. Task switching and inactive-LDTR fault-code completion remain active.
+
+## P390 LDT System-Instruction Execution Checklist
+
+P390 verifies that LAR, LSL, and VERR execute the shared active-LDTR path with
+TI selectors, including access-rights and limit results plus selector
+verification. This is execution evidence for P389's shared lookup, not a new
+runtime dependency. Inactive-LDTR fault-code completion remains active.

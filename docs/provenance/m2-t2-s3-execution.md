@@ -1141,6 +1141,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   runtime reference import.
 - M2 T2 S3 P389 adapts NXVM's XDT table selection into a project-native
   GDT/LDTR descriptor lookup shared by segment loading and selector verification.
+- M2 T2 S3 P390 records direct rebuilt execution evidence for NXVM-style LDT
+  selector use in LAR, LSL, and VERR without adding runtime reference imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

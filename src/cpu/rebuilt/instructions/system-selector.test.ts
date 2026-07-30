@@ -72,6 +72,24 @@ describe("rebuilt 0F 00 selector group", () => {
     }
   });
 
+  it("resolves VERR selectors through the active LDTR", () => {
+    const result = machine([0x0f, 0x00, 0xe0]);
+    result.state.writeSegment("cs", {
+      selector: 0x0b,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 3
+    });
+    result.state.writeLdtr({ selector: 0x10, base: 0x200, limit: 0x17, default32: false });
+    result.state.registers.write16(0, 0x0f);
+    [0xff, 0x0f, 0, 0, 0, 0xf2, 0x40, 0].forEach((value, index) =>
+      result.memory.set(0x208 + index, value)
+    );
+    result.step();
+    expect(result.state.flags.has(0x40)).toBe(true);
+  });
+
   it("delivers #GP(0) before nonzero-CPL LLDT and LTR change selector state", () => {
     for (const [opcode, ldt] of [
       [0xd0, true],
