@@ -668,6 +668,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P244 migrates non-repeated default-segment CMPS and SCAS. Context
   now selects comparison width and SI/ESI/DI/EDI updates; REP/REPNE remains a
   distinct future migration because it adds count and termination semantics.
+- M2 T2 S3 P245 migrates repeat comparison termination. Context now selects
+  CX or ECX, data width, and source or destination indexes while F3 and F2
+  select zero or nonzero continuation without copying PCjs or NXVM source.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
