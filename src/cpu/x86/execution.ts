@@ -1550,6 +1550,18 @@ function executeContextualInstruction(
     );
     return { halted: false, fetched };
   }
+  if (
+    (context.opcode === 0xc0 ||
+      context.opcode === 0xc1 ||
+      context.opcode === 0xd0 ||
+      context.opcode === 0xd1 ||
+      context.opcode === 0xd2 ||
+      context.opcode === 0xd3) &&
+    decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode).reg === 0x06
+  ) {
+    deliverCpuFault(memory, state, 6, fetched.instructionPointer);
+    return { halted: false, fetched };
+  }
   if (context.opcode === 0xd1) {
     const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
     if (modRm.reg === 0x00) {

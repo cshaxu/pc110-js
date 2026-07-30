@@ -3286,6 +3286,39 @@ describe("80386 instruction fetch", () => {
     }
   });
 
+  it("delivers NXVM Group 2 /6 forms as real-mode invalid opcodes", () => {
+    for (const [label, opcode, immediate] of [
+      ["C0", 0xc0, true],
+      ["C1", 0xc1, true],
+      ["D0", 0xd0, false],
+      ["D1", 0xd1, false],
+      ["D2", 0xd2, false],
+      ["D3", 0xd3, false]
+    ] as const) {
+      const values = new Map<number, number>([
+        [0x000ffff0, opcode],
+        [0x000ffff1, 0xf0],
+        ...(immediate ? [[0x000ffff2, 0x01] as const] : []),
+        [0x00000018, 0x34],
+        [0x00000019, 0x12],
+        [0x0000001a, 0x00],
+        [0x0000001b, 0x20]
+      ]);
+      const state = new Cpu386State();
+      state.loadRealModeSegment("ss", 0);
+      state.writeRegister16(4, 0x1000);
+
+      stepInstruction(resetAliasMemory(values), state);
+
+      expect(state.snapshot(), label).toMatchObject({
+        cs: { selector: 0x2000 },
+        eip: 0x1234,
+        registers: { esp: 0x0ffa }
+      });
+      expect([values.get(0x0ffa), values.get(0x0ffb)], label).toEqual([0xf0, 0xff]);
+    }
+  });
+
   it("creates local and nested ENTER stack frames", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xc8],

@@ -30,7 +30,7 @@ and whole-machine comparison reference.
 | Data movement and exchange | `MOV`, `XCHG`, `LEA`, `LES`, `LDS`, `MOVSX`, `MOVZX`, moffs, immediate, and segment forms | Partial |
 | Stack and frame operations | register/immediate/segment `PUSH`/`POP`, `PUSHA`, `POPA`, `PUSHF`, `POPF`, `ENTER`, and `LEAVE` | Partial |
 | Control transfer | `CALL`, `JMP`, `RET`, `RETF`, `INT`, `INTO`, `IRET`, conditional branches, `LOOP*`, and `JCXZ` | Partial |
-| Shift and rotate | groups `C0`, `C1`, `D0` through `D3` | Partial |
+| Shift and rotate | groups `C0`, `C1`, `D0` through `D3`; all `/6` forms fault with `#UD` | Partial |
 | String and translation | `MOVS`, `CMPS`, `STOS`, `LODS`, `SCAS`, `INS`, `OUTS`, and `XLAT` | Partial |
 | Port I/O | immediate and `DX` `IN`/`OUT`, plus string I/O | Partial |
 | Flag, halt, and synchronization | `CLC`, `STC`, `CMC`, `CLI`, `STI`, `CLD`, `STD`, `HLT`, `WAIT`, and `LOCK` | Partial |

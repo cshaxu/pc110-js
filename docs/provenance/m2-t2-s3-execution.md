@@ -859,6 +859,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   context. The project-native helper normalizes counts by the 16- or 32-bit
   carry ring, keeps CF through every rotation, updates OF only for a one-bit
   rotation, and preserves existing ModR/M memory addressing.
+- M2 T2 S3 P299 aligns all NXVM Group 2 `/6` forms with its
+  `UndefinedOpcode()` path. The context dispatcher recognizes each Group 2
+  opcode before host-only unsupported-form handling and delivers vector 6 with
+  the original fault EIP.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
