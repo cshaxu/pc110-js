@@ -23,9 +23,9 @@ export class RebuiltCpuRunner {
   }
 
   public step(): RebuiltCpuStepResult {
-    const before = this.state.snapshot();
+    const beforeEip = this.state.readEip();
     const instruction = this.executor.step(dispatchRebuiltInstruction);
-    return { cycles: estimate386Cycles(instruction, before, this.state.snapshot()) };
+    return { cycles: estimate386Cycles(instruction, beforeEip, this.state.readEip()) };
   }
 
   public serviceExternalInterrupt(vector: number): boolean {

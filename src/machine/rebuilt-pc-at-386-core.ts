@@ -264,7 +264,7 @@ export class RebuiltPcAt386Core {
     try {
       while (executed < maxInstructions) {
         if (this.servicePendingInterrupt()) continue;
-        if (this.runner.state.snapshot().halted) break;
+        if (this.runner.state.isHalted()) break;
         this.advanceExecutedInstruction(this.runner.step().cycles);
         executed += 1;
       }
@@ -279,7 +279,7 @@ export class RebuiltPcAt386Core {
       });
       throw error;
     }
-    const halted = this.runner.state.snapshot().halted;
+    const halted = this.runner.state.isHalted();
     this.trace?.({
       kind: "stop",
       reason: halted ? "halted" : "budget",

@@ -5,6 +5,24 @@ import { RebuiltTripleFaultError } from "./events/interrupt-delivery.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
 describe("RebuiltCpuExecutor", () => {
+  it("retains full before and after snapshots when an instruction trace is enabled", () => {
+    const state = new RebuiltCpuState();
+    const trace: Array<{
+      readonly before: { readonly eip: number };
+      readonly after: { readonly eip: number };
+    }> = [];
+    const executor = new RebuiltCpuExecutor(
+      state,
+      { readUint8: () => 0x90, writeUint8: () => undefined },
+      (event) => trace.push(event)
+    );
+
+    executor.step(({ instruction, state: active }) => active.advanceEip(instruction.length));
+
+    expect(trace).toHaveLength(1);
+    expect(trace[0]).toMatchObject({ before: { eip: 0xfff0 }, after: { eip: 0xfff1 } });
+  });
+
   it("fetches from reset CS:EIP and preserves instruction-start EIP for dispatch", () => {
     const state = new RebuiltCpuState();
     const bytes = new Map<number, number>([[0xfffffff0, 0x90]]);

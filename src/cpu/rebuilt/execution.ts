@@ -54,35 +54,37 @@ export class RebuiltCpuExecutor {
   }
 
   public step(dispatch: RebuiltInstructionDispatcher): DecodedInstruction | undefined {
-    const before = this.state.snapshot();
+    const before = this.trace ? this.state.snapshot() : undefined;
+    const faultEip = this.state.readEip();
     const codeDefault32 = this.state.codeDefault32();
     const codeAddressSize = codeDefault32 ? 32 : 16;
     const reader = {
       readCodeByte: (offset: number) => {
-        if (offset < 0 || offset >= 15) throw new InstructionLengthError(before.eip);
-        return this.memory.readCode8(before.eip + offset, codeAddressSize);
+        if (offset < 0 || offset >= 15) throw new InstructionLengthError(faultEip);
+        return this.memory.readCode8(faultEip + offset, codeAddressSize);
       }
     };
     let instruction: DecodedInstruction;
     try {
-      instruction = decodeInstruction(reader, before.eip, codeDefault32);
+      instruction = decodeInstruction(reader, faultEip, codeDefault32);
     } catch (error) {
-      if (!this.deliverAccessFault(error, before.eip)) throw error;
-      this.trace?.({ before, fault: true, after: this.state.snapshot() });
+      if (!this.deliverAccessFault(error, faultEip)) throw error;
+      if (this.trace && before) this.trace({ before, fault: true, after: this.state.snapshot() });
       return undefined;
     }
     try {
       dispatch({ state: this.state, memory: this.memory, instruction, reader, io: this.io });
     } catch (error) {
-      if (!this.deliverAccessFault(error, before.eip)) throw error;
+      if (!this.deliverAccessFault(error, faultEip)) throw error;
     }
     this.state.completeInstructionBoundary();
-    this.trace?.({
-      before,
-      opcodeOffset: instruction.opcodeOffset,
-      opcode: instruction.opcode,
-      after: this.state.snapshot()
-    });
+    if (this.trace && before)
+      this.trace({
+        before,
+        opcodeOffset: instruction.opcodeOffset,
+        opcode: instruction.opcode,
+        after: this.state.snapshot()
+      });
     return instruction;
   }
 
