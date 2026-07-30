@@ -993,6 +993,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   immediate arithmetic. Shared rebuilt arithmetic supplies EFLAGS behavior;
   local ModR/M and segmented-memory access provide all eight extensions without
   runtime imports from NXVM, PCjs, or the legacy CPU.
+- M2 T2 S3 P333 translates NXVM TEST ModR/M behavior into a project-native
+  rebuilt module. It reads register or segmented memory operands, updates only
+  defined logical flags, and introduces no runtime import from NXVM, PCjs, or
+  the legacy CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
