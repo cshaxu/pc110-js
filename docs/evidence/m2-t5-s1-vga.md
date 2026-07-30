@@ -73,3 +73,13 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
   input, native runner compatibility, and `0F20/0F22` MOD-field fixtures.
 - Trace: 70,000 native instructions cross `F000:87A5 -> 0018:87AA` and return
   via `0018:87D7 -> F000:87DC`; the previous `0000:0000` #UD diversion is gone.
+
+## P7 PC/AT Refresh Status Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `chipset.js` documents PC/AT port-`0x61`
+  refresh observation; native PIT channel 1 is the existing signal source.
+- Tests: counter-1 output is exposed at bit 4 without changing timer-2 gate or
+  speaker behavior.
+- Trace: 200,000 native instructions move from the `F000:B587` refresh loop to
+  `F000:B5F7`, with actual `0x61` reads and writes in the port journal.

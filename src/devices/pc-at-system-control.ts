@@ -7,6 +7,7 @@ import {
 } from "./pc-at-system-port.js";
 
 const TIMER2_OUTPUT = 0x20;
+const REFRESH_OUTPUT = 0x10;
 
 export interface PcAtSystemPortRange {
   readonly start: number;
@@ -31,7 +32,11 @@ export class PcAtSystemControl {
 
   public read(port: number, width: PortWidth): number {
     this.requirePort(port, width);
-    return this.state.read() | (this.pit.counter2Output() ? TIMER2_OUTPUT : 0);
+    return (
+      this.state.read() |
+      (this.pit.counter1Output() ? REFRESH_OUTPUT : 0) |
+      (this.pit.counter2Output() ? TIMER2_OUTPUT : 0)
+    );
   }
 
   public write(port: number, value: number, width: PortWidth): void {

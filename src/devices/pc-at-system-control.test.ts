@@ -28,4 +28,15 @@ describe("project-native PC/AT system-port composition", () => {
     control.reset();
     expect(control.speakerOutput()).toBe(false);
   });
+
+  it("exposes native PIT counter-1 refresh state at bit 4", () => {
+    const pit = new PcAtPit();
+    const control = new PcAtSystemControl(pit);
+    pit.timer.writeControl(0x74);
+    pit.timer.writeCounter(1, 1);
+    pit.timer.writeCounter(1, 0);
+    const before = control.read(0x61, 8) & 0x10;
+    pit.advance(1);
+    expect(control.read(0x61, 8) & 0x10).not.toBe(before);
+  });
 });

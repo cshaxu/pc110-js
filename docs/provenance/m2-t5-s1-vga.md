@@ -50,3 +50,9 @@ TypeScript now uses a project-owned step-cycle result and exact integer-ratio
 PIT scheduling, with a narrowly scoped control-register compatibility rule.
 No PCjs source, runtime, firmware service, timer callback, or browser code is
 imported.
+
+## P7 PC/AT Refresh Status
+
+PCjs documents port `0x61` refresh-state observation as PC/AT system control.
+Original TypeScript exposes the existing native PIT channel-1 output at that
+read bit. It imports no PCjs chipset code, firmware response, or audio behavior.

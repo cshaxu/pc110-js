@@ -49,6 +49,10 @@ export class PcAtPit {
     return this.timer.output(2);
   }
 
+  public counter1Output(): boolean {
+    return this.timer.output(1);
+  }
+
   public snapshot(index: number): PitCounterSnapshot {
     return this.timer.snapshot(index);
   }
