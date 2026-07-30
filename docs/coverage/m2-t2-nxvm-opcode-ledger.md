@@ -641,3 +641,9 @@ P408 routes NXVM-table-defined primary `82` and extended `0F B8/B9` encodings
 through the rebuilt #UD path. Focused tests verify their faulting real-mode EIP
 frames. This preserves a distinction between explicit NXVM undefined entries
 and unrelated incomplete instruction families.
+
+## P409 Group Two Undefined-Extension Checklist
+
+P409 routes Group Two `/6` for C0/C1/D0-D3 through rebuilt #UD delivery.
+Focused tests retain every defined byte operation and verify the faulting
+real-mode vector frame for `/6`.

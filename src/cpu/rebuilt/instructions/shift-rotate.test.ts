@@ -21,7 +21,7 @@ function execute(
 }
 
 describe("rebuilt C0/C1/D0-D3 Group Two", () => {
-  it("executes every defined byte operation and rejects /6", () => {
+  it("executes every defined byte operation and delivers #UD for /6", () => {
     [0, 1, 2, 3, 4, 5, 7].forEach((extension) => {
       const result = execute([0xd0, 0xc0 | (extension << 3)], (state) => {
         state.registers.write8(0, 0x81);
@@ -29,7 +29,15 @@ describe("rebuilt C0/C1/D0-D3 Group Two", () => {
       });
       expect(result.state.readEip()).toBe(2);
     });
-    expect(() => execute([0xd0, 0xf0])).toThrow("#UD");
+    const undefinedExtension = execute([0xd0, 0xf0], (state, memory) => {
+      state.registers.write16(4, 0x100);
+      [0x40, 0, 0, 0].forEach((value, index) => memory.set(0x18 + index, value));
+    });
+    expect(undefinedExtension.state.snapshot()).toMatchObject({
+      eip: 0x40,
+      registers: { esp: 0xfa }
+    });
+    expect(undefinedExtension.memory.get(0xfa)).toBe(0);
   });
 
   it("uses immediate and CL counts, preserves state for zero count, and applies single-count overflow", () => {

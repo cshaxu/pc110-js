@@ -1193,6 +1193,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native Group Four/Five fault path without runtime reference imports.
 - M2 T2 S3 P408 adapts NXVM's explicit `82` and `0F B8/B9` undefined table
   entries into the project-native dispatcher without a runtime reference import.
+- M2 T2 S3 P409 adapts the NXVM Group Two `/6` undefined extension into the
+  project-native fault path without a runtime reference import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

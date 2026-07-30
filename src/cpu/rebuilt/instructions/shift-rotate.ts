@@ -1,5 +1,6 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import type { SegmentName } from "../state/segments.js";
 import {
   EFLAGS_AUXILIARY_CARRY,
@@ -39,7 +40,10 @@ export function executeShiftRotate(context: RebuiltExecutionContext): void {
     context.state.registers
   );
   const operation = OPERATIONS[modRm.reg];
-  if (!operation) throw new Error("Group Two /6 requires rebuilt #UD delivery");
+  if (!operation) {
+    deliverFault(context.memory, context.state, 6, context.state.readEip());
+    return;
+  }
   const immediate = opcode === 0xc0 || opcode === 0xc1;
   const fromCl = opcode === 0xd2 || opcode === 0xd3;
   const count = immediate
