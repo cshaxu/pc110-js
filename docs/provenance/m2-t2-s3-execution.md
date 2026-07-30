@@ -1134,6 +1134,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   path and deliberately leaves other incomplete opcode families visible.
 - M2 T2 S3 P386 aligns LLDT/LTR admission with NXVM's privileged system-selector
   loaders, using project-native hidden state and protected fault delivery.
+- M2 T2 S3 P387 adapts NXVM's VERR/VERW descriptor access checks into the
+  rebuilt selector verifier, with no reference runtime import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

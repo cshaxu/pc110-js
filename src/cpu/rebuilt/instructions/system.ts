@@ -235,7 +235,12 @@ function verifySelector(
     );
     const code = Boolean(descriptor.type & 8);
     const readable = Boolean(descriptor.type & 2);
-    valid = descriptor.system && (write ? !code && readable : !code || readable);
+    const conforming = code && Boolean(descriptor.type & 4);
+    const privilegeAllowed =
+      conforming ||
+      (currentPrivilege(context) <= descriptor.dpl && (selector & 3) <= descriptor.dpl);
+    valid =
+      descriptor.system && privilegeAllowed && (write ? !code && readable : !code || readable);
   } catch {
     valid = false;
   }

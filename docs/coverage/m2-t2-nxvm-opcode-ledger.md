@@ -461,3 +461,11 @@ through its faulting-EIP interrupt path.
 P386 follows NXVM's LLDT/LTR loader boundary by requiring CPL zero before
 either system selector changes state. Tests deliver protected `#GP(0)` through
 a same-privilege IDT gate and confirm both selector states are preserved.
+
+## P387 `0F 00 /4,/5` Verification Checklist
+
+P387 follows NXVM's VERR/VERW checks for code/data descriptor type, readable
+or writable access, conforming-code handling, and the CPL/RPL-versus-DPL rule
+for nonconforming descriptors. Tests cover accepted writable data, DPL denial,
+and the VERR-only read-only-data result. LDT lookup remains an active
+descriptor-system dependency.

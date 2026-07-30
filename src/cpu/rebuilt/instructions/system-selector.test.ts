@@ -17,6 +17,12 @@ function machine(bytes: number[]) {
   return { state, memory, step: () => executor.step(dispatchRebuiltInstruction) };
 }
 
+function writeDescriptor(memory: Map<number, number>, type: number, dpl: number) {
+  [0xff, 0x0f, 0, 0, 0, type | 0x10 | (dpl << 5) | 0x80, 0x40, 0].forEach((value, index) =>
+    memory.set(0x108 + index, value)
+  );
+}
+
 describe("rebuilt 0F 00 selector group", () => {
   it("stores LDTR and TR selectors through operand-sized register destinations", () => {
     const ldt = machine([0x66, 0x0f, 0x00, 0xc0]);
@@ -39,6 +45,31 @@ describe("rebuilt 0F 00 selector group", () => {
     verw.state.registers.write16(0, 0);
     verw.step();
     expect(verw.state.flags.has(0x40)).toBe(false);
+  });
+
+  it("applies NXVM descriptor type and CPL/RPL checks to VERR and VERW", () => {
+    for (const [opcode, type, dpl, expected] of [
+      [0xe0, 2, 3, true],
+      [0xe8, 2, 3, true],
+      [0xe0, 2, 0, false],
+      [0xe8, 2, 0, false],
+      [0xe0, 0, 3, true],
+      [0xe8, 0, 3, false]
+    ] as const) {
+      const result = machine([0x0f, 0x00, opcode]);
+      result.state.writeSegment("cs", {
+        selector: 0x0b,
+        base: 0,
+        limit: 0xffffffff,
+        default32: true,
+        dpl: 3
+      });
+      result.state.writeGdtr({ base: 0x100, limit: 0x17 });
+      result.state.registers.write16(0, 0x0b);
+      writeDescriptor(result.memory, type, dpl);
+      result.step();
+      expect(result.state.flags.has(0x40)).toBe(expected);
+    }
   });
 
   it("delivers #GP(0) before nonzero-CPL LLDT and LTR change selector state", () => {
