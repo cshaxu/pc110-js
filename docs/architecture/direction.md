@@ -54,6 +54,19 @@ After the PC110 boot and usability baseline is secure, remaining features are ad
 
 The same registry and profile mechanism must support future machine-specific hardware and ROMs. No interface should encode PC110 assumptions when the behavior belongs in a profile or variant.
 
+## Verification-Only PCjs-Assisted Integration
+
+Before native-device migration, the project-native rebuilt CPU must run as the
+sole executing CPU in a verification-only harness that temporarily adapts the
+pinned sibling PCjs device side. The harness is separate from product profiles:
+it is read-only, does not ship, does not retain the PCjs CPU, and does not relax
+the final standalone M2 requirement.
+
+Each native device replaces its corresponding harness proxy only after focused
+contract tests and the M1 browser workload pass. A profile keeps the PCjs proxy
+selectable until the native device has this evidence; the M2 golden profile may
+not select any proxy when M2 closes.
+
 ## CPU Scope
 
 PCjs PCx86 v2 explicitly supports CPU models through the 80386. M2 therefore delivers a complete minimal 80386 CPU suitable for the selected PC/AT machine.

@@ -47,6 +47,11 @@ Do not treat this file as a substitute for those canonical documents.
   browser launch path and document the manual reference-mode procedure.
 - M2 must provide the standalone project-owned TypeScript implementation and
   must not depend on sibling PCjs code at runtime.
+- A read-only sibling PCjs dependency is permitted only inside the documented
+  PCjs-assisted integration harness. That harness is verification-only: it
+  must use the project-native rebuilt CPU as the sole executing CPU and must
+  never become a product runtime, distribution dependency, or fallback for
+  missing project device behavior.
 - Do not add fake BIOS, DOS, PCDOS, filesystem, boot-repair, guest-service, or
   application-specific shortcuts.
 - Any intentional behavior change to PCjs-derived implementation requires the
@@ -77,6 +82,10 @@ Do not treat this file as a substitute for those canonical documents.
   breadth-first default. ROM traces identify dependencies and validate progress;
   they do not select CPU implementation scope.
 - Preserve every established runnable or boot baseline.
+- Before native device migration begins, the rebuilt CPU must pass the M2 T2 S6
+  PCjs-assisted integration gate. Each later native-device replacement must
+  preserve the harness whole-machine workload while the corresponding PCjs
+  proxy remains selectable until the native device is independently verified.
 - Record deferred work only as `TODO(High)`, `TODO(Medium)`, or `TODO(Low)` as
   defined in `CONTRIBUTING.md`. Never hide an active blocker behind a TODO.
 - Milestone completion does not authorize the next milestone unless the goal

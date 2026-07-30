@@ -123,6 +123,28 @@ For every class, defer nonblocking questions with evidence and activation
 conditions. Do not replace missing hardware with firmware, BIOS, DOS,
 filesystem, or application behavior.
 
+## PCjs-Assisted Integration Policy
+
+The project maintains two distinct PCjs uses:
+
+- The M1 reference machine runs the pinned PCjs CPU and devices as a read-only
+  comparison baseline.
+- The M2 T2 S6 PCjs-assisted integration harness runs the project-native
+  rebuilt CPU as the sole executing CPU while temporarily adapting selected
+  read-only PCjs devices.
+
+The harness is a test-only dependency. It must not import the legacy CPU or
+NXVM at runtime, must disable the PCjs CPU, and must not be presented as the
+standalone product baseline. Its required evidence is the M1 browser workload
+running through the rebuilt CPU, project-owned memory and port contracts, and
+the temporary PCjs device side.
+
+After the harness passes, every M2 T3 through M4 native-device migration must
+replace only its declared PCjs proxy or tightly coupled device group, rerun the
+same workload, and retain a selectable PCjs proxy fallback until the native
+replacement passes its focused and whole-machine evidence. No native device may
+claim integration completion from isolated tests alone.
+
 ## Escalation Conditions
 
 Stop and request owner direction when:

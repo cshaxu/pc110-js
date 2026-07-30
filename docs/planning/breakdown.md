@@ -159,7 +159,10 @@ Goal: implement a clean, complete, standalone TypeScript version of the selected
 - S3: Implement all supported opcode families, exceptions, interrupts, and privilege behavior with focused conformance coverage.
 - S4: Implement physical memory, RAM, ROM, shadowing where selected, A20, and memory access contracts.
 - S5: Implement I/O port dispatch, machine reset, deterministic stepping, and trace hooks.
-- S6: Compare focused CPU and memory behavior against the M1 reference.
+- S6: Establish the PCjs-assisted CPU integration gate: run the project-native
+  rebuilt CPU as the sole executing CPU against temporary read-only PCjs device
+  adapters, boot the M1 browser workload, and record CPU/memory comparison
+  evidence without creating a product runtime dependency.
 
 #### Authorized Dependency Correction (2026-07-29)
 
@@ -171,6 +174,11 @@ the trace through the new layout before resuming S3. This changes execution
 order only; it does not reduce, replace, or relax any M2 completion criterion.
 
 ### T3: TypeScript Core PC/AT Hardware
+
+Entry gate: M2 T2 S6 must prove that the rebuilt CPU, not the PCjs CPU, drives
+the M1 browser workload through the PCjs-assisted verification harness. Every
+native device introduced below replaces one declared PCjs proxy or tightly
+coupled group and must preserve the same workload before its proxy is retired.
 
 - S1: Implement master and slave 8259A-compatible PIC variants.
 - S2: Implement 8253/8254-compatible PIT and speaker timing.
@@ -221,6 +229,9 @@ Completion gate:
 - Every configured hardware device has a real hardware model; no placeholder or guest-service shortcut is active.
 - The machine boots the known-good DOS floppy to a prompt.
 - The runtime has no dependency on `../pcjs` or copied PCjs JavaScript.
+- The PCjs-assisted integration harness has proven the rebuilt CPU as the sole
+  executing CPU against the M1 browser workload before native hardware
+  migration, and every temporary PCjs proxy is replaced before M2 closes.
 - Generic devices are registered as selectable default variants.
 - The M1 reference result remains reproducible for comparison.
 - `QUICKSTART.md` is short, complete, and manually verified in a browser.

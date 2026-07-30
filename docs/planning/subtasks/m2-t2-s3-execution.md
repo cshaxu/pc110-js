@@ -117,6 +117,9 @@ BIOS, DOS, or filesystem work.
 - S3 does not claim complete 80386 behavior until its coverage and reference
   evidence demonstrate that all behavior required by the selected machine has
   been implemented.
+- S3 coverage closure is followed by M2 T2 S6, which must prove the rebuilt
+  CPU as the sole executing CPU in the PCjs-assisted integration harness before
+  the CPU is accepted as ready for native-device migration.
 
 ## Mandatory T2-To-T3 Transition Gate
 

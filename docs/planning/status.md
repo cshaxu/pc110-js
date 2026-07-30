@@ -52,4 +52,9 @@ retains breadth-first ROI delivery, while CPU and other architecture-closure
 work follows its authority and coverage ledger. NXVM is the decisive M2 T2 CPU
 behavior authority; PCjs remains the PC/AT and whole-machine comparison source.
 
+P365 records the required CPU handoff path. S3 closes NXVM CPU coverage first;
+M2 T2 S6 then proves the rebuilt CPU as the sole executing CPU in a
+verification-only PCjs-assisted harness before native-device migration may
+begin. The harness is not a product runtime dependency.
+
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

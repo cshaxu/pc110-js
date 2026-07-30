@@ -52,6 +52,12 @@ opcode ledger records the reason before implementation.
 Every completed family updates the ledger, tracking, provenance, and a PCjs
 comparison report, runs the full gate, and commits as `M2 T2 S3 Pxxx:`.
 
+Coverage closure of S3 is not CPU integration acceptance. After the last NXVM
+family and architectural dependency close, M2 T2 S6 must prove that this
+rebuilt CPU is the sole executing CPU in the PCjs-assisted integration harness.
+The harness uses temporary PCjs devices only for verification and must reach the
+M1 browser workload without a legacy CPU, NXVM, or PCjs CPU runtime path.
+
 Shared decode or addressing infrastructure is added only within an active
 opcode-interval delivery. Do not create standalone parser, type, adapter,
 trace, or utility parts before an interval has execution behavior.
@@ -82,5 +88,6 @@ that NXVM marks as `UndefinedOpcode()` remain required `#UD` behavior only.
 ## Completion Gate
 
 M2 T2 still requires complete NXVM-covered 80386 behavior, paging, faults,
-ROM trace, M1 comparison, coverage evidence, and all scheduled tests. The
-post-T2 architecture review remains mandatory before M2 T3.
+ROM trace, M1 comparison, coverage evidence, the S6 PCjs-assisted CPU handoff,
+and all scheduled tests. The post-T2 architecture review remains mandatory
+before M2 T3.
