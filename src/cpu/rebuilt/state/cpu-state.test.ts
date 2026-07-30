@@ -25,4 +25,14 @@ describe("RebuiltCpuState", () => {
     expect(state.readGdtr()).toEqual({ base: 0x0012_3000, limit: 0x0047 });
     expect(state.readIdtr()).toEqual({ base: 0x0045_6000, limit: 0x07ff });
   });
+
+  it("tracks one succeeding instruction of maskable-interrupt inhibition", () => {
+    const state = new RebuiltCpuState();
+    state.inhibitMaskableInterruptsForNextInstruction();
+    expect(state.maskableInterruptsInhibited()).toBe(true);
+    state.completeInstructionBoundary();
+    expect(state.maskableInterruptsInhibited()).toBe(true);
+    state.completeInstructionBoundary();
+    expect(state.maskableInterruptsInhibited()).toBe(false);
+  });
 });

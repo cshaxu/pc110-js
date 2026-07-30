@@ -87,8 +87,10 @@ function executeSegmentStack(context: RebuiltExecutionContext): boolean {
   if (pop) {
     const selector =
       popStack(context.memory, context.state, context.instruction.prefixes.operandSize) & 0xffff;
-    if (segment === "ss") loadStackSegment(context.memory, context.state, selector);
-    else if (segment !== "cs") loadDataSegment(context.memory, context.state, segment, selector);
+    if (segment === "ss") {
+      loadStackSegment(context.memory, context.state, selector);
+      context.state.inhibitMaskableInterruptsForNextInstruction();
+    } else if (segment !== "cs") loadDataSegment(context.memory, context.state, segment, selector);
     else throw new Error("POP CS is not available in the rebuilt 80386 path");
   } else
     pushStack(

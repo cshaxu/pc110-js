@@ -13,6 +13,7 @@ export interface RebuiltCpuSnapshot {
   readonly eip: number;
   readonly eflags: number;
   readonly halted: boolean;
+  readonly maskableInterruptsInhibited: boolean;
   readonly cr0: number;
   readonly cr2: number;
   readonly cr3: number;
@@ -43,6 +44,7 @@ export class RebuiltCpuState {
   public readonly flags = new Eflags();
   private eip = 0;
   private halted = false;
+  private interruptInhibitBoundaries = 0;
   private cr0 = 0x7ffffff0;
   private cr2 = 0;
   private cr3 = 0;
@@ -63,6 +65,7 @@ export class RebuiltCpuState {
     this.flags.reset();
     this.eip = 0x0000fff0;
     this.halted = false;
+    this.interruptInhibitBoundaries = 0;
     this.cr0 = 0x7ffffff0;
     this.cr2 = 0;
     this.cr3 = 0;
@@ -81,6 +84,7 @@ export class RebuiltCpuState {
       eip: this.eip,
       eflags: this.flags.read(),
       halted: this.halted,
+      maskableInterruptsInhibited: this.maskableInterruptsInhibited(),
       cr0: this.cr0,
       cr2: this.cr2,
       cr3: this.cr3,
@@ -136,6 +140,18 @@ export class RebuiltCpuState {
 
   public isHalted(): boolean {
     return this.halted;
+  }
+
+  public inhibitMaskableInterruptsForNextInstruction(): void {
+    this.interruptInhibitBoundaries = 2;
+  }
+
+  public completeInstructionBoundary(): void {
+    if (this.interruptInhibitBoundaries > 0) this.interruptInhibitBoundaries -= 1;
+  }
+
+  public maskableInterruptsInhibited(): boolean {
+    return this.interruptInhibitBoundaries > 0;
   }
 
   public readSegment(name: SegmentName): SegmentCache {

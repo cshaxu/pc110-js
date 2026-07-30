@@ -1205,6 +1205,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   exception path.
 - M2 T2 S3 P413 adapts NXVM's AAM divide and C6/C7 undefined-extension faults
   into project-native event delivery without a reference runtime or host error.
+- M2 T2 S3 P414 adapts NXVM's `flagMaskInt` behavior into project-native CPU
+  state and external-interrupt admission without a reference runtime or PIC.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -676,3 +676,11 @@ remain active dependencies.
 P413 routes zero-base `AAM` through rebuilt `#DE` delivery and nonzero C6/C7
 extensions through rebuilt `#UD` delivery. Focused real-mode tests verify both
 fault targets and frames while retaining valid instruction behavior.
+
+## P414 Maskable-Interrupt Inhibition Checklist
+
+P414 models the one succeeding-instruction maskable-interrupt inhibition after
+`POP SS`, `MOV SS,r/m16`, and `STI`. The project-native runner refuses external
+IRQ admission during that bounded state and accepts it after the following
+instruction boundary. Focused runner evidence covers all three sources. NMI and
+PIC/device scheduling remain outside this CPU-only part.

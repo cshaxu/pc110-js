@@ -68,4 +68,45 @@ describe("RebuiltCpuRunner", () => {
     expect(memory.readUint8(0xfa)).toBe(0x10);
     expect(runner.state.flags.read() & 0x200).toBe(0);
   });
+
+  it.each([
+    {
+      name: "POP SS",
+      bytes: [0x17, 0x90],
+      setup: (memory: PhysicalMemory, runner: RebuiltCpuRunner) => {
+        runner.state.registers.write16(4, 0x100);
+        memory.writeUint8(0x100, 0);
+        memory.writeUint8(0x101, 0);
+      }
+    },
+    {
+      name: "MOV SS",
+      bytes: [0x8e, 0xd0, 0x90],
+      setup: (_memory: PhysicalMemory, runner: RebuiltCpuRunner) => {
+        runner.state.registers.write16(0, 0);
+      }
+    },
+    { name: "STI", bytes: [0xfb, 0x90], setup: () => undefined }
+  ])("defers a maskable interrupt across the instruction after $name", ({ bytes, setup }) => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    bytes.forEach((value, index) => memory.writeUint8(index, value));
+    memory.writeUint8(0x20, 0x40);
+    memory.writeUint8(0x21, 0);
+    memory.writeUint8(0x22, 0);
+    memory.writeUint8(0x23, 0);
+    const runner = new RebuiltCpuRunner(memory);
+    runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeEip(0);
+    runner.state.registers.write16(4, 0x100);
+    runner.state.flags.set(0x200);
+    setup(memory, runner);
+    runner.step();
+    expect(runner.state.maskableInterruptsInhibited()).toBe(true);
+    expect(runner.serviceExternalInterrupt(8)).toBe(false);
+    runner.step();
+    expect(runner.state.maskableInterruptsInhibited()).toBe(false);
+    expect(runner.serviceExternalInterrupt(8)).toBe(true);
+    expect(runner.state.readEip()).toBe(0x40);
+  });
 });

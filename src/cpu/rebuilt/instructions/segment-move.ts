@@ -22,8 +22,10 @@ export function executeSegmentMove(context: RebuiltExecutionContext): void {
     const segment = segmentFromReg(modRm.reg);
     if (!segment || segment === "cs") return undefinedOpcode(context);
     const selector = readRm16(context, modRm);
-    if (segment === "ss") loadStackSegment(context.memory, context.state, selector);
-    else loadDataSegment(context.memory, context.state, segment, selector);
+    if (segment === "ss") {
+      loadStackSegment(context.memory, context.state, selector);
+      context.state.inhibitMaskableInterruptsForNextInstruction();
+    } else loadDataSegment(context.memory, context.state, segment, selector);
   } else throw new Error(`Opcode 0x${opcode.toString(16)} is outside rebuilt segment-MOV coverage`);
   context.state.advanceEip(context.instruction.length + modRm.bytes);
 }

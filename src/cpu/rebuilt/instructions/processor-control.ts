@@ -22,6 +22,7 @@ function executeInterruptFlag(context: RebuiltExecutionContext, enabled: boolean
     return generalProtection(context);
   if (enabled) context.state.flags.set(EFLAGS_INTERRUPT);
   else context.state.flags.clear(EFLAGS_INTERRUPT);
+  if (enabled) context.state.inhibitMaskableInterruptsForNextInstruction();
   context.state.advanceEip(context.instruction.length);
 }
 

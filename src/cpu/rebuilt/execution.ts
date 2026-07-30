@@ -64,6 +64,7 @@ export class RebuiltCpuExecutor {
     } catch (error) {
       if (!this.deliverAccessFault(error, before.eip)) throw error;
     }
+    this.state.completeInstructionBoundary();
     this.trace?.({
       before,
       opcodeOffset: instruction.opcodeOffset,
@@ -76,7 +77,8 @@ export class RebuiltCpuExecutor {
   public serviceExternalInterrupt(vector: number): boolean {
     if (!Number.isInteger(vector) || vector < 0 || vector > 0xff)
       throw new RangeError("Interrupt vector must be an 8-bit integer");
-    if (!(this.state.flags.read() & 0x00000200)) return false;
+    if (!(this.state.flags.read() & 0x00000200) || this.state.maskableInterruptsInhibited())
+      return false;
     deliverInterrupt(this.memory, this.state, {
       vector,
       returnEip: this.state.readEip(),
