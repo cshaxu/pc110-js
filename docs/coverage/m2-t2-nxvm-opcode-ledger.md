@@ -346,3 +346,9 @@ provide the callback to preserve the same boundary under reentry.
 P370 implements NXVM POP r/m through rebuilt ModR/M, stack, and segmented
 memory paths. Tests cover register and memory destinations, operand and
 address-size overrides, independent SS stack width, and #UD for `/1-7`.
+
+## P371 `9B` WAIT Checklist
+
+P371 implements NXVM WAIT's 80386 CR0.TS boundary. It advances when TS is
+clear and delivers vector 7 at the faulting EIP when TS is set; no FPU behavior
+is synthesized.

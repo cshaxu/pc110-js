@@ -1093,6 +1093,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   memory-bus atomic boundary and vector-6 validation without runtime imports.
 - M2 T2 S3 P370 adapts NXVM POP r/m through project-native stack, ModR/M, and
   segmented-memory modules without reference runtime imports.
+- M2 T2 S3 P371 adapts NXVM WAIT's CR0.TS check and vector-7 path without
+  synthesizing FPU behavior or importing a reference runtime.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

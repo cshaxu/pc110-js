@@ -33,6 +33,7 @@ import { executeShortConditionalJump } from "./instructions/control.js";
 import { executeStackFrameControl } from "./instructions/stack-frame-control.js";
 import { executeTestModRm } from "./instructions/test.js";
 import { executeUndefinedOpcode } from "./instructions/undefined.js";
+import { executeWait } from "./instructions/wait.js";
 import { executeXlat } from "./instructions/xlat.js";
 
 export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): void {
@@ -88,6 +89,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode === 0x8f) return executePopModRm(context);
   if (opcode >= 0x90 && opcode <= 0x97) return executeAccumulatorExchange(context);
   if (opcode === 0x98 || opcode === 0x99) return executeSignExtension(context);
+  if (opcode === 0x9b) return executeWait(context);
   if (opcode === 0x9e || opcode === 0x9f) return executeFlagTransfer(context);
   if (opcode >= 0xa0 && opcode <= 0xa3) return executeMoffsMove(context);
   if (opcode === 0xa8 || opcode === 0xa9) return executeAccumulatorTest(context);
