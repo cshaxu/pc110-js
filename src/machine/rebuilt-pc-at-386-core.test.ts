@@ -181,4 +181,24 @@ describe("RebuiltPcAt386Core", () => {
     core.reset();
     expect(core.systemPort.snapshot()).toMatchObject({ timer2Gate: false, speakerData: false });
   });
+
+  it("delivers a requested NMI only when the RTC address mask permits it", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0x08, 0x40);
+    const trace: RebuiltMachineTraceEvent[] = [];
+    const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event));
+    core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeEip(0x10);
+    core.runner.state.registers.write16(4, 0x100);
+    core.runner.state.halt();
+
+    core.ports.write(0x70, 0x80, 8);
+    expect(core.requestNmi()).toBe(false);
+    core.ports.write(0x70, 0, 8);
+    expect(core.requestNmi()).toBe(true);
+    core.step();
+    expect(core.runner.state.snapshot()).toMatchObject({ eip: 0x40, halted: false });
+    expect(trace).toContainEqual({ kind: "interrupt", vector: 2 });
+  });
 });

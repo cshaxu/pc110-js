@@ -25,6 +25,10 @@ export class RebuiltCpuRunner {
     return this.executor.serviceExternalInterrupt(vector);
   }
 
+  public serviceNonMaskableInterrupt(vector = 2): boolean {
+    return this.executor.serviceNonMaskableInterrupt(vector);
+  }
+
   public run(instructionCount: number): void {
     if (!Number.isInteger(instructionCount) || instructionCount < 0)
       throw new RangeError("Instruction count must be a non-negative integer");

@@ -69,6 +69,23 @@ describe("RebuiltCpuRunner", () => {
     expect(runner.state.flags.read() & 0x200).toBe(0);
   });
 
+  it("delivers a non-maskable interrupt through the IVT despite IF being clear", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0x08, 0x40);
+    memory.writeUint8(0x09, 0x00);
+    memory.writeUint8(0x0a, 0x00);
+    memory.writeUint8(0x0b, 0x00);
+    const runner = new RebuiltCpuRunner(memory);
+    runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeEip(0x10);
+    runner.state.registers.write16(4, 0x100);
+    runner.state.halt();
+
+    expect(runner.serviceNonMaskableInterrupt()).toBe(true);
+    expect(runner.state.snapshot()).toMatchObject({ eip: 0x40, halted: false });
+  });
+
   it.each([
     {
       name: "POP SS",

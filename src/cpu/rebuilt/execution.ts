@@ -101,6 +101,19 @@ export class RebuiltCpuExecutor {
     return true;
   }
 
+  public serviceNonMaskableInterrupt(vector = 2): boolean {
+    if (!Number.isInteger(vector) || vector < 0 || vector > 0xff)
+      throw new RangeError("Interrupt vector must be an 8-bit integer");
+    deliverInterrupt(this.memory, this.state, {
+      vector,
+      returnEip: this.state.readEip(),
+      operandSize: this.state.codeDefault32() ? 32 : 16,
+      software: false
+    });
+    this.state.resume();
+    return true;
+  }
+
   private deliverAccessFault(error: unknown, faultEip: number): boolean {
     if (error instanceof InterruptDeliveryError) {
       deliverFault(this.memory, this.state, error.vector, faultEip, error.errorCode);

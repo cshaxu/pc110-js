@@ -34,3 +34,11 @@ P3 composes local `0x61` state with the existing native PIT only. The port
 adapter has no PCjs dependency and exports a hardware signal rather than sound.
 The reset action owns only local control/gate state; it does not provide NMI,
 8042, A20, firmware, media, or machine-wide reset behavior.
+
+## P4 NMI Admission And Delivery
+
+P4 uses the existing project-native interrupt-frame delivery implementation but
+adds a distinct non-maskable admission entry that does not consult IF or STI
+inhibition. The RTC address-port mask remains the only modeled admission gate.
+Hardware error sources, DeskPro signals, 8042 protocol, A20, reset, PCjs, and
+firmware dependencies remain excluded.

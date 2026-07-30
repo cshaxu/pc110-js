@@ -41,6 +41,7 @@ export class RebuiltPcAt386Core {
   public readonly systemPort = new PcAtSystemControl(this.pit);
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
+  private nmiPending = false;
 
   public constructor(
     memory: PhysicalMemory,
@@ -67,11 +68,13 @@ export class RebuiltPcAt386Core {
     this.dma.reset();
     this.rtc.reset();
     this.systemPort.reset();
+    this.nmiPending = false;
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
   }
 
   public step(): void {
+    if (this.servicePendingNmi()) return;
     if (this.servicePendingInterrupt()) return;
     if (this.runner.state.isHalted()) return;
     this.runner.step();
@@ -83,6 +86,12 @@ export class RebuiltPcAt386Core {
 
   public advanceRtc(ticks: number): void {
     this.rtc.advance(ticks);
+  }
+
+  public requestNmi(): boolean {
+    if (this.rtc.nmiDisabled()) return false;
+    this.nmiPending = true;
+    return true;
   }
 
   public run(maxInstructions: number): RebuiltMachineRunResult {
@@ -124,6 +133,14 @@ export class RebuiltPcAt386Core {
     if (acknowledged !== vector)
       throw new Error("PC/AT PIC acknowledgement changed after CPU interrupt admission");
     this.trace?.({ kind: "interrupt", vector });
+    return true;
+  }
+
+  private servicePendingNmi(): boolean {
+    if (!this.nmiPending) return false;
+    this.runner.serviceNonMaskableInterrupt(2);
+    this.nmiPending = false;
+    this.trace?.({ kind: "interrupt", vector: 2 });
     return true;
   }
 }
