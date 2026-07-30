@@ -956,6 +956,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   wrapping independently from CS D/B EIP advancement, and checks protected
   segment limits. Paging, privilege, and architectural fault delivery remain
   separate later rebuilt-core work.
+- M2 T2 S3 P325 adds project-native shared 8-, 16-, and 32-bit arithmetic
+  result and EFLAGS semantics for the first opcode interval. It explicitly
+  normalizes dword operands before carry comparison to avoid JavaScript signed
+  bitwise coercion. Logical forms preserve undefined AF while clearing defined
+  CF and OF. No opcode dispatch or legacy dependency is introduced.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
