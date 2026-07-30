@@ -1238,6 +1238,19 @@ function executeContextualInstruction(
       state.advanceEip(context.opcodeOffset + 2);
       return { halted: false, fetched };
     }
+    if (extension >= 0x80 && extension <= 0x8f) {
+      const displacement =
+        context.operandSize === 32
+          ? fetchCodeUint32(memory, state, context.opcodeOffset + 2)
+          : fetchCodeUint16(memory, state, context.opcodeOffset + 2);
+      const instructionBytes = context.opcodeOffset + 2 + context.operandSize / 8;
+      if (shortJumpCondition(state, extension & 0x0f)) {
+        if (context.operandSize === 32)
+          state.writeEip(state.snapshot().eip + instructionBytes + (displacement | 0));
+        else state.writeEip16(state.snapshot().eip + instructionBytes + displacement);
+      } else state.advanceEip(instructionBytes);
+      return { halted: false, fetched };
+    }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
       executeMovExtendModRm(
         memory,

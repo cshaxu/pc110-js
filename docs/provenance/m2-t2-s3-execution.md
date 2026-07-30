@@ -805,6 +805,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   execution context. PCjs prefix behavior selects pushed and popped data width,
   while the existing context stack boundary keeps SS D/B selected address width
   independent. Segment loads retain the existing real/protected-mode loader.
+- M2 T2 S3 P286 routes near conditional jumps through the project-native
+  execution context. PCjs prefix behavior selects the signed displacement and
+  destination IP/EIP width, while the existing shared EFLAGS condition mapping
+  remains authoritative.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
