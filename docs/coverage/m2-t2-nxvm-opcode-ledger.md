@@ -149,6 +149,14 @@ verification conflict record. It is now EXC-002 in the project-wide
 compatibility register, does not count as passing differential coverage, and
 does not block further S6 expansion.
 
+## S6 P14 Differential Evidence
+
+The generic PCjs lockstep harness passes real-mode numeric programs for the
+ADD/ADC/SBB/SUB/CMP accumulator forms in `00-3F`, complete `40-5F` register and
+stack sequences, and every `B0-BF` immediate-register encoding. This is S6
+differential evidence only and does not replace focused S3 tests or claim
+default-32, protected-mode, paging, or exception closure.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

@@ -21,6 +21,10 @@ It does not yet record writes whose value is unchanged.
 | MOV moffs, AL | `A2 00 02` | register/EIP state and changed RAM byte at `0200` |
 | Mixed program | `B0 5A A2 00 02 49 90` | four automatic instruction-by-instruction comparisons |
 | Byte port program | `E4 80 E6 80` | automatic input/output journal comparison |
+| `00-3F` arithmetic slice | ADD, ADC, SBB, SUB, CMP accumulator forms | automatic register and flag lockstep |
+| `40-4F` program | all INC and DEC register forms | automatic register and EFLAGS lockstep |
+| `50-5F` program | all PUSH and POP register forms | automatic stack-memory and register lockstep |
+| `B0-BF` program | every byte and word immediate-register form | automatic register-width and EIP lockstep |
 
 ## Active Expansion Order
 

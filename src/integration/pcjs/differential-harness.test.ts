@@ -77,4 +77,76 @@ describe("PCjs differential CPU harness", () => {
     });
     expect(() => assertDifferentialTraceMatch(trace)).not.toThrow();
   });
+
+  it.each([
+    {
+      name: "00-3F accumulator arithmetic slice",
+      bytes: [
+        0x05, 0x01, 0x00, 0x15, 0x01, 0x00, 0x1d, 0x01, 0x00, 0x2d, 0x01, 0x00, 0x3d, 0x00, 0x00
+      ],
+      registers: { eax: 0xfffe },
+      eflags: 0x00000002,
+      instructionCount: 5
+    },
+    {
+      name: "40-4F register increment and decrement interval",
+      bytes: [
+        0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e,
+        0x4f
+      ],
+      registers: {
+        eax: 0xffff,
+        ecx: 0x7fff,
+        edx: 0,
+        ebx: 0x8000,
+        esp: 0x800,
+        ebp: 0xffff,
+        esi: 0x7fff,
+        edi: 0
+      },
+      eflags: 0x00000003,
+      instructionCount: 16
+    },
+    {
+      name: "50-5F register stack interval",
+      bytes: [
+        0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e,
+        0x5f
+      ],
+      registers: {
+        eax: 0x1001,
+        ecx: 0x1002,
+        edx: 0x1003,
+        ebx: 0x1004,
+        esp: 0x800,
+        ebp: 0x1006,
+        esi: 0x1007,
+        edi: 0x1008
+      },
+      instructionCount: 16
+    },
+    {
+      name: "B0-BF immediate register interval",
+      bytes: [
+        0xb0, 0x10, 0xb1, 0x11, 0xb2, 0x12, 0xb3, 0x13, 0xb4, 0x14, 0xb5, 0x15, 0xb6, 0x16, 0xb7,
+        0x17, 0xb8, 0x18, 0x00, 0xb9, 0x19, 0x00, 0xba, 0x1a, 0x00, 0xbb, 0x1b, 0x00, 0xbc, 0x1c,
+        0x00, 0xbd, 0x1d, 0x00, 0xbe, 0x1e, 0x00, 0xbf, 0x1f, 0x00
+      ],
+      registers: {
+        eax: 0xaaaa0000,
+        ecx: 0xbbbb0000,
+        edx: 0xcccc0000,
+        ebx: 0xdddd0000,
+        esp: 0x800,
+        ebp: 0xeeee0000,
+        esi: 0xffff0000,
+        edi: 0x11110000
+      },
+      instructionCount: 16
+    }
+  ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
+    const trace = await runPcjsDifferentialTrace(differentialCase);
+    expect(trace.steps).toHaveLength(differentialCase.instructionCount);
+    expect(() => assertDifferentialTraceMatch(trace)).not.toThrow();
+  });
 });

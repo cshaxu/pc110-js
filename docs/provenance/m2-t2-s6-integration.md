@@ -45,3 +45,9 @@ The existing generic dispatcher exposed a PCjs mismatch in an attempted
 real-mode accumulator-arithmetic program. The owner approved retaining the
 NXVM-aligned behavior and recording EXC-002. No PCjs source was copied or
 changed.
+
+## P14 Numeric Program Intervals
+
+P14 passes real-mode byte streams and instruction budgets through the existing
+rebuilt dispatcher and isolated PCjs CPU. It adds no PCjs source,
+opcode-specific oracle implementation, or runtime dependency.
