@@ -17,6 +17,7 @@ export interface RebuiltCpuSnapshot {
   readonly cr2: number;
   readonly cr3: number;
   readonly debug: readonly number[];
+  readonly test: readonly number[];
   readonly gdtr: DescriptorTable;
   readonly idtr: DescriptorTable;
   readonly ldtr: SystemSelector;
@@ -45,6 +46,7 @@ export class RebuiltCpuState {
   private cr2 = 0;
   private cr3 = 0;
   private readonly debug = new Uint32Array(8);
+  private readonly test = new Uint32Array(8);
   private gdtr: DescriptorTable = { base: 0, limit: 0 };
   private idtr: DescriptorTable = { base: 0, limit: 0x3ff };
   private ldtr: SystemSelector = { selector: 0, base: 0, limit: 0, default32: false };
@@ -64,6 +66,7 @@ export class RebuiltCpuState {
     this.cr2 = 0;
     this.cr3 = 0;
     this.debug.fill(0);
+    this.test.fill(0);
     this.gdtr = { base: 0, limit: 0 };
     this.idtr = { base: 0, limit: 0x3ff };
     this.ldtr = { selector: 0, base: 0, limit: 0, default32: false };
@@ -81,6 +84,7 @@ export class RebuiltCpuState {
       cr2: this.cr2,
       cr3: this.cr3,
       debug: Array.from(this.debug),
+      test: Array.from(this.test),
       gdtr: { ...this.gdtr },
       idtr: { ...this.idtr },
       ldtr: { ...this.ldtr },
@@ -155,6 +159,12 @@ export class RebuiltCpuState {
   public writeDebug(index: number, value: number): void {
     this.debug[this.assertDebugIndex(index)] = value >>> 0;
   }
+  public readTest(index: number): number {
+    return this.test[this.assertTestIndex(index)]!;
+  }
+  public writeTest(index: number, value: number): void {
+    this.test[this.assertTestIndex(index)] = value >>> 0;
+  }
 
   public readGdtr(): DescriptorTable {
     return { ...this.gdtr };
@@ -199,6 +209,11 @@ export class RebuiltCpuState {
   private assertDebugIndex(index: number): number {
     if (!Number.isInteger(index) || index < 0 || index > 7)
       throw new RangeError("Invalid debug register index");
+    return index;
+  }
+
+  private assertTestIndex(index: number): number {
+    if (index !== 6 && index !== 7) throw new RangeError("Invalid test register index");
     return index;
   }
 }

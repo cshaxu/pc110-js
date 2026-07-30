@@ -133,7 +133,8 @@ function dispatchExtended(context: RebuiltExecutionContext): void {
   if (opcode !== undefined && opcode >= 0x90 && opcode <= 0x9f) return executeSetCondition(context);
   if (opcode !== undefined && [0x00, 0x01, 0x02, 0x03, 0x06].includes(opcode))
     return executeSystemGroup(context);
-  if (opcode !== undefined && opcode >= 0x20 && opcode <= 0x23) return executeSystemGroup(context);
+  if (opcode !== undefined && opcode >= 0x20 && opcode <= 0x26 && opcode !== 0x25)
+    return executeSystemGroup(context);
   if (
     opcode !== undefined &&
     [

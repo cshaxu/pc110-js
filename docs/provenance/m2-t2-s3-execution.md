@@ -1126,6 +1126,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   descriptor lookup, protected-mode state, and interrupt-delivery contracts
   without a runtime reference import. It keeps LAR and LSL system-descriptor
   acceptance sets distinct and takes CPL from the CS hidden cache when present.
+- M2 T2 S3 P384 adapts NXVM TR6/TR7 transfer handlers into project-native CPU
+  state and system-instruction decoding. The shared privilege helper returns
+  CPL zero outside protected mode and otherwise uses the CS hidden cache.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

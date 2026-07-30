@@ -13,7 +13,8 @@ export function executeSystemGroup(context: RebuiltExecutionContext): void {
   if (
     context.instruction.secondaryOpcode !== undefined &&
     context.instruction.secondaryOpcode >= 0x20 &&
-    context.instruction.secondaryOpcode <= 0x23
+    context.instruction.secondaryOpcode <= 0x26 &&
+    context.instruction.secondaryOpcode !== 0x25
   )
     return executeControlTransfer(context);
   if (context.instruction.secondaryOpcode !== 0x01)
@@ -99,20 +100,26 @@ function descriptorAccessRights(descriptor: ReturnType<typeof readGdtDescriptor>
 
 function executeControlTransfer(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.secondaryOpcode!;
+  if (currentPrivilege(context) !== 0)
+    return deliverFault(context.memory, context.state, 13, context.state.readEip(), 0);
   const modRm = decode(context);
   if (!modRm.registerDirect)
     return deliverFault(context.memory, context.state, 6, context.state.readEip());
-  const toGeneral = opcode === 0x20 || opcode === 0x21;
+  const toGeneral = opcode === 0x20 || opcode === 0x21 || opcode === 0x24;
   const value =
     opcode === 0x20 || opcode === 0x22
       ? readControl(context, modRm.reg)
-      : readDebug(context, modRm.reg);
+      : opcode === 0x21 || opcode === 0x23
+        ? readDebug(context, modRm.reg)
+        : readTest(context, modRm.reg);
   if (value === undefined)
     return deliverFault(context.memory, context.state, 6, context.state.readEip());
   if (toGeneral) context.state.registers.write32(modRm.rm, value);
   else if (opcode === 0x22)
     writeControl(context, modRm.reg, context.state.registers.read32(modRm.rm));
-  else context.state.writeDebug(modRm.reg, context.state.registers.read32(modRm.rm));
+  else if (opcode === 0x23)
+    context.state.writeDebug(modRm.reg, context.state.registers.read32(modRm.rm));
+  else context.state.writeTest(modRm.reg, context.state.registers.read32(modRm.rm));
   context.state.advanceEip(context.instruction.length + modRm.bytes);
 }
 
@@ -133,6 +140,15 @@ function writeControl(context: RebuiltExecutionContext, index: number, value: nu
 }
 function readDebug(context: RebuiltExecutionContext, index: number): number | undefined {
   return [0, 1, 2, 3, 6, 7].includes(index) ? context.state.readDebug(index) : undefined;
+}
+function readTest(context: RebuiltExecutionContext, index: number): number | undefined {
+  return [6, 7].includes(index) ? context.state.readTest(index) : undefined;
+}
+
+function currentPrivilege(context: RebuiltExecutionContext): number {
+  if (!(context.state.readCr0() & 1)) return 0;
+  const codeSegment = context.state.readSegment("cs");
+  return codeSegment.dpl ?? codeSegment.selector & 3;
 }
 
 function executeSelectorGroup(context: RebuiltExecutionContext): void {
