@@ -35,11 +35,20 @@ header span {
 .display {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 12px;
   margin: 16px;
   min-height: 260px;
   color: #d1fae5;
   background: #111827;
   font-family: monospace;
+}
+
+#screen {
+  width: min(720px, 100%);
+  height: auto;
+  image-rendering: pixelated;
+  background: #000000;
 }
 
 .native-status {

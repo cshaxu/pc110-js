@@ -15,6 +15,7 @@ root.innerHTML = `
       <span id="state" role="status"></span>
     </header>
     <div class="display" aria-label="Machine display">
+      <canvas id="screen" width="720" height="400" aria-label="Native VGA text display"></canvas>
       <div class="native-status" id="native-status" aria-live="polite"></div>
     </div>
     <footer>
@@ -30,11 +31,36 @@ const run = root.querySelector<HTMLButtonElement>("#run");
 const pause = root.querySelector<HTMLButtonElement>("#pause");
 const reset = root.querySelector<HTMLButtonElement>("#reset");
 const nativeStatus = root.querySelector<HTMLElement>("#native-status");
-if (!state || !run || !pause || !reset || !nativeStatus)
+const screen = root.querySelector<HTMLCanvasElement>("#screen");
+if (!state || !run || !pause || !reset || !nativeStatus || !screen)
   throw new Error("Missing machine controls");
-const controls = { state, run, pause, reset, nativeStatus };
+const context = screen.getContext("2d");
+if (!context) throw new Error("Canvas 2D context is unavailable");
+const controls = { state, run, pause, reset, nativeStatus, screen, context };
+
+function color(component: readonly [number, number, number]): string {
+  return `rgb(${component[0] * 4}, ${component[1] * 4}, ${component[2] * 4})`;
+}
+
+function renderDisplay(): void {
+  const { context } = controls;
+  context.font = "16px monospace";
+  context.textBaseline = "top";
+  for (let row = 0; row < 25; row += 1) {
+    for (let column = 0; column < 80; column += 1) {
+      const cell = checkpoint.textFramebuffer.cell(column, row);
+      const x = column * 9;
+      const y = row * 16;
+      context.fillStyle = color(cell.background);
+      context.fillRect(x, y, 9, 16);
+      context.fillStyle = color(cell.foreground);
+      context.fillText(String.fromCharCode(cell.character), x, y);
+    }
+  }
+}
 
 function render(snapshot: MachineSnapshot): void {
+  renderDisplay();
   controls.state.textContent = `${snapshot.profileId}: ${snapshot.runState}`;
   const native = checkpoint.snapshot();
   controls.nativeStatus.textContent = [

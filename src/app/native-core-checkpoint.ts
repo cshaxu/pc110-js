@@ -1,5 +1,6 @@
 import { PhysicalMemory } from "../memory/physical-memory.js";
 import { RebuiltPcAt386Core } from "../machine/rebuilt-pc-at-386-core.js";
+import { VgaTextFramebuffer } from "../devices/vga-text-framebuffer.js";
 
 export interface NativeCoreCheckpointSnapshot {
   readonly codeAddress: string;
@@ -29,6 +30,11 @@ export interface NativeCoreCheckpointSnapshot {
 export class NativeCoreCheckpoint {
   public readonly core = new RebuiltPcAt386Core(
     new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true })
+  );
+  public readonly textFramebuffer = new VgaTextFramebuffer(
+    this.core.vgaMemory,
+    this.core.crtc,
+    this.core.dac
   );
 
   public reset(): void {
