@@ -85,11 +85,9 @@ P330 follows NXVM handlers `PUSHA`, `POPA`, `PUSH_I32`,
 SS stack addressing, signed immediate extension, IMUL CF/OF truncation, and
 `67` plus segment-overridden memory sources for IMUL.
 
-The remaining `60-6F` dependencies are explicit: `62` needs `#BR` delivery;
-`63` needs protected-mode-only ARPL and selector fault routing; `64/65` prefix
-decode exists but FS/GS selector loading remains unfinished; and `6C-6F` need
-CPU port I/O, REP iteration, I/O privilege checks, and fault behavior. These
-dependencies prevent a completion claim for the full interval.
+P373, P375, P376, P378, and P418 close the originally recorded `62-6F`
+exception, selector, prefix, string-I/O, and protected-I/O dependencies.
+The interval remains open pending its complete family-close review and evidence.
 
 ## P331 `70-7F` Checklist
 
@@ -276,8 +274,8 @@ P359 implements the NXVM immediate-port and DX-port `IN`/`OUT` forms through a
 project-native width-aware port boundary. Focused tests cover byte/word/dword,
 immediate/DX ports, 16-bit-default and 32-bit-default operand width, `66`,
 dispatcher integration, and fault-EIP preservation when no boundary is
-supplied. Protected-mode IOPL and TSS I/O-permission checks remain explicit
-protection-system dependencies; no device response is synthesized.
+supplied. P418 completes protected-mode IOPL and 32-bit TSS I/O-permission
+bitmap admission; no device response is synthesized.
 
 ## P360 `8C-8E-C4-C5` Segment Forms Checklist
 
@@ -370,8 +368,8 @@ Tests cover register/memory operands, 67 addressing, ZF results, and real-mode
 
 P376 implements project-native INS/OUTS through the port bus. Tests cover
 ES:DI input, DS:SI output, DF, and one-element REP execution with EIP retained
-while the counter remains nonzero. Protected I/O privilege checks remain an
-active protection dependency.
+while the counter remains nonzero. P418 completes protected I/O privilege
+admission for the string-I/O path.
 
 ## P377 `A4-A7-AA-AF` Generic String Checklist
 
@@ -710,3 +708,17 @@ plus independent `66` operand and `67` address-size forms. It covers the four
 adjust instructions in virtual-8086 mode, all segment PUSH/POP encodings in
 real/v86 modes, and protected POP selector `#NP` and `#GP` delivery through
 IDT frames. `0F` remains the separately ledgered escape opcode.
+
+## P418 Protected I/O Admission Checklist
+
+P418 follows NXVM's protected I/O admission boundary: with CR0.PE set, access
+is direct only when non-v86 CPL does not exceed IOPL or when virtual-8086 IOPL
+is three. NXVM's I/O-map helper is explicitly unimplemented, so the rebuilt
+32-bit TSS bitmap lookup is a project-native completion of the required CPU
+behavior rather than a copied NXVM algorithm. The rebuilt path reads the TSS
+bitmap offset, checks every port byte requested by 8/16/32-bit access, rejects
+truncated maps, and routes denial through `#GP(0)` before any port-bus, memory,
+index, or accumulator side effect. Focused tests cover direct protected access,
+multi-port bitmap denial, missing/16-bit TSS rejection, v86 IOPL-three direct
+access, v86 bitmap admission, truncation, and dispatcher-integrated scalar and
+string I/O faults.

@@ -1,5 +1,6 @@
 import type { RebuiltExecutionContext } from "../execution.js";
 import { normalizePort, type PortWidth } from "../io/port-bus.js";
+import { assertIoPermission } from "../protection/io-permission.js";
 
 export function executePortIo(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.opcode;
@@ -16,6 +17,7 @@ export function executePortIo(context: RebuiltExecutionContext): void {
       ? context.reader.readCodeByte(context.instruction.opcodeOffset + 1)
       : context.state.registers.read16(2)
   );
+  assertIoPermission(context.memory, context.state, port, width);
   if (isInput) writeAccumulator(context, context.io.read(port, width), width);
   else context.io.write(port, readAccumulator(context, width), width);
   context.state.advanceEip(context.instruction.length + (immediatePort ? 1 : 0));

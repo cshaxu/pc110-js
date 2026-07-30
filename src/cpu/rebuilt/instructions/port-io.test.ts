@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { dispatchRebuiltInstruction } from "../dispatch.js";
 import { RebuiltCpuExecutor } from "../execution.js";
 import type { RebuiltPortBus } from "../io/port-bus.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
@@ -87,5 +88,50 @@ describe("rebuilt port I/O", () => {
       )
     ).toThrow("Rebuilt I/O bus is unavailable");
     expect(state.readEip()).toBe(0);
+  });
+
+  it("delivers #GP(0) instead of accessing a port denied by protected I/O admission", () => {
+    const writes: Array<[number, number, number]> = [];
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("cs", {
+      selector: 0x1b,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeSegment("ss", {
+      selector: 0x23,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x2f });
+    state.writeIdtr({ base: 0x300, limit: 0x7f });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    const memory = new Map<number, number>([
+      [0, 0xe6],
+      [1, 0x80]
+    ]);
+    [0xff, 0xff, 0, 0, 0, 0xfa, 0xcf, 0].forEach((value, index) =>
+      memory.set(0x218 + index, value)
+    );
+    [0x60, 0, 0x18, 0, 0, 0xee, 0, 0].forEach((value, index) => memory.set(0x368 + index, value));
+    new RebuiltCpuExecutor(
+      state,
+      {
+        readUint8: (address) => memory.get(address) ?? 0,
+        writeUint8: (address, value) => memory.set(address, value)
+      },
+      undefined,
+      { read: () => 0, write: (port, value, width) => writes.push([port, value, width]) }
+    ).step(dispatchRebuiltInstruction);
+
+    expect(writes).toEqual([]);
+    expect(state.snapshot()).toMatchObject({ eip: 0x60, registers: { esp: 0xf0 } });
+    expect(memory.get(0xf0)).toBe(0);
   });
 });

@@ -1218,6 +1218,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P417 records complete project-native execution evidence for NXVM's
   `00-3F` handlers. The rebuilt runtime remains independent of NXVM, PCjs, and
   legacy CPU code; `0F` stays on the separate extended-opcode path.
+- M2 T2 S3 P418 adapts NXVM's protected I/O admission boundary into
+  project-native CPL/IOPL and virtual-8086 checks. NXVM's I/O-map helper is a
+  source TODO, so the rebuilt 32-bit TSS bitmap lookup and `#GP(0)` routing are
+  project-native CPU completion work, with no reference runtime, BIOS, device,
+  or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

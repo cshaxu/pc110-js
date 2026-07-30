@@ -11,6 +11,7 @@ import {
   type RebuiltMemoryBus
 } from "./memory/segmented-memory.js";
 import { SegmentLoadError } from "./protection/segment-loader.js";
+import { RebuiltIoPermissionError } from "./protection/io-permission.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
 export interface RebuiltExecutionContext {
@@ -106,6 +107,10 @@ export class RebuiltCpuExecutor {
     }
     if (error instanceof SegmentLoadError) {
       deliverFault(this.memory, this.state, error.vector, faultEip, error.errorCode);
+      return true;
+    }
+    if (error instanceof RebuiltIoPermissionError) {
+      deliverFault(this.memory, this.state, 13, faultEip, 0);
       return true;
     }
     return false;

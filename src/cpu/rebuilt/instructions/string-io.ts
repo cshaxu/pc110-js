@@ -1,5 +1,6 @@
 import type { RebuiltExecutionContext } from "../execution.js";
 import { normalizePort, type PortWidth } from "../io/port-bus.js";
+import { assertIoPermission } from "../protection/io-permission.js";
 import type { SegmentName } from "../state/segments.js";
 
 const EFLAGS_DIRECTION = 0x00000400;
@@ -17,6 +18,7 @@ export function executeStringIo(context: RebuiltExecutionContext): void {
   const index = input ? 7 : 6;
   const offset = readIndex(context, index, addressSize);
   const port = normalizePort(context.state.registers.read16(2));
+  assertIoPermission(context.memory, context.state, port, width);
   if (input) writeMemory(context, "es", offset, addressSize, width, context.io.read(port, width));
   else
     readMemory(
