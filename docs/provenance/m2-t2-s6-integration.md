@@ -72,3 +72,8 @@ PCjs source or branch-specific oracle behavior.
 
 P18 uses the shared dispatcher and a real-mode immediate register program. It
 adds no PCjs source, opcode-specific oracle, or product runtime dependency.
+
+## P19 ModR/M Program
+
+P19 uses the shared dispatcher for register ModR/M and LEA forms. It adds no
+PCjs source, custom oracle behavior, or product dependency.

@@ -180,6 +180,12 @@ A generic real-mode Group One program matches PCjs for ADD, ADC, SBB, SUB, and
 CMP immediate register forms across `80-83`. Logical forms remain separately
 governed by EXC-002.
 
+## S6 P19 Differential Evidence
+
+A generic real-mode program matches PCjs for TEST, XCHG, both general MOV
+directions, and LEA across the `84-8D` slice. Segment forms and POP r/m remain
+separate S6 coverage.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
