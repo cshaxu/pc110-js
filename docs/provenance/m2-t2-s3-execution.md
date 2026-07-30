@@ -1146,6 +1146,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P391 adapts NXVM's segment-stack selector flow into the existing
   project-native data and stack segment loaders. It retains selector-only PUSH
   semantics and imports no reference runtime code.
+- M2 T2 S3 P392 adapts NXVM's protected CR0/CR3 two-level page walk into the
+  rebuilt segmented-memory boundary using existing project-native translation
+  contracts. The rebuilt runtime does not import NXVM, PCjs, or legacy CPU code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
