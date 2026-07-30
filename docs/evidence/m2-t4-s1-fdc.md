@@ -30,3 +30,14 @@ claim a boot-sector read.
   controller paths.
 - Boundary: raw media, READ ID/READ DATA transfer, DMA2, IRQ6 port wiring,
   and boot-sector reads remain future parts.
+
+## P3 Raw-Media Evidence
+
+- Level: Strong.
+- Source: M1 machine contract and local-media identity record establish the
+  1.44MB size; standard CHS geometry derives the selected `80 x 2 x 18 x 512`
+  raw-sector mapping.
+- Tests: complete-size validation, CHS translation and range checks, attach,
+  eject, write protection, writable sectors, and defensive copies.
+- Boundary: no protected bytes, image loading, FDC attachment, DMA, IRQ, BIOS,
+  DOS, or filesystem behavior is present.

@@ -24,3 +24,9 @@ PCjs establishes the FDC main-status ready/direction/busy/non-DMA bits and
 the selected command lengths and result-phase behavior. The TypeScript core
 uses that evidence for an isolated state machine; it deliberately does not
 adopt PCjs media, timing, panel, browser, or machine-service code.
+
+## P3 Raw Sector Media
+
+The M1 selected-machine contract establishes two 1.44MB drives and the known
+local image size of 1,474,560 bytes. The native drive models geometry and raw
+CHS sectors only; it does not read, embed, or redistribute the protected image.
