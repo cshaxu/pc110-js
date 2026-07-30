@@ -1247,6 +1247,21 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   }
 
+  if (context.opcode >= 0x91 && context.opcode <= 0x97) {
+    const register = context.opcode & 0x07;
+    if (context.operandSize === 32) {
+      const accumulator = state.readRegister(0);
+      state.writeRegister(0, state.readRegister(register));
+      state.writeRegister(register, accumulator);
+    } else {
+      const accumulator = state.readRegister16(0);
+      state.writeRegister16(0, state.readRegister16(register));
+      state.writeRegister16(register, accumulator);
+    }
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
   if (
     context.opcode === 0xa4 ||
     context.opcode === 0xa5 ||
