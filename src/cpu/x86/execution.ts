@@ -1083,6 +1083,15 @@ function executeContextualInstruction(
   if (nearCallReturn) return nearCallReturn;
   const nearConditionalJump = executeContextualNearConditionalJump(memory, state, context, fetched);
   if (nearConditionalJump) return nearConditionalJump;
+  if (context.opcode >= 0x70 && context.opcode <= 0x7f) {
+    const displacement = signedByte(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    const nextInstruction = fetched.instructionPointer + context.opcodeOffset + 2;
+    if (shortJumpCondition(state, context.opcode & 0x0f)) {
+      if (context.operandSize === 32) state.writeEip(nextInstruction + displacement);
+      else state.writeEip16(nextInstruction + displacement);
+    } else state.advanceEip(context.opcodeOffset + 2);
+    return { halted: false, fetched };
+  }
   const lea = executeContextualLea(memory, state, context, fetched);
   if (lea) return lea;
   const immediateMov = executeContextualImmediateMov(memory, state, context, fetched);

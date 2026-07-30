@@ -4621,6 +4621,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ ds: { selector: 0x0060 }, eip: 0x010b });
   });
 
+  it("uses CS defaults and 66 for short conditional-jump target width", () => {
+    const values = new Map<number, number>([
+      [0x10000, 0x74],
+      [0x10001, 0x01],
+      [0x1fffe, 0x66],
+      [0x1ffff, 0x75],
+      [0x20000, 0x01]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x10000, true);
+    state.writeEflags(0x00000042);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().eip).toBe(0x10003);
+    state.writeEflags(0x00000002);
+    state.writeEip(0x1fffe);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot().eip).toBe(0x0002);
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

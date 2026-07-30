@@ -766,6 +766,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   helper. Segment selectors remain 16-bit; PCjs address-size selection controls
   the ModR/M memory form, and existing real/protected segment-load validation
   remains shared behavior.
+- M2 T2 S3 P277 routes `70` through `7F` through context. PCjs operand-size
+  selection controls whether the signed rel8 target is written to IP or EIP;
+  the existing shared EFLAGS condition mapping remains authoritative.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
