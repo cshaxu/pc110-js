@@ -18,3 +18,10 @@ browser audio remains outside the device core.
 P2 implements a local binary 8254-style state model from component protocol and
 timing semantics. It contains no host clock, PCjs import, firmware response, or
 machine coupling; later parts own port and IRQ wiring.
+
+## P3 PC/AT Wiring
+
+P3 exports project-native 8-bit PIT port ranges and composes them with the
+rebuilt machine's local PIC. Counter-0 output is the sole IRQ source; counter-2
+remains a signal only. No PCjs device, scheduler, firmware, or browser audio is
+used.

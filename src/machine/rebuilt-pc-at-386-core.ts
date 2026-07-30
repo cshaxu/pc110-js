@@ -3,6 +3,7 @@ import { RebuiltCpuRunner } from "../cpu/rebuilt/runner.js";
 import type { RebuiltCpuSnapshot } from "../cpu/rebuilt/state/cpu-state.js";
 import type { PhysicalMemory } from "../memory/physical-memory.js";
 import { PcAtPic } from "../devices/pc-at-pic.js";
+import { PcAtPit } from "../devices/pc-at-pit.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -31,6 +32,7 @@ export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 
 export class RebuiltPcAt386Core {
   public readonly pic = new PcAtPic();
+  public readonly pit = new PcAtPit((irq) => this.pic.raiseIrq(irq));
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
 
@@ -43,6 +45,7 @@ export class RebuiltPcAt386Core {
       this.trace?.({ kind: "instruction", event })
     );
     for (const range of this.pic.portRanges()) this.registerPorts(range);
+    for (const range of this.pit.portRanges()) this.registerPorts(range);
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -51,6 +54,7 @@ export class RebuiltPcAt386Core {
 
   public reset(): void {
     this.pic.reset();
+    this.pit.reset();
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
   }
@@ -59,6 +63,10 @@ export class RebuiltPcAt386Core {
     if (this.servicePendingInterrupt()) return;
     if (this.runner.state.isHalted()) return;
     this.runner.step();
+  }
+
+  public advancePit(ticks: number): void {
+    this.pit.advance(ticks);
   }
 
   public run(maxInstructions: number): RebuiltMachineRunResult {
