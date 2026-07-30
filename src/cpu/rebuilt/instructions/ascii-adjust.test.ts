@@ -4,14 +4,18 @@ import { RebuiltCpuState } from "../state/cpu-state.js";
 import { EFLAGS_CARRY, EFLAGS_ZERO } from "./arithmetic.js";
 import { executeAsciiAdjust } from "./ascii-adjust.js";
 
-function execute(bytes: readonly number[], setup?: (state: RebuiltCpuState) => void) {
+function execute(
+  bytes: readonly number[],
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+) {
   const state = new RebuiltCpuState();
+  const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
   state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
   state.writeEip(0);
-  setup?.(state);
+  setup?.(state, memory);
   new RebuiltCpuExecutor(state, {
-    readUint8: (address) => bytes[address] ?? 0,
-    writeUint8: () => undefined
+    readUint8: (address) => memory.get(address) ?? 0,
+    writeUint8: (address, value) => memory.set(address, value)
   }).step(executeAsciiAdjust);
   return state;
 }
@@ -36,6 +40,12 @@ describe("rebuilt AAM and AAD", () => {
     const zero = execute([0xd5, 10]);
     expect(zero.flags.has(EFLAGS_ZERO)).toBe(true);
   });
-  it("leaves base-zero AAM for rebuilt divide-error delivery", () =>
-    expect(() => execute([0xd4, 0])).toThrow("#DE delivery"));
+  it("delivers #DE for base-zero AAM", () => {
+    const state = execute([0xd4, 0], (cpu, memory) => {
+      cpu.registers.write16(4, 0x100);
+      cpu.writeIdtr({ base: 0x200, limit: 0x3ff });
+      [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x200 + index, value));
+    });
+    expect(state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+  });
 });

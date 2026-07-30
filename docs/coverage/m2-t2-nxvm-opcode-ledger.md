@@ -670,3 +670,9 @@ P412 completes the rebuilt `#UD` routing for `LEA` register-only forms,
 `LES/LDS`. Focused real-mode evidence verifies the vector-six target and fault
 frame. POP-SS interrupt inhibition and protected segment-transfer completion
 remain active dependencies.
+
+## P413 AAM And C6/C7 Fault Checklist
+
+P413 routes zero-base `AAM` through rebuilt `#DE` delivery and nonzero C6/C7
+extensions through rebuilt `#UD` delivery. Focused real-mode tests verify both
+fault targets and frames while retaining valid instruction behavior.

@@ -1,4 +1,5 @@
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import { EFLAGS_PARITY, EFLAGS_SIGN, EFLAGS_ZERO } from "./arithmetic.js";
 
 const DEFINED_MASK = EFLAGS_PARITY | EFLAGS_SIGN | EFLAGS_ZERO;
@@ -9,7 +10,7 @@ export function executeAsciiAdjust(context: RebuiltExecutionContext): void {
     throw new Error(`Opcode 0x${opcode.toString(16)} is outside rebuilt AAM/AAD coverage`);
   const base = context.reader.readCodeByte(context.instruction.opcodeOffset + 1) & 0xff;
   if (opcode === 0xd4) {
-    if (base === 0) throw new Error("AAM base zero requires rebuilt #DE delivery");
+    if (base === 0) return deliverFault(context.memory, context.state, 0, context.state.readEip());
     const al = context.state.registers.read8(0);
     context.state.registers.write8(4, Math.floor(al / base));
     context.state.registers.write8(0, al % base);

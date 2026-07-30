@@ -1,5 +1,6 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import type { SegmentName } from "../state/segments.js";
 
 export function executeImmediateModRmMove(context: RebuiltExecutionContext): void {
@@ -14,7 +15,8 @@ export function executeImmediateModRmMove(context: RebuiltExecutionContext): voi
     context.instruction.prefixes.addressSize,
     context.state.registers
   );
-  if (modRm.reg !== 0) throw new Error("C6/C7 non-zero extensions require rebuilt #UD delivery");
+  if (modRm.reg !== 0)
+    return deliverFault(context.memory, context.state, 6, context.state.readEip());
   const immediateBytes = width / 8;
   const value = readImmediate(context, offset + modRm.bytes, immediateBytes);
   writeRm(context, modRm, width, value);

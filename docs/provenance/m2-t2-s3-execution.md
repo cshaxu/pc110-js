@@ -1203,6 +1203,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P412 adapts NXVM's undefined `84-8F` encoding behavior into
   project-native instruction handlers without a reference runtime or host
   exception path.
+- M2 T2 S3 P413 adapts NXVM's AAM divide and C6/C7 undefined-extension faults
+  into project-native event delivery without a reference runtime or host error.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

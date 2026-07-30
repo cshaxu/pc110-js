@@ -41,7 +41,11 @@ describe("rebuilt C6/C7 immediate ModR/M MOV", () => {
     expect(result.state.readEip()).toBe(13);
   });
 
-  it("keeps non-zero extensions visible until #UD delivery is rebuilt", () => {
-    expect(() => execute([0xc6, 0xc8, 0])).toThrow("#UD delivery");
+  it("delivers #UD for non-zero extensions", () => {
+    const result = execute([0xc6, 0xc8, 0], (state, memory) => {
+      state.registers.write16(4, 0x100);
+      [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value));
+    });
+    expect(result.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
   });
 });
