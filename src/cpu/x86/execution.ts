@@ -778,6 +778,42 @@ function executeContextualImmediatePush(
   return { halted: false, fetched };
 }
 
+function executeContextualPushAllPopAll(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0x60 && context.opcode !== 0x61) return undefined;
+  if (context.opcode === 0x60) {
+    const originalStackPointer =
+      context.operandSize === 32 ? state.readRegister(4) : state.readRegister16(4);
+    for (const register of [0, 1, 2, 3, 4, 5, 6, 7]) {
+      const value =
+        register === 4
+          ? originalStackPointer
+          : context.operandSize === 32
+            ? state.readRegister(register)
+            : state.readRegister16(register);
+      pushContextOperand(memory, state, context, value);
+    }
+  } else {
+    for (const register of [7, 6, 5]) {
+      const value = popContextOperand(memory, state, context);
+      if (context.operandSize === 32) state.writeRegister(register, value);
+      else state.writeRegister16(register, value);
+    }
+    popContextOperand(memory, state, context);
+    for (const register of [3, 2, 1, 0]) {
+      const value = popContextOperand(memory, state, context);
+      if (context.operandSize === 32) state.writeRegister(register, value);
+      else state.writeRegister16(register, value);
+    }
+  }
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -798,6 +834,8 @@ function executeContextualInstruction(
   if (signExtension) return signExtension;
   const immediatePush = executeContextualImmediatePush(memory, state, context, fetched);
   if (immediatePush) return immediatePush;
+  const pushAllPopAll = executeContextualPushAllPopAll(memory, state, context, fetched);
+  if (pushAllPopAll) return pushAllPopAll;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;

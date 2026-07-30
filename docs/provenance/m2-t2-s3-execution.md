@@ -681,6 +681,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   66 select CBW/CWDE and CWD/CDQ behavior through the shared context.
 - M2 T2 S3 P250 migrates immediate PUSH forms so CS defaults select word or
   dword data and SS defaults independently select stack addressing.
+- M2 T2 S3 P251 migrates PUSHA and POPA so CS defaults select word or dword
+  register frames and SS defaults independently select stack addressing.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
