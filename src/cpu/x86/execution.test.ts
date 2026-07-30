@@ -5030,6 +5030,39 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("uses contextual operand and address sizes for memory bit-test operations", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0xab],
+      [0x0102, 0x0d],
+      [0x0103, 0x00],
+      [0x0104, 0x40],
+      [0x0105, 0x00],
+      [0x0106, 0x00],
+      [0x0107, 0x67],
+      [0x0108, 0x66],
+      [0x0109, 0x0f],
+      [0x010a, 0xbb],
+      [0x010b, 0x1e],
+      [0x010c, 0x34],
+      [0x010d, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(1, 33);
+    state.writeRegister16(3, 15);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect([values.get(0x4004), values.get(0x4005)]).toEqual([0x02, 0x00]);
+    expect(state.snapshot().eip).toBe(0x0107);
+    stepInstruction(memory, state);
+    expect([values.get(0x1234), values.get(0x1235)]).toEqual([0x00, 0x80]);
+    expect(state.snapshot().eip).toBe(0x010e);
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

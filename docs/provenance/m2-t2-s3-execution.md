@@ -817,6 +817,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   segment-pointer loader. PCjs prefix behavior selects pointer offset and
   destination-register width separately from ModR/M address width; the selector
   remains 16-bit and uses the existing real/protected segment loaders.
+- M2 T2 S3 P289 routes register-index BT/BTS/BTR/BTC forms through a
+  project-native contextual helper. PCjs prefix behavior selects operand and
+  address widths, including signed register bit-index expansion across memory
+  operands; the existing carry-flag and mutation semantics remain shared.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

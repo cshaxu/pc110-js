@@ -398,6 +398,66 @@ function executeBitTest(
   state.advanceEip(instructionBytes + (address?.displacementBytes ?? 0));
 }
 
+function executeContextualBitTest(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  extension: 0xa3 | 0xab | 0xb3 | 0xbb,
+  source: number,
+  expandMemoryBitIndex: boolean,
+  immediateBytes = 0
+): void {
+  const modRmOffset = context.opcodeOffset + 2;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const width = context.operandSize;
+  const signedSource = width === 32 ? source | 0 : (source << 16) >> 16;
+  const targetOffset =
+    address && expandMemoryBitIndex
+      ? context.addressSize === 32
+        ? (address.offset + Math.floor(signedSource / width) * (width / 8)) >>> 0
+        : (address.offset + Math.floor(signedSource / width) * (width / 8)) & 0xffff
+      : address?.offset;
+  const target = modRm.registerDirect
+    ? width === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : width === 32
+      ? readSegmentUint32(memory, state, address!.segment, targetOffset!, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, targetOffset!, context.addressSize);
+  const mask = 1 << (source & (width - 1));
+  if (target & mask) state.setCarryFlag();
+  else state.clearCarryFlag();
+  const result =
+    extension === 0xab ? target | mask : extension === 0xb3 ? target & ~mask : target ^ mask;
+  if (extension !== 0xa3) {
+    if (modRm.registerDirect) {
+      if (width === 32) state.writeRegister(modRm.rm, result);
+      else state.writeRegister16(modRm.rm, result);
+    } else if (width === 32)
+      writeSegmentUint32(
+        memory,
+        state,
+        address!.segment,
+        targetOffset!,
+        result,
+        context.addressSize
+      );
+    else
+      writeSegmentUint16(
+        memory,
+        state,
+        address!.segment,
+        targetOffset!,
+        result,
+        context.addressSize
+      );
+  }
+  state.advanceEip(
+    modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + immediateBytes
+  );
+}
+
 function executeLoadSegmentPointer(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1337,6 +1397,20 @@ function executeContextualInstruction(
         context.opcodeOffset + 2,
         context.addressSize,
         context.operandSize
+      );
+      return { halted: false, fetched };
+    }
+    if (extension === 0xa3 || extension === 0xab || extension === 0xb3 || extension === 0xbb) {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 2).opcode);
+      executeContextualBitTest(
+        memory,
+        state,
+        context,
+        extension,
+        context.operandSize === 32
+          ? state.readRegister(modRm.reg)
+          : state.readRegister16(modRm.reg),
+        true
       );
       return { halted: false, fetched };
     }
