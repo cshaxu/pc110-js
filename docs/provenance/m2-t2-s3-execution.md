@@ -961,6 +961,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   normalizes dword operands before carry comparison to avoid JavaScript signed
   bitwise coercion. Logical forms preserve undefined AF while clearing defined
   CF and OF. No opcode dispatch or legacy dependency is introduced.
+- M2 T2 S3 P326 composes rebuilt state, segmented memory, instruction decoding,
+  and trace into an independent single-step boundary. Its reset-vector test
+  reads the architectural high-ROM `0xfffffff0` address, not a synthetic low
+  alias. It does not import the legacy CPU or claim any dispatched opcode.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
