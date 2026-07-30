@@ -1,7 +1,11 @@
 import type { RebuiltExecutionContext } from "../execution.js";
 import { deliverInterrupt } from "../events/interrupt-delivery.js";
 import { popStack } from "../memory/stack.js";
-import { loadCodeSegment, loadStackSegment } from "../protection/segment-loader.js";
+import {
+  loadCodeSegment,
+  loadDataSegment,
+  loadStackSegment
+} from "../protection/segment-loader.js";
 import { EFLAGS_OVERFLOW } from "./arithmetic.js";
 
 export function executeInterrupt(context: RebuiltExecutionContext): void {
@@ -35,6 +39,7 @@ function executeIret(context: RebuiltExecutionContext): void {
   const target = popStack(context.memory, context.state, operandSize);
   const selector = popStack(context.memory, context.state, operandSize) & 0xffff;
   const flags = popStack(context.memory, context.state, operandSize);
+  if ((flags & 0x00020000) !== 0) return restoreVirtual8086(context, target, selector, flags);
   if (context.state.readCr0() & 1 && !context.state.isVirtual8086()) {
     const currentPrivilege =
       context.state.readSegment("cs").dpl ?? context.state.readSegment("cs").selector & 3;
@@ -56,4 +61,29 @@ function executeIret(context: RebuiltExecutionContext): void {
   loadCodeSegment(context.memory, context.state, selector);
   context.state.flags.write(flags);
   context.state.writeEip(operandSize === 16 ? target & 0xffff : target);
+}
+
+function restoreVirtual8086(
+  context: RebuiltExecutionContext,
+  target: number,
+  selector: number,
+  flags: number
+): void {
+  if (context.instruction.prefixes.operandSize !== 32)
+    throw new Error("Virtual-8086 IRET requires a rebuilt 32-bit frame");
+  const stackPointer = popStack(context.memory, context.state, 32);
+  const stackSelector = popStack(context.memory, context.state, 32) & 0xffff;
+  const es = popStack(context.memory, context.state, 32) & 0xffff;
+  const ds = popStack(context.memory, context.state, 32) & 0xffff;
+  const fs = popStack(context.memory, context.state, 32) & 0xffff;
+  const gs = popStack(context.memory, context.state, 32) & 0xffff;
+  context.state.flags.write(flags);
+  loadCodeSegment(context.memory, context.state, selector);
+  loadStackSegment(context.memory, context.state, stackSelector);
+  loadDataSegment(context.memory, context.state, "es", es);
+  loadDataSegment(context.memory, context.state, "ds", ds);
+  loadDataSegment(context.memory, context.state, "fs", fs);
+  loadDataSegment(context.memory, context.state, "gs", gs);
+  context.state.registers.write32(4, stackPointer);
+  context.state.writeEip(target & 0xffff);
 }

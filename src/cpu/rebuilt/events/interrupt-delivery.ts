@@ -3,7 +3,11 @@ import { pushStack } from "../memory/stack.js";
 import type { SegmentedMemory } from "../memory/segmented-memory.js";
 import { readGdtDescriptor } from "../protection/descriptor.js";
 import { readInterruptGate } from "../protection/interrupt-gate.js";
-import { loadCodeSegment, loadStackSegment } from "../protection/segment-loader.js";
+import {
+  loadCodeSegment,
+  loadDataSegment,
+  loadStackSegment
+} from "../protection/segment-loader.js";
 import type { RebuiltCpuState } from "../state/cpu-state.js";
 
 const EFLAGS_INTERRUPT = 0x00000200;
@@ -48,15 +52,23 @@ export function deliverInterrupt(
     throw new InterruptDeliveryError(
       "Interrupt gate cannot transfer to a less-privileged code segment"
     );
+  const virtual8086 = state.isVirtual8086();
   const outerFrame =
     targetPrivilege < currentPrivilege
-      ? switchToPrivilegeStack(memory, state, targetPrivilege)
+      ? switchToPrivilegeStack(memory, state, targetPrivilege, virtual8086)
       : undefined;
-  if (outerFrame !== undefined) {
+  if (outerFrame?.virtual8086) {
+    pushVirtual8086Frame(memory, state, gate.operandSize, request.returnEip, outerFrame);
+    loadDataSegment(memory, state, "gs", 0);
+    loadDataSegment(memory, state, "fs", 0);
+    loadDataSegment(memory, state, "ds", 0);
+    loadDataSegment(memory, state, "es", 0);
+  } else if (outerFrame !== undefined) {
     pushStack(memory, state, gate.operandSize, outerFrame.ss);
     pushStack(memory, state, gate.operandSize, outerFrame.esp);
   }
-  pushInterruptFrame(memory, state, gate.operandSize, request.returnEip, request.errorCode);
+  if (!outerFrame?.virtual8086)
+    pushInterruptFrame(memory, state, gate.operandSize, request.returnEip, request.errorCode);
   if (gate.trap) state.flags.clear(EFLAGS_TRAP);
   else state.flags.clear(EFLAGS_INTERRUPT | EFLAGS_TRAP);
   loadCodeSegment(memory, state, gate.selector, targetPrivilege);
@@ -66,10 +78,19 @@ export function deliverInterrupt(
 function switchToPrivilegeStack(
   memory: SegmentedMemory,
   state: RebuiltCpuState,
-  targetPrivilege: number
-): { readonly esp: number; readonly ss: number } {
-  if (state.isVirtual8086())
-    throw new InterruptDeliveryError("Virtual-8086 interrupt frames require rebuilt v86 delivery");
+  targetPrivilege: number,
+  virtual8086: boolean
+): {
+  readonly esp: number;
+  readonly ss: number;
+  readonly virtual8086: boolean;
+  readonly flags: number;
+  readonly cs: number;
+  readonly es: number;
+  readonly ds: number;
+  readonly fs: number;
+  readonly gs: number;
+} {
   const tr = state.readTr();
   if ((tr.selector & 0xfff8) === 0 || tr.type !== 9 || tr.limit < 9)
     throw new InterruptDeliveryError("Interrupt privilege change requires a valid 32-bit TSS");
@@ -78,13 +99,40 @@ function switchToPrivilegeStack(
   const esp = readPhysical32(memory, tr.base + 4);
   const ss = memory.readPhysical8(tr.base + 8) | (memory.readPhysical8(tr.base + 9) << 8);
   const old = {
-    esp: state.stackDefault32() ? state.registers.read32(4) : state.registers.read16(4),
-    ss: state.readSegment("ss").selector
+    esp:
+      virtual8086 || state.stackDefault32() ? state.registers.read32(4) : state.registers.read16(4),
+    ss: state.readSegment("ss").selector,
+    virtual8086,
+    flags: state.flags.read(),
+    cs: state.readSegment("cs").selector,
+    es: state.readSegment("es").selector,
+    ds: state.readSegment("ds").selector,
+    fs: state.readSegment("fs").selector,
+    gs: state.readSegment("gs").selector
   };
+  if (virtual8086) state.flags.clear(0x00034100);
   loadStackSegment(memory, state, ss, targetPrivilege);
   if (state.stackDefault32()) state.registers.write32(4, esp);
   else state.registers.write16(4, esp);
   return old;
+}
+
+function pushVirtual8086Frame(
+  memory: SegmentedMemory,
+  state: RebuiltCpuState,
+  operandSize: OperandSize,
+  returnEip: number,
+  frame: ReturnType<typeof switchToPrivilegeStack>
+): void {
+  pushStack(memory, state, operandSize, frame.gs);
+  pushStack(memory, state, operandSize, frame.fs);
+  pushStack(memory, state, operandSize, frame.ds);
+  pushStack(memory, state, operandSize, frame.es);
+  pushStack(memory, state, operandSize, frame.ss);
+  pushStack(memory, state, operandSize, frame.esp);
+  pushStack(memory, state, operandSize, frame.flags);
+  pushStack(memory, state, operandSize, frame.cs);
+  pushStack(memory, state, operandSize, returnEip);
 }
 
 export function deliverFault(

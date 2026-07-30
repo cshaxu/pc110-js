@@ -574,6 +574,13 @@ CPL3-to-CPL0 software gate, frame ordering, return to CPL3, and busy state.
 16-bit TSS, v86 interrupt frames, task switching, and gate fault escalation
 remain active dependencies.
 
+## P401 Virtual-8086 Interrupt Frame Checklist
+
+P401 adds the 32-bit TSS-gated v86 interrupt frame and matching IRET restore:
+VM state, full ESP, all segment selectors, and data-segment nulling/restoration.
+Focused evidence covers a v86-to-CPL0 round trip. 16-bit TSS, task switching,
+and complete v86 I/O and flag privilege paths remain active dependencies.
+
 ## P399 `30-3D` XOR/CMP Checklist
 
 P399 verifies the project-native XOR and CMP handlers across every byte and

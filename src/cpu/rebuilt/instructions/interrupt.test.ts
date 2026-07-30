@@ -143,6 +143,52 @@ describe("rebuilt INT and IRET", () => {
     });
   });
 
+  it("round-trips a virtual-8086 interrupt frame through a 32-bit TSS stack", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.flags.write(0x0002_3002);
+    for (const [name, selector] of [
+      ["cs", 0x1000],
+      ["ss", 0x2000],
+      ["es", 0x3000],
+      ["ds", 0x4000],
+      ["fs", 0x5000],
+      ["gs", 0x6000]
+    ] as const)
+      state.writeSegment(name, {
+        selector,
+        base: selector << 4,
+        limit: 0xffff,
+        default32: false,
+        dpl: 3
+      });
+    state.writeGdtr({ base: 0x200, limit: 0x2f });
+    state.writeIdtr({ base: 0x300, limit: 0x1ff });
+    state.writeTr({ selector: 0x28, base: 0x400, limit: 0x67, default32: true, type: 9 });
+    state.writeEip(0);
+    state.registers.write32(4, 0x12340080);
+    const memory = new Map<number, number>();
+    write(memory, 0x10000, [0x66, 0xcd, 0x30]);
+    write(memory, 0x80, [0xcf]);
+    write(memory, 0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0]);
+    write(memory, 0x480, [0x80, 0, 8, 0, 0, 0xee, 0, 0]);
+    write(memory, 0x404, [0, 2, 0, 0, 0x10, 0]);
+    const cpu = executor(state, memory);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({ eip: 0x80, registers: { esp: 0x1dc } });
+    expect(state.flags.read() & 0x00020000).toBe(0);
+    expect(state.readSegment("ds").valid).toBe(false);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({ eip: 3, registers: { esp: 0x12340080 } });
+    expect(state.flags.read() & 0x00020000).toBe(0x00020000);
+    expect(
+      ["cs", "ss", "es", "ds", "fs", "gs"].map((name) => state.readSegment(name as "cs").selector)
+    ).toEqual([0x1000, 0x2000, 0x3000, 0x4000, 0x5000, 0x6000]);
+  });
+
   it("does not invoke INTO when overflow is clear", () => {
     const state = realModeState();
     const memory = new Map<number, number>([[0, 0xce]]);

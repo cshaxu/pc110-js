@@ -1171,6 +1171,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P400 adapts NXVM's 32-bit TSS privilege-stack and busy-descriptor
   behavior into project-native event, selector, stack, and segment modules
   without importing a reference runtime or adding guest-service behavior.
+- M2 T2 S3 P401 adapts NXVM's 32-bit virtual-8086 interrupt frame and return
+  behavior into project-native event and interrupt modules without a reference
+  runtime dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
