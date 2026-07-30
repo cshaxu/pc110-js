@@ -915,6 +915,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P315 permits repeated LODS through the contextual path when a source
   segment override is present. The repeat helper selects the override segment
   while retaining context-selected count, source-index, and data widths.
+- M2 T2 S3 P316 permits repeated MOVS through the contextual path when a source
+  segment override is present. The transfer helper selects the override only
+  for its source read and retains ES as the fixed destination segment.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
