@@ -981,6 +981,35 @@ function executeContextualLoop(
   return { halted: false, fetched };
 }
 
+function executeContextualMoffs(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode < 0xa0 || context.opcode > 0xa3) return undefined;
+  const offset =
+    context.addressSize === 32
+      ? fetchCodeUint32(memory, state, context.opcodeOffset + 1)
+      : fetchCodeUint16(memory, state, context.opcodeOffset + 1);
+  const offsetBytes = context.addressSize === 32 ? 4 : 2;
+  if (context.opcode === 0xa0)
+    state.writeRegister8(0, readSegmentUint8(memory, state, "ds", offset, context.addressSize));
+  else if (context.opcode === 0xa2)
+    writeSegmentUint8(memory, state, "ds", offset, state.readRegister8(0), context.addressSize);
+  else if (context.opcode === 0xa1) {
+    if (context.operandSize === 32)
+      state.writeRegister(0, readSegmentUint32(memory, state, "ds", offset, context.addressSize));
+    else
+      state.writeRegister16(0, readSegmentUint16(memory, state, "ds", offset, context.addressSize));
+  } else if (context.operandSize === 32)
+    writeSegmentUint32(memory, state, "ds", offset, state.readRegister(0), context.addressSize);
+  else
+    writeSegmentUint16(memory, state, "ds", offset, state.readRegister16(0), context.addressSize);
+  state.advanceEip(context.opcodeOffset + 1 + offsetBytes);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1015,6 +1044,8 @@ function executeContextualInstruction(
   if (immediateMov) return immediateMov;
   const loop = executeContextualLoop(memory, state, context, fetched);
   if (loop) return loop;
+  const moffs = executeContextualMoffs(memory, state, context, fetched);
+  if (moffs) return moffs;
 
   const byteAluOperation = byteModRmAluOperation(context.opcode);
   if (byteAluOperation) {

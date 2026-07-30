@@ -267,6 +267,37 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x00000108);
   });
 
+  it("selects moffs operand and address widths through the context", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xa1],
+      [0x00000101, 0x00],
+      [0x00000102, 0x20],
+      [0x00000103, 0x01],
+      [0x00000104, 0x00],
+      [0x00000105, 0x66],
+      [0x00000106, 0xa3],
+      [0x00000107, 0x34],
+      [0x00000108, 0x12],
+      [0x00001234, 0x00],
+      [0x00001235, 0x00],
+      [0x00012000, 0x78],
+      [0x00012001, 0x56],
+      [0x00012002, 0x34],
+      [0x00012003, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x12345678 }, eip: 0x00000105 });
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect([values.get(0x00001234), values.get(0x00001235)]).toEqual([0x78, 0x56]);
+    expect(state.snapshot().eip).toBe(0x0000010b);
+  });
+
   it("selects LODS data and index width independently through the context", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xad],
