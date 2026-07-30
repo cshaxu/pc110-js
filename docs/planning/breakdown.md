@@ -32,9 +32,9 @@ M0 provides governance. M5 provides preservation-grade release packaging.
 Repository consultation order is PCjs, PC110-EMU, pc110js-v2, pc110js-v1, then
 NXVM, except for the owner-authorized M2 T2 CPU baseline correction recorded in
 `docs/decisions/m2-t2-nxvm-cpu-authority.md`. For that CPU work, NXVM coverage
-and validated execution behavior are the primary implementation baseline, Intel
-IA-32 documentation resolves semantic conflicts, and PCjs remains the PC/AT
-compatibility and whole-machine reference. NXVM BIOS, POST, device, I/O,
+and validated execution behavior are the decisive implementation baseline, and
+PCjs remains the PC/AT compatibility and whole-machine reference. NXVM BIOS,
+POST, device, I/O,
 global-state, macro, and guest-service code remains excluded. Evidence
 authority is domain-specific:
 

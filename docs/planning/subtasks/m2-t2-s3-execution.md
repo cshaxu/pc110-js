@@ -22,7 +22,8 @@ project-native TypeScript boundaries.
 - PCjs baseline: `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70` in `../pcjs`.
 - CPU implementation baseline: NXVM `vcpu.h` and `vcpuins.c`, constrained by
   the owner-authorized decision record.
-- CPU semantic conflict authority: Intel IA-32 documentation.
+- CPU coverage and instruction behavior authority: NXVM `vcpu.h` and
+  `vcpuins.c`.
 - PC/AT compatibility and whole-machine reference: PCjs PCx86 v2 source and
   the M1 selected-machine reference path.
 - Protected ROM and disk assets remain local, ignored inputs; no protected
@@ -63,8 +64,8 @@ coverage matrix, and bounded PCjs comparison evidence.
 
 The owner authorized an M2 T2 CPU baseline correction after this record was
 created. NXVM `vcpu.h` and `vcpuins.c` now define required CPU coverage and are
-the first-order execution reference, with Intel IA-32 documentation resolving
-semantic conflicts. Do not translate NXVM C, macros, global state, BIOS, POST,
+the first-order and decisive execution reference. Do not translate NXVM C,
+macros, global state, BIOS, POST,
 I/O hacks, or guest-service behavior. PCjs remains the PC/AT compatibility and
 whole-machine reference. NXVM compatibility extensions listed in the decision
 record are mandatory `#UD` behavior only; later-processor functionality remains
@@ -93,11 +94,14 @@ BIOS, DOS, or filesystem work.
 
 ## Working Method
 
-1. Classify one observed reset, BIOS, protected-mode, or interrupt blocker.
-2. Compare the exact NXVM CPU behavior, resolve semantic conflicts with Intel
-   IA-32 documentation, then use PCjs for PC/AT compatibility and implement the
-   smallest generic CPU boundary that resolves that blocker.
-3. Add focused TypeScript tests, provenance, a PCjs behavior report when
+1. Select the next incomplete NXVM opcode family or recorded architectural
+   dependency from the opcode ledger in numeric family order.
+2. Implement the complete applicable NXVM behavior in project-native
+   TypeScript. An observed reset, BIOS, protected-mode, or interrupt blocker
+   may identify a dependency or validate the result, but does not narrow the
+   family scope.
+3. Use PCjs only for PC/AT compatibility and whole-machine comparison. Add
+   focused TypeScript tests, provenance, a PCjs behavior report when
    required, and a concise tracking entry in the same part commit.
 4. Run `pnpm run format`, `pnpm run build`, `pnpm run lint`, `pnpm run test`,
    and `git diff --check` before pushing.
@@ -113,6 +117,15 @@ BIOS, DOS, or filesystem work.
 - S3 does not claim complete 80386 behavior until its coverage and reference
   evidence demonstrate that all behavior required by the selected machine has
   been implemented.
+
+## Mandatory T2-To-T3 Transition Gate
+
+After all M2 T2 subtasks and completion evidence are closed, execute
+`docs/steering/m2-t2-post-completion-architecture-review.zh-CN.md` before
+starting M2 T3. This is a behavior-preserving architecture-hardening gate, not
+authorization for new hardware, firmware, guest-service, or PC110 behavior.
+It must preserve the verified T2 baseline and record its result before normal
+M2 T3 work resumes.
 
 ## Stop Conditions
 

@@ -47,4 +47,9 @@ behavior, rather than standalone infrastructure parts. P327 remains a partial
 `00-3F` execution slice with its protection dependencies recorded in the
 ledger.
 
+P364 corrected the execution-governance conflict: integration and device work
+retains breadth-first ROI delivery, while CPU and other architecture-closure
+work follows its authority and coverage ledger. NXVM is the decisive M2 T2 CPU
+behavior authority; PCjs remains the PC/AT and whole-machine comparison source.
+
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

@@ -11,7 +11,7 @@ credit.
 
 - NXVM `vcpu.h` and `vcpuins.c` are the owner-authorized CPU coverage and
   validated execution baseline.
-- Intel IA-32 documentation resolves CPU semantic conflicts.
+- NXVM is the decisive CPU behavior authority for this reconstruction.
 - PCjs at `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70` remains the PC/AT
   compatibility and whole-machine authority.
 - NXVM BIOS, POST, I/O, global-state, macro, and guest-service behavior is

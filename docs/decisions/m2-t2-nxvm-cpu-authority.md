@@ -3,9 +3,11 @@
 ## Decision
 
 The owner authorized NXVM CPU coverage and validated instruction execution
-behavior as the first-order M2 T2 CPU implementation baseline. Intel IA-32
-documentation resolves CPU semantic conflicts. PCjs remains the PC/AT
+behavior as the decisive M2 T2 CPU implementation baseline. NXVM is the CPU
+behavior authority for this reconstruction. PCjs remains the PC/AT
 compatibility, reference-machine, and whole-machine comparison authority.
+External architecture documentation may be retained as nonbinding background,
+but it must not resolve or override NXVM CPU behavior.
 
 ## Required Scope
 

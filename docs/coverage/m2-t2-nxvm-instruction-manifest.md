@@ -6,8 +6,8 @@ This is the implementation inventory for M2 T2. Its audit source is the
 external, read-only NXVM `src/device/vcpu.h` and `src/device/vcpuins.c`; NXVM
 is not a build dependency and its C source is not copied. Every row requires a
 project-native TypeScript implementation and focused tests before T2 closure.
-Intel IA-32 documentation resolves semantic conflicts. PCjs remains the PC/AT
-and whole-machine comparison reference.
+NXVM is the decisive CPU behavior authority. PCjs remains the PC/AT and
+whole-machine comparison reference.
 
 ## CPU Model And Execution Infrastructure
 

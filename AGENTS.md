@@ -35,7 +35,9 @@ Do not treat this file as a substitute for those canonical documents.
 
 - Every repository artifact must be written in English, including source,
   documentation, comments, tests, generated text, file names, and commit
-  messages.
+  messages. The owner-directed Chinese transition guide at
+  `docs/steering/m2-t2-post-completion-architecture-review.zh-CN.md` is the
+  sole exception.
 - Emulator and application runtime code must be TypeScript. JavaScript
   exceptions require the justification and removal condition defined in
   `CONTRIBUTING.md`.
@@ -65,9 +67,15 @@ Do not treat this file as a substitute for those canonical documents.
 - Before implementation, create the required subtask record described in
   `docs/planning/execution-policy.md` when the canonical breakdown does not
   already contain the required detail.
-- Prefer breadth-first progress toward an observable whole-machine checkpoint.
-  Classify one blocker before implementing one blocker, and stop investigations
-  at the policy's evidence and escalation boundaries.
+- Classify work by execution strategy before selecting an implementation unit.
+  Integration and device work defaults to breadth-first, ROI-led progress toward
+  an observable whole-machine checkpoint. Architecture-closure work, including
+  CPU execution, address translation, exceptions, and interrupt delivery,
+  follows its approved coverage ledger and semantic-family plan instead. For
+  M2 T2 S3, `docs/planning/m2-t2-nxvm-cpu-reconstruction.md` and
+  `docs/coverage/m2-t2-nxvm-opcode-ledger.md` override the generic
+  breadth-first default. ROM traces identify dependencies and validate progress;
+  they do not select CPU implementation scope.
 - Preserve every established runnable or boot baseline.
 - Record deferred work only as `TODO(High)`, `TODO(Medium)`, or `TODO(Low)` as
   defined in `CONTRIBUTING.md`. Never hide an active blocker behind a TODO.
@@ -75,6 +83,10 @@ Do not treat this file as a substitute for those canonical documents.
   explicitly names that next milestone. A goal that authorizes M1 through M2
   may begin M2 only after the M1 completion gate and milestone snapshot process
   both pass.
+- After M2 T2 closes and before M2 T3 begins, execute the mandatory transition
+  gate in `docs/steering/m2-t2-post-completion-architecture-review.zh-CN.md`.
+  Do not begin M2 T3 until that gate records its required evidence and leaves
+  the T2 regression baseline green.
 
 ## Verification, Commits, And Pushes
 

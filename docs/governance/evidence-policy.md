@@ -8,10 +8,11 @@ Hardware behavior must be implemented from explicit evidence, not from plausibil
 
 PCjs PCx86 v2 is the primary implementation source outside the owner-authorized
 M2 T2 CPU baseline correction. For M2 T2 CPU coverage and instruction
-execution, NXVM `vcpu.h` and `vcpuins.c` are the primary reference, Intel IA-32
-documentation resolves semantic conflicts, and PCjs remains the PC/AT and
-whole-machine comparison reference. Intel, IBM, and component documentation
-plus focused conformance tests may justify corrections or extensions.
+execution, NXVM `vcpu.h` and `vcpuins.c` are the decisive behavior reference,
+while PCjs remains the PC/AT and whole-machine comparison reference. External
+architecture documentation is nonbinding background for this CPU work and may
+not override NXVM. Focused conformance tests may expose an implementation defect
+but do not authorize a divergent CPU behavior without owner direction.
 
 ### PC110-Specific Behavior
 

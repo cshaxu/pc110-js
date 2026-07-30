@@ -8,9 +8,10 @@ migration method on 2026-07-29. M2 T2 now reconstructs the project-native
 method, not a reduction of the M2 T2 completion gate.
 
 `../nxvm/src/device/vcpu.h` and `../nxvm/src/device/vcpuins.c` are the
-first-order reference for CPU coverage and validated instruction behavior.
-Intel IA-32 documentation resolves semantic conflicts. PCjs remains the
-PC/AT, compatibility, ROM-trace, and whole-machine comparison authority.
+first-order and decisive reference for CPU coverage and validated instruction
+behavior. PCjs remains the PC/AT, compatibility, ROM-trace, and whole-machine
+comparison authority. External architecture documentation is not a CPU behavior
+authority for this reconstruction and must not override NXVM.
 
 ## Frozen Reference
 

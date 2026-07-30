@@ -84,14 +84,44 @@ preceding snapshot process has completed.
 - M4 establishes the expanded PC110 hardware baseline.
 - Each later subtask preserves every applicable established baseline.
 
-## Breadth-First Rules
+## Execution Strategy Classification
+
+Classify a subtask before selecting its implementation unit. The product ROI
+chooses the next capability; the subtask class chooses the execution method.
+
+### Integration And Device Work
+
+Integration and device work defaults to breadth-first, ROI-led delivery:
 
 - Prefer the smallest change that advances an observable whole-machine checkpoint.
 - Keep unknown behavior visible in traces.
 - Classify one blocker before implementing one blocker.
 - Time-box exploratory tracing through explicit instruction, cycle, output, or experiment-count limits.
-- Defer nonblocking questions with evidence and activation conditions.
-- Do not replace a missing hardware model with firmware, BIOS, DOS, filesystem, or application behavior.
+
+### Architecture-Closure Work
+
+CPU execution, address translation, segmentation, exceptions, interrupts, and
+other shared architectural substrates are architecture-closure work. They must
+follow their approved authority, coverage ledger, and semantic-family plan.
+Do not use a single observed ROM path, opcode, ModR/M extension, or local
+blocker as the default implementation unit. A trace may expose a dependency or
+validate progress, but it cannot narrow the required family coverage.
+
+For M2 T2 S3, NXVM `vcpu.h` and `vcpuins.c` define CPU coverage and instruction
+behavior. The reconstruction plan and opcode ledger are binding over this
+default policy. Split a family only for a genuine architectural dependency and
+record the dependency before implementation.
+
+### Hybrid Work
+
+Memory mapping, I/O dispatch, and machine composition may have both classes of
+work. A bounded integration prerequisite is permitted only when it is recorded
+as a dependency correction; it does not authorize unrelated device behavior or
+reduce the architecture-closure completion gate.
+
+For every class, defer nonblocking questions with evidence and activation
+conditions. Do not replace missing hardware with firmware, BIOS, DOS,
+filesystem, or application behavior.
 
 ## Escalation Conditions
 
