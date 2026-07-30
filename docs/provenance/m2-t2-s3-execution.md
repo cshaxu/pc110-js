@@ -833,6 +833,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   Group 2 `/7` `C1/D1/D3` forms through the same context. PCjs remains the
   behavior authority for count normalization and arithmetic sign extension;
   rotate and byte forms remain outside this part.
+- M2 T2 S3 P293 adds a project-native 32-bit ROL flag writer and routes Group
+  2 `/0` `C1/D1/D3` forms through the context. PCjs remains the behavioral
+  authority for normalized count and CF/OF updates; other rotate forms remain
+  on their existing path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
