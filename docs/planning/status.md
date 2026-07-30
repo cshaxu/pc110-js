@@ -12,11 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T2: active. Reconstruct the project-native CPU in NXVM opcode-family
-  order; the frozen legacy/reference CPU remains differential evidence only.
-  Close ROM-trace, coverage-matrix, and PCjs-comparison evidence before T3.
-  Do not begin T3 until every T2 completion gate passes and the owner
-  authorizes T3.
+- M2 T2 S4: active. Close the final project-native physical-memory contract
+  after S3's NXVM CPU coverage audit. The frozen legacy/reference CPU remains
+  differential evidence only. Do not begin T3 until every T2 completion gate
+  passes and the owner authorizes T3.
 
 ## Delivery Nodes
 
@@ -60,5 +59,11 @@ runtime dependency.
 
 P366 corrected the S6 ordering record: S6 is the final T2 integration gate and
 does not bypass S4 or S5.
+
+P452 closed S3's executable NXVM CPU-coverage audit within the explicit
+NXVM-TODO boundaries. The rebuilt selected-ROM trace reaches `F000:F907` and
+stops only at the documented unavailable I/O-bus boundary; the M1 PCjs browser
+reference reaches `A:\>`. The next eligible work is S4 final memory closure,
+followed by S5 and S6.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

@@ -129,6 +129,17 @@ entries are not modified except for the NXVM-defined PDE Accessed update before
 a subsequent PTE lookup. NXVM's `MOV DRx` handlers are covered by P428; NXVM
 does not implement a hardware-breakpoint engine.
 
+## P452 S3 CPU Coverage Closure Checklist
+
+P452 audits every executable NXVM CPU family and shared CPU dependency against
+the focused evidence cited in this ledger and the 80386 matrix. NXVM's explicit
+`_______todo` entries remain excluded only where a matching rebuilt
+`TODO(High)` exists, as verified by P442. The rebuilt selected DeskPro ROM trace
+executes two instructions through `F000:F907` and stops at the unavailable
+project-native I/O boundary; the recorded M1 PCjs browser run reaches `A:\>`.
+This classifies the difference as S5 device/I/O work, not an S3 CPU opcode
+gap. S4, S5, and S6 remain required T2 gates.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

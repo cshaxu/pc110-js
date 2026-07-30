@@ -10,20 +10,19 @@ NXVM is the decisive CPU behavior authority. PCjs remains the PC/AT and
 whole-machine comparison reference.
 
 `Implemented NXVM handler coverage` records that the listed executable NXVM
-handler set has project-native implementation and focused evidence. It is not
-an S3 closure claim when it shares an unfinished descriptor, task, gate,
-interrupt, paging, or fault-delivery dependency. `Partial architecture
-closure` identifies those remaining cross-family dependencies.
+handler set has project-native implementation and focused evidence. S3 closure
+excludes only NXVM's explicit TODO boundaries, each of which has a matching
+project-native `TODO(High)` record. S4, S5, and S6 remain separate T2 gates.
 
 ## CPU Model And Execution Infrastructure
 
 | Family | NXVM evidence | M2 status |
 | --- | --- | --- |
-| Register, EFLAGS, segment-cache, descriptor, control, debug, and test-register state | `vcpu.h` state and descriptor definitions | Partial architecture closure: state and executable register transfers, including NXVM's defined `MOV DRx` forms, are evidenced by P382, P384, P388, and P428. NXVM does not implement a hardware-breakpoint engine. Task-switch state is an NXVM TODO-aligned exclusion recorded by P441. |
-| Real/protected segmentation, GDT, LDT, IDT, TSS, and privilege validation | `_ksa_*`, `_s_*`, and `_ser_*` helpers | Partial architecture closure: P388-P390, P396-P397, P400-P401, P415-P416, and P443 cover implemented paths and descriptor Accessed-bit writeback; complete descriptor fault classification remains. Task/call gates are NXVM TODO-aligned exclusions recorded by P441. |
-| Linear address translation, paging, page-table flags, and access checks | `_kma_*` helpers and paging definitions | Partial architecture closure: P392, P394-P395, P411, P433, P447, and P451 cover rebuilt walks, permissions, A/D updates, delivery, escalation, supervisor system-table access, and cross-page preflight. |
+| Register, EFLAGS, segment-cache, descriptor, control, debug, and test-register state | `vcpu.h` state and descriptor definitions | Implemented NXVM handler coverage: P382, P384, P388, and P428 cover state and executable register transfers, including defined `MOV DRx` forms. NXVM does not implement a hardware-breakpoint engine. Task-switch state is an NXVM TODO-aligned exclusion recorded by P441. |
+| Real/protected segmentation, GDT, LDT, IDT, TSS, and privilege validation | `_ksa_*`, `_s_*`, and `_ser_*` helpers | Implemented NXVM handler coverage: P388-P390, P396-P397, P400-P401, P415-P416, P443, and P450 cover executable paths, Accessed-bit writeback, and descriptor faults. Task/call gates are NXVM TODO-aligned exclusions recorded by P441. |
+| Linear address translation, paging, page-table flags, and access checks | `_kma_*` helpers and paging definitions | Implemented NXVM handler coverage: P392, P394-P395, P411, P433, P447, and P451 cover rebuilt walks, permissions, A/D updates, delivery, escalation, supervisor system-table access, and cross-page preflight. |
 | Prefix, operand/address size, ModR/M, SIB, immediate, and moffs decoding | `_d_*` helpers and prefix handlers | Implemented NXVM handler coverage: P369 and P431 close prefix and length behavior; family-level use is evidenced by P417-P430. |
-| Stack, near/far transfer, interrupt, return, and exception delivery | `_kec_*` and `_ser_*` helpers | Partial architecture closure: implemented handler paths are evidenced by P400-P416, P422/P425/P427, and P444 target-code validation; remaining non-NXVM-TODO privilege and fault classification cases remain. Task/call-gate and outer-RETF boundaries are NXVM TODO-aligned exclusions recorded by P441. |
+| Stack, near/far transfer, interrupt, return, and exception delivery | `_kec_*` and `_ser_*` helpers | Implemented NXVM handler coverage: P400-P416, P422/P425/P427, P437-P440, and P444 cover executable transfer, privilege, fault, and restart paths. Task/call-gate and outer-RETF boundaries are NXVM TODO-aligned exclusions recorded by P441. |
 | Port I/O, trace, and instruction dispatch boundaries | `_p_*`, `ExecIns`, and `ExecInt` | Implemented CPU handler coverage: P355, P359, P410, P418, and P434; project-native concrete port routing remains S5 work. |
 
 ## One-Byte Instruction Families
