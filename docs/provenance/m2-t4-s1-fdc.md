@@ -17,3 +17,10 @@ reaches `F000:BB26` after 216 instructions and writes DOR port `0x3F2`.
 PCjs defines this as the AT floppy-controller digital-output register: bits
 0-1 select a drive, bit 2 enables the controller, bit 3 enables IRQ/DMA, and
 bits 4-5 control the two supported drive motors.
+
+## P2 Controller Core
+
+PCjs establishes the FDC main-status ready/direction/busy/non-DMA bits and
+the selected command lengths and result-phase behavior. The TypeScript core
+uses that evidence for an isolated state machine; it deliberately does not
+adopt PCjs media, timing, panel, browser, or machine-service code.

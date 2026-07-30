@@ -19,3 +19,14 @@ checkpoint or a safe ignored port.
 The first implementation part owns the complete FDC behavior contract and
 does not attach media, emulate BIOS services, fabricate commands/results, or
 claim a boot-sector read.
+
+## P2 Controller-Core Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `fdc.js`, DOR/main-status/data/control
+  definitions and selected command dispatch.
+- Tests: DOR reset completion, command/result state, main-status direction,
+  drive sense, seek/recalibrate completion, invalid command, and disabled
+  controller paths.
+- Boundary: raw media, READ ID/READ DATA transfer, DMA2, IRQ6 port wiring,
+  and boot-sector reads remain future parts.
