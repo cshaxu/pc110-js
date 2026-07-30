@@ -34,7 +34,7 @@ export function loadCodeSegment(
     state.readGdtr(),
     selector
   );
-  const cpl = state.readSegment("cs").selector & 3;
+  const cpl = currentPrivilege(state);
   const conforming = Boolean(descriptor.type & 4);
   if (!descriptor.system || !(descriptor.type & 8) || !descriptor.present)
     throw new SegmentLoadError("Selector does not identify a present code segment");
@@ -86,7 +86,7 @@ function load(
     state.readGdtr(),
     selector
   );
-  const cpl = state.readSegment("cs").selector & 3;
+  const cpl = currentPrivilege(state);
   const rpl = selector & 3;
   const executable = Boolean(descriptor.type & 8);
   const writable = Boolean(descriptor.type & 2);
@@ -103,4 +103,9 @@ function load(
     valid: true,
     dpl: descriptor.dpl
   });
+}
+
+function currentPrivilege(state: RebuiltCpuState): number {
+  const codeSegment = state.readSegment("cs");
+  return codeSegment.dpl ?? codeSegment.selector & 3;
 }

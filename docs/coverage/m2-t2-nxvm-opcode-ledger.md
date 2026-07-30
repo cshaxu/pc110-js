@@ -469,3 +469,10 @@ or writable access, conforming-code handling, and the CPL/RPL-versus-DPL rule
 for nonconforming descriptors. Tests cover accepted writable data, DPL denial,
 and the VERR-only read-only-data result. LDT lookup remains an active
 descriptor-system dependency.
+
+## P388 Segment-Loader Hidden-CPL Checklist
+
+P388 makes project-native data and code segment loaders derive CPL from the CS
+hidden cache, as NXVM does, rather than selector RPL. Focused tests deliberately
+separate those values and cover GDT data and code loading. LDT lookup and full
+descriptor fault-code delivery remain active dependencies.

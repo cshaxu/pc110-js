@@ -1136,6 +1136,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   loaders, using project-native hidden state and protected fault delivery.
 - M2 T2 S3 P387 adapts NXVM's VERR/VERW descriptor access checks into the
   rebuilt selector verifier, with no reference runtime import.
+- M2 T2 S3 P388 aligns project-native segment loaders with NXVM's CS hidden-CPL
+  model, affecting existing far-control and data-segment consumers without a
+  runtime reference import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
