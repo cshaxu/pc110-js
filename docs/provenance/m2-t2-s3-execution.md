@@ -1257,6 +1257,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P428 records complete project-native evidence for executable NXVM
   `0F 00-26` system handlers. It adds default-32 table and selector tests and
   joins existing project-native descriptor, TSS, and fault paths without imports.
+- M2 T2 S3 P429 records complete project-native evidence for executable NXVM
+  `0F 80-9F` conditional handlers. It adds default-32 SETcc addressing and
+  operand-size-reversed near-Jcc coverage without importing reference code or
+  adding device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

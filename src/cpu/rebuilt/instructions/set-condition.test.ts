@@ -13,10 +13,11 @@ import { executeSetCondition } from "./set-condition.js";
 function execute(
   bytes: readonly number[],
   flags: number,
-  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  code32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: code32 });
   state.writeEip(0);
   state.flags.write(flags);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
@@ -62,5 +63,22 @@ describe("rebuilt 0F 90-9F SETcc", () => {
     );
     expect(result.memory.get(0x3000)).toBe(1);
     expect(result.state.readEip()).toBe(9);
+  });
+
+  it("uses default-32 addressing without changing the byte result width", () => {
+    const result = execute(
+      [0x0f, 0x95, 0x05, 0x00, 0x10, 0x00, 0x00],
+      0,
+      (state) =>
+        state.writeSegment("ds", {
+          selector: 0,
+          base: 0x2000,
+          limit: 0xffff_ffff,
+          default32: false
+        }),
+      true
+    );
+    expect(result.memory.get(0x3000)).toBe(1);
+    expect(result.state.readEip()).toBe(7);
   });
 });
