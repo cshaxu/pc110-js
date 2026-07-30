@@ -134,13 +134,15 @@ function readSegmentUint8(
   memory: InstructionMemory,
   state: Cpu386State,
   segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
-  offset: number
+  offset: number,
+  addressSize?: 16 | 32
 ): number {
   const snapshot = state.snapshot();
   const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
   return (
     memory.readUint8(
-      translateSegmentOffset(mode, { ...snapshot[segment], present: true }, offset)
+      translateSegmentOffset(mode, { ...snapshot[segment], present: true }, normalizedOffset)
     ) & 0xff
   );
 }
@@ -551,6 +553,25 @@ function executeContextualInstruction(
     const value = popContextOperand(memory, state, context);
     if (context.operandSize === 32) state.writeRegister(register, value);
     else state.writeRegister16(register, value);
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
+  if (context.opcode === 0xac || context.opcode === 0xad) {
+    const width = context.opcode === 0xac ? 1 : context.operandSize === 32 ? 4 : 2;
+    const source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
+    const value =
+      width === 1
+        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        : width === 2
+          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
+          : readSegmentUint32(memory, state, "ds", source, context.addressSize);
+    if (width === 1) state.writeRegister8(0, value);
+    else if (width === 2) state.writeRegister16(0, value);
+    else state.writeRegister(0, value);
+    const nextSource = state.directionFlag() ? source - width : source + width;
+    if (context.addressSize === 32) state.writeRegister(6, nextSource);
+    else state.writeRegister16(6, nextSource);
     state.advanceEip(context.opcodeOffset + 1);
     return { halted: false, fetched };
   }

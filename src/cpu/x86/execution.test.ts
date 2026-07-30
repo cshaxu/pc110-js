@@ -111,6 +111,40 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0x0000beef }, eip: 0x00000203 });
   });
 
+  it("selects LODS data and index width independently through the context", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xad],
+      [0x00000101, 0x66],
+      [0x00000102, 0xad],
+      [0x00000103, 0x67],
+      [0x00000104, 0xad],
+      [0x00012000, 0x11],
+      [0x00012001, 0x22],
+      [0x00012002, 0x33],
+      [0x00012003, 0x44],
+      [0x00002000, 0xaa],
+      [0x00002001, 0xbb],
+      [0x00002002, 0xcc],
+      [0x00002003, 0xdd]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(6, 0x00012000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x44332211, esi: 0x00012004 } });
+
+    state.writeRegister(6, 0x00012000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x44332211, esi: 0x00012002 } });
+
+    state.writeRegister(6, 0xabcd2000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xddccbbaa, esi: 0xabcd2004 } });
+  });
+
   it("fetches the reset-vector opcode through the current CS:EIP state", () => {
     const values = new Map<number, number>([[0x000ffff0, 0xea]]);
     const memory = resetAliasMemory(values);

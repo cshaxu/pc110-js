@@ -659,6 +659,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P241 applies the same context to `89` and `8B`: data width follows
   the selected operand size and ModR/M decoding follows the selected address
   size. It is original TypeScript with no copied PCjs or NXVM source.
+- M2 T2 S3 P242 migrates the non-repeated default-segment LODS paths. The
+  context selects LODSW versus LODSD data width and SI versus ESI indexing;
+  PCjs remains the behavioral authority for later prefix and repeat work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
