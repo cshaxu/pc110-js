@@ -40,6 +40,12 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | Explicit NXVM undefined extensions | 12546-12552, 12637-12649, 12924-12977 | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD` | `instructions/system.ts` | Complete reference evidence | Prefixes and fault EIP | Required | Planned |
 | Segmentation, paging, exceptions, and trace | 51-1145, 2033-3096, 13315-13917 | Logical/linear access, descriptors, stack, faults, interrupts, trace | `protection/`, `events/`, `debug/` | Partial | PF/GP/SS/NP; privilege; ROM trace; differential state dumps | Required | Planned |
 
+## P355 Rebuilt Dispatcher Boundary
+
+P355 adds a project-owned dispatcher for completed rebuilt instruction families.
+It supports sequence-level execution and does not switch the machine runtime,
+which remains a later integration gate.
+
 ## P327 `00-3F` Checklist And Deferred Dependencies
 
 P327 is an in-progress execution slice. It executes the base ALU encodings

@@ -1060,6 +1060,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   dependency is introduced.
 - M2 T2 S3 P354 translates NXVM SETcc behavior into native TypeScript through
   rebuilt ModR/M and segmented-memory access, with no external runtime import.
+- M2 T2 S3 P355 adds a project-owned dispatcher that joins rebuilt instruction
+  families without importing legacy CPU, NXVM, or PCjs runtime code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
