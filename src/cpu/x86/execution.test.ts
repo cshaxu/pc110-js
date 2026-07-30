@@ -19,6 +19,53 @@ function resetAliasMemory(values: Map<number, number>) {
 }
 
 describe("80386 instruction fetch", () => {
+  it("selects MOV immediate width from the code-segment default and 66 override", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xb8],
+      [0x00000101, 0x78],
+      [0x00000102, 0x56],
+      [0x00000103, 0x34],
+      [0x00000104, 0x12],
+      [0x00000200, 0x66],
+      [0x00000201, 0xb8],
+      [0x00000202, 0xcd],
+      [0x00000203, 0xab]
+    ]);
+    const state = new Cpu386State();
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x12345678 }, eip: 0x00000105 });
+
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000200, true);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x1234abcd }, eip: 0x00000204 });
+  });
+
+  it("uses SS stack address size independently for default-32 register push and pop", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x53],
+      [0x00000101, 0x58]
+    ]);
+    const state = new Cpu386State();
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, false);
+    state.writeRegister(3, 0x44332211);
+    state.writeRegister(4, 0xcafe0002);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect([values.get(0x0000fffe), values.get(0x0000ffff), values.get(0), values.get(1)]).toEqual([
+      0x11, 0x22, 0x33, 0x44
+    ]);
+    expect(state.snapshot().registers.esp).toBe(0xcafefffe);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x44332211, esp: 0xcafe0002 },
+      eip: 0x00000102
+    });
+  });
+
   it("fetches the reset-vector opcode through the current CS:EIP state", () => {
     const values = new Map<number, number>([[0x000ffff0, 0xea]]);
     const memory = resetAliasMemory(values);
@@ -3329,7 +3376,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(0, 0x12345678);
     state.writeRegister(4, 0x3000);

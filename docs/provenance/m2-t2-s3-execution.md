@@ -653,6 +653,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P239 introduces project-native context parsing only. Its repeated
   prefix behavior follows the owner-approved selection rule; no PCjs or NXVM
   source was copied, and no guest-visible execution behavior changed.
+- M2 T2 S3 P240 migrates only immediate-register MOV and register push/pop.
+  The selected operand size now controls data width while the SS hidden-cache
+  default controls stack addressing. PCjs remains the behavior authority.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

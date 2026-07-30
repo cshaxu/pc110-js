@@ -1,4 +1,5 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
+import { decodeExecutionContext, type ExecutionContext } from "./execution-context.js";
 import { decodeModRm, decodeModRm16Address, decodeModRm32Address } from "./modrm.js";
 import { loadDescriptor, loadInterruptGate } from "./segmentation.js";
 import { SegmentRegister, type LoadedSegment } from "./segment-register.js";
@@ -406,6 +407,91 @@ function popUint32(memory: InstructionMemory, state: Cpu386State): number {
   const value = readSegmentUint32(memory, state, "ss", stackPointer, 32);
   state.writeRegister(4, stackPointer + 4);
   return value;
+}
+
+function pushContextOperand(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  value: number
+): void {
+  const width = context.operandSize === 32 ? 4 : 2;
+  if (context.stackAddressSize === 32) {
+    const stackPointer = (state.readRegister(4) - width) >>> 0;
+    state.writeRegister(4, stackPointer);
+    if (context.operandSize === 32)
+      writeSegmentUint32(memory, state, "ss", stackPointer, value, 32);
+    else writeSegmentUint16(memory, state, "ss", stackPointer, value);
+    return;
+  }
+
+  const stackPointer = (state.readRegister16(4) - width) & 0xffff;
+  state.writeRegister16(4, stackPointer);
+  if (context.operandSize === 32) writeSegmentUint32(memory, state, "ss", stackPointer, value, 16);
+  else writeSegmentUint16(memory, state, "ss", stackPointer, value);
+}
+
+function popContextOperand(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): number {
+  const width = context.operandSize === 32 ? 4 : 2;
+  if (context.stackAddressSize === 32) {
+    const stackPointer = state.readRegister(4);
+    const value =
+      context.operandSize === 32
+        ? readSegmentUint32(memory, state, "ss", stackPointer, 32)
+        : readSegmentUint16(memory, state, "ss", stackPointer);
+    state.writeRegister(4, stackPointer + width);
+    return value;
+  }
+
+  const stackPointer = state.readRegister16(4);
+  const value =
+    context.operandSize === 32
+      ? readSegmentUint32(memory, state, "ss", stackPointer, 16)
+      : readSegmentUint16(memory, state, "ss", stackPointer);
+  state.writeRegister16(4, (stackPointer + width) & 0xffff);
+  return value;
+}
+
+function executeContextualInstruction(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.segmentOverride || context.repeatPrefix || context.lock) return undefined;
+
+  if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
+    const register = context.opcode - 0xb8;
+    if (context.operandSize === 32)
+      state.writeRegister(register, fetchCodeUint32(memory, state, context.opcodeOffset + 1));
+    else state.writeRegister16(register, fetchCodeUint16(memory, state, context.opcodeOffset + 1));
+    state.advanceEip(context.opcodeOffset + (context.operandSize === 32 ? 5 : 3));
+    return { halted: false, fetched };
+  }
+
+  if (context.opcode >= 0x50 && context.opcode <= 0x57) {
+    const register = context.opcode & 0x07;
+    const value =
+      context.operandSize === 32 ? state.readRegister(register) : state.readRegister16(register);
+    pushContextOperand(memory, state, context, value);
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
+  if (context.opcode >= 0x58 && context.opcode <= 0x5f) {
+    const register = context.opcode & 0x07;
+    const value = popContextOperand(memory, state, context);
+    if (context.operandSize === 32) state.writeRegister(register, value);
+    else state.writeRegister16(register, value);
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
+  return undefined;
 }
 
 function deliverRealModeInterrupt(
@@ -1811,6 +1897,14 @@ export function stepInstruction(
   if (state.snapshot().halted) return { halted: true };
 
   const fetched = fetchOpcode(memory, state);
+  const snapshot = state.snapshot();
+  const context = decodeExecutionContext(
+    { readByte: (displacement) => fetchCodeByte(memory, state, displacement).opcode },
+    fetched.instructionPointer,
+    { codeDefault32: snapshot.cs.default32, stackDefault32: snapshot.ss.default32 }
+  );
+  const contextualResult = executeContextualInstruction(memory, state, context, fetched);
+  if (contextualResult) return contextualResult;
   switch (fetched.opcode) {
     case 0x62: {
       const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
