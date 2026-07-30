@@ -8,3 +8,11 @@
   `0x3F6`, and IRQ14.
 - Excluded: PCjs runtime/source, DOS/filesystem behavior, BIOS services,
   protected media, and synthetic boot results.
+
+## P2 Raw Media
+
+- Product code: original TypeScript `FixedDrive` media contract.
+- Scope: validated complete raw image, Type 5 geometry, CHS sectors, explicit
+  write protection, and attachment lifecycle.
+- Excluded: ATA command handling, ports, IRQ, firmware, DOS/filesystem, and
+  host-path access.

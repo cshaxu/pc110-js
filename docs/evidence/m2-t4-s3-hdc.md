@@ -8,3 +8,10 @@
   primary AT ports and IRQ14 behavior.
 - Boundary: P1 records the native controller and raw-media path only. It adds
   no port handling, media, BIOS behavior, or boot result.
+
+## P2 Raw Media Evidence
+
+- Focused tests cover complete-image validation, CHS addressing, attachment,
+  ejection, readiness, write protection, defensive copies, writable updates,
+  and the exact 49,090,560-byte Type 5 geometry.
+- No media is auto-attached and no protected asset is loaded or tracked.
