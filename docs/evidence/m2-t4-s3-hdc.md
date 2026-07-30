@@ -32,3 +32,11 @@
   CHS error paths.
 - No disk image is auto-attached and no filesystem or firmware response is
   used to obtain sector bytes.
+
+## P5 PIO Write Evidence
+
+- Focused tests verify real multi-sector raw-media updates through little-endian
+  word writes, DRQ, IRQ14 service points, CHS/count progression, terminal
+  state, and write-protect error reporting.
+- No host path, filesystem, auto-attached image, firmware helper, or guest
+  shortcut participates in a write.

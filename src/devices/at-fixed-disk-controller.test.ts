@@ -101,4 +101,39 @@ describe("primary AT fixed-disk controller", () => {
     });
     expect(interrupts.filter(Boolean)).toHaveLength(2);
   });
+
+  it("writes real PIO sectors with word ordering, progression, and write-protect errors", () => {
+    const controller = new AtFixedDiskController();
+    const drive = new FixedDrive({ cylinders: 1, heads: 1, sectorsPerTrack: 2, bytesPerSector: 4 });
+    drive.attach(new Uint8Array(8), false);
+    controller.attachDrive(0, drive);
+    controller.write(ATC_SECTOR_COUNT_PORT, 2, 8);
+    controller.write(ATC_SECTOR_NUMBER_PORT, 1, 8);
+    controller.write(ATC_STATUS_PORT, 0x30, 8);
+    expect(controller.read(ATC_STATUS_PORT, 8)).toBe(0x58);
+    controller.write(ATC_DATA_PORT, 0x1110, 16);
+    controller.write(ATC_DATA_PORT, 0x1312, 16);
+    expect(controller.snapshot()).toMatchObject({ sectorCount: 1, sectorNumber: 2, status: 0x58 });
+    controller.write(ATC_DATA_PORT, 0x2120, 16);
+    controller.write(ATC_DATA_PORT, 0x2322, 16);
+    expect(drive.readSector(0, 0, 1)).toEqual(Uint8Array.from([0x10, 0x11, 0x12, 0x13]));
+    expect(drive.readSector(0, 0, 2)).toEqual(Uint8Array.from([0x20, 0x21, 0x22, 0x23]));
+    expect(controller.snapshot()).toMatchObject({ sectorCount: 0, status: 0x50 });
+
+    const protectedDrive = new FixedDrive({
+      cylinders: 1,
+      heads: 1,
+      sectorsPerTrack: 1,
+      bytesPerSector: 4
+    });
+    protectedDrive.attach(new Uint8Array(4), true);
+    controller.attachDrive(0, protectedDrive);
+    controller.write(ATC_SECTOR_COUNT_PORT, 1, 8);
+    controller.write(ATC_SECTOR_NUMBER_PORT, 1, 8);
+    controller.write(ATC_STATUS_PORT, 0x30, 8);
+    controller.write(ATC_DATA_PORT, 0x0100, 16);
+    controller.write(ATC_DATA_PORT, 0x0302, 16);
+    expect(controller.read(ATC_STATUS_PORT, 8)).toBe(0x51);
+    expect(controller.read(ATC_ERROR_PORT, 8)).toBe(0x04);
+  });
 });

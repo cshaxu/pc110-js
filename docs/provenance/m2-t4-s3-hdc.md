@@ -34,3 +34,12 @@
   multi-sector CHS progression, status/error state, and IRQ14 service points.
 - Excluded: auto-attachment, PIO write, identify, BIOS/DOS/filesystem, PCjs
   source/runtime, and guest shortcuts.
+
+## P5 PIO Write
+
+- Product code: original TypeScript PIO sector-write state within the native
+  AT controller, committing only to an explicitly attached writable drive.
+- Scope: `WRITE DATA`, DRQ, 8/16-bit data writes, multi-sector CHS/count
+  progression, IRQ14 service points, terminal state, and write protection.
+- Excluded: auto-attachment, identify, BIOS/DOS/filesystem, PCjs source/runtime,
+  and guest shortcuts.
