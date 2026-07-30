@@ -12,10 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T3 S7: active. Verify selected BIOS POST checkpoints through the existing
-  project-native device paths. Preserve the verified T2 CPU oracle baseline,
-  native PIC/PIT/DMA/RTC/system-port/8042 browser checkpoint, and no-PCjs-
-  runtime boundary.
+- M2 T5 S1: active. The selected ROM has crossed the implemented T3/T4 paths
+  and reached the selected VGA compatibility domain at `0x3B8`. Preserve the
+  verified T2 CPU oracle baseline, native platform devices, raw FDC/DMA2/IRQ6
+  path, and no-PCjs-runtime boundary.
 
 ## Delivery Nodes
 
