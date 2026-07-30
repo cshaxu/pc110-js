@@ -38,3 +38,15 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
   write ownership, and machine composition.
 - Trace: native CGA state advances the selected ROM to 231 instructions at
   `F000:BB44`, stopping on VGA attribute-controller port `0x3C0`.
+
+## P4 VGA Attribute Controller Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `video.js` ATC definitions, port table, write
+  state machine, and status-one reset behavior.
+- Tests: all palette/control register classes, masks, index/data sequencing,
+  palette gating, status-one flip-flop reset, width, reset, and machine
+  composition.
+- Trace: the fixed 1,000-instruction native trace completes at `F000:9C05`.
+  It demonstrates no remaining port boundary in that bounded interval, not a
+  successful video boot or rendered output.

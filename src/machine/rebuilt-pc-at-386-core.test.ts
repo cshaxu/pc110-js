@@ -328,4 +328,17 @@ describe("RebuiltPcAt386Core", () => {
     core.reset();
     expect(core.cgaCompatibility.snapshot()).toMatchObject({ mode: 0, color: 0, crtcIndex: 0 });
   });
+
+  it("registers native VGA attribute state and resets its write flip-flop from status one", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x3c0, 0x10, 8);
+    core.ports.read(0x3da, 8);
+    core.ports.write(0x3c0, 0x12, 8);
+    expect(core.attributeController.snapshot()).toMatchObject({ index: 0x12, expectsData: true });
+    core.ports.write(0x3c0, 0x2f, 8);
+    expect(core.ports.read(0x3c1, 8)).toBe(0x2f);
+    core.reset();
+    expect(core.attributeController.snapshot()).toMatchObject({ index: 0, expectsData: false });
+  });
 });

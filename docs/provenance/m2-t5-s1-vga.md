@@ -27,3 +27,10 @@ PCjs maps the CGA CRTC index/data registers at `0x3D4`/`0x3D5`, mode at
 `0x3D8`, color select at `0x3D9`, and status at `0x3DA`. The native model
 retains the full compatibility group and deterministic retrace bits without
 adopting PCjs display, timing, font, BIOS, or browser code.
+
+## P4 VGA Attribute Controller
+
+PCjs maps the `0x3C0` index/data flip-flop, `0x3C1` data reads, palette-enable
+bit, 21 attribute registers, and the status-one read reset. The native model
+retains those register contracts with a narrow status-read callback. It does
+not adopt PCjs rendering, font, timing, DAC, BIOS, or browser code.

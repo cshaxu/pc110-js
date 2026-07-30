@@ -37,6 +37,8 @@ export class CgaCompatibility {
   private retrace = false;
   private verticalRetrace = false;
 
+  public constructor(private readonly onStatusRead?: () => void) {}
+
   public reset(): void {
     this.crtcData.fill(0);
     this.crtcIndex = 0;
@@ -63,6 +65,7 @@ export class CgaCompatibility {
       case CGA_COLOR_PORT:
         return this.color;
       case CGA_STATUS_PORT:
+        this.onStatusRead?.();
         return (
           (this.retrace ? CGA_STATUS_RETRACE : 0) |
           (this.verticalRetrace ? CGA_STATUS_VERTICAL_RETRACE : 0)

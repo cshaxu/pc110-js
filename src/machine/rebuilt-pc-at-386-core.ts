@@ -15,6 +15,7 @@ import { PcAtFdc } from "../devices/pc-at-fdc.js";
 import { performDmaTransfer } from "../devices/dma-transfer.js";
 import { MdaCompatibility } from "../devices/mda-compatibility.js";
 import { CgaCompatibility } from "../devices/cga-compatibility.js";
+import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -63,7 +64,10 @@ export class RebuiltPcAt386Core {
     (active) => this.dma.setHardwareRequest(2, active)
   );
   public readonly mdaCompatibility = new MdaCompatibility();
-  public readonly cgaCompatibility = new CgaCompatibility();
+  public readonly attributeController = new VgaAttributeController();
+  public readonly cgaCompatibility = new CgaCompatibility(() =>
+    this.attributeController.resetAddressDataFlipFlop()
+  );
   public readonly deskProSecondaryPit: DeskPro386SecondaryPit | undefined;
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
@@ -88,6 +92,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.fdc.portRanges()) this.registerPorts(range);
     for (const range of this.mdaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
+    for (const range of this.attributeController.portRanges()) this.registerPorts(range);
     if (options.deskProSecondaryPit) {
       this.deskProSecondaryPit = new DeskPro386SecondaryPit();
       for (const range of this.deskProSecondaryPit.portRanges()) this.registerPorts(range);
@@ -109,6 +114,7 @@ export class RebuiltPcAt386Core {
     this.fdc.reset();
     this.mdaCompatibility.reset();
     this.cgaCompatibility.reset();
+    this.attributeController.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.memory.setA20Enabled(true);
