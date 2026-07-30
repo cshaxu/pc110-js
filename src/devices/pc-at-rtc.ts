@@ -2,6 +2,7 @@ import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
 import {
   RtcCmos,
   type RtcAdvanceResult,
+  type RtcCmosConfiguration,
   type RtcCmosOptions,
   type RtcCmosSnapshot
 } from "./rtc-cmos.js";
@@ -16,6 +17,10 @@ export interface PcAtRtcPortRange {
   readonly write: (port: number, value: number, width: PortWidth) => void;
 }
 
+export interface PcAtRtcOptions extends RtcCmosOptions {
+  readonly configuration?: RtcCmosConfiguration;
+}
+
 /**
  * PC/AT RTC/CMOS port composition. The NMI-mask bit is retained as a signal
  * for T3 S5; this device neither generates nor suppresses CPU NMIs.
@@ -25,15 +30,17 @@ export class PcAtRtc {
   private address = 0;
 
   public constructor(
-    options: RtcCmosOptions = {},
+    private readonly options: PcAtRtcOptions = {},
     private readonly raiseIrq?: (irq: number) => void
   ) {
     this.rtc = new RtcCmos(options);
+    this.applyConfiguration();
   }
 
   public reset(): void {
     this.address = 0;
     this.rtc.reset();
+    this.applyConfiguration();
   }
 
   public read(port: number, width: PortWidth): number {
@@ -81,5 +88,9 @@ export class PcAtRtc {
   private requireByteWidth(width: PortWidth): void {
     if (width !== 8)
       throw new RangeError(`PC/AT RTC supports 8-bit I/O only, received ${width}-bit`);
+  }
+
+  private applyConfiguration(): void {
+    if (this.options.configuration) this.rtc.applyConfiguration(this.options.configuration);
   }
 }

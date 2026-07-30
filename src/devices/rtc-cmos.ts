@@ -50,6 +50,12 @@ export interface RtcCmosOptions {
   readonly initialDateTime?: RtcDateTime;
 }
 
+export interface RtcCmosConfiguration {
+  readonly baseMemoryKiB?: number;
+  readonly extendedMemoryKiB?: number;
+  readonly equipment?: number;
+}
+
 export interface RtcCmosSnapshot {
   readonly dateTime: RtcDateTime;
   readonly statusA: number;
@@ -169,6 +175,16 @@ export class RtcCmos {
     for (let index = 0x10; index <= 0x2d; index += 1) checksum += this.data[index]!;
     this.data[RtcCmosRegister.ChecksumLow] = checksum & 0xff;
     this.data[RtcCmosRegister.ChecksumHigh] = checksum >>> 8;
+  }
+
+  public applyConfiguration(configuration: RtcCmosConfiguration): void {
+    if (configuration.baseMemoryKiB !== undefined)
+      this.writeWord(RtcCmosRegister.BaseMemoryLow, configuration.baseMemoryKiB);
+    if (configuration.extendedMemoryKiB !== undefined)
+      this.writeWord(RtcCmosRegister.ExtendedMemoryLow, configuration.extendedMemoryKiB);
+    if (configuration.equipment !== undefined)
+      this.data[RtcCmosRegister.Equipment] = byte(configuration.equipment);
+    this.updateChecksum();
   }
 
   private readTimeRegister(register: number): number {
@@ -313,6 +329,13 @@ export class RtcCmos {
   private normalizeIndex(index: number): number {
     if (!Number.isInteger(index)) throw new RangeError(`RTC index is not an integer: ${index}`);
     return index & 0x7f;
+  }
+
+  private writeWord(index: number, value: number): void {
+    if (!Number.isInteger(value) || value < 0 || value > 0xffff)
+      throw new RangeError("RTC CMOS configuration word is outside 0-65535");
+    this.data[index] = value & 0xff;
+    this.data[index + 1] = value >>> 8;
   }
 
   private validateDateTime(value: RtcDateTime): void {

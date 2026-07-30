@@ -34,3 +34,10 @@ P3 composes the local model with project-native port and PIC interfaces only.
 The `0x70` NMI-disable bit is exposed as state for the future S5 system-port
 owner; no NMI behavior is added. IRQ8 originates only after a caller advances
 the local RTC, so no host-timer or PCjs scheduler dependency exists.
+
+## P4 Selected Configuration State
+
+P4 derives only the M1 contract's standard memory declaration: 640 KiB low RAM
+and 3072 KiB extended RAM. The DeskPro RAM window, chipset wiring, ROM map,
+and all unrecorded equipment details remain DeskPro-profile concerns and are
+not fabricated as generic CMOS defaults.
