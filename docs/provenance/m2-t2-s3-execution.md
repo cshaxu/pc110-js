@@ -809,6 +809,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   execution context. PCjs prefix behavior selects the signed displacement and
   destination IP/EIP width, while the existing shared EFLAGS condition mapping
   remains authoritative.
+- M2 T2 S3 P287 adds a project-native 32-bit double-shift flags API and routes
+  SHLD/SHRD through the execution context. PCjs prefix behavior selects data
+  and ModR/M address widths; the shared count, carry, sign, zero, and parity
+  model mirrors the established 16-bit project behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

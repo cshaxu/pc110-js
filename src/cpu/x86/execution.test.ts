@@ -4949,6 +4949,36 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x010d);
   });
 
+  it("uses contextual operand sizes for SHLD and SHRD", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0xa4],
+      [0x0102, 0xd8],
+      [0x0103, 0x04],
+      [0x0104, 0x66],
+      [0x0105, 0x0f],
+      [0x0106, 0xac],
+      [0x0107, 0xd8],
+      [0x0108, 0x04]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeEflags(0x00000012);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.writeRegister(0, 0x12345678);
+    state.writeRegister(3, 0xabcdef01);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x2345678a },
+      eflags: 0x00000013,
+      eip: 0x0104
+    });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x23451678 }, eip: 0x0109 });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

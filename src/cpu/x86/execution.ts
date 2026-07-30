@@ -462,6 +462,73 @@ function executeDoubleShiftWord(
   state.advanceEip(instructionBytes);
 }
 
+function executeContextualDoubleShift(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  extension: number
+): void {
+  const modRmOffset = context.opcodeOffset + 2;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const immediateCount = extension === 0xa4 || extension === 0xac;
+  const instructionBytes =
+    modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + (immediateCount ? 1 : 0);
+  let count = immediateCount
+    ? fetchCodeByte(memory, state, instructionBytes - 1).opcode
+    : state.readRegister8(1);
+  count &= 0x1f;
+  if (!count) {
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  const left = extension === 0xa4 || extension === 0xa5;
+  const width = context.operandSize;
+  const mask = width === 32 ? 0xffffffff : 0xffff;
+  let destination = modRm.registerDirect
+    ? width === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : width === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  const source = width === 32 ? state.readRegister(modRm.reg) : state.readRegister16(modRm.reg);
+  if (width === 16 && count > 16) {
+    destination = source;
+    count -= 16;
+  }
+  const carry = left
+    ? Boolean((destination << (count - 1)) & (width === 32 ? 0x80000000 : 0x8000))
+    : Boolean((destination >>> (count - 1)) & 0x01);
+  const result = left
+    ? ((destination << count) | (source >>> (width - count))) & mask
+    : ((destination >>> count) | (source << (width - count))) & mask;
+  if (modRm.registerDirect) {
+    if (width === 32) state.writeRegister(modRm.rm, result);
+    else state.writeRegister16(modRm.rm, result);
+  } else if (width === 32)
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  else
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  if (width === 32) state.writeDoubleShiftFlags32(result, carry);
+  else state.writeDoubleShiftFlags16(result, carry);
+  state.advanceEip(instructionBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1249,6 +1316,10 @@ function executeContextualInstruction(
           state.writeEip(state.snapshot().eip + instructionBytes + (displacement | 0));
         else state.writeEip16(state.snapshot().eip + instructionBytes + displacement);
       } else state.advanceEip(instructionBytes);
+      return { halted: false, fetched };
+    }
+    if (extension === 0xa4 || extension === 0xa5 || extension === 0xac || extension === 0xad) {
+      executeContextualDoubleShift(memory, state, context, extension);
       return { halted: false, fetched };
     }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
