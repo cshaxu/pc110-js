@@ -66,4 +66,15 @@ describe("PCjs differential CPU harness", () => {
       { direction: "read", port: 0x81, value: 0xbeef, width: 16 }
     ]);
   });
+
+  it("groups PCjs prefix steps into one operand-size-prefixed instruction", async () => {
+    const trace = await runPcjsDifferentialTrace({
+      name: "real-mode dword DX port program",
+      bytes: [0x66, 0xed, 0x66, 0xef],
+      registers: { edx: 0x82 },
+      instructionCount: 2,
+      io: { ports: [{ port: 0x82, inputValue: 0x12345678, width: 32 }] }
+    });
+    expect(() => assertDifferentialTraceMatch(trace)).not.toThrow();
+  });
 });

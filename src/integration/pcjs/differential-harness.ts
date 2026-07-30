@@ -170,7 +170,7 @@ export async function runPcjsDifferentialTrace(
     pcjs.io.clear();
     const pcjsMemory = snapshotPcjsMemory(pcjs.bus);
     rebuilt.runner.step();
-    pcjs.cpu.stepCPU(0);
+    stepPcjsLogicalInstruction(pcjs.cpu, pcjs.bus);
     steps.push({
       before,
       rebuilt: snapshotRebuilt(rebuilt.runner),
@@ -561,4 +561,13 @@ function diffPcjsMemory(bus: PcjsBus, before: Uint8Array): readonly Differential
     if (value !== before[address]) writes.push({ address, value });
   }
   return writes;
+}
+
+function stepPcjsLogicalInstruction(cpu: PcjsCpu, bus: PcjsBus): void {
+  const prefixes = new Set([0xf0, 0xf2, 0xf3, 0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65, 0x66, 0x67]);
+  let count = 0;
+  while (count < 14 && prefixes.has(bus.getByte((cpu.segCS.base + cpu.getIP() + count) >>> 0))) {
+    count += 1;
+  }
+  for (let index = 0; index <= count; index += 1) cpu.stepCPU(0);
 }
