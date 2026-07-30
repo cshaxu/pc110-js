@@ -34,6 +34,7 @@ It does not yet record writes whose value is unchanged.
 | `A0-A3` program | byte and word accumulator moffs loads/stores | automatic register, memory, and EIP lockstep |
 | `A4-AE` program | MOVSB, CMPSB, STOSB, LODSB, SCASB | automatic memory, index, and flag lockstep |
 | `B0-BF` program | every byte and word immediate-register form | automatic register-width and EIP lockstep |
+| `C0-C7` slice | immediate Group Two shifts and immediate MOV | automatic register, memory, flag, and EIP lockstep |
 
 ## Active Expansion Order
 

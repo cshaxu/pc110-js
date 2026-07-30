@@ -93,3 +93,10 @@ moffs forms. It adds no PCjs source or runtime dependency.
 P22 uses independent RAM images and the shared dispatcher for byte string
 operations. It adds no PCjs source, device emulation, or product runtime
 dependency.
+
+## P24 Immediate Shift And Move Program
+
+P24 uses the project-native dispatcher and two independent real-mode RAM
+images for C0/C1 immediate shifts and C6/C7 immediate MOV forms. PCjs remains
+a verification-only oracle; no PCjs source, runtime dependency, or
+instruction-specific oracle logic enters the product.

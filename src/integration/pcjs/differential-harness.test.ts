@@ -225,6 +225,12 @@ describe("PCjs differential CPU harness", () => {
         edi: 0x11110000
       },
       instructionCount: 16
+    },
+    {
+      name: "C0-C7 immediate shift and move slice",
+      bytes: [0xc0, 0xe0, 0x01, 0xc1, 0xe1, 0x01, 0xc6, 0xc0, 0x5a, 0xc7, 0xc1, 0x34, 0x12],
+      registers: { eax: 0x0001, ecx: 0x0001 },
+      instructionCount: 4
     }
   ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
     const trace = await runPcjsDifferentialTrace(differentialCase);
