@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { dispatchRebuiltInstruction } from "./dispatch.js";
 import { RebuiltCpuExecutor } from "./execution.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
@@ -146,5 +147,37 @@ describe("RebuiltCpuExecutor", () => {
     expect(state.readCr2()).toBe(0x400000);
     expect(trace).toHaveLength(1);
     expect(trace[0]?.fault).toBe(true);
+  });
+
+  it("delivers a non-present segment-load fault through the rebuilt IDT path", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Map<number, number>();
+    const write = (address: number, values: readonly number[]) =>
+      values.forEach((value, index) => bytes.set(address + index, value));
+    state.writeCr0(1);
+    state.writeSegment("cs", { selector: 8, base: 0, limit: 0xffff, default32: false, dpl: 0 });
+    state.writeSegment("ss", {
+      selector: 0x18,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x1f });
+    state.writeIdtr({ base: 0x300, limit: 0x7f });
+    state.writeEip(0);
+    state.registers.write16(0, 0x10);
+    state.registers.write32(4, 0x100);
+    write(0, [0x8e, 0xd8]);
+    write(0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(0x210, [0xff, 0xff, 0, 0, 0, 0x12, 0xcf, 0]);
+    write(0x358, [0x40, 0, 8, 0, 0, 0x8e, 0, 0]);
+    new RebuiltCpuExecutor(state, {
+      readUint8: (address) => bytes.get(address) ?? 0,
+      writeUint8: (address, value) => bytes.set(address, value)
+    }).step(dispatchRebuiltInstruction);
+
+    expect(state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xf0 } });
+    expect([0xf0, 0xf4, 0xf8].map((address) => bytes.get(address))).toEqual([0x10, 0, 8]);
   });
 });

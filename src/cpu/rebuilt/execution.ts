@@ -9,6 +9,7 @@ import {
   SegmentedMemory,
   type RebuiltMemoryBus
 } from "./memory/segmented-memory.js";
+import { SegmentLoadError } from "./protection/segment-loader.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
 export interface RebuiltExecutionContext {
@@ -80,6 +81,10 @@ export class RebuiltCpuExecutor {
     }
     if (error instanceof SegmentAccessError) {
       deliverFault(this.memory, this.state, error.segment === "ss" ? 12 : 13, faultEip, 0);
+      return true;
+    }
+    if (error instanceof SegmentLoadError) {
+      deliverFault(this.memory, this.state, error.vector, faultEip, error.errorCode);
       return true;
     }
     return false;

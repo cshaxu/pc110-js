@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { SegmentedMemory } from "../memory/segmented-memory.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
-import { loadCodeSegment, loadDataSegment } from "./segment-loader.js";
+import {
+  loadCodeSegment,
+  loadDataSegment,
+  loadStackSegment,
+  SegmentLoadError
+} from "./segment-loader.js";
 
 function machine() {
   const state = new RebuiltCpuState();
@@ -56,5 +61,25 @@ describe("rebuilt segment loader hidden CPL", () => {
       limit: 0x0fff,
       valid: true
     });
+  });
+
+  it("classifies selector type, presence, and stack errors", () => {
+    const missing = machine();
+    writeDescriptor(missing.bytes, 2);
+    missing.bytes.set(0x10d, 0x12);
+    expect(() => loadDataSegment(missing.memory, missing.state, "ds", 8)).toThrow(SegmentLoadError);
+    try {
+      loadDataSegment(missing.memory, missing.state, "ds", 8);
+    } catch (error) {
+      expect(error).toMatchObject({ vector: 11, errorCode: 8 });
+    }
+
+    const stack = machine();
+    expect(() => loadStackSegment(stack.memory, stack.state, 0)).toThrow(SegmentLoadError);
+    try {
+      loadStackSegment(stack.memory, stack.state, 0);
+    } catch (error) {
+      expect(error).toMatchObject({ vector: 13, errorCode: 0 });
+    }
   });
 });

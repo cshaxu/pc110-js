@@ -1,9 +1,17 @@
 import type { SegmentedMemory } from "../memory/segmented-memory.js";
 import type { RebuiltCpuState } from "../state/cpu-state.js";
 import type { SegmentName } from "../state/segments.js";
-import { readDescriptor } from "./descriptor.js";
+import { DescriptorLookupError, readDescriptor } from "./descriptor.js";
 
-export class SegmentLoadError extends Error {}
+export class SegmentLoadError extends Error {
+  public constructor(
+    readonly vector: 11 | 12 | 13,
+    readonly errorCode: number,
+    message: string
+  ) {
+    super(message);
+  }
+}
 
 export function loadDataSegment(
   memory: SegmentedMemory,
@@ -29,17 +37,14 @@ export function loadCodeSegment(
 ): void {
   selector &= 0xffff;
   if (!(state.readCr0() & 1)) return load(memory, state, "cs", selector, false);
-  const descriptor = readDescriptor(
-    { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
-    state,
-    selector
-  );
+  const descriptor = lookup(memory, state, selector);
   const cpl = currentPrivilege(state);
   const conforming = Boolean(descriptor.type & 4);
-  if (!descriptor.system || !(descriptor.type & 8) || !descriptor.present)
-    throw new SegmentLoadError("Selector does not identify a present code segment");
+  if (!descriptor.system || !(descriptor.type & 8))
+    throw fault(13, selector, "Selector does not identify a code segment");
+  if (!descriptor.present) throw fault(11, selector, "Selected code segment is not present");
   if (conforming ? descriptor.dpl > cpl : descriptor.dpl !== cpl || (selector & 3) > cpl)
-    throw new SegmentLoadError("Selected code segment violates privilege rules");
+    throw fault(13, selector, "Selected code segment violates privilege rules");
   state.writeSegment("cs", {
     selector: (selector & 0xfffc) | cpl,
     base: descriptor.base,
@@ -70,7 +75,7 @@ function load(
     return;
   }
   if ((selector & 0xfffc) === 0) {
-    if (stack) throw new SegmentLoadError("SS cannot receive a null selector");
+    if (stack) throw fault(13, 0, "SS cannot receive a null selector");
     state.writeSegment(name, {
       selector,
       base: 0,
@@ -81,20 +86,17 @@ function load(
     });
     return;
   }
-  const descriptor = readDescriptor(
-    { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
-    state,
-    selector
-  );
+  const descriptor = lookup(memory, state, selector);
   const cpl = currentPrivilege(state);
   const rpl = selector & 3;
   const executable = Boolean(descriptor.type & 8);
   const writable = Boolean(descriptor.type & 2);
   if (!descriptor.system || (stack ? executable || !writable : executable && !writable))
-    throw new SegmentLoadError("Selector does not identify a compatible data segment");
-  if (!descriptor.present) throw new SegmentLoadError("Selected segment is not present");
+    throw fault(13, selector, "Selector does not identify a compatible data segment");
+  if (!descriptor.present)
+    throw fault(stack ? 12 : 11, selector, "Selected segment is not present");
   if (stack ? rpl !== cpl || descriptor.dpl !== cpl : Math.max(cpl, rpl) > descriptor.dpl)
-    throw new SegmentLoadError("Selected segment violates privilege rules");
+    throw fault(13, selector, "Selected segment violates privilege rules");
   state.writeSegment(name, {
     selector,
     base: descriptor.base,
@@ -103,6 +105,24 @@ function load(
     valid: true,
     dpl: descriptor.dpl
   });
+}
+
+function lookup(memory: SegmentedMemory, state: RebuiltCpuState, selector: number) {
+  try {
+    return readDescriptor(
+      { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      state,
+      selector
+    );
+  } catch (error) {
+    if (error instanceof DescriptorLookupError)
+      throw fault(13, selector, "Selector is outside the descriptor table");
+    throw error;
+  }
+}
+
+function fault(vector: 11 | 12 | 13, errorCode: number, message: string): SegmentLoadError {
+  return new SegmentLoadError(vector, errorCode & 0xffff, message);
 }
 
 function currentPrivilege(state: RebuiltCpuState): number {

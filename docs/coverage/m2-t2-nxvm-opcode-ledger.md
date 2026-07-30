@@ -535,3 +535,11 @@ returns no decoded instruction, and emits a fault trace event without inventing
 an opcode. Focused evidence covers protected paged fetch, fault EIP, error
 code, CR2, and trace state. Descriptor-specific codes, escalation, and
 outer-privilege delivery remain active work.
+
+## P396 Segment-Loader Fault Checklist
+
+P396 classifies rebuilt code/data/stack selector-load failures as #GP, #NP, or
+#SS with NXVM-style selector error codes, then routes those typed failures through
+the rebuilt executor. Focused tests cover descriptor presence and null SS
+classification. Descriptor gates, task switching, escalation, and all
+outer-privilege paths remain active work.
