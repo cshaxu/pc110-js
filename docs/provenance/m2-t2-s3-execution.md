@@ -984,6 +984,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   local signed-width arithmetic to set only defined CF/OF truncation results.
   BOUND, ARPL, FS/GS selector behavior, and string I/O remain explicit
   dependencies; no legacy, NXVM, or PCjs runtime import is introduced.
+- M2 T2 S3 P331 translates NXVM's `70-7F` short conditional-transfer handlers
+  into a single project-native EFLAGS predicate table. It preserves the
+  instruction-start relative-base behavior through decoded length and applies
+  CS D/B only to the resulting EIP width. No external runtime dependency is
+  introduced.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
