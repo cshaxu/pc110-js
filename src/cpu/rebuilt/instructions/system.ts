@@ -182,7 +182,7 @@ function loadSystemSelector(
     return true;
   }
   if (selector & 4) {
-    deliverFault(context.memory, context.state, 13, context.state.readEip());
+    deliverSelectorLoadFault(context, 13, selector);
     return false;
   }
   let descriptor;
@@ -196,14 +196,18 @@ function loadSystemSelector(
       selector
     );
   } catch {
-    deliverFault(context.memory, context.state, 13, context.state.readEip());
+    deliverSelectorLoadFault(context, 13, selector);
     return false;
   }
   const valid = ldt
     ? !descriptor.system && descriptor.type === 2
     : !descriptor.system && (descriptor.type === 1 || descriptor.type === 9);
-  if (!valid || !descriptor.present) {
-    deliverFault(context.memory, context.state, 13, context.state.readEip());
+  if (!valid) {
+    deliverSelectorLoadFault(context, 13, selector);
+    return false;
+  }
+  if (!descriptor.present) {
+    deliverSelectorLoadFault(context, 11, selector);
     return false;
   }
   const target = {
@@ -220,6 +224,14 @@ function loadSystemSelector(
     context.state.writeTr(target);
   }
   return true;
+}
+
+function deliverSelectorLoadFault(
+  context: RebuiltExecutionContext,
+  vector: 11 | 13,
+  selector: number
+): void {
+  deliverFault(context.memory, context.state, vector, context.state.readEip(), selector & 0xffff);
 }
 
 function verifySelector(

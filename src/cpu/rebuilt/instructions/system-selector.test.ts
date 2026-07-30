@@ -174,4 +174,57 @@ describe("rebuilt 0F 00 selector group", () => {
       );
     }
   });
+
+  it("delivers #NP(selector) for non-present LLDT and LTR descriptors", () => {
+    for (const [opcode, ldt, type] of [
+      [0xd0, true, 2],
+      [0xd8, false, 9]
+    ] as const) {
+      const result = machine([0x0f, 0x00, opcode]);
+      result.state.writeSegment("cs", {
+        selector: 8,
+        base: 0,
+        limit: 0xffff,
+        default32: false,
+        dpl: 0
+      });
+      result.state.writeSegment("ss", {
+        selector: 0x10,
+        base: 0,
+        limit: 0xffffffff,
+        default32: true,
+        dpl: 0
+      });
+      result.state.writeGdtr({ base: 0x200, limit: 0x27 });
+      result.state.writeIdtr({ base: 0x300, limit: 0x7f });
+      result.state.registers.write32(4, 0x100);
+      result.state.registers.write16(0, 0x18);
+      result.state.writeLdtr({ selector: 0x1234, base: 0, limit: 0, default32: false });
+      result.state.writeTr({ selector: 0x5678, base: 0, limit: 0, default32: false });
+      [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0].forEach((value, index) =>
+        result.memory.set(0x208 + index, value)
+      );
+      [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0].forEach((value, index) =>
+        result.memory.set(0x210 + index, value)
+      );
+      [0xff, 0xff, 0, 0, 0, type, 0x40, 0].forEach((value, index) =>
+        result.memory.set(0x218 + index, value)
+      );
+      [0x60, 0, 8, 0, 0, 0x8e, 0, 0].forEach((value, index) =>
+        result.memory.set(0x358 + index, value)
+      );
+
+      result.step();
+
+      expect(result.state.snapshot()).toMatchObject({
+        eip: 0x60,
+        segments: { cs: { selector: 8 } }
+      });
+      expect(result.state.registers.read32(4)).toBe(0xf0);
+      expect(result.memory.get(0xf0)).toBe(0x18);
+      expect(ldt ? result.state.readLdtr().selector : result.state.readTr().selector).toBe(
+        ldt ? 0x1234 : 0x5678
+      );
+    }
+  });
 });
