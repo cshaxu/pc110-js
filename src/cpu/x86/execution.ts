@@ -496,7 +496,7 @@ function pushContextOperand(
     state.writeRegister(4, stackPointer);
     if (context.operandSize === 32)
       writeSegmentUint32(memory, state, "ss", stackPointer, value, 32);
-    else writeSegmentUint16(memory, state, "ss", stackPointer, value);
+    else writeSegmentUint16(memory, state, "ss", stackPointer, value, 32);
     return;
   }
 
@@ -517,7 +517,7 @@ function popContextOperand(
     const value =
       context.operandSize === 32
         ? readSegmentUint32(memory, state, "ss", stackPointer, 32)
-        : readSegmentUint16(memory, state, "ss", stackPointer);
+        : readSegmentUint16(memory, state, "ss", stackPointer, 32);
     state.writeRegister(4, stackPointer + width);
     return value;
   }
@@ -1278,6 +1278,16 @@ function executeContextualInstruction(
     const value = popContextOperand(memory, state, context);
     if (context.operandSize === 32) state.writeRegister(register, value);
     else state.writeRegister16(register, value);
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
+  if (context.opcode === 0xc9) {
+    if (context.stackAddressSize === 32) state.writeRegister(4, state.readRegister(5));
+    else state.writeRegister16(4, state.readRegister16(5));
+    const framePointer = popContextOperand(memory, state, context);
+    if (context.operandSize === 32) state.writeRegister(5, framePointer);
+    else state.writeRegister16(5, framePointer);
     state.advanceEip(context.opcodeOffset + 1);
     return { halted: false, fetched };
   }

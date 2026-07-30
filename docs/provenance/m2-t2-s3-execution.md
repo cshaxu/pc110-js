@@ -769,6 +769,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P277 routes `70` through `7F` through context. PCjs operand-size
   selection controls whether the signed rel8 target is written to IP or EIP;
   the existing shared EFLAGS condition mapping remains authoritative.
+- M2 T2 S3 P278 routes `C9` through context after confirming the PCjs LEAVE
+  stack-address behavior. Operand-size controls BP/EBP pop width, while SS D/B
+  controls SP/ESP address width. This also corrects project-native contextual
+  word push/pop accesses to pass a 32-bit SS address explicitly when required.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

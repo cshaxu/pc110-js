@@ -4642,6 +4642,38 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0002);
   });
 
+  it("uses CS and SS defaults independently for LEAVE", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0xc9],
+      [0x0101, 0x66],
+      [0x0102, 0xc9],
+      [0x1200, 0x78],
+      [0x1201, 0x56],
+      [0x1202, 0x34],
+      [0x1203, 0x12],
+      [0xabcd1300, 0xf0],
+      [0xabcd1301, 0xbe]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(5, 0x1200);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebp: 0x12345678, esp: 0x1204 },
+      eip: 0x0101
+    });
+    state.writeRegister(5, 0xabcd1300);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ebp: 0xabcdbef0, esp: 0xabcd1302 },
+      eip: 0x0103
+    });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
