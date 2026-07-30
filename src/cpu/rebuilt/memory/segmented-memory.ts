@@ -40,6 +40,10 @@ export class SegmentedMemory {
     return this.bus.readUint8(address >>> 0) & 0xff;
   }
 
+  public writePhysical8(address: number, value: number): void {
+    this.bus.writeUint8(address >>> 0, value & 0xff);
+  }
+
   public runAtomically<T>(operation: () => T): T {
     return this.bus.runAtomically?.(operation) ?? operation();
   }

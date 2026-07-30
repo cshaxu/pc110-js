@@ -25,21 +25,23 @@ export function loadDataSegment(
 export function loadStackSegment(
   memory: SegmentedMemory,
   state: RebuiltCpuState,
-  selector: number
+  selector: number,
+  targetPrivilege = currentPrivilege(state)
 ): void {
-  load(memory, state, "ss", selector, true);
+  load(memory, state, "ss", selector, true, targetPrivilege);
 }
 
 export function loadCodeSegment(
   memory: SegmentedMemory,
   state: RebuiltCpuState,
-  selector: number
+  selector: number,
+  targetPrivilege = currentPrivilege(state)
 ): void {
   selector &= 0xffff;
   if (!(state.readCr0() & 1) || state.isVirtual8086())
     return load(memory, state, "cs", selector, false);
   const descriptor = lookup(memory, state, selector);
-  const cpl = currentPrivilege(state);
+  const cpl = targetPrivilege;
   const conforming = Boolean(descriptor.type & 4);
   if (!descriptor.system || !(descriptor.type & 8))
     throw fault(13, selector, "Selector does not identify a code segment");
@@ -65,7 +67,8 @@ function load(
   state: RebuiltCpuState,
   name: SegmentName,
   selector: number,
-  stack: boolean
+  stack: boolean,
+  targetPrivilege = currentPrivilege(state)
 ): void {
   selector &= 0xffff;
   if (!(state.readCr0() & 1) || state.isVirtual8086()) {
@@ -100,7 +103,7 @@ function load(
     return;
   }
   const descriptor = lookup(memory, state, selector);
-  const cpl = currentPrivilege(state);
+  const cpl = targetPrivilege;
   const rpl = selector & 3;
   const executable = Boolean(descriptor.type & 8);
   const writable = Boolean(descriptor.type & 2);

@@ -210,10 +210,15 @@ function loadSystemSelector(
     selector,
     base: descriptor.base,
     limit: descriptor.limit,
-    default32: descriptor.default32
+    default32: !ldt && descriptor.type === 9,
+    type: ldt ? descriptor.type : descriptor.type | 2
   };
   if (ldt) context.state.writeLdtr(target);
-  else context.state.writeTr(target);
+  else {
+    const address = (context.state.readGdtr().base + (selector & 0xfff8) + 5) >>> 0;
+    context.memory.writePhysical8(address, context.memory.readPhysical8(address) | 0x02);
+    context.state.writeTr(target);
+  }
   return true;
 }
 

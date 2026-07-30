@@ -91,6 +91,58 @@ describe("rebuilt INT and IRET", () => {
     expect(state.snapshot()).toMatchObject({ eip: 2, eflags: 0x302, registers: { esp: 0x100 } });
   });
 
+  it("switches through a 32-bit TSS stack for an outer-privilege gate and IRET", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("cs", {
+      selector: 0x1b,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeSegment("ss", {
+      selector: 0x23,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x2f });
+    state.writeIdtr({ base: 0x300, limit: 0x1ff });
+    state.writeTr({ selector: 0x28, base: 0x400, limit: 0x67, default32: true, type: 9 });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    state.flags.set(0x300);
+    const memory = new Map<number, number>();
+    write(memory, 0, [0xcd, 0x30]);
+    write(memory, 0x80, [0xcf]);
+    write(memory, 0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(memory, 0x218, [0xff, 0xff, 0, 0, 0, 0xfa, 0xcf, 0]);
+    write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0]);
+    write(memory, 0x220, [0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0]);
+    write(memory, 0x480, [0x80, 0, 8, 0, 0, 0xee, 0, 0]);
+    write(memory, 0x404, [0, 2, 0, 0, 0x10, 0]);
+    const cpu = executor(state, memory);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x80,
+      registers: { esp: 0x1ec },
+      segments: { cs: { selector: 8, dpl: 0 }, ss: { selector: 0x10, dpl: 0 } }
+    });
+    expect([0x1ec, 0x1f0, 0x1f4, 0x1f8, 0x1fc].map((address) => memory.get(address))).toEqual([
+      2, 0x1b, 2, 0, 0x23
+    ]);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({
+      eip: 2,
+      registers: { esp: 0x100 },
+      segments: { cs: { selector: 0x1b, dpl: 3 }, ss: { selector: 0x23, dpl: 3 } }
+    });
+  });
+
   it("does not invoke INTO when overflow is clear", () => {
     const state = realModeState();
     const memory = new Map<number, number>([[0, 0xce]]);

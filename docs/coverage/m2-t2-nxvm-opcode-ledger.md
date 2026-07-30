@@ -565,6 +565,15 @@ and descriptor-free segment loading. v86 interrupt delivery, IOPL/TSS I/O
 checks, POPF/IRET virtualization, and privilege-changing exception delivery
 remain active protection-system dependencies.
 
+## P400 32-bit TSS Privilege Stack Checklist
+
+P400 adds project-native 32-bit TSS ring-zero stack switching for protected
+interrupt gates and matching outer-privilege IRET restoration. LTR records the
+TSS type and marks an available TSS descriptor busy. Focused tests cover a
+CPL3-to-CPL0 software gate, frame ordering, return to CPL3, and busy state.
+16-bit TSS, v86 interrupt frames, task switching, and gate fault escalation
+remain active dependencies.
+
 ## P399 `30-3D` XOR/CMP Checklist
 
 P399 verifies the project-native XOR and CMP handlers across every byte and

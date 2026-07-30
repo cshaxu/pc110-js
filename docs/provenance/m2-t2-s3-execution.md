@@ -1168,6 +1168,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P399 records full opcode-form execution evidence for the existing
   project-native XOR and CMP handlers against NXVM's `30-3D` family. The
   rebuilt runtime remains independent of NXVM, PCjs, and legacy CPU code.
+- M2 T2 S3 P400 adapts NXVM's 32-bit TSS privilege-stack and busy-descriptor
+  behavior into project-native event, selector, stack, and segment modules
+  without importing a reference runtime or adding guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

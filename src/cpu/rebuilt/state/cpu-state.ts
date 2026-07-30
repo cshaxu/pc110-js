@@ -35,6 +35,7 @@ export interface SystemSelector {
   readonly base: number;
   readonly limit: number;
   readonly default32: boolean;
+  readonly type?: number;
 }
 
 export class RebuiltCpuState {
@@ -249,6 +250,7 @@ function validateSystemSelector(value: SystemSelector): SystemSelector {
     selector: value.selector & 0xffff,
     base: value.base >>> 0,
     limit: value.limit >>> 0,
-    default32: value.default32
+    default32: value.default32,
+    type: value.type
   };
 }
