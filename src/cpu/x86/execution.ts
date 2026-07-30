@@ -42,6 +42,8 @@ export class UnsupportedOpcodeError extends Error {}
 
 export class DivideError extends Error {}
 
+const NXVM_UNDEFINED_TWO_BYTE_EXTENSIONS = new Set([0x09, 0x30, 0x32, 0xa2, 0xaa]);
+
 interface DecodedMemoryAddress {
   readonly offset: number;
   readonly displacementBytes: number;
@@ -1582,6 +1584,10 @@ function executeContextualInstruction(
   if (moffs) return moffs;
   if (context.opcode === 0x0f) {
     const extension = fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode;
+    if (NXVM_UNDEFINED_TWO_BYTE_EXTENSIONS.has(extension)) {
+      deliverCpuFault(memory, state, 6, fetched.instructionPointer);
+      return { halted: false, fetched };
+    }
     if (extension === 0x06) {
       const snapshot = state.snapshot();
       if (

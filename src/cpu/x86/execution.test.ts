@@ -3253,6 +3253,39 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf0, 0xff]);
   });
 
+  it("delivers NXVM's explicit post-80386 TODO opcodes as real-mode invalid opcodes", () => {
+    for (const [label, prefix, extension] of [
+      ["WBINVD", 0, 0x09],
+      ["WRMSR", 0, 0x30],
+      ["RDMSR", 0, 0x32],
+      ["CPUID", 0, 0xa2],
+      ["RSM", 0x66, 0xaa]
+    ] as const) {
+      const opcodeOffset = prefix === 0 ? 0 : 1;
+      const values = new Map<number, number>([
+        [0x000ffff0, prefix],
+        [0x000ffff0 + opcodeOffset, 0x0f],
+        [0x000ffff1 + opcodeOffset, extension],
+        [0x00000018, 0x34],
+        [0x00000019, 0x12],
+        [0x0000001a, 0x00],
+        [0x0000001b, 0x20]
+      ]);
+      const state = new Cpu386State();
+      state.loadRealModeSegment("ss", 0);
+      state.writeRegister16(4, 0x1000);
+
+      stepInstruction(resetAliasMemory(values), state);
+
+      expect(state.snapshot(), label).toMatchObject({
+        cs: { selector: 0x2000 },
+        eip: 0x1234,
+        registers: { esp: 0x0ffa }
+      });
+      expect([values.get(0x0ffa), values.get(0x0ffb)], label).toEqual([0xf0, 0xff]);
+    }
+  });
+
   it("creates local and nested ENTER stack frames", () => {
     const values = new Map<number, number>([
       [0x000ffff0, 0xc8],

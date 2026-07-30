@@ -45,7 +45,7 @@ and whole-machine comparison reference.
 | Bit and double-shift operations | `BT`, `BTS`, `BTR`, `BTC`, `0F BA`, `BSF`, `BSR`, `SHLD`, and `SHRD` | Partial |
 | Extended segment operations | `PUSH`/`POP FS`, `PUSH`/`POP GS`, `LSS`, `LFS`, and `LGS` | Partial |
 | Signed multiplication and extension | two-operand `IMUL`, `MOVSX`, and `MOVZX` | Partial |
-| NXVM explicit undefined entries | `WBINVD`, `WRMSR`, `RDMSR`, `CPUID`, and `RSM` | Not started: `#UD` behavior only |
+| NXVM explicit undefined entries | `WBINVD`, `WRMSR`, `RDMSR`, `CPUID`, and `RSM` | Implemented: `#UD` behavior only |
 
 ## Audit Rule
 

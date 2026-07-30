@@ -52,10 +52,10 @@ credit.
 
 | Opcode | NXVM behavior | Required M2 boundary |
 | --- | --- | --- |
-| `0F 09` `WBINVD` | Explicit `UndefinedOpcode()` TODO handler | Decode, `#UD`, and fault-EIP test; no cache model. |
-| `0F 30` `WRMSR` and `0F 32` `RDMSR` | Explicit `UndefinedOpcode()` TODO handlers | Decode, `#UD`, and fault-EIP tests; no MSR model. |
-| `0F A2` `CPUID` | Explicit `UndefinedOpcode()` TODO handler | Decode, `#UD`, and fault-EIP test; no CPUID leaf model. |
-| `0F AA` `RSM` | Explicit `UndefinedOpcode()` TODO handler | Decode, `#UD`, and fault-EIP test; no SMM model. |
+| `0F 09` `WBINVD` | Explicit `UndefinedOpcode()` TODO handler | Implemented `#UD` and fault-EIP test; no cache model. |
+| `0F 30` `WRMSR` and `0F 32` `RDMSR` | Explicit `UndefinedOpcode()` TODO handlers | Implemented `#UD` and fault-EIP tests; no MSR model. |
+| `0F A2` `CPUID` | Explicit `UndefinedOpcode()` TODO handler | Implemented `#UD` and fault-EIP test; no CPUID leaf model. |
+| `0F AA` `RSM` | Explicit `UndefinedOpcode()` TODO handler | Implemented prefixed `#UD` and fault-EIP test; no SMM model. |
 
 ## Explicitly Pending Before T2 Closure
 

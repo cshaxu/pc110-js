@@ -851,6 +851,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   instruction-ignore path. M2 therefore preserves and tests their `#UD`
   behavior; it does not invent later-processor cache, MSR, CPUID, or SMM
   functionality.
+- M2 T2 S3 P297 adds a project-native two-byte opcode boundary for NXVM's
+  explicit `UndefinedOpcode()` TODO handlers. It uses the existing vector-6
+  fault delivery path before any extension-specific execution and verifies the
+  faulting EIP for unprefixed and `66`-prefixed forms.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
