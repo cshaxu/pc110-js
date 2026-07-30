@@ -12,9 +12,9 @@
 
 ## Next Eligible Work
 
-- M2 T2 S3: active. Resume supported opcode, exception, interrupt, and
-  privilege behavior only after S4 P4 verified the existing reset-ROM trace
-  through the new physical-memory path.
+- M2 T2 S3: active. The owner-authorized execution-size correction establishes
+  generic CS-default operand/address-size context before further protected-mode
+  opcode migration; S4 P4's mapped-ROM trace remains the preserved baseline.
 
 ## Delivery Nodes
 

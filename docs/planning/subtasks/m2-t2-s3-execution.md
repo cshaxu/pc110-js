@@ -25,6 +25,31 @@ project-native TypeScript boundaries.
 - Protected ROM and disk assets remain local, ignored inputs; no protected
   bytes are committed.
 
+## Authorized Execution-Size Correction
+
+The owner authorized a bounded correction on 2026-07-29 after evidence showed
+that PCjs selects data and address width from the current CS hidden-cache `D/B`
+attribute, while the current TypeScript dispatcher uses explicit prefix branches
+for most dword behavior. The correction introduces a generic per-instruction
+execution context with these contracts:
+
+- CS `default32` supplies the default operand and address sizes.
+- One or more `66` prefixes select the non-default operand size; one or more
+  `67` prefixes select the non-default address size.
+- Repeated same-class prefixes do not cumulatively toggle a size.
+- SS `default32` remains the independent stack-address width; operand size
+  controls pushed or popped data width where applicable.
+- Segment overrides, repeat prefixes, LOCK boundaries, fault instruction EIP,
+  trace hooks, and device-facing interfaces remain explicit context or existing
+  execution inputs.
+
+The first implementation slice must test 16-bit and 32-bit CS defaults with and
+without `66`/`67`, independent SS stack width, prefix combinations, instruction
+length, and fault EIP. Migration then proceeds through decode, ModR/M,
+immediates, stack, and string paths in verified parts. It does not authorize
+hardware, storage, video, PC110, 80486, guest-service, BIOS, DOS, or filesystem
+work.
+
 ## Working Method
 
 1. Classify one observed reset, BIOS, protected-mode, or interrupt blocker.

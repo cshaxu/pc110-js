@@ -646,6 +646,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   descriptor or modifies task-register state.
 - M2 T2 S3 P237 routes nonzero-CPL `LGDT`, `LIDT`, and `LMSW` through `#GP(0)`
   before operand access or modification of descriptor-table and machine-status state.
+- M2 T2 S3 P238 records the owner-authorized execution-size correction. PCjs
+  uses per-instruction data and address sizes selected from the CS hidden cache
+  and prefixes; the project will replace prefix-special-case dispatch with a
+  project-native context while retaining PCjs as behavior authority.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
