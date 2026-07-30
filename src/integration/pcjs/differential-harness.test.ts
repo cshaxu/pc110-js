@@ -77,5 +77,4 @@ describe("PCjs differential CPU harness", () => {
     });
     expect(() => assertDifferentialTraceMatch(trace)).not.toThrow();
   });
-
 });
