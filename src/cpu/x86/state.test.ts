@@ -296,6 +296,21 @@ describe("Cpu386State", () => {
     expect(cpu.snapshot().eflags).toBe(0x00000847);
   });
 
+  it("preserves undefined byte shift overflow for multi-bit counts", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEflags(0x803);
+    cpu.writeShiftLeftFlags8(0x41, 2);
+    expect(cpu.snapshot().eflags).toBe(0x803);
+
+    cpu.writeEflags(0x803);
+    cpu.writeShiftRightFlags8(0x80, 2);
+    expect(cpu.snapshot().eflags).toBe(0x802);
+
+    cpu.writeEflags(0x803);
+    cpu.writeArithmeticShiftRightFlags8(0x80, 2);
+    expect(cpu.snapshot().eflags).toBe(0x882);
+  });
+
   it("sets 16-bit left-shift flags with the 80386 count mask", () => {
     const cpu = new Cpu386State();
     cpu.writeShiftLeftFlags16(0x8001, 1);

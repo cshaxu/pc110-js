@@ -8266,4 +8266,22 @@ describe("80386 instruction fetch", () => {
     expect(values.get(0x00002000)).toBe(0xc0);
     expect(state.snapshot().eip).toBe(17);
   });
+
+  it("leaves contextual byte Group 2 state unchanged for a zero count", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0xc0],
+      [0x00000001, 0xc8],
+      [0x00000002, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeEip(0);
+    state.writeRegister8(0, 0x81);
+    state.writeEflags(0x8d7);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x81 }, eflags: 0x8d7, eip: 3 });
+  });
 });

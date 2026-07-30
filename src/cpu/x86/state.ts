@@ -581,6 +581,7 @@ export class Cpu386State {
     const carry = normalizedCount > 8 ? 0 : source << (normalizedCount - 1);
     const result = normalizedCount > 8 ? 0 : (carry << 1) & 0xff;
     let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (normalizedCount !== 1) flags |= this.eflags & EFLAGS_OVERFLOW;
     if (carry & 0x80) flags |= EFLAGS_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;
@@ -626,6 +627,7 @@ export class Cpu386State {
     const carry = normalizedCount > 8 ? 0 : source >>> (normalizedCount - 1);
     const result = normalizedCount > 8 ? 0 : (carry >>> 1) & 0xff;
     let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (normalizedCount !== 1) flags |= this.eflags & EFLAGS_OVERFLOW;
     if (carry & 0x01) flags |= EFLAGS_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;
@@ -640,6 +642,7 @@ export class Cpu386State {
     if (!normalizedCount) return;
     const result = (((source << 24) >> 24) >> normalizedCount) & 0xff;
     let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (normalizedCount !== 1) flags |= this.eflags & EFLAGS_OVERFLOW;
     if (normalizedCount <= 8 && source & (1 << (normalizedCount - 1))) flags |= EFLAGS_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;

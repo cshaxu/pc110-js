@@ -866,10 +866,14 @@ function executeContextualByteGroupTwo(
     ? fetchCodeByte(memory, state, instructionBytes - 1).opcode
     : count;
   if (modRm.reg === 0x06) throw new UnsupportedOpcodeError("Undefined Group 2 form");
+  const logicalCount = effectiveCount & 0x1f;
+  if (logicalCount === 0) {
+    state.advanceEip(instructionBytes);
+    return;
+  }
   const source = modRm.registerDirect
     ? state.readRegister8(modRm.rm)
     : readSegmentUint8(memory, state, address!.segment, address!.offset, context.addressSize);
-  const logicalCount = effectiveCount & 0x1f;
   let result = source;
   let carry = state.carryFlag();
   if (modRm.reg === 0x00 || modRm.reg === 0x01) {
