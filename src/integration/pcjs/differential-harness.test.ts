@@ -259,6 +259,12 @@ describe("PCjs differential CPU harness", () => {
         { address: 0x207, value: 0x30 }
       ],
       instructionCount: 2
+    },
+    {
+      name: "C8-C9 stack frame slice",
+      bytes: [0xc8, 0x04, 0x00, 0x00, 0xc9],
+      registers: { esp: 0x800, ebp: 0x812 },
+      instructionCount: 2
     }
   ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
     const trace = await runPcjsDifferentialTrace(differentialCase);

@@ -219,6 +219,12 @@ A generic real-mode program matches PCjs for C4/C5 LES and LDS word
 far-pointer loads. Dword, address-size, protection, and invalid-register forms
 remain separate S6 work.
 
+## S6 P27 Differential Evidence
+
+A generic real-mode program matches PCjs for C8/C9 ENTER and LEAVE stack-frame
+operations. Nested frames, default-32 code, and independent stack-address
+width remain separate S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

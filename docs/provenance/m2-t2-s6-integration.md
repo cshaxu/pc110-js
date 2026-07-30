@@ -114,3 +114,10 @@ P26 uses the project-native dispatcher and independent real-mode RAM images
 for C4/C5 LES and LDS word far-pointer loads. PCjs remains a verification-only
 oracle; no PCjs source, runtime dependency, or instruction-specific oracle
 logic enters the product.
+
+## P27 Stack Frame Program
+
+P27 uses the project-native dispatcher and independent real-mode RAM images
+for C8/C9 ENTER and LEAVE stack-frame operations. PCjs remains a
+verification-only oracle; no PCjs source, runtime dependency, or
+instruction-specific oracle logic enters the product.
