@@ -321,13 +321,15 @@ function writeSegmentUint8(
   state: Cpu386State,
   segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
   offset: number,
-  value: number
+  value: number,
+  addressSize?: 16 | 32
 ): void {
   if (!memory.writeUint8) throw new UnsupportedOpcodeError("Memory does not support writes");
   const snapshot = state.snapshot();
   const mode = addressMode(snapshot.cr0, snapshot.eflags);
+  const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
   memory.writeUint8(
-    translateSegmentOffset(mode, { ...snapshot[segment], present: true }, offset),
+    translateSegmentOffset(mode, { ...snapshot[segment], present: true }, normalizedOffset),
     value & 0xff
   );
 }
@@ -553,6 +555,45 @@ function executeContextualInstruction(
     const value = popContextOperand(memory, state, context);
     if (context.operandSize === 32) state.writeRegister(register, value);
     else state.writeRegister16(register, value);
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
+  if (
+    context.opcode === 0xa4 ||
+    context.opcode === 0xa5 ||
+    context.opcode === 0xaa ||
+    context.opcode === 0xab
+  ) {
+    const copy = context.opcode === 0xa4 || context.opcode === 0xa5;
+    const width =
+      context.opcode === 0xa4 || context.opcode === 0xaa ? 1 : context.operandSize === 32 ? 4 : 2;
+    const source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
+    const destination =
+      context.addressSize === 32 ? state.readRegister(7) : state.readRegister16(7);
+    const value = copy
+      ? width === 1
+        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        : width === 2
+          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
+          : readSegmentUint32(memory, state, "ds", source, context.addressSize)
+      : width === 1
+        ? state.readRegister8(0)
+        : width === 2
+          ? state.readRegister16(0)
+          : state.readRegister(0);
+    if (width === 1)
+      writeSegmentUint8(memory, state, "es", destination, value, context.addressSize);
+    else if (width === 2)
+      writeSegmentUint16(memory, state, "es", destination, value, context.addressSize);
+    else writeSegmentUint32(memory, state, "es", destination, value, context.addressSize);
+    const delta = state.directionFlag() ? -width : width;
+    if (copy) {
+      if (context.addressSize === 32) state.writeRegister(6, source + delta);
+      else state.writeRegister16(6, source + delta);
+    }
+    if (context.addressSize === 32) state.writeRegister(7, destination + delta);
+    else state.writeRegister16(7, destination + delta);
     state.advanceEip(context.opcodeOffset + 1);
     return { halted: false, fetched };
   }

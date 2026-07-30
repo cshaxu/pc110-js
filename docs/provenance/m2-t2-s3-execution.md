@@ -662,6 +662,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P242 migrates the non-repeated default-segment LODS paths. The
   context selects LODSW versus LODSD data width and SI versus ESI indexing;
   PCjs remains the behavioral authority for later prefix and repeat work.
+- M2 T2 S3 P243 migrates non-repeated default-segment MOVS and STOS. Their
+  data width and source or destination index width are selected by the shared
+  context; repeat and segment-override behavior remains deliberately separate.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
