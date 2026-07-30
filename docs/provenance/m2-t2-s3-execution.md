@@ -1143,6 +1143,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   GDT/LDTR descriptor lookup shared by segment loading and selector verification.
 - M2 T2 S3 P390 records direct rebuilt execution evidence for NXVM-style LDT
   selector use in LAR, LSL, and VERR without adding runtime reference imports.
+- M2 T2 S3 P391 adapts NXVM's segment-stack selector flow into the existing
+  project-native data and stack segment loaders. It retains selector-only PUSH
+  semantics and imports no reference runtime code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1,6 +1,7 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { popStack, pushStack } from "../memory/stack.js";
+import { loadDataSegment, loadStackSegment } from "../protection/segment-loader.js";
 import type { SegmentName } from "../state/segments.js";
 import {
   add,
@@ -79,8 +80,6 @@ function executeSegmentStack(context: RebuiltExecutionContext): boolean {
     [0x1f, "ds"]
   ]).get(context.instruction.opcode);
   if (!segment) return false;
-  if (context.state.readCr0() & 0x01)
-    throw new Error("Protected segment loading is not yet rebuilt");
   const pop =
     context.instruction.opcode === 0x07 ||
     context.instruction.opcode === 0x17 ||
@@ -88,12 +87,9 @@ function executeSegmentStack(context: RebuiltExecutionContext): boolean {
   if (pop) {
     const selector =
       popStack(context.memory, context.state, context.instruction.prefixes.operandSize) & 0xffff;
-    context.state.writeSegment(segment, {
-      selector,
-      base: selector << 4,
-      limit: 0xffff,
-      default32: false
-    });
+    if (segment === "ss") loadStackSegment(context.memory, context.state, selector);
+    else if (segment !== "cs") loadDataSegment(context.memory, context.state, segment, selector);
+    else throw new Error("POP CS is not available in the rebuilt 80386 path");
   } else
     pushStack(
       context.memory,

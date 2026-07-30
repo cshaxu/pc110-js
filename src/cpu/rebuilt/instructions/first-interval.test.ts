@@ -4,12 +4,15 @@ import { RebuiltCpuState } from "../state/cpu-state.js";
 import { EFLAGS_CARRY, EFLAGS_ZERO } from "./arithmetic.js";
 import { executeFirstIntervalArithmetic } from "./first-interval.js";
 
-function execute(bytes: readonly number[], setup?: (state: RebuiltCpuState) => void) {
+function execute(
+  bytes: readonly number[],
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+) {
   const state = new RebuiltCpuState();
   state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
   state.writeEip(0);
-  setup?.(state);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
+  setup?.(state, memory);
   const executor = new RebuiltCpuExecutor(state, {
     readUint8: (address) => memory.get(address) ?? 0,
     writeUint8: (address, value) => memory.set(address, value)
@@ -111,5 +114,60 @@ describe("rebuilt 00-3D arithmetic forms", () => {
     expect(pushed.state.registers.read16(4)).toBe(0xfe);
     expect(pushed.memory.get(0xfe)).toBe(0x34);
     expect(pushed.memory.get(0xff)).toBe(0x12);
+  });
+
+  it("loads protected data and stack segments through POP selectors", () => {
+    const data = execute([0x1f], (state, memory) => {
+      state.writeCr0(1);
+      state.writeGdtr({ base: 0x200, limit: 0x1f });
+      state.writeSegment("cs", {
+        selector: 8,
+        base: 0,
+        limit: 0xffff,
+        default32: false,
+        valid: true,
+        dpl: 0
+      });
+      state.registers.write16(4, 0x100);
+      memory.set(0x100, 0x08);
+      memory.set(0x101, 0);
+      [0xff, 0xff, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+        memory.set(0x208 + index, value)
+      );
+    });
+    expect(data.state.readSegment("ds")).toMatchObject({ selector: 8, limit: 0xffff, valid: true });
+    expect(data.state.registers.read16(4)).toBe(0x102);
+
+    const stack = execute([0x66, 0x17], (state, memory) => {
+      state.writeCr0(1);
+      state.writeGdtr({ base: 0x200, limit: 0x1f });
+      state.writeSegment("cs", {
+        selector: 8,
+        base: 0,
+        limit: 0xffff,
+        default32: false,
+        valid: true,
+        dpl: 0
+      });
+      state.writeSegment("ss", {
+        selector: 8,
+        base: 0,
+        limit: 0xffff_ffff,
+        default32: true,
+        valid: true,
+        dpl: 0
+      });
+      state.registers.write32(4, 0x100);
+      memory.set(0x100, 0x10);
+      memory.set(0x101, 0);
+      memory.set(0x102, 0);
+      memory.set(0x103, 0);
+      [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0].forEach((value, index) =>
+        memory.set(0x210 + index, value)
+      );
+    });
+    expect(stack.state.readSegment("ss")).toMatchObject({ selector: 0x10, default32: true });
+    expect(stack.state.registers.read32(4)).toBe(0x104);
+    expect(stack.state.readEip()).toBe(2);
   });
 });
