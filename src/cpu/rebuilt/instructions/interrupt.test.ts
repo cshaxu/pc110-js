@@ -195,6 +195,87 @@ describe("rebuilt INT and IRET", () => {
     });
   });
 
+  it("switches through 32-bit and 16-bit TSS stacks for target rings one and two", () => {
+    for (const [targetPrivilege, tss32] of [
+      [1, true],
+      [2, false]
+    ] as const) {
+      const state = new RebuiltCpuState();
+      state.writeCr0(1);
+      state.writeSegment("cs", {
+        selector: 0x1b,
+        base: 0,
+        limit: 0xffff_ffff,
+        default32: true,
+        dpl: 3
+      });
+      state.writeSegment("ss", {
+        selector: 0x23,
+        base: 0,
+        limit: 0xffff_ffff,
+        default32: true,
+        dpl: 3
+      });
+      state.writeGdtr({ base: 0x200, limit: 0x2f });
+      state.writeIdtr({ base: 0x300, limit: 0x1ff });
+      state.writeTr({
+        selector: 0x28,
+        base: 0x400,
+        limit: tss32 ? 0x67 : 0x2b,
+        default32: tss32,
+        type: tss32 ? 11 : 3
+      });
+      state.writeEip(0);
+      state.registers.write32(4, 0x100);
+      state.flags.set(0x300);
+      const memory = new Map<number, number>();
+      const targetAccess = 0x9a | (targetPrivilege << 5);
+      const targetStackAccess = 0x92 | (targetPrivilege << 5);
+      const targetStackPointer = 0x200 + targetPrivilege * 0x100;
+      const targetStackSelector = 0x10 | targetPrivilege;
+      write(memory, 0, [0xcd, 0x30]);
+      write(memory, 0x80, [0xcf]);
+      write(memory, 0x208, [0xff, 0xff, 0, 0, 0, targetAccess, 0xcf, 0]);
+      write(memory, 0x218, [0xff, 0xff, 0, 0, 0, 0xfa, 0xcf, 0]);
+      write(memory, 0x210, [0xff, 0xff, 0, 0, 0, targetStackAccess, tss32 ? 0xcf : 0x0f, 0]);
+      write(memory, 0x220, [0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0]);
+      write(memory, 0x480, [0x80, 0, 8, 0, 0, 0xee, 0, 0]);
+      const stackPointerOffset = (tss32 ? 4 : 2) + targetPrivilege * (tss32 ? 8 : 4);
+      const stackSelectorOffset = (tss32 ? 8 : 4) + targetPrivilege * (tss32 ? 8 : 4);
+      if (tss32)
+        write(memory, 0x400 + stackPointerOffset, [
+          targetStackPointer & 0xff,
+          targetStackPointer >> 8,
+          0,
+          0
+        ]);
+      else
+        write(memory, 0x400 + stackPointerOffset, [
+          targetStackPointer & 0xff,
+          targetStackPointer >> 8
+        ]);
+      write(memory, 0x400 + stackSelectorOffset, [targetStackSelector, 0]);
+      const cpu = executor(state, memory);
+
+      cpu.step(dispatchRebuiltInstruction);
+      expect(state.snapshot()).toMatchObject({
+        eip: 0x80,
+        registers: { esp: targetStackPointer - 20 },
+        segments: {
+          cs: { selector: 8 | targetPrivilege, dpl: targetPrivilege },
+          ss: { selector: targetStackSelector, dpl: targetPrivilege, default32: tss32 }
+        }
+      });
+
+      cpu.step(dispatchRebuiltInstruction);
+      expect(state.snapshot()).toMatchObject({
+        eip: 2,
+        registers: { esp: 0x100 },
+        segments: { cs: { selector: 0x1b, dpl: 3 }, ss: { selector: 0x23, dpl: 3 } }
+      });
+    }
+  });
+
   it("round-trips a virtual-8086 interrupt frame through a 32-bit TSS stack", () => {
     const state = new RebuiltCpuState();
     state.writeCr0(1);

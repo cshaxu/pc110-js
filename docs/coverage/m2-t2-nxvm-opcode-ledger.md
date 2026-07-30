@@ -694,5 +694,14 @@ available or busy 16/32-bit TR cache types, verifies each layout's final TSS
 byte, and assigns the selected SS D/B stack width independently from the TSS
 layout. Focused tests cover `LTR` busy conversion for an available 16-bit TSS,
 outer-privilege interrupt/IRET round trips through a 16-bit busy TSS, and the
-NXVM-relevant v86 interrupt/IRET round trip. Task switching and stacks for
-target rings one and two remain active dependencies.
+NXVM-relevant v86 interrupt/IRET round trip. P416 completes target rings one
+and two; task switching remains active.
+
+## P416 TSS Ring-One And Ring-Two Stack Checklist
+
+P416 completes project-native TSS privilege-stack selection for target rings
+one and two. It derives 32-bit TSS ESPn/SSn offsets from `4 + n * 8` and
+`8 + n * 8`, and 16-bit TSS SPn/SSn offsets from `2 + n * 4` and `4 + n * 4`.
+Focused tests cover CPL3-to-CPL1 through a 32-bit busy TSS and CPL3-to-CPL2
+through a 16-bit busy TSS, including selected SS D/B width and IRET return.
+Task switching remains an active dependency.

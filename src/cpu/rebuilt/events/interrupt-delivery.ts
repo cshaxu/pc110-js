@@ -147,17 +147,17 @@ function switchToPrivilegeStack(
   const tr = state.readTr();
   const tss32 = tr.type === 9 || tr.type === 11;
   const tss16 = tr.type === 1 || tr.type === 3;
-  const stackPointerOffset = tss32 ? 4 : 2;
-  const stackSelectorOffset = tss32 ? 8 : 4;
+  const stackPointerOffset = (tss32 ? 4 : 2) + targetPrivilege * (tss32 ? 8 : 4);
+  const stackSelectorOffset = (tss32 ? 8 : 4) + targetPrivilege * (tss32 ? 8 : 4);
   if ((tr.selector & 0xfff8) === 0 || (!tss16 && !tss32) || tr.limit < stackSelectorOffset + 1)
     throw new InterruptDeliveryError(
       "Interrupt privilege change requires a valid TSS",
       10,
       tr.selector
     );
-  if (targetPrivilege !== 0)
+  if (targetPrivilege < 0 || targetPrivilege > 2)
     throw new InterruptDeliveryError(
-      "Only the 32-bit TSS ring-zero stack is rebuilt",
+      "Interrupt privilege change requires a TSS stack for rings zero through two",
       10,
       tr.selector
     );

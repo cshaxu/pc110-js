@@ -1211,6 +1211,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native interrupt delivery. It reads only rebuilt TR state and memory,
   keeps SS D/B addressing independent, and introduces no reference runtime,
   task switch, BIOS, or device behavior.
+- M2 T2 S3 P416 extends the project-native TSS stack-layout calculation to the
+  80386 ring-one and ring-two slots. It uses the existing rebuilt event and
+  segment contracts without importing a reference runtime or adding task-switch
+  behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
