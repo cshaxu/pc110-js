@@ -25,3 +25,12 @@
   selection, diagnostic/recalibrate/seek/verify, and no-media errors.
 - Excluded: PIO sector transfer, guest shortcut, BIOS/DOS/filesystem behavior,
   PCjs source/runtime, and automatic media attachment.
+
+## P4 PIO Read
+
+- Product code: original TypeScript PIO sector-read state within the native AT
+  controller, consuming project-owned raw fixed-drive sectors.
+- Scope: `READ DATA`, DRQ, 8/16-bit data reads, sector boundary state,
+  multi-sector CHS progression, status/error state, and IRQ14 service points.
+- Excluded: auto-attachment, PIO write, identify, BIOS/DOS/filesystem, PCjs
+  source/runtime, and guest shortcuts.

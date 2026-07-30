@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   ATC_CYLINDER_HIGH_PORT,
   ATC_CYLINDER_LOW_PORT,
+  ATC_DATA_PORT,
   ATC_DEVICE_CONTROL_PORT,
   ATC_DRIVE_HEAD_PORT,
   ATC_ERROR_PORT,
   ATC_SECTOR_NUMBER_PORT,
+  ATC_SECTOR_COUNT_PORT,
   ATC_STATUS_PORT,
   AtFixedDiskController
 } from "./at-fixed-disk-controller.js";
@@ -67,5 +69,36 @@ describe("primary AT fixed-disk controller", () => {
     expect(controller.snapshot().status).toBe(0x80);
     controller.write(ATC_DEVICE_CONTROL_PORT, 0, 8);
     expect(controller.snapshot()).toMatchObject({ status: 0x50, error: 0, interruptActive: false });
+  });
+
+  it("transfers real PIO sector data and advances CHS/register state", () => {
+    const interrupts: boolean[] = [];
+    const controller = new AtFixedDiskController((active) => interrupts.push(active));
+    const drive = new FixedDrive({ cylinders: 1, heads: 1, sectorsPerTrack: 2, bytesPerSector: 4 });
+    drive.attach(Uint8Array.from([0x10, 0x11, 0x12, 0x13, 0x20, 0x21, 0x22, 0x23]));
+    controller.attachDrive(0, drive);
+    controller.write(ATC_SECTOR_COUNT_PORT, 2, 8);
+    controller.write(ATC_SECTOR_NUMBER_PORT, 1, 8);
+    controller.write(ATC_STATUS_PORT, 0x20, 8);
+
+    expect(controller.read(ATC_STATUS_PORT, 8)).toBe(0x58);
+    expect(controller.read(ATC_DATA_PORT, 16)).toBe(0x1110);
+    expect(controller.read(ATC_DATA_PORT, 16)).toBe(0x1312);
+    expect(controller.snapshot()).toMatchObject({
+      sectorCount: 1,
+      sectorNumber: 2,
+      status: 0x58,
+      dataBytesPending: 4
+    });
+    expect(controller.read(ATC_DATA_PORT, 8)).toBe(0x20);
+    expect(controller.read(ATC_DATA_PORT, 8)).toBe(0x21);
+    expect(controller.read(ATC_DATA_PORT, 16)).toBe(0x2322);
+    expect(controller.snapshot()).toMatchObject({
+      sectorCount: 0,
+      sectorNumber: 1,
+      status: 0x50,
+      dataBytesPending: 0
+    });
+    expect(interrupts.filter(Boolean)).toHaveLength(2);
   });
 });

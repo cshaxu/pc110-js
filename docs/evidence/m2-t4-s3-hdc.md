@@ -23,3 +23,12 @@
   no-media and invalid-CHS errors, and software-reset transitions.
 - Rebuilt-machine coverage verifies controller composition and IRQ14 routing
   through the native slave PIC path.
+
+## P4 PIO Read Evidence
+
+- Focused tests use attached raw sectors and verify little-endian 16-bit and
+  byte reads, DRQ, interrupt clearing/reassertion between sectors, sector
+  count, CHS progression, terminal state, and the existing no-media/invalid
+  CHS error paths.
+- No disk image is auto-attached and no filesystem or firmware response is
+  used to obtain sector bytes.

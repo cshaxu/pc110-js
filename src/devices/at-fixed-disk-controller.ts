@@ -12,6 +12,7 @@ export const ATC_STATUS_PORT = 0x1f7;
 export const ATC_DEVICE_CONTROL_PORT = 0x3f6;
 
 const STATUS_ERROR = 0x01;
+const STATUS_DATA_REQUEST = 0x08;
 const STATUS_SEEK_COMPLETE = 0x10;
 const STATUS_READY = 0x40;
 const STATUS_BUSY = 0x80;
@@ -39,6 +40,7 @@ export interface AtFixedDiskSnapshot {
   readonly deviceControl: number;
   readonly selectedDrive: number;
   readonly interruptActive: boolean;
+  readonly dataBytesPending: number;
   readonly drives: readonly boolean[];
 }
 
@@ -58,6 +60,9 @@ export class AtFixedDiskController {
   private status = 0;
   private deviceControl = 0;
   private interruptActive = false;
+  private transfer: Uint8Array | undefined;
+  private transferOffset = 0;
+  private sectorsPending = 0;
 
   public constructor(private readonly onInterrupt: (active: boolean) => void = () => undefined) {}
 
@@ -70,6 +75,7 @@ export class AtFixedDiskController {
     this.driveHead = DRIVE_HEAD_REQUIRED_BITS;
     this.deviceControl = 0;
     this.interruptActive = false;
+    this.clearTransfer();
     this.updateSelectedStatus();
     this.onInterrupt(false);
   }
@@ -90,7 +96,7 @@ export class AtFixedDiskController {
     this.requireReadablePort(port, width);
     switch (port) {
       case ATC_DATA_PORT:
-        return width === 16 ? 0xffff : 0xff;
+        return this.readData(width);
       case ATC_ERROR_PORT:
         return this.error;
       case ATC_SECTOR_COUNT_PORT:
@@ -167,6 +173,8 @@ export class AtFixedDiskController {
       deviceControl: this.deviceControl,
       selectedDrive: this.selectedDrive(),
       interruptActive: this.interruptActive,
+      dataBytesPending:
+        this.transfer === undefined ? 0 : this.transfer.byteLength - this.transferOffset,
       drives: this.drives.map((drive) => drive?.snapshot().ready ?? false)
     };
   }
@@ -200,6 +208,9 @@ export class AtFixedDiskController {
         this.cylinderHigh = 0;
         this.succeed();
         return;
+      case 0x20:
+        this.beginRead();
+        return;
       case 0x40:
         this.verifyAddress();
         return;
@@ -227,6 +238,85 @@ export class AtFixedDiskController {
     this.verifyCylinderAndHead();
   }
 
+  private beginRead(): void {
+    const requested = this.sectorCount || 256;
+    if (!this.verifyAddressForTransfer()) return;
+    this.sectorsPending = requested;
+    this.loadNextReadSector();
+  }
+
+  private readData(width: PortWidth): number {
+    if (this.transfer === undefined || !(this.status & STATUS_DATA_REQUEST))
+      return width === 16 ? 0xffff : 0xff;
+    const low = this.readTransferByte();
+    if (width === 8) return low;
+    const high = this.readTransferByte();
+    return low | (high << 8);
+  }
+
+  private readTransferByte(): number {
+    const transfer = this.transfer;
+    if (transfer === undefined) return 0xff;
+    const value = transfer[this.transferOffset++]!;
+    if (this.transferOffset === transfer.byteLength) this.completeReadSector();
+    return value;
+  }
+
+  private completeReadSector(): void {
+    this.sectorsPending -= 1;
+    this.sectorCount = (this.sectorCount - 1) & 0xff;
+    this.advanceAddress();
+    if (this.sectorsPending === 0) {
+      this.clearTransfer();
+      this.status = STATUS_READY | STATUS_SEEK_COMPLETE;
+      return;
+    }
+    this.loadNextReadSector();
+  }
+
+  private loadNextReadSector(): void {
+    const drive = this.selectedDriveMedia();
+    if (!drive || !this.verifyAddressForTransfer()) return;
+    try {
+      this.transfer = drive.readSector(this.cylinder(), this.head(), this.sectorNumber);
+      this.transferOffset = 0;
+      this.status = STATUS_READY | STATUS_SEEK_COMPLETE | STATUS_DATA_REQUEST;
+      this.setInterrupt(true);
+    } catch {
+      this.fail(ERROR_ID_NOT_FOUND);
+    }
+  }
+
+  private verifyAddressForTransfer(): boolean {
+    const drive = this.selectedDriveMedia();
+    if (!drive || this.sectorNumber < 1 || this.sectorNumber > drive.geometry.sectorsPerTrack) {
+      this.fail(ERROR_ID_NOT_FOUND);
+      return false;
+    }
+    if (this.cylinder() >= drive.geometry.cylinders || this.head() >= drive.geometry.heads) {
+      this.fail(ERROR_ID_NOT_FOUND);
+      return false;
+    }
+    return true;
+  }
+
+  private advanceAddress(): void {
+    const drive = this.selectedDriveMedia();
+    if (!drive) return;
+    this.sectorNumber += 1;
+    if (this.sectorNumber <= drive.geometry.sectorsPerTrack) return;
+    this.sectorNumber = 1;
+    const nextHead = this.head() + 1;
+    if (nextHead < drive.geometry.heads) {
+      this.driveHead = (this.driveHead & ~DRIVE_HEAD_SELECT_MASK) | nextHead;
+      return;
+    }
+    this.driveHead &= ~DRIVE_HEAD_SELECT_MASK;
+    const nextCylinder = (this.cylinder() + 1) & 0xffff;
+    this.cylinderLow = nextCylinder & 0xff;
+    this.cylinderHigh = nextCylinder >>> 8;
+  }
+
   private verifyCylinderAndHead(): void {
     const drive = this.selectedDriveMedia();
     if (
@@ -241,11 +331,13 @@ export class AtFixedDiskController {
   }
 
   private succeed(): void {
+    this.clearTransfer();
     this.status = STATUS_READY | STATUS_SEEK_COMPLETE;
     this.setInterrupt(true);
   }
 
   private fail(error: number): void {
+    this.clearTransfer();
     this.error = error;
     this.status =
       STATUS_ERROR | (this.selectedDriveMedia() ? STATUS_READY | STATUS_SEEK_COMPLETE : 0);
@@ -264,6 +356,12 @@ export class AtFixedDiskController {
     if (active === this.interruptActive) return;
     this.interruptActive = active;
     this.onInterrupt(active);
+  }
+
+  private clearTransfer(): void {
+    this.transfer = undefined;
+    this.transferOffset = 0;
+    this.sectorsPending = 0;
   }
 
   private selectedDrive(): number {
