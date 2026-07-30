@@ -1015,6 +1015,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P339 translates NXVM SAHF/LAHF behavior into native TypeScript.
   The module transfers only CF/PF/AF/ZF/SF, generates LAHF's fixed bit 1, and
   keeps unrelated EFLAGS state without an external runtime dependency.
+- M2 T2 S3 P340 translates NXVM immediate register MOV coverage into native
+  TypeScript. The module reads only instruction bytes and writes rebuilt
+  registers, with no external runtime dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
