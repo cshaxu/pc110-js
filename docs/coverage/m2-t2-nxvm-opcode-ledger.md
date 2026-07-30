@@ -634,3 +634,10 @@ CALL/JMP forms through rebuilt #UD delivery. Focused real-mode vector-frame
 tests cover each invalid form while preserving the existing legal Group Four/
 Five paths. Far gate, task, and privilege-transfer behavior remain separate
 protection-system work.
+
+## P408 Explicit Primary Undefined-Opcode Checklist
+
+P408 routes NXVM-table-defined primary `82` and extended `0F B8/B9` encodings
+through the rebuilt #UD path. Focused tests verify their faulting real-mode EIP
+frames. This preserves a distinction between explicit NXVM undefined entries
+and unrelated incomplete instruction families.

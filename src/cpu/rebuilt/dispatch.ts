@@ -88,6 +88,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode >= 0x6c && opcode <= 0x6f) return executeStringIo(context);
   if (opcode === 0x63) return executeArpl(context);
   if (opcode >= 0x70 && opcode <= 0x7f) return executeShortConditionalJump(context);
+  if (opcode === 0x82) return executeUndefinedOpcode(context);
   if ([0x80, 0x81, 0x83].includes(opcode)) return executeGroupOne(context);
   if (opcode === 0x84 || opcode === 0x85) return executeTestModRm(context);
   if (opcode === 0x86 || opcode === 0x87) return executeExchangeModRm(context);
@@ -150,9 +151,9 @@ function dispatchExtended(context: RebuiltExecutionContext): void {
 
 function nxvmUndefinedExtendedOpcode(opcode: number): boolean {
   return (
-    [0x04, 0x05, 0x07, 0x08, 0x09, 0x25, 0xa2, 0xa6, 0xa7, 0xaa, 0xae, 0xb0, 0xb1].includes(
-      opcode
-    ) ||
+    [
+      0x04, 0x05, 0x07, 0x08, 0x09, 0x25, 0xa2, 0xa6, 0xa7, 0xaa, 0xae, 0xb0, 0xb1, 0xb8, 0xb9
+    ].includes(opcode) ||
     (opcode >= 0x0a && opcode <= 0x1f) ||
     (opcode >= 0x27 && opcode <= 0x2f) ||
     (opcode >= 0x30 && opcode <= 0x7f) ||
