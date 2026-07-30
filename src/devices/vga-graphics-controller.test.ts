@@ -21,11 +21,21 @@ describe("VGA graphics controller", () => {
     expect(controller.readRegister(5)).toBe(0x1b);
   });
 
+  it("transacts indexed register pairs through a little-endian word access", () => {
+    const controller = new VgaGraphicsController();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of controller.portRanges()) bus.register(range);
+
+    bus.write(0x3ce, 0x1b05, 16);
+    expect(controller.readRegister(5)).toBe(0x1b);
+    expect(bus.read(0x3ce, 16)).toBe(0x1b05);
+  });
+
   it("rejects undefined data and invalid widths, then resets", () => {
     const controller = new VgaGraphicsController();
     controller.write(0x3ce, 9, 8);
     expect(() => controller.write(0x3cf, 0, 8)).toThrow("not defined");
-    expect(() => controller.read(0x3ce, 16)).toThrow("8-bit");
+    expect(() => controller.read(0x3ce, 32)).toThrow("8-bit");
     expect(() => controller.readRegister(9)).toThrow("not defined");
 
     controller.reset();

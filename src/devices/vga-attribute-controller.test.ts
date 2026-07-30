@@ -20,6 +20,21 @@ describe("VGA attribute controller", () => {
     expect(bus.read(0x3c1, 8)).toBe(0x0f);
   });
 
+  it("retains the full five-bit index bank while masking defined register classes", () => {
+    const controller = new VgaAttributeController();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of controller.portRanges()) bus.register(range);
+
+    bus.write(0x3c0, 0x1f, 8);
+    bus.write(0x3c0, 0xff, 8);
+    expect(bus.read(0x3c0, 8)).toBe(0x1f);
+    expect(bus.read(0x3c1, 8)).toBe(0xff);
+
+    bus.write(0x3c0, 0x12, 8);
+    bus.write(0x3c0, 0xff, 8);
+    expect(bus.read(0x3c1, 8)).toBe(0x3f);
+  });
+
   it("honors palette gating and resets the address/data flip-flop from status one", () => {
     const controller = new VgaAttributeController();
     controller.write(0x3c0, 0x20, 8);

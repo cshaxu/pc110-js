@@ -17,6 +17,17 @@ describe("VGA CGA compatibility ports", () => {
     expect(bus.read(0x3d9, 8)).toBe(0x1e);
   });
 
+  it("transacts CRTC and mode/color pairs through little-endian word accesses", () => {
+    const cga = new CgaCompatibility();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of cga.portRanges()) bus.register(range);
+
+    bus.write(0x3d4, 0x431f, 16);
+    bus.write(0x3d8, 0x1e29, 16);
+    expect(bus.read(0x3d4, 16)).toBe(0x431f);
+    expect(bus.read(0x3d8, 16)).toBe(0x1e29);
+  });
+
   it("exposes deterministic retrace state and rejects invalid width/write ownership", () => {
     const cga = new CgaCompatibility();
     expect(cga.read(0x3da, 8)).toBe(0);
@@ -25,7 +36,7 @@ describe("VGA CGA compatibility ports", () => {
     cga.advance();
     expect(cga.read(0x3da, 8)).toBe(0x08);
     expect(() => cga.write(0x3da, 0, 8)).toThrow("not writable");
-    expect(() => cga.read(0x3d8, 16)).toThrow("8-bit");
+    expect(() => cga.read(0x3d8, 32)).toThrow("8-bit");
     cga.reset();
     expect(cga.snapshot()).toMatchObject({ crtcIndex: 0, mode: 0, color: 0 });
   });

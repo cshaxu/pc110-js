@@ -16,11 +16,21 @@ describe("VGA sequencer", () => {
     expect(bus.read(0x3c5, 8)).toBe(0x0f);
   });
 
+  it("transacts indexed register pairs through a little-endian word access", () => {
+    const sequencer = new VgaSequencer();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of sequencer.portRanges()) bus.register(range);
+
+    bus.write(0x3c4, 0x0f02, 16);
+    expect(sequencer.readRegister(2)).toBe(0x0f);
+    expect(bus.read(0x3c4, 16)).toBe(0x0f02);
+  });
+
   it("rejects undefined indexed data and invalid port widths, then resets", () => {
     const sequencer = new VgaSequencer();
     sequencer.write(0x3c4, 7, 8);
     expect(() => sequencer.write(0x3c5, 0, 8)).toThrow("not defined");
-    expect(() => sequencer.read(0x3c4, 16)).toThrow("8-bit");
+    expect(() => sequencer.read(0x3c4, 32)).toThrow("8-bit");
     sequencer.reset();
     expect(sequencer.snapshot()).toEqual({ index: 0, data: [0, 0, 0, 0, 0] });
   });

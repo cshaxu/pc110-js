@@ -21,12 +21,19 @@ export class VgaCrtc {
     this.index = 0;
   }
   public read(port: number, width: PortWidth): number {
+    if (width === 16 && port === VGA_CRTC_INDEX_PORT)
+      return this.read(VGA_CRTC_INDEX_PORT, 8) | (this.read(VGA_CRTC_DATA_PORT, 8) << 8);
     this.requireByteWidth(width);
     if (port === VGA_CRTC_INDEX_PORT) return this.index;
     if (port === VGA_CRTC_DATA_PORT) return this.data[this.index]!;
     throw new RangeError(`VGA CRTC port is not mapped: 0x${port.toString(16)}`);
   }
   public write(port: number, value: number, width: PortWidth): void {
+    if (width === 16 && port === VGA_CRTC_INDEX_PORT) {
+      this.write(VGA_CRTC_INDEX_PORT, value, 8);
+      this.write(VGA_CRTC_DATA_PORT, value >>> 8, 8);
+      return;
+    }
     this.requireByteWidth(width);
     if (port === VGA_CRTC_INDEX_PORT) {
       this.index = value & 0x1f;

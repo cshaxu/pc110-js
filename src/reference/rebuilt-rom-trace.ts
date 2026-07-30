@@ -13,6 +13,7 @@ import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
 
 const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 const SOURCE_ROM = "machines/pcx86/compaq/deskpro386/rom/1988-01-28/1988-01-28.json5";
+const SOURCE_VGA_ROM = "machines/pcx86/ibm/video/vga/1986-10-27/IBM-VGA.json5";
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(moduleDirectory, "../..");
 const pcjsRoot = resolve(projectRoot, "..", "pcjs");
@@ -60,7 +61,7 @@ function watchedAddresses(): ReadonlySet<string> {
   return new Set(values);
 }
 
-function loadRom(): Uint8Array {
+function loadRom(sourceRom: string, expectedBytes: number): Uint8Array {
   const source = execFileSync(
     "git",
     [
@@ -69,7 +70,7 @@ function loadRom(): Uint8Array {
       "-C",
       pcjsRoot,
       "show",
-      `${PINNED_PCJS_COMMIT}:${SOURCE_ROM}`
+      `${PINNED_PCJS_COMMIT}:${sourceRom}`
     ],
     { encoding: "utf8" }
   );
@@ -79,7 +80,8 @@ function loadRom(): Uint8Array {
   const values = [...source.slice(start, end).matchAll(/0x([0-9a-f]{2})(?=,|\s)/gi)].map((match) =>
     Number.parseInt(match[1], 16)
   );
-  if (values.length !== 0x8000) throw new Error(`Unexpected selected ROM size: ${values.length}`);
+  if (values.length !== expectedBytes)
+    throw new Error(`Unexpected selected ROM size: ${values.length}`);
   return Uint8Array.from(values);
 }
 
@@ -191,10 +193,11 @@ function main(): void {
     ignoreUnmappedWrites: true
   });
   memory.mapRom(
-    createRomImage("deskpro386", loadRom()),
+    createRomImage("deskpro386", loadRom(SOURCE_ROM, 0x8000)),
     0xffff8000,
     [0xf8000, 0xf0000, 0xffff0000]
   );
+  memory.mapRom(createRomImage("ibm-vga", loadRom(SOURCE_VGA_ROM, 0x6000)), 0xc0000);
   const trace: RebuiltMachineTraceEvent[] = [];
   const transferTrace: RebuiltMachineTraceEvent[] = [];
   const traceCapacity = Math.max(1, tailLength, eventTailLengthValue);

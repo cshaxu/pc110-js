@@ -44,6 +44,8 @@ export class MdaCompatibility {
   }
 
   public read(port: number, width: PortWidth): number {
+    if (width === 16 && this.isCrtcIndexPort(port))
+      return this.read(port, 8) | (this.read(port + 1, 8) << 8);
     this.requireByteWidth(width);
     if (port >= MDA_CRTC_FIRST_PORT && port <= MDA_CRTC_LAST_PORT)
       return (port & 1) === 0 ? this.crtcIndex : this.crtcData[this.crtcIndex]!;
@@ -54,6 +56,11 @@ export class MdaCompatibility {
   }
 
   public write(port: number, value: number, width: PortWidth): void {
+    if (width === 16 && this.isCrtcIndexPort(port)) {
+      this.write(port, value, 8);
+      this.write(port + 1, value >>> 8, 8);
+      return;
+    }
     this.requireByteWidth(width);
     const data = this.byte(value);
     if (port >= MDA_CRTC_FIRST_PORT && port <= MDA_CRTC_LAST_PORT) {
@@ -102,6 +109,10 @@ export class MdaCompatibility {
   private requireByteWidth(width: PortWidth): void {
     if (width !== 8)
       throw new RangeError(`MDA compatibility supports 8-bit I/O only, received ${width}-bit`);
+  }
+
+  private isCrtcIndexPort(port: number): boolean {
+    return port >= MDA_CRTC_FIRST_PORT && port <= MDA_CRTC_LAST_PORT && (port & 1) === 0;
   }
 
   private byte(value: number): number {

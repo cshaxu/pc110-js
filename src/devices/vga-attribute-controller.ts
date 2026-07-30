@@ -5,7 +5,7 @@ export const VGA_ATTRIBUTE_DATA_PORT = 0x3c1;
 
 const ATTRIBUTE_INDEX_MASK = 0x1f;
 const ATTRIBUTE_PALETTE_ENABLE = 0x20;
-const ATTRIBUTE_REGISTER_COUNT = 0x15;
+const ATTRIBUTE_REGISTER_COUNT = 0x20;
 
 export interface VgaAttributeControllerSnapshot {
   readonly index: number;
@@ -91,7 +91,7 @@ export class VgaAttributeController {
     if (index === 0x10) return 0xef;
     if (index === 0x12) return 0x3f;
     if (index === 0x13 || index === 0x14) return 0x0f;
-    throw new RangeError(`VGA attribute-controller index is not defined: 0x${index.toString(16)}`);
+    return 0xff;
   }
 
   private requireByteWidth(width: PortWidth): void {

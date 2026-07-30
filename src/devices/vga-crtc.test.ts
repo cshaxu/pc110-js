@@ -22,6 +22,16 @@ describe("VGA CRTC", () => {
     expect(bus.read(0x3d5, 8)).toBe(0x78);
   });
 
+  it("transacts indexed register pairs through a little-endian word access", () => {
+    const crtc = new VgaCrtc();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of crtc.portRanges()) bus.register(range);
+
+    bus.write(0x3d4, 0x340d, 16);
+    expect(crtc.displayStartAddress()).toBe(0x0034);
+    expect(bus.read(0x3d4, 16)).toBe(0x340d);
+  });
+
   it("masks defined values and rejects unsupported accesses", () => {
     const crtc = new VgaCrtc();
     crtc.write(0x3d4, 3, 8);
@@ -29,6 +39,6 @@ describe("VGA CRTC", () => {
     expect(crtc.readRegister(3)).toBe(0x1f);
     crtc.write(0x3d4, 0x1f, 8);
     expect(() => crtc.write(0x3d5, 0, 8)).toThrow("not defined");
-    expect(() => crtc.read(0x3d4, 16)).toThrow("8-bit");
+    expect(() => crtc.read(0x3d4, 32)).toThrow("8-bit");
   });
 });

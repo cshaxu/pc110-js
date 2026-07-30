@@ -57,6 +57,8 @@ export class CgaCompatibility {
   }
 
   public read(port: number, width: PortWidth): number {
+    if (width === 16 && this.isWordPairPort(port))
+      return this.read(port, 8) | (this.read(port + 1, 8) << 8);
     this.requireByteWidth(width);
     switch (port) {
       case CGA_CRTC_INDEX_PORT:
@@ -79,6 +81,11 @@ export class CgaCompatibility {
   }
 
   public write(port: number, value: number, width: PortWidth): void {
+    if (width === 16 && this.isWordPairPort(port)) {
+      this.write(port, value, 8);
+      this.write(port + 1, value >>> 8, 8);
+      return;
+    }
     this.requireByteWidth(width);
     const data = this.byte(value);
     switch (port) {
@@ -139,6 +146,10 @@ export class CgaCompatibility {
   private requireByteWidth(width: PortWidth): void {
     if (width !== 8)
       throw new RangeError(`CGA compatibility supports 8-bit I/O only, received ${width}-bit`);
+  }
+
+  private isWordPairPort(port: number): boolean {
+    return port === CGA_CRTC_INDEX_PORT || port === CGA_MODE_PORT;
   }
 
   private byte(value: number): number {
