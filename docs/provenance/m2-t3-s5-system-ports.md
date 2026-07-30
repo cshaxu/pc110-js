@@ -27,3 +27,10 @@ P2 implements the shared low-bit PPI/8042 RWREG state as a local TypeScript
 model. Refresh is an explicit observable signal, rather than a host-clock
 effect. Keyboard-controller, DeskPro-only, NMI, reset, A20, PCjs, firmware,
 media, and browser audio dependencies remain excluded.
+
+## P3 System-Port And PIT2 Composition
+
+P3 composes local `0x61` state with the existing native PIT only. The port
+adapter has no PCjs dependency and exports a hardware signal rather than sound.
+The reset action owns only local control/gate state; it does not provide NMI,
+8042, A20, firmware, media, or machine-wide reset behavior.

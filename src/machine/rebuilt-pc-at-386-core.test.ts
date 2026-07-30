@@ -171,4 +171,14 @@ describe("RebuiltPcAt386Core", () => {
     core.reset();
     expect(core.rtc.snapshot()).toMatchObject({ statusC: 0, statusD: 0x80 });
   });
+
+  it("registers native system port 0x61 and gates PIT counter 2", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x61, 0x03, 8);
+    expect(core.systemPort.snapshot()).toMatchObject({ timer2Gate: true, speakerData: true });
+    expect(core.pit.snapshot(2).gate).toBe(true);
+    core.reset();
+    expect(core.systemPort.snapshot()).toMatchObject({ timer2Gate: false, speakerData: false });
+  });
 });
