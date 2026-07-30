@@ -16,3 +16,12 @@
   write protection, and attachment lifecycle.
 - Excluded: ATA command handling, ports, IRQ, firmware, DOS/filesystem, and
   host-path access.
+
+## P3 Primary Controller
+
+- Product code: original TypeScript primary AT command-block controller,
+  composed with native PC/AT IRQ14 routing.
+- Scope: `0x1F0`-`0x1F7`, `0x3F6`, width rules, reset, status/error,
+  selection, diagnostic/recalibrate/seek/verify, and no-media errors.
+- Excluded: PIO sector transfer, guest shortcut, BIOS/DOS/filesystem behavior,
+  PCjs source/runtime, and automatic media attachment.

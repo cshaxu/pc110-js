@@ -15,3 +15,11 @@
   ejection, readiness, write protection, defensive copies, writable updates,
   and the exact 49,090,560-byte Type 5 geometry.
 - No media is auto-attached and no protected asset is loaded or tracked.
+
+## P3 Primary Controller Evidence
+
+- Focused tests cover the full port family, data-port width boundary, selected
+  register readback, recalibrate, seek, verify, status-read interrupt clear,
+  no-media and invalid-CHS errors, and software-reset transitions.
+- Rebuilt-machine coverage verifies controller composition and IRQ14 routing
+  through the native slave PIC path.

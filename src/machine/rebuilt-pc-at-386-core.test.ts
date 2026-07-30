@@ -3,6 +3,7 @@ import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory } from "../memory/physical-memory.js";
 import { RTC_TICKS_PER_SECOND, RtcCmosRegister } from "../devices/rtc-cmos.js";
 import { FloppyDrive } from "../devices/floppy-drive.js";
+import { FixedDrive } from "../devices/fixed-drive.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
@@ -33,6 +34,19 @@ describe("RebuiltPcAt386Core", () => {
     core.lpt1.setStatus(0x8f);
     expect(core.pic.snapshot().master.request).toBe(0x80);
     expect(core.ports.read(0x379, 8)).toBe(0x8f);
+  });
+
+  it("composes the primary AT fixed-disk controller with native IRQ14", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    const drive = new FixedDrive({ cylinders: 1, heads: 1, sectorsPerTrack: 1, bytesPerSector: 4 });
+    drive.attach(new Uint8Array(4));
+    core.hdc.attachDrive(0, drive);
+    core.ports.write(0x1f7, 0x10, 8);
+    expect(core.pic.snapshot()).toMatchObject({
+      slave: { request: 0x40 }
+    });
+    expect(core.ports.read(0x1f7, 8)).toBe(0x50);
   });
 
   it("selects floating unpopulated I/O only when the machine profile requests it", () => {
