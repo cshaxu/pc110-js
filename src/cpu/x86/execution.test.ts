@@ -4118,7 +4118,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.writeRegister16(3, 0x1000);
     state.writeRegister(6, 0x12340000);
     const memory = resetAliasMemory(values);

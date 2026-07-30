@@ -886,6 +886,23 @@ function executeContextualNearConditionalJump(
   return { halted: false, fetched };
 }
 
+function executeContextualLea(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0x8d) return undefined;
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.registerDirect) throw new UnsupportedOpcodeError("LEA requires a memory operand");
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize)!;
+  if (context.operandSize === 32) state.writeRegister(modRm.reg, address.offset);
+  else state.writeRegister16(modRm.reg, address.offset);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -914,6 +931,8 @@ function executeContextualInstruction(
   if (nearCallReturn) return nearCallReturn;
   const nearConditionalJump = executeContextualNearConditionalJump(memory, state, context, fetched);
   if (nearConditionalJump) return nearConditionalJump;
+  const lea = executeContextualLea(memory, state, context, fetched);
+  if (lea) return lea;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;

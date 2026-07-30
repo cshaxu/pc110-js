@@ -689,6 +689,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   return widths while SS defaults independently select stack addressing.
 - M2 T2 S3 P254 migrates `0F 80..8F` so CS defaults and 66 select the signed
   displacement length and IP/EIP target through the shared context.
+- M2 T2 S3 P255 migrates LEA so CS defaults and prefixes select both ModR/M
+  effective-address decoding and destination register width through context.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
