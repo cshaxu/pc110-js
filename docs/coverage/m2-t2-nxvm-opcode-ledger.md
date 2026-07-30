@@ -213,6 +213,12 @@ A generic real-mode program matches PCjs for C2/C3 near returns with and
 without immediate cleanup. Far returns, frame construction, and interrupts
 remain separate S6 work.
 
+## S6 P26 Differential Evidence
+
+A generic real-mode program matches PCjs for C4/C5 LES and LDS word
+far-pointer loads. Dword, address-size, protection, and invalid-register forms
+remain separate S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

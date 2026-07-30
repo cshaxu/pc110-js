@@ -107,3 +107,10 @@ P25 uses the project-native dispatcher and independent real-mode RAM images
 for C2/C3 near returns through a prepared stack frame. PCjs remains a
 verification-only oracle; no PCjs source, runtime dependency, or
 instruction-specific oracle logic enters the product.
+
+## P26 Far Pointer Load Program
+
+P26 uses the project-native dispatcher and independent real-mode RAM images
+for C4/C5 LES and LDS word far-pointer loads. PCjs remains a verification-only
+oracle; no PCjs source, runtime dependency, or instruction-specific oracle
+logic enters the product.

@@ -36,6 +36,7 @@ It does not yet record writes whose value is unchanged.
 | `B0-BF` program | every byte and word immediate-register form | automatic register-width and EIP lockstep |
 | `C0-C7` slice | immediate Group Two shifts and immediate MOV | automatic register, memory, flag, and EIP lockstep |
 | `C2-C3` slice | near returns with and without cleanup | automatic EIP and stack-pointer lockstep |
+| `C4-C5` slice | LES and LDS word far-pointer loads | automatic register, segment, and EIP lockstep |
 
 ## Active Expansion Order
 

@@ -244,6 +244,21 @@ describe("PCjs differential CPU harness", () => {
         { address: 0x807, value: 0x02 }
       ],
       instructionCount: 2
+    },
+    {
+      name: "C4-C5 far pointer load slice",
+      bytes: [0xc4, 0x06, 0x00, 0x02, 0xc5, 0x0e, 0x04, 0x02],
+      memory: [
+        { address: 0x200, value: 0x34 },
+        { address: 0x201, value: 0x12 },
+        { address: 0x202, value: 0x00 },
+        { address: 0x203, value: 0x20 },
+        { address: 0x204, value: 0x78 },
+        { address: 0x205, value: 0x56 },
+        { address: 0x206, value: 0x00 },
+        { address: 0x207, value: 0x30 }
+      ],
+      instructionCount: 2
     }
   ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
     const trace = await runPcjsDifferentialTrace(differentialCase);
