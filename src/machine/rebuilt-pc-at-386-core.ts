@@ -7,6 +7,7 @@ import { PcAtPit } from "../devices/pc-at-pit.js";
 import { PcAtDma } from "../devices/pc-at-dma.js";
 import { PcAtRtc } from "../devices/pc-at-rtc.js";
 import { PcAtSystemControl } from "../devices/pc-at-system-control.js";
+import { KeyboardOutputPort } from "../devices/keyboard-output-port.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -34,6 +35,7 @@ export type RebuiltMachineTraceEvent =
 export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 
 export class RebuiltPcAt386Core {
+  public readonly keyboardOutputPort = new KeyboardOutputPort();
   public readonly pic = new PcAtPic();
   public readonly pit = new PcAtPit((irq) => this.pic.raiseIrq(irq));
   public readonly dma = new PcAtDma();
@@ -44,7 +46,7 @@ export class RebuiltPcAt386Core {
   private nmiPending = false;
 
   public constructor(
-    memory: PhysicalMemory,
+    private readonly memory: PhysicalMemory,
     private readonly trace?: RebuiltMachineTrace
   ) {
     this.ports = new RebuiltMachinePortBus((event) => this.trace?.({ kind: "port", event }));
@@ -68,6 +70,8 @@ export class RebuiltPcAt386Core {
     this.dma.reset();
     this.rtc.reset();
     this.systemPort.reset();
+    this.keyboardOutputPort.reset();
+    this.memory.setA20Enabled(true);
     this.nmiPending = false;
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
@@ -92,6 +96,12 @@ export class RebuiltPcAt386Core {
     if (this.rtc.nmiDisabled()) return false;
     this.nmiPending = true;
     return true;
+  }
+
+  public writeKeyboardOutputPort(value: number): void {
+    const update = this.keyboardOutputPort.write(value);
+    this.memory.setA20Enabled(update.a20Enabled);
+    if (update.resetRequested) this.runner.reset();
   }
 
   public run(maxInstructions: number): RebuiltMachineRunResult {

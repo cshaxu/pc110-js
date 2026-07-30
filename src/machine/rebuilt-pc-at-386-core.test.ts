@@ -201,4 +201,16 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.runner.state.snapshot()).toMatchObject({ eip: 0x40, halted: false });
     expect(trace).toContainEqual({ kind: "interrupt", vector: 2 });
   });
+
+  it("routes the narrow 8042 output-port signals to physical A20 and CPU reset", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x200000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.runner.state.writeEip(0x1234);
+    core.writeKeyboardOutputPort(0x01);
+    expect(memory.isA20Enabled()).toBe(false);
+    expect(core.runner.state.readEip()).toBe(0x1234);
+    core.writeKeyboardOutputPort(0x02);
+    expect(memory.isA20Enabled()).toBe(true);
+    expect(core.runner.state.readEip()).toBe(0xfff0);
+  });
 });

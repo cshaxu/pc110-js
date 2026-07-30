@@ -42,3 +42,11 @@ adds a distinct non-maskable admission entry that does not consult IF or STI
 inhibition. The RTC address-port mask remains the only modeled admission gate.
 Hardware error sources, DeskPro signals, 8042 protocol, A20, reset, PCjs, and
 firmware dependencies remain excluded.
+
+## P5 8042 Output-Port Boundary
+
+P5 maps only the selected output-port A20 and reset signals into existing
+project-native memory and CPU-reset contracts. It does not map an I/O port,
+simulate a command queue, keyboard data, status bits, firmware, PCjs, storage,
+media, or guest services. Full device reset stays machine-owned rather than
+being inferred from the CPU reset pulse.
