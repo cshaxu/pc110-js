@@ -56,3 +56,10 @@ imported.
 PCjs documents port `0x61` refresh-state observation as PC/AT system control.
 Original TypeScript exposes the existing native PIT channel-1 output at that
 read bit. It imports no PCjs chipset code, firmware response, or audio behavior.
+
+## P8 Video Aperture Contract
+
+PCjs represents VGA memory as a hardware-controlled aperture rather than host
+RAM. Original TypeScript now has an explicit physical-memory device aperture
+with A20-normalized lookup and ROM-protection boundaries. It imports no PCjs
+memory, video, firmware, renderer, or browser code.

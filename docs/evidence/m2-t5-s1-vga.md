@@ -83,3 +83,13 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
   speaker behavior.
 - Trace: 200,000 native instructions move from the `F000:B587` refresh loop to
   `F000:B5F7`, with actual `0x61` reads and writes in the port journal.
+
+## P8 Video Aperture Contract Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `video.js` represents VGA memory through a
+  controller-owned aperture rather than ordinary RAM.
+- Tests: device lookup follows A20 normalization, overlays writable RAM, and
+  rejects overlap with immutable ROM or another device.
+- Boundary: no VGA plane, graphics-controller, renderer, or browser behavior
+  is claimed by this prerequisite part.

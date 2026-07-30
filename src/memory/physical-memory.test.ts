@@ -72,6 +72,35 @@ describe("PC/AT physical memory", () => {
     expect(memory.readUint8(0xe0000)).toBe(0xff);
   });
 
+  it("maps a hardware aperture over writable RAM after A20 normalization", () => {
+    const accesses: string[] = [];
+    const device = {
+      readUint8: (offset: number) => {
+        accesses.push(`read:${offset.toString(16)}`);
+        return 0xa5;
+      },
+      writeUint8: (offset: number, value: number) => {
+        accesses.push(`write:${offset.toString(16)}:${value.toString(16)}`);
+      }
+    };
+    const memory = new PhysicalMemory({ ramBytes: 0x200000 });
+    memory.mapDevice(0xa0000, 0x20000, device);
+
+    memory.writeUint8(0x1a0003, 0x5a);
+    expect(memory.readUint8(0xa0003)).toBe(0xa5);
+    expect(accesses).toEqual(["write:3:5a", "read:3"]);
+  });
+
+  it("rejects device overlap with immutable memory or another device", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+    const device = { readUint8: () => 0, writeUint8: () => undefined };
+    memory.mapRom(createRomImage("system-rom", new Uint8Array([0xea])), 0xf0000);
+    memory.mapDevice(0xa0000, 0x20000, device);
+
+    expect(() => memory.mapDevice(0xb0000, 0x10000, device)).toThrow(PhysicalMemoryError);
+    expect(() => memory.mapDevice(0xf0000, 1, device)).toThrow(PhysicalMemoryError);
+  });
+
   it("preserves the existing reset-ROM far-jump table trace through mapped ROM", () => {
     const bytes = new Uint8Array(0x8000);
     bytes.set([0x2e, 0xff, 0x2e, 0xfd, 0xf8], 0x7ff0);

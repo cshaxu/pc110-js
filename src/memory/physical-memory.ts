@@ -7,6 +7,17 @@ interface MemoryRegion {
   readonly writable: boolean;
 }
 
+export interface MemoryMappedDevice {
+  readUint8(offset: number): number;
+  writeUint8(offset: number, value: number): void;
+}
+
+interface DeviceRegion {
+  readonly start: number;
+  readonly end: number;
+  readonly device: MemoryMappedDevice;
+}
+
 export interface PhysicalMemoryOptions {
   readonly ramBytes: number;
   readonly a20Enabled?: boolean;
@@ -18,6 +29,7 @@ export class PhysicalMemoryError extends Error {}
 
 export class PhysicalMemory {
   private readonly regions: MemoryRegion[];
+  private readonly devices: DeviceRegion[] = [];
   private a20Enabled: boolean;
   private readonly unmappedReadValue: number | undefined;
   private readonly ignoreUnmappedWrites: boolean;
@@ -57,8 +69,32 @@ export class PhysicalMemory {
     }
   }
 
+  /** Maps a hardware aperture over writable RAM while retaining immutable ROM ownership. */
+  public mapDevice(start: number, size: number, device: MemoryMappedDevice): void {
+    if (!Number.isSafeInteger(size) || size <= 0) {
+      throw new PhysicalMemoryError("Device region size must be a positive safe integer");
+    }
+    const region = this.createDeviceRegion(start, size, device);
+    if (
+      this.devices.some((existing) => region.start < existing.end && existing.start < region.end)
+    ) {
+      throw new PhysicalMemoryError("Physical device regions cannot overlap");
+    }
+    if (
+      this.regions.some(
+        (existing) =>
+          !existing.writable && region.start < existing.end && existing.start < region.end
+      )
+    ) {
+      throw new PhysicalMemoryError("Physical device regions cannot overlap immutable memory");
+    }
+    this.devices.push(region);
+  }
+
   public readUint8(address: number): number {
     const normalized = this.normalizeAddress(address);
+    const device = this.findDevice(normalized);
+    if (device) return device.device.readUint8(normalized - device.start) & 0xff;
     const region = this.findRegion(normalized);
     if (!region && this.unmappedReadValue !== undefined) return this.unmappedReadValue;
     if (!region)
@@ -68,6 +104,11 @@ export class PhysicalMemory {
 
   public writeUint8(address: number, value: number): void {
     const normalized = this.normalizeAddress(address);
+    const device = this.findDevice(normalized);
+    if (device) {
+      device.device.writeUint8(normalized - device.start, value & 0xff);
+      return;
+    }
     const region = this.findRegion(normalized);
     if (!region && this.ignoreUnmappedWrites) return;
     if (!region)
@@ -102,6 +143,22 @@ export class PhysicalMemory {
     return { start, end: start + bytes.byteLength, bytes, writable };
   }
 
+  private createDeviceRegion(
+    start: number,
+    size: number,
+    device: MemoryMappedDevice
+  ): DeviceRegion {
+    if (!Number.isSafeInteger(start) || start < 0 || start > 0xffffffff) {
+      throw new PhysicalMemoryError("Physical device start must be a 32-bit unsigned address");
+    }
+    if (start + size - 1 > 0xffffffff) {
+      throw new PhysicalMemoryError(
+        "Physical device region must fit within the 32-bit address space"
+      );
+    }
+    return { start, end: start + size, device };
+  }
+
   private addRegion(region: MemoryRegion): void {
     if (
       this.regions.some((existing) => region.start < existing.end && existing.start < region.end)
@@ -120,5 +177,9 @@ export class PhysicalMemory {
 
   private findRegion(address: number): MemoryRegion | undefined {
     return this.regions.find((region) => address >= region.start && address < region.end);
+  }
+
+  private findDevice(address: number): DeviceRegion | undefined {
+    return this.devices.find((device) => address >= device.start && address < device.end);
   }
 }
