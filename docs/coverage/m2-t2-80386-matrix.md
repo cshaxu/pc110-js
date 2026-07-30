@@ -1,19 +1,21 @@
-# M2 T2 80386 Coverage Matrix
+# M2 T2 NXVM CPU Coverage Matrix
 
 ## Purpose
 
 This matrix is the M2 T2 CPU completion ledger. It prevents a ROM-observed
-opcode from being mistaken for complete 80386 coverage. `Implemented` requires
-focused tests and a PCjs behavior record. `Partial` is not completion credit.
+opcode from being mistaken for complete NXVM CPU coverage. `Implemented`
+requires focused tests and an authority record. `Partial` is not completion
+credit.
 
 ## Authorities
 
-- PCjs at `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70` is the behavior and
-  compatibility authority.
-- Intel 80386 architecture is the semantic requirement.
-- NXVM `vcpu.h` and `vcpuins.c` are M2-only structural and coverage references.
-  They are not behavior authorities or source code inputs. NXVM BIOS, POST,
-  I/O, global-state, macro, and guest-service behavior is excluded.
+- NXVM `vcpu.h` and `vcpuins.c` are the owner-authorized CPU coverage and
+  validated execution baseline.
+- Intel IA-32 documentation resolves CPU semantic conflicts.
+- PCjs at `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70` remains the PC/AT
+  compatibility and whole-machine authority.
+- NXVM BIOS, POST, I/O, global-state, macro, and guest-service behavior is
+  excluded. No NXVM C source is copied.
 
 ## CPU State And Translation
 
@@ -46,12 +48,22 @@ focused tests and a PCjs behavior record. `Partial` is not completion credit.
 | Privilege model | Partial | Selected CPL-zero checks and TSS stack switching exist; complete CPL/RPL/DPL and conforming-segment behavior remains. |
 | Exceptions and fault restart | Partial | Selected no-error and general-protection delivery exists; full architectural exception matrix, #PF codes, and restart coverage remain. |
 
+## Required NXVM Compatibility Extensions
+
+| Extension | Status | Required boundary |
+| --- | --- | --- |
+| `CPUID` | Not started | Generic CPU compatibility interface, deterministic leaf model, and focused register-result tests. |
+| `RDMSR` and `WRMSR` | Not started | Generic CPU compatibility interface, privilege/fault behavior, and no guest-service or device shortcut. |
+| `WBINVD` | Not started | Generic CPU compatibility interface and defined cache-model boundary; no host-cache operation. |
+| `RSM` | Not started | Generic CPU compatibility interface and explicit unsupported-state fault behavior until a resumable SMM model exists. |
+
 ## Explicitly Pending Before T2 Closure
 
 1. Migrate remaining instruction families through the execution context; a `66`
    form alone never proves default-32 support.
-2. Complete the instruction/system feature rows to the selected PCjs machine
-   surface and record each PCjs comparison.
+2. Inventory every NXVM CPU instruction family and implementation behavior,
+   complete its project-native equivalent, and record each IA-32 and PCjs
+   compatibility comparison.
 3. Complete paging-to-core, descriptor, privilege, interrupt, and fault tests.
 4. Re-run the selected local ROM trace through the project-owned core and record
    the next whole-machine blocker without synthetic device behavior.

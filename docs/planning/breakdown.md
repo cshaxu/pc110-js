@@ -30,8 +30,12 @@ M0 provides governance. M5 provides preservation-grade release packaging.
 ## Reference And Evidence Rules
 
 Repository consultation order is PCjs, PC110-EMU, pc110js-v2, pc110js-v1, then
-NXVM. NXVM is eligible only during M2 and only for directory/file organization,
-CPU data-model and coverage planning, and trace/debugging design. Evidence
+NXVM, except for the owner-authorized M2 T2 CPU baseline correction recorded in
+`docs/decisions/m2-t2-nxvm-cpu-authority.md`. For that CPU work, NXVM coverage
+and validated execution behavior are the primary implementation baseline, Intel
+IA-32 documentation resolves semantic conflicts, and PCjs remains the PC/AT
+compatibility and whole-machine reference. NXVM BIOS, POST, device, I/O,
+global-state, macro, and guest-service code remains excluded. Evidence
 authority is domain-specific:
 
 - Standard PC/AT behavior: PCjs PCx86 v2 is the primary implementation source.

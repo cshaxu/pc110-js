@@ -13,15 +13,18 @@ project-native TypeScript boundaries.
 - Do not begin M2 T2 S4 paging-to-core integration, M2 T3 hardware, or later
   subtasks before their canonical entry conditions are met or the owner
   authorizes a documented ordering correction.
-- Do not use NXVM as a behavioral authority.
+- Use NXVM CPU coverage and validated instruction behavior only as authorized
+  by `docs/decisions/m2-t2-nxvm-cpu-authority.md`; do not use its BIOS, POST,
+  device, I/O, global-state, macro, or guest-service behavior.
 
 ## Dependencies And Evidence
 
 - PCjs baseline: `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70` in `../pcjs`.
-- Behavioral authority: PCjs PCx86 v2 source and the M1 selected-machine
-  reference path.
-- Structural reference only during M2: NXVM CPU state, module boundaries, and
-  trace design.
+- CPU implementation baseline: NXVM `vcpu.h` and `vcpuins.c`, constrained by
+  the owner-authorized decision record.
+- CPU semantic conflict authority: Intel IA-32 documentation.
+- PC/AT compatibility and whole-machine reference: PCjs PCx86 v2 source and
+  the M1 selected-machine reference path.
 - Protected ROM and disk assets remain local, ignored inputs; no protected
   bytes are committed.
 
@@ -58,12 +61,14 @@ remaining 80386 instruction and system paths. T2 closure requires all scheduled
 focused tests, a selected local ROM trace through the project-owned core, a
 coverage matrix, and bounded PCjs comparison evidence.
 
-For the M2 CPU only, NXVM `vcpu.h` and `vcpuins.c` are structural and
-coverage-reference inputs. They set neither behavior nor implementation source:
-do not translate NXVM C, macros, global state, BIOS, POST, I/O hacks, or
-guest-service behavior. PCjs remains the compatibility authority and Intel
-80386 architecture remains the semantic requirement. T3 remains prohibited
-until T2's gates pass and the owner grants a new authorization.
+The owner authorized an M2 T2 CPU baseline correction after this record was
+created. NXVM `vcpu.h` and `vcpuins.c` now define required CPU coverage and are
+the first-order execution reference, with Intel IA-32 documentation resolving
+semantic conflicts. Do not translate NXVM C, macros, global state, BIOS, POST,
+I/O hacks, or guest-service behavior. PCjs remains the PC/AT compatibility and
+whole-machine reference. NXVM compatibility extensions listed in the decision
+record are mandatory, isolated CPU work. T3 remains prohibited until T2's gates
+pass and the owner grants a new authorization.
 
 ## Working Method
 
