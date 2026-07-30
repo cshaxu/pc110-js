@@ -1,6 +1,8 @@
 import { pcAt386Profile } from "../machine/configurations/pc-at-386.js";
 import { MachineRuntime, type MachineSnapshot } from "../machine/machine-runtime.js";
 import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
+import { LocalAssetLoader } from "./local-asset-loader.js";
+import { selectedDeskProRom, selectedDosFloppy } from "./selected-media-profile.js";
 import "./styles.css";
 
 const root = document.querySelector<HTMLElement>("#app");
@@ -22,6 +24,9 @@ root.innerHTML = `
       <button id="run" type="button">Run</button>
       <button id="pause" type="button">Pause</button>
       <button id="reset" type="button">Reset</button>
+      <label>ROM <input id="rom" type="file" /></label>
+      <label>Floppy <input id="floppy" type="file" /></label>
+      <button id="mount" type="button">Mount</button>
     </footer>
   </section>
 `;
@@ -32,11 +37,17 @@ const pause = root.querySelector<HTMLButtonElement>("#pause");
 const reset = root.querySelector<HTMLButtonElement>("#reset");
 const nativeStatus = root.querySelector<HTMLElement>("#native-status");
 const screen = root.querySelector<HTMLCanvasElement>("#screen");
-if (!state || !run || !pause || !reset || !nativeStatus || !screen)
+const rom = root.querySelector<HTMLInputElement>("#rom");
+const floppy = root.querySelector<HTMLInputElement>("#floppy");
+const mount = root.querySelector<HTMLButtonElement>("#mount");
+if (!state || !run || !pause || !reset || !nativeStatus || !screen || !rom || !floppy || !mount)
   throw new Error("Missing machine controls");
 const context = screen.getContext("2d");
 if (!context) throw new Error("Canvas 2D context is unavailable");
 const controls = { state, run, pause, reset, nativeStatus, screen, context };
+const loader = new LocalAssetLoader();
+let mediaMounted = false;
+let animationFrame: number | undefined;
 
 function color(component: readonly [number, number, number]): string {
   return `rgb(${component[0] * 4}, ${component[1] * 4}, ${component[2] * 4})`;
@@ -77,10 +88,48 @@ function render(snapshot: MachineSnapshot): void {
   controls.pause.disabled = snapshot.runState !== "running";
 }
 
-controls.run.addEventListener("click", () => machine.start());
-controls.pause.addEventListener("click", () => machine.pause());
+controls.run.addEventListener("click", () => {
+  if (!mediaMounted) return;
+  machine.start();
+  scheduleNativeRun();
+});
+controls.pause.addEventListener("click", () => {
+  machine.pause();
+  if (animationFrame !== undefined) cancelAnimationFrame(animationFrame);
+  animationFrame = undefined;
+});
 controls.reset.addEventListener("click", () => {
   checkpoint.reset();
   machine.reset();
 });
+mount.addEventListener("click", async () => {
+  if (!rom.files?.[0] || !floppy.files?.[0]) return;
+  try {
+    const [romBytes, floppyBytes] = await Promise.all([
+      loader.load(rom.files[0], selectedDeskProRom),
+      loader.load(floppy.files[0], selectedDosFloppy)
+    ]);
+    checkpoint.mapSystemRom(romBytes);
+    checkpoint.attachFloppy(floppyBytes);
+    checkpoint.reset();
+    mediaMounted = true;
+    render(machine.snapshot());
+  } catch (error) {
+    controls.nativeStatus.textContent = error instanceof Error ? error.message : String(error);
+  }
+});
+
+function scheduleNativeRun(): void {
+  if (machine.snapshot().runState !== "running") return;
+  try {
+    checkpoint.core.run(5_000);
+  } catch (error) {
+    machine.pause();
+    animationFrame = undefined;
+    controls.nativeStatus.textContent = error instanceof Error ? error.message : String(error);
+    return;
+  }
+  render(machine.snapshot());
+  animationFrame = requestAnimationFrame(scheduleNativeRun);
+}
 machine.subscribe(render);

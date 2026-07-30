@@ -33,4 +33,16 @@ describe("NativeCoreCheckpoint", () => {
     checkpoint.reset();
     expect(checkpoint.snapshot().masterRequest).toBe("00");
   });
+
+  it("maps native system ROM aliases and attaches selected raw floppy media", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+    const rom = new Uint8Array(0x8000);
+    rom[0x7ff0] = 0xea;
+    checkpoint.mapSystemRom(rom);
+    expect(checkpoint.memory.readUint8(0xfffffff0)).toBe(0xea);
+    expect(checkpoint.memory.readUint8(0xffff0)).toBe(0xea);
+
+    checkpoint.attachFloppy(new Uint8Array(80 * 2 * 18 * 512));
+    expect(checkpoint.core.fdc.controller.snapshot().drives[0]).toMatchObject({ ready: true });
+  });
 });

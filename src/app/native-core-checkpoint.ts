@@ -1,6 +1,8 @@
 import { PhysicalMemory } from "../memory/physical-memory.js";
 import { RebuiltPcAt386Core } from "../machine/rebuilt-pc-at-386-core.js";
 import { VgaTextFramebuffer } from "../devices/vga-text-framebuffer.js";
+import { createRomImage } from "../firmware/rom-image.js";
+import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
 
 export interface NativeCoreCheckpointSnapshot {
   readonly codeAddress: string;
@@ -28,9 +30,8 @@ export interface NativeCoreCheckpointSnapshot {
 }
 
 export class NativeCoreCheckpoint {
-  public readonly core = new RebuiltPcAt386Core(
-    new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true })
-  );
+  public readonly memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+  public readonly core = new RebuiltPcAt386Core(this.memory);
   public readonly textFramebuffer = new VgaTextFramebuffer(
     this.core.vgaMemory,
     this.core.crtc,
@@ -39,6 +40,20 @@ export class NativeCoreCheckpoint {
 
   public reset(): void {
     this.core.reset();
+  }
+
+  public mapSystemRom(bytes: Uint8Array): void {
+    this.memory.mapRom(
+      createRomImage("system-rom", bytes),
+      0xffff8000,
+      [0xf8000, 0xf0000, 0xffff0000]
+    );
+  }
+
+  public attachFloppy(bytes: Uint8Array): void {
+    const drive = new FloppyDrive(FLOPPY_1440K_GEOMETRY);
+    drive.attach(bytes);
+    this.core.fdc.controller.attachDrive(0, drive);
   }
 
   public snapshot(): NativeCoreCheckpointSnapshot {
