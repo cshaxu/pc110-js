@@ -196,6 +196,11 @@ CWD, SAHF, and LAHF. WAIT and far CALL remain separate S6 coverage.
 A generic real-mode program matches PCjs for byte and word accumulator moffs
 loads and stores across `A0-A3`, including changed RAM deltas.
 
+## S6 P22 Differential Evidence
+
+A generic real-mode byte-string program matches PCjs for MOVSB, CMPSB, STOSB,
+LODSB, and SCASB. REP, DF, and segment-override forms remain separate S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

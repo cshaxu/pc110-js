@@ -87,3 +87,9 @@ no PCjs source, instruction-specific oracle, or product runtime dependency.
 
 P21 uses independent RAM images and the shared dispatcher for all accumulator
 moffs forms. It adds no PCjs source or runtime dependency.
+
+## P22 Byte String Program
+
+P22 uses independent RAM images and the shared dispatcher for byte string
+operations. It adds no PCjs source, device emulation, or product runtime
+dependency.
