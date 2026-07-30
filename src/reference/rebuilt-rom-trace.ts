@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { createRomImage } from "../firmware/rom-image.js";
@@ -7,6 +9,7 @@ import {
   RebuiltPcAt386Core,
   type RebuiltMachineTraceEvent
 } from "../machine/rebuilt-pc-at-386-core.js";
+import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
 
 const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 const SOURCE_ROM = "machines/pcx86/compaq/deskpro386/rom/1988-01-28/1988-01-28.json5";
@@ -16,6 +19,8 @@ const pcjsRoot = resolve(projectRoot, "..", "pcjs");
 const DEFAULT_INSTRUCTION_BUDGET = 1_000;
 const DEFAULT_TRACE_TAIL = 0;
 const DEFAULT_EVENT_TAIL = 0;
+const FLOPPY_BYTES = 1_474_560;
+const FLOPPY_SHA256 = "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5";
 
 function instructionBudget(): number {
   const raw = process.env.PC110JS_ROM_TRACE_INSTRUCTIONS;
@@ -67,6 +72,17 @@ function loadRom(): Uint8Array {
   return Uint8Array.from(values);
 }
 
+function attachLocalFloppy(core: RebuiltPcAt386Core): void {
+  if (process.env.PC110JS_ROM_TRACE_FLOPPY !== "1") return;
+  const bytes = new Uint8Array(readFileSync(resolve(projectRoot, "..", "fdd.img")));
+  if (bytes.byteLength !== FLOPPY_BYTES) throw new Error("Unexpected local floppy size");
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  if (hash !== FLOPPY_SHA256) throw new Error("Unexpected local floppy SHA-256");
+  const drive = new FloppyDrive(FLOPPY_1440K_GEOMETRY);
+  drive.attach(bytes);
+  core.fdc.controller.attachDrive(0, drive);
+}
+
 function formatAddress(core: RebuiltPcAt386Core): string {
   const cs = core.runner.state.readSegment("cs").selector.toString(16).padStart(4, "0");
   const eip = core.runner.state.readEip().toString(16).padStart(4, "0");
@@ -75,6 +91,7 @@ function formatAddress(core: RebuiltPcAt386Core): string {
 
 function writeDiagnosticTail(trace: readonly RebuiltMachineTraceEvent[], length: number): void {
   if (length === 0) return;
+  const registers = process.env.PC110JS_ROM_TRACE_REGISTERS === "1";
   const instructions = trace.filter((event) => event.kind === "instruction").slice(-length);
   for (const entry of instructions) {
     if (entry.kind !== "instruction") continue;
@@ -83,7 +100,10 @@ function writeDiagnosticTail(trace: readonly RebuiltMachineTraceEvent[], length:
       .toString(16)
       .padStart(4, "0")}`;
     const byte = opcode === undefined ? "??" : opcode.toString(16).padStart(2, "0");
-    process.stdout.write(`  ${address} ${byte}\n`);
+    const registerTail = registers
+      ? ` ax=${before.registers.eax.toString(16).padStart(8, "0")} bx=${before.registers.ebx.toString(16).padStart(8, "0")} sp=${before.registers.esp.toString(16).padStart(8, "0")}`
+      : "";
+    process.stdout.write(`  ${address} ${byte}${registerTail}\n`);
   }
 }
 
@@ -112,6 +132,16 @@ function writeSegmentTransfers(trace: readonly RebuiltMachineTraceEvent[]): void
   }
 }
 
+function writePitState(core: RebuiltPcAt386Core): void {
+  if (process.env.PC110JS_ROM_TRACE_PIT !== "1") return;
+  for (let index = 0; index < 3; index += 1) {
+    const counter = core.pit.snapshot(index);
+    process.stdout.write(
+      `  pit${index} reload=${counter.reload} count=${counter.count} mode=${counter.mode} output=${Number(counter.output)} null=${Number(counter.nullCount)}\n`
+    );
+  }
+}
+
 function main(): void {
   const budget = instructionBudget();
   const tailLength = traceTailLength();
@@ -133,6 +163,7 @@ function main(): void {
     deskProSecondaryPit: true,
     unpopulatedIo: "floating"
   });
+  attachLocalFloppy(core);
   try {
     const result = core.run(budget);
     process.stdout.write(
@@ -141,6 +172,7 @@ function main(): void {
     writeDiagnosticTail(trace, tailLength);
     writeEventTail(trace, eventTailLengthValue);
     if (transfers) writeSegmentTransfers(trace);
+    writePitState(core);
   } catch (error) {
     const stop = trace.at(-1);
     const detail = stop?.kind === "stop" && stop.error ? stop.error : String(error);
@@ -151,6 +183,7 @@ function main(): void {
     writeDiagnosticTail(trace, tailLength);
     writeEventTail(trace, eventTailLengthValue);
     if (transfers) writeSegmentTransfers(trace);
+    writePitState(core);
   }
 }
 
