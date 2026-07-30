@@ -4,6 +4,7 @@ import { deliverFault } from "./events/interrupt-delivery.js";
 import { executeAccumulatorExchange } from "./instructions/accumulator-exchange.js";
 import { executeAccumulatorTest } from "./instructions/accumulator-test.js";
 import { executeAsciiAdjust } from "./instructions/ascii-adjust.js";
+import { executeArpl } from "./instructions/arpl.js";
 import { executeFlagControl } from "./instructions/flag-control.js";
 import { executeFlagTransfer } from "./instructions/flag-transfer.js";
 import { executeFlagStack } from "./instructions/flag-stack.js";
@@ -80,6 +81,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode >= 0x40 && opcode <= 0x5f) return executeRegisterStackInterval(context);
   if ([0x60, 0x61, 0x62, 0x68, 0x69, 0x6a, 0x6b].includes(opcode))
     return executeFrameImmediateSlice(context);
+  if (opcode === 0x63) return executeArpl(context);
   if (opcode >= 0x70 && opcode <= 0x7f) return executeShortConditionalJump(context);
   if ([0x80, 0x81, 0x83].includes(opcode)) return executeGroupOne(context);
   if (opcode === 0x84 || opcode === 0x85) return executeTestModRm(context);

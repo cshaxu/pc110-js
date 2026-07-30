@@ -364,3 +364,9 @@ dependency.
 
 P373 implements signed 16/32-bit memory bounds checks with 66/67 addressing.
 Tests cover in-range, #BR, and register-only #UD behavior.
+
+## P375 `63` ARPL Checklist
+
+P375 implements protected-mode ARPL's fixed 16-bit selector RPL adjustment.
+Tests cover register/memory operands, 67 addressing, ZF results, and real-mode
+#UD.
