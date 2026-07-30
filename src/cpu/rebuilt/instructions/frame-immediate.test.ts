@@ -61,7 +61,8 @@ describe("rebuilt 60-6B frame and immediate forms", () => {
     expect(outside.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
     const invalid = execute([0x62, 0xc0], {
       setup: (state) => state.registers.write16(4, 0x100),
-      setupMemory: (memory) => [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value))
+      setupMemory: (memory) =>
+        [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value))
     });
     expect(invalid.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
   });
