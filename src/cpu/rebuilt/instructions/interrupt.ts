@@ -24,7 +24,7 @@ function interrupt(context: RebuiltExecutionContext, vector: number, bytes: numb
   const fallthrough = context.state.readEip() + context.instruction.length + bytes - 1;
   deliverInterrupt(context.memory, context.state, {
     vector,
-    returnEip: context.state.readSegment("cs").default32 ? fallthrough >>> 0 : fallthrough & 0xffff,
+    returnEip: context.state.codeDefault32() ? fallthrough >>> 0 : fallthrough & 0xffff,
     operandSize: context.instruction.prefixes.operandSize,
     software: true
   });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PageFaultError } from "../../../memory/address-translation.js";
 import { SegmentAccessError, SegmentedMemory, type RebuiltMemoryBus } from "./segmented-memory.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
+import { pushStack } from "./stack.js";
 
 function memory(bytes: Uint8Array): RebuiltMemoryBus {
   return {
@@ -111,5 +112,62 @@ describe("SegmentedMemory", () => {
     bytes[0x8000] = 0x5a;
     expect(segmented.read8("ds", 0x8000, 16)).toBe(0x5a);
     expect(() => segmented.read8("ds", 0x7fff, 16)).toThrow(SegmentAccessError);
+  });
+
+  it("uses virtual-8086 real-style segments and a 16-bit stack address", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.flags.write(0x00020000);
+    state.writeSegment("ds", {
+      selector: 0x1234,
+      base: 0,
+      limit: 0,
+      default32: true,
+      valid: false,
+      writable: false
+    });
+    state.writeSegment("ss", {
+      selector: 0x2000,
+      base: 0,
+      limit: 0,
+      default32: true,
+      valid: false,
+      writable: false
+    });
+    state.registers.write32(4, 0xabcd0002);
+    const bytes = new Uint8Array(0x30000);
+    bytes[0x12340] = 0x5a;
+    const segmented = new SegmentedMemory(memory(bytes), state);
+
+    expect(segmented.read8("ds", 0, 16)).toBe(0x5a);
+    pushStack(segmented, state, 16, 0x1234);
+    expect(state.registers.read32(4)).toBe(0xabcd0000);
+    expect(bytes[0x20000]).toBe(0x34);
+    expect(bytes[0x20001]).toBe(0x12);
+  });
+
+  it("retains paging and requests user access in virtual-8086 mode", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Uint8Array(0x4000);
+    state.writeCr0(0x80000001);
+    state.writeCr3(0x1000);
+    state.flags.write(0x00020000);
+    state.writeSegment("ds", {
+      selector: 0,
+      base: 0,
+      limit: 0,
+      default32: true,
+      valid: false
+    });
+    write32(bytes, 0x1000, 0x2003);
+    write32(bytes, 0x2000, 0x3003);
+    const segmented = new SegmentedMemory(memory(bytes), state);
+
+    expect(() => segmented.read8("ds", 0, 16)).toThrow(PageFaultError);
+    try {
+      segmented.read8("ds", 0, 16);
+    } catch (error) {
+      expect(error).toMatchObject({ access: { user: true }, linearAddress: 0 });
+    }
   });
 });

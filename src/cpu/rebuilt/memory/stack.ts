@@ -9,7 +9,7 @@ export function pushStack(
   value: number
 ): void {
   const width = operandSize / 8;
-  const stackAddressSize = state.readSegment("ss").default32 ? 32 : 16;
+  const stackAddressSize = state.stackDefault32() ? 32 : 16;
   const stackPointer =
     stackAddressSize === 32
       ? (state.registers.read32(4) - width) >>> 0
@@ -26,7 +26,7 @@ export function popStack(
   operandSize: OperandSize
 ): number {
   const width = operandSize / 8;
-  const stackAddressSize = state.readSegment("ss").default32 ? 32 : 16;
+  const stackAddressSize = state.stackDefault32() ? 32 : 16;
   const stackPointer =
     stackAddressSize === 32 ? state.registers.read32(4) : state.registers.read16(4);
   const value =

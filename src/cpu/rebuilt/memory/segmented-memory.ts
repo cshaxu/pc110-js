@@ -86,9 +86,11 @@ export class SegmentedMemory {
     const segment = this.state.readSegment(segmentName);
     const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
     const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
-    if (protectedMode)
+    const virtual8086 = this.state.isVirtual8086();
+    if (protectedMode && !virtual8086)
       this.validateProtectedAccess(segmentName, segment, normalizedOffset, write, instructionFetch);
-    const linear = (segment.base + normalizedOffset) >>> 0;
+    const base = virtual8086 ? (segment.selector << 4) >>> 0 : segment.base;
+    const linear = (base + normalizedOffset) >>> 0;
     try {
       return translateLinearAddress(
         {

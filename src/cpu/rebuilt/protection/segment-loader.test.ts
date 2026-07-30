@@ -82,4 +82,18 @@ describe("rebuilt segment loader hidden CPL", () => {
       expect(error).toMatchObject({ vector: 13, errorCode: 0 });
     }
   });
+
+  it("loads virtual-8086 segment caches without descriptor-table lookup", () => {
+    const result = machine();
+    result.state.flags.write(0x00020000);
+    loadDataSegment(result.memory, result.state, "ds", 0x1234);
+    expect(result.state.readSegment("ds")).toMatchObject({
+      selector: 0x1234,
+      base: 0x12340,
+      limit: 0xffff,
+      default32: false,
+      dpl: 3,
+      valid: true
+    });
+  });
 });

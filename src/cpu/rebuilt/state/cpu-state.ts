@@ -110,7 +110,19 @@ export class RebuiltCpuState {
 
   public advanceEip(bytes: number): void {
     const next = (this.eip + bytes) >>> 0;
-    this.eip = this.segments.cs.default32 ? next : next & 0xffff;
+    this.eip = this.codeDefault32() ? next : next & 0xffff;
+  }
+
+  public isVirtual8086(): boolean {
+    return Boolean((this.cr0 & 1) !== 0 && (this.flags.read() & 0x00020000) !== 0);
+  }
+
+  public codeDefault32(): boolean {
+    return !this.isVirtual8086() && this.segments.cs.default32;
+  }
+
+  public stackDefault32(): boolean {
+    return !this.isVirtual8086() && this.segments.ss.default32;
   }
 
   public halt(): void {

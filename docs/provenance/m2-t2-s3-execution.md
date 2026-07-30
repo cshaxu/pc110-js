@@ -1161,6 +1161,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   segment-loader errors and rebuilt executor delivery, with no runtime reference import.
 - M2 T2 S3 P397 adapts NXVM cached segment access attributes and normal/
   expand-down range logic into project-native state, memory, and loader modules.
+- M2 T2 S3 P398 adapts NXVM's virtual-8086 mode boundary into project-native
+  CPU state, segmented memory, stack, decode, and segment-loader modules.
+  It retains 80386 paging with user access and introduces no reference runtime
+  import, device behavior, or guest-service path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -48,6 +48,36 @@ describe("RebuiltCpuExecutor", () => {
     expect(state.readEip()).toBe(1);
   });
 
+  it("uses virtual-8086 segment bases and 16-bit defaults despite cached D/B values", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Map<number, number>();
+    state.writeCr0(1);
+    state.flags.write(0x00020000);
+    state.writeSegment("cs", {
+      selector: 0x1000,
+      base: 0,
+      limit: 0,
+      default32: true,
+      valid: false,
+      dpl: 0
+    });
+    state.writeEip(0xfffe);
+    bytes.set(0x1fffe, 0x66);
+    bytes.set(0x1ffff, 0x67);
+    bytes.set(0x10000, 0x90);
+    const executor = new RebuiltCpuExecutor(state, {
+      readUint8: (address) => bytes.get(address) ?? 0,
+      writeUint8: (address, value) => bytes.set(address, value)
+    });
+
+    executor.step(({ instruction, state: active }) => {
+      expect(instruction.prefixes).toMatchObject({ operandSize: 32, addressSize: 32 });
+      active.advanceEip(instruction.length);
+    });
+
+    expect(state.readEip()).toBe(1);
+  });
+
   it("delivers a protected page fault with the faulting EIP and error code", () => {
     const state = new RebuiltCpuState();
     const bytes = new Map<number, number>();

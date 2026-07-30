@@ -552,3 +552,15 @@ and normal or expand-down bounds; instruction fetch is distinct from data reads.
 Focused tests cover write denial and 16-bit expand-down range checks. Full
 segment-system fault codes, v86 access semantics, and task/gate paths remain
 active work.
+
+## P398 Virtual-8086 Baseline Checklist
+
+P398 follows NXVM's `_IsProtected`, `_GetCPL`, and `_ksa_load_sreg` v86
+boundary. With CR0.PE and EFLAGS.VM set, rebuilt execution uses 16-bit code
+and stack address defaults, derives segment bases from `selector << 4`, gives
+loaded segment caches DPL 3 and a 64 KiB limit, and bypasses protected cached
+segment-type checks. Paging remains enabled and uses user access. Focused tests
+cover prefixed decode, EIP wrapping, segment-base access, stack addressing,
+and descriptor-free segment loading. v86 interrupt delivery, IOPL/TSS I/O
+checks, POPF/IRET virtualization, and privilege-changing exception delivery
+remain active protection-system dependencies.

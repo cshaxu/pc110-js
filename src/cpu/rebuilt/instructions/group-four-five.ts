@@ -76,7 +76,7 @@ function incrementDecrement(
 }
 
 function writeTarget(context: RebuiltExecutionContext, value: number): void {
-  context.state.writeEip(context.state.readSegment("cs").default32 ? value >>> 0 : value & 0xffff);
+  context.state.writeEip(context.state.codeDefault32() ? value >>> 0 : value & 0xffff);
 }
 
 function readRm(

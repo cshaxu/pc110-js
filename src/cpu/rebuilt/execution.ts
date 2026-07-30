@@ -45,13 +45,14 @@ export class RebuiltCpuExecutor {
 
   public step(dispatch: RebuiltInstructionDispatcher): DecodedInstruction | undefined {
     const before = this.state.snapshot();
-    const codeAddressSize = before.segments.cs.default32 ? 32 : 16;
+    const codeDefault32 = this.state.codeDefault32();
+    const codeAddressSize = codeDefault32 ? 32 : 16;
     const reader = {
       readCodeByte: (offset: number) => this.memory.readCode8(before.eip + offset, codeAddressSize)
     };
     let instruction: DecodedInstruction;
     try {
-      instruction = decodeInstruction(reader, before.eip, before.segments.cs.default32);
+      instruction = decodeInstruction(reader, before.eip, codeDefault32);
     } catch (error) {
       if (!this.deliverAccessFault(error, before.eip)) throw error;
       this.trace?.({ before, fault: true, after: this.state.snapshot() });

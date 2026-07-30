@@ -49,9 +49,7 @@ function executeNearReturn(context: RebuiltExecutionContext): void {
       ? readUint16(context, context.instruction.opcodeOffset + 1)
       : 0;
   adjustStackPointer(context, cleanup);
-  context.state.writeEip(
-    context.state.readSegment("cs").default32 ? target >>> 0 : target & 0xffff
-  );
+  context.state.writeEip(context.state.codeDefault32() ? target >>> 0 : target & 0xffff);
 }
 
 function executeEnter(context: RebuiltExecutionContext): void {
@@ -59,7 +57,7 @@ function executeEnter(context: RebuiltExecutionContext): void {
   const allocation = readUint16(context, context.instruction.opcodeOffset + 1);
   const level =
     context.reader.readCodeByte(context.instruction.opcodeOffset + 3) & ENTER_LEVEL_MASK;
-  const stack32 = context.state.readSegment("ss").default32;
+  const stack32 = context.state.stackDefault32();
   pushStack(context.memory, context.state, operandSize, readFramePointer(context, stack32));
   const frame = readStackPointer(context, stack32);
 
@@ -84,7 +82,7 @@ function executeEnter(context: RebuiltExecutionContext): void {
 
 function executeLeave(context: RebuiltExecutionContext): void {
   const operandSize = context.instruction.prefixes.operandSize;
-  const stack32 = context.state.readSegment("ss").default32;
+  const stack32 = context.state.stackDefault32();
   writeStackPointer(context, stack32, readFramePointer(context, stack32));
   writeFramePointer(context, stack32, popStack(context.memory, context.state, operandSize));
   context.state.advanceEip(context.instruction.length);
@@ -95,14 +93,14 @@ function readStack(
   offset: number,
   operandSize: OperandSize
 ): number {
-  const addressSize = context.state.readSegment("ss").default32 ? 32 : 16;
+  const addressSize = context.state.stackDefault32() ? 32 : 16;
   return operandSize === 32
     ? context.memory.read32("ss", offset, addressSize)
     : context.memory.read16("ss", offset, addressSize);
 }
 
 function adjustStackPointer(context: RebuiltExecutionContext, amount: number): void {
-  const stack32 = context.state.readSegment("ss").default32;
+  const stack32 = context.state.stackDefault32();
   writeStackPointer(context, stack32, readStackPointer(context, stack32) + amount);
 }
 

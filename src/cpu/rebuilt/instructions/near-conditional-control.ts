@@ -21,9 +21,7 @@ export function executeNearConditionalJump(context: RebuiltExecutionContext): vo
   const destination = condition(context.state.flags.read(), opcode & 0x0f)
     ? fallthrough + displacement
     : fallthrough;
-  context.state.writeEip(
-    context.state.readSegment("cs").default32 ? destination >>> 0 : destination & 0xffff
-  );
+  context.state.writeEip(context.state.codeDefault32() ? destination >>> 0 : destination & 0xffff);
 }
 
 function signedImmediate(context: RebuiltExecutionContext, offset: number, bytes: number): number {

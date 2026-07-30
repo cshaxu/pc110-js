@@ -18,7 +18,7 @@ export function executeShortConditionalJump(context: RebuiltExecutionContext): v
   const destination = condition(context.state.flags.read(), opcode & 0x0f)
     ? fallthrough + displacement
     : fallthrough;
-  const code32 = context.state.readSegment("cs").default32;
+  const code32 = context.state.codeDefault32();
   context.state.writeEip(code32 ? destination >>> 0 : destination & 0xffff);
 }
 

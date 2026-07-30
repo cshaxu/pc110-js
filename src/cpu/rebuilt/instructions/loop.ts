@@ -21,7 +21,5 @@ export function executeLoop(context: RebuiltExecutionContext): void {
     (context.reader.readCodeByte(context.instruction.opcodeOffset + 1) << 24) >> 24;
   const fallthrough = context.state.readEip() + context.instruction.length + 1;
   const target = take ? fallthrough + displacement : fallthrough;
-  context.state.writeEip(
-    context.state.readSegment("cs").default32 ? target >>> 0 : target & 0xffff
-  );
+  context.state.writeEip(context.state.codeDefault32() ? target >>> 0 : target & 0xffff);
 }

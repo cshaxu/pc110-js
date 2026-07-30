@@ -36,7 +36,8 @@ export function loadCodeSegment(
   selector: number
 ): void {
   selector &= 0xffff;
-  if (!(state.readCr0() & 1)) return load(memory, state, "cs", selector, false);
+  if (!(state.readCr0() & 1) || state.isVirtual8086())
+    return load(memory, state, "cs", selector, false);
   const descriptor = lookup(memory, state, selector);
   const cpl = currentPrivilege(state);
   const conforming = Boolean(descriptor.type & 4);
@@ -67,14 +68,14 @@ function load(
   stack: boolean
 ): void {
   selector &= 0xffff;
-  if (!(state.readCr0() & 1)) {
+  if (!(state.readCr0() & 1) || state.isVirtual8086()) {
     state.writeSegment(name, {
       selector,
       base: selector << 4,
       limit: 0xffff,
       default32: false,
       valid: true,
-      dpl: 0,
+      dpl: state.isVirtual8086() ? 3 : 0,
       executable: false,
       readable: true,
       writable: true,
