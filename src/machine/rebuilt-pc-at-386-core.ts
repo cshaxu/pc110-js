@@ -18,6 +18,7 @@ import { CgaCompatibility } from "../devices/cga-compatibility.js";
 import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
 import { VgaSequencer } from "../devices/vga-sequencer.js";
 import { VgaGraphicsController } from "../devices/vga-graphics-controller.js";
+import { VGA_MEMORY_SIZE, VGA_MEMORY_START, VgaMemory } from "../devices/vga-memory.js";
 import { Uart16550 } from "../devices/uart16550.js";
 import { ParallelPort } from "../devices/parallel-port.js";
 import { AtFixedDiskController } from "../devices/at-fixed-disk-controller.js";
@@ -88,6 +89,7 @@ export class RebuiltPcAt386Core {
   public readonly attributeController = new VgaAttributeController();
   public readonly sequencer = new VgaSequencer();
   public readonly graphicsController = new VgaGraphicsController();
+  public readonly vgaMemory = new VgaMemory(this.sequencer, this.graphicsController);
   public readonly cgaCompatibility = new CgaCompatibility(() =>
     this.attributeController.resetAddressDataFlipFlop()
   );
@@ -112,6 +114,7 @@ export class RebuiltPcAt386Core {
     this.runner = new RebuiltCpuRunner(memory, this.ports, (event) =>
       this.trace?.({ kind: "instruction", event })
     );
+    this.memory.mapDevice(VGA_MEMORY_START, VGA_MEMORY_SIZE, this.vgaMemory);
     for (const range of this.pic.portRanges()) this.registerPorts(range);
     for (const range of this.pit.portRanges()) this.registerPorts(range);
     for (const range of this.dma.portRanges()) this.registerPorts(range);
@@ -157,6 +160,7 @@ export class RebuiltPcAt386Core {
     this.attributeController.reset();
     this.sequencer.reset();
     this.graphicsController.reset();
+    this.vgaMemory.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.scheduler.reset();

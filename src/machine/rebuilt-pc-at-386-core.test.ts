@@ -307,7 +307,11 @@ describe("RebuiltPcAt386Core", () => {
     const generic = new RebuiltPcAt386Core(memory);
     expect(() => generic.ports.write(0x4b, 0x34, 8)).toThrow("Unmapped I/O write");
 
-    const deskPro = new RebuiltPcAt386Core(memory, undefined, { deskProSecondaryPit: true });
+    const deskPro = new RebuiltPcAt386Core(
+      new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true }),
+      undefined,
+      { deskProSecondaryPit: true }
+    );
     deskPro.ports.write(0x4b, 0x34, 8);
     deskPro.ports.write(0x48, 2, 8);
     deskPro.ports.write(0x48, 0, 8);

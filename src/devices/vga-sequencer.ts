@@ -57,6 +57,12 @@ export class VgaSequencer {
     return { index: this.index, data: Array.from(this.data) };
   }
 
+  public readRegister(index: number): number {
+    if (!Number.isInteger(index) || index < 0 || index >= SEQUENCER_REGISTER_COUNT)
+      throw new RangeError(`VGA sequencer index is not defined: ${index}`);
+    return this.data[index]!;
+  }
+
   public portRanges(): readonly VgaSequencerPortRange[] {
     return [
       {
