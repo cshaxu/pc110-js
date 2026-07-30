@@ -1121,6 +1121,10 @@ function executeContextualInstruction(
       );
       return { halted: false, fetched };
     }
+    if (extension >= 0x90 && extension <= 0x9f) {
+      executeSetcc(memory, state, extension, context.opcodeOffset + 2, context.addressSize);
+      return { halted: false, fetched };
+    }
   }
 
   const byteAluOperation = byteModRmAluOperation(context.opcode);
@@ -2763,6 +2767,21 @@ function executeBitScanModRm(
     if (operandSize === 32) state.writeRegister(modRm.reg, index);
     else state.writeRegister16(modRm.reg, index);
   }
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
+}
+
+function executeSetcc(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  extension: number,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const value = shortJumpCondition(state, extension & 0x0f) ? 1 : 0;
+  if (modRm.registerDirect) state.writeRegister8(modRm.rm, value);
+  else writeSegmentUint8(memory, state, address!.segment, address!.offset, value, addressSize);
   state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 

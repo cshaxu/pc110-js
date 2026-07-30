@@ -744,6 +744,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native operand-width helper and routes `69/6B` through context.
   PCjs operand/address-size selection controls signed source, immediate, and
   destination widths, while address-size controls the ModR/M address form.
+- M2 T2 S3 P271 routes `0F 90` through `0F 9F` through a project-native SETcc
+  helper. PCjs address-size selection controls the byte destination's ModR/M
+  address form; condition evaluation and byte width remain opcode-defined.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
