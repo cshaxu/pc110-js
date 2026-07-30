@@ -899,6 +899,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P310 routes FF /4 through a project-native contextual near-jump
   helper. It uses the context-selected operand and ModR/M address widths and
   does not alter stack state.
+- M2 T2 S3 P311 adds project-native repeated LODS handling. It selects data
+  width from the operand context and count/SI or ESI width from the address
+  context, retaining the last loaded accumulator value and direction-flag
+  progression.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

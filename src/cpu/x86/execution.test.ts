@@ -365,6 +365,34 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0xddccbbaa, esi: 0xabcd2004 } });
   });
 
+  it("repeats LODS through contextual data and address widths", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xf3],
+      [0x00000101, 0xad],
+      [0x00012000, 0x11],
+      [0x00012001, 0x22],
+      [0x00012002, 0x33],
+      [0x00012003, 0x44],
+      [0x00012004, 0x55],
+      [0x00012005, 0x66],
+      [0x00012006, 0x77],
+      [0x00012007, 0x88]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(1, 2);
+    state.writeRegister(6, 0x00012000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x88776655, ecx: 0, esi: 0x00012008 },
+      eip: 0x00000102
+    });
+  });
+
   it("selects MOVS and STOS data and index width independently through the context", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xa5],

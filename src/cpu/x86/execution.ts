@@ -1205,6 +1205,44 @@ function executeContextualRepeatTransfer(
   return { halted: false, fetched };
 }
 
+function executeContextualRepeatLoad(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (!context.repeatPrefix || (context.opcode !== 0xac && context.opcode !== 0xad))
+    return undefined;
+  const width = context.opcode === 0xac ? 1 : context.operandSize === 32 ? 4 : 2;
+  let count = context.addressSize === 32 ? state.readRegister(1) : state.readRegister16(1);
+  let source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
+  const delta = state.directionFlag() ? -width : width;
+
+  while (count > 0) {
+    const value =
+      width === 1
+        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        : width === 2
+          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
+          : readSegmentUint32(memory, state, "ds", source, context.addressSize);
+    if (width === 1) state.writeRegister8(0, value);
+    else if (width === 2) state.writeRegister16(0, value);
+    else state.writeRegister(0, value);
+    source = context.addressSize === 32 ? (source + delta) >>> 0 : (source + delta) & 0xffff;
+    count -= 1;
+  }
+
+  if (context.addressSize === 32) {
+    state.writeRegister(6, source);
+    state.writeRegister(1, count);
+  } else {
+    state.writeRegister16(6, source);
+    state.writeRegister16(1, count);
+  }
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualAccumulatorAlu(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1659,6 +1697,8 @@ function executeContextualInstruction(
   if (repeatedComparison) return repeatedComparison;
   const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);
   if (repeatedTransfer) return repeatedTransfer;
+  const repeatedLoad = executeContextualRepeatLoad(memory, state, context, fetched);
+  if (repeatedLoad) return repeatedLoad;
   if (context.repeatPrefix) return undefined;
   const accumulatorAlu = executeContextualAccumulatorAlu(memory, state, context, fetched);
   if (accumulatorAlu) return accumulatorAlu;
