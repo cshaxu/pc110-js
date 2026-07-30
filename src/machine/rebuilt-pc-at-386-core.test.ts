@@ -341,4 +341,25 @@ describe("RebuiltPcAt386Core", () => {
     core.reset();
     expect(core.attributeController.snapshot()).toMatchObject({ index: 0, expectsData: false });
   });
+
+  it("registers native VGA sequencer state for selected firmware", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x3c4, 2, 8);
+    core.ports.write(0x3c5, 0x0f, 8);
+    expect(core.ports.read(0x3c5, 8)).toBe(0x0f);
+    core.reset();
+    expect(core.sequencer.snapshot()).toEqual({ index: 0, data: [0, 0, 0, 0, 0] });
+  });
+
+  it("advances VGA-compatible status timing separately from rendering", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    expect(core.ports.read(0x3da, 8)).toBe(0);
+    core.advanceVideo(1);
+    expect(core.ports.read(0x3da, 8)).toBe(0x01);
+    core.advanceVideo(1);
+    expect(core.ports.read(0x3da, 8)).toBe(0x08);
+    expect(() => core.advanceVideo(-1)).toThrow("non-negative");
+  });
 });

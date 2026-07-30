@@ -50,3 +50,15 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
 - Trace: the fixed 1,000-instruction native trace completes at `F000:9C05`.
   It demonstrates no remaining port boundary in that bounded interval, not a
   successful video boot or rendered output.
+
+## P5 VGA Sequencer And Trace Diagnostics Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `video.js` sequencer definitions and indexed
+  port handlers.
+- Tests: all five register classes, masks, undefined indexes, byte width,
+  reset, and machine composition.
+- Trace: the optional 100,000-instruction diagnostic trace reaches
+  `F000:BBB4`, whose ROM bytes are `EB FE` after the PIT counter-zero POST
+  branch. The unresolved dependency is a cycle-accounted machine scheduler;
+  no instruction-count clock or firmware workaround is retained.

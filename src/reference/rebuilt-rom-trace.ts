@@ -13,6 +13,26 @@ const SOURCE_ROM = "machines/pcx86/compaq/deskpro386/rom/1988-01-28/1988-01-28.j
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(moduleDirectory, "../..");
 const pcjsRoot = resolve(projectRoot, "..", "pcjs");
+const DEFAULT_INSTRUCTION_BUDGET = 1_000;
+const DEFAULT_TRACE_TAIL = 0;
+
+function instructionBudget(): number {
+  const raw = process.env.PC110JS_ROM_TRACE_INSTRUCTIONS;
+  if (raw === undefined) return DEFAULT_INSTRUCTION_BUDGET;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(value) || value <= 0)
+    throw new Error("PC110JS_ROM_TRACE_INSTRUCTIONS must be a positive safe integer");
+  return value;
+}
+
+function traceTailLength(): number {
+  const raw = process.env.PC110JS_ROM_TRACE_TAIL;
+  if (raw === undefined) return DEFAULT_TRACE_TAIL;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw new Error("PC110JS_ROM_TRACE_TAIL must be a non-negative safe integer");
+  return value;
+}
 
 function loadRom(): Uint8Array {
   const source = execFileSync(
@@ -43,7 +63,23 @@ function formatAddress(core: RebuiltPcAt386Core): string {
   return `${cs}:${eip}`;
 }
 
+function writeDiagnosticTail(trace: readonly RebuiltMachineTraceEvent[], length: number): void {
+  if (length === 0) return;
+  const instructions = trace.filter((event) => event.kind === "instruction").slice(-length);
+  for (const entry of instructions) {
+    if (entry.kind !== "instruction") continue;
+    const { before, opcode } = entry.event;
+    const address = `${before.segments.cs.selector.toString(16).padStart(4, "0")}:${before.eip
+      .toString(16)
+      .padStart(4, "0")}`;
+    const byte = opcode === undefined ? "??" : opcode.toString(16).padStart(2, "0");
+    process.stdout.write(`  ${address} ${byte}\n`);
+  }
+}
+
 function main(): void {
+  const budget = instructionBudget();
+  const tailLength = traceTailLength();
   const memory = new PhysicalMemory({
     ramBytes: 0xa0000,
     a20Enabled: true,
@@ -60,10 +96,11 @@ function main(): void {
     deskProSecondaryPit: true
   });
   try {
-    const result = core.run(1_000);
+    const result = core.run(budget);
     process.stdout.write(
       `Rebuilt selected-ROM trace completed ${result.executed} instructions at ${formatAddress(core)}\n`
     );
+    writeDiagnosticTail(trace, tailLength);
   } catch (error) {
     const stop = trace.at(-1);
     const detail = stop?.kind === "stop" && stop.error ? stop.error : String(error);
@@ -71,6 +108,7 @@ function main(): void {
     process.stdout.write(
       `Rebuilt selected-ROM trace stopped after ${executed} instructions at ${formatAddress(core)}: ${detail}\n`
     );
+    writeDiagnosticTail(trace, tailLength);
   }
 }
 

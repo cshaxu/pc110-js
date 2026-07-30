@@ -34,3 +34,10 @@ PCjs maps the `0x3C0` index/data flip-flop, `0x3C1` data reads, palette-enable
 bit, 21 attribute registers, and the status-one read reset. The native model
 retains those register contracts with a narrow status-read callback. It does
 not adopt PCjs rendering, font, timing, DAC, BIOS, or browser code.
+
+## P5 VGA Sequencer And Trace Diagnostics
+
+PCjs maps the sequencer index/data ports at `0x3C4`/`0x3C5` and five register
+classes. The project-native sequencer retains those values for later VGA
+memory-plane consumers. The project-owned trace options add only observation
+controls; they do not alter CPU, firmware, or device behavior.

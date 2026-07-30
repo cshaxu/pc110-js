@@ -16,6 +16,7 @@ import { performDmaTransfer } from "../devices/dma-transfer.js";
 import { MdaCompatibility } from "../devices/mda-compatibility.js";
 import { CgaCompatibility } from "../devices/cga-compatibility.js";
 import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
+import { VgaSequencer } from "../devices/vga-sequencer.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -65,6 +66,7 @@ export class RebuiltPcAt386Core {
   );
   public readonly mdaCompatibility = new MdaCompatibility();
   public readonly attributeController = new VgaAttributeController();
+  public readonly sequencer = new VgaSequencer();
   public readonly cgaCompatibility = new CgaCompatibility(() =>
     this.attributeController.resetAddressDataFlipFlop()
   );
@@ -93,6 +95,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.mdaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.attributeController.portRanges()) this.registerPorts(range);
+    for (const range of this.sequencer.portRanges()) this.registerPorts(range);
     if (options.deskProSecondaryPit) {
       this.deskProSecondaryPit = new DeskPro386SecondaryPit();
       for (const range of this.deskProSecondaryPit.portRanges()) this.registerPorts(range);
@@ -115,6 +118,7 @@ export class RebuiltPcAt386Core {
     this.mdaCompatibility.reset();
     this.cgaCompatibility.reset();
     this.attributeController.reset();
+    this.sequencer.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.memory.setA20Enabled(true);
@@ -128,6 +132,7 @@ export class RebuiltPcAt386Core {
     if (this.servicePendingInterrupt()) return;
     if (this.runner.state.isHalted()) return;
     this.runner.step();
+    this.advanceVideo(1);
   }
 
   public advancePit(ticks: number): void {
@@ -137,6 +142,16 @@ export class RebuiltPcAt386Core {
 
   public advanceRtc(ticks: number): void {
     this.rtc.advance(ticks);
+  }
+
+  /** Advances project-native video compatibility timing independently of rendering. */
+  public advanceVideo(ticks: number): void {
+    if (!Number.isInteger(ticks) || ticks < 0)
+      throw new RangeError("Video tick count must be a non-negative integer");
+    for (let index = 0; index < ticks; index += 1) {
+      this.mdaCompatibility.advance();
+      this.cgaCompatibility.advance();
+    }
   }
 
   public advanceFdcDma(maxTransfers: number): number {
@@ -196,6 +211,7 @@ export class RebuiltPcAt386Core {
         if (this.servicePendingInterrupt()) continue;
         if (this.runner.state.snapshot().halted) break;
         this.runner.step();
+        this.advanceVideo(1);
         executed += 1;
       }
     } catch (error) {
