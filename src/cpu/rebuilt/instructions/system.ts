@@ -1,7 +1,7 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { deliverFault } from "../events/interrupt-delivery.js";
-import { readGdtDescriptor } from "../protection/descriptor.js";
+import { readDescriptor, readGdtDescriptor } from "../protection/descriptor.js";
 import type { DescriptorTable } from "../state/cpu-state.js";
 import type { SegmentName } from "../state/segments.js";
 
@@ -53,14 +53,14 @@ function executeClts(context: RebuiltExecutionContext): void {
 }
 
 function readSelectorDescriptor(context: RebuiltExecutionContext, selector: number) {
-  if ((selector & 0xfff8) === 0 || selector & 4) return undefined;
+  if ((selector & 0xfff8) === 0) return undefined;
   try {
-    return readGdtDescriptor(
+    return readDescriptor(
       {
         readUint8: (address) => context.memory.readPhysical8(address),
         writeUint8: () => undefined
       },
-      context.state.readGdtr(),
+      context.state,
       selector
     );
   } catch {
@@ -71,7 +71,7 @@ function readSelectorDescriptor(context: RebuiltExecutionContext, selector: numb
 function selectorAccessible(
   context: RebuiltExecutionContext,
   selector: number,
-  descriptor: ReturnType<typeof readGdtDescriptor>,
+  descriptor: ReturnType<typeof readDescriptor>,
   access: boolean
 ): boolean {
   const codeSegment = context.state.readSegment("cs");
@@ -86,7 +86,7 @@ function selectorAccessible(
   return allowedTypes.includes(descriptor.type);
 }
 
-function descriptorAccessRights(descriptor: ReturnType<typeof readGdtDescriptor>): number {
+function descriptorAccessRights(descriptor: ReturnType<typeof readDescriptor>): number {
   return (
     ((descriptor.type << 8) |
       (descriptor.system ? 0x1000 : 0) |
@@ -225,12 +225,12 @@ function verifySelector(
   const selector = readRm16(context, modRm);
   let valid = false;
   try {
-    const descriptor = readGdtDescriptor(
+    const descriptor = readDescriptor(
       {
         readUint8: (address) => context.memory.readPhysical8(address),
         writeUint8: () => undefined
       },
-      context.state.readGdtr(),
+      context.state,
       selector
     );
     const code = Boolean(descriptor.type & 8);

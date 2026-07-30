@@ -1,7 +1,7 @@
 import type { SegmentedMemory } from "../memory/segmented-memory.js";
 import type { RebuiltCpuState } from "../state/cpu-state.js";
 import type { SegmentName } from "../state/segments.js";
-import { readGdtDescriptor } from "./descriptor.js";
+import { readDescriptor } from "./descriptor.js";
 
 export class SegmentLoadError extends Error {}
 
@@ -29,9 +29,9 @@ export function loadCodeSegment(
 ): void {
   selector &= 0xffff;
   if (!(state.readCr0() & 1)) return load(memory, state, "cs", selector, false);
-  const descriptor = readGdtDescriptor(
+  const descriptor = readDescriptor(
     { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
-    state.readGdtr(),
+    state,
     selector
   );
   const cpl = currentPrivilege(state);
@@ -81,9 +81,9 @@ function load(
     });
     return;
   }
-  const descriptor = readGdtDescriptor(
+  const descriptor = readDescriptor(
     { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
-    state.readGdtr(),
+    state,
     selector
   );
   const cpl = currentPrivilege(state);

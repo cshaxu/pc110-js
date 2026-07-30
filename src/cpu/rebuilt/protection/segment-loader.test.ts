@@ -43,4 +43,18 @@ describe("rebuilt segment loader hidden CPL", () => {
     loadCodeSegment(code.memory, code.state, 8);
     expect(code.state.readSegment("cs")).toMatchObject({ selector: 8, dpl: 0, valid: true });
   });
+
+  it("resolves a data selector through the active LDTR table", () => {
+    const result = machine();
+    result.state.writeLdtr({ selector: 0x10, base: 0x200, limit: 0x17, default32: false });
+    [0xff, 0x0f, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+      result.bytes.set(0x208 + index, value)
+    );
+    loadDataSegment(result.memory, result.state, "ds", 0x0c);
+    expect(result.state.readSegment("ds")).toMatchObject({
+      selector: 0x0c,
+      limit: 0x0fff,
+      valid: true
+    });
+  });
 });

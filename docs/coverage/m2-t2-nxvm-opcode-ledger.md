@@ -476,3 +476,11 @@ P388 makes project-native data and code segment loaders derive CPL from the CS
 hidden cache, as NXVM does, rather than selector RPL. Focused tests deliberately
 separate those values and cover GDT data and code loading. LDT lookup and full
 descriptor fault-code delivery remain active dependencies.
+
+## P389 LDT Descriptor-Lookup Checklist
+
+P389 adds project-native descriptor-table selection: GDT selectors retain the
+existing path, while TI selectors resolve through active LDTR base and limit.
+Segment loaders and LAR/LSL/VERR/VERW use the shared lookup; GDT-only system
+instructions retain explicit GDT lookup. Tests cover active-LDTR data segment
+loading. Task switching and inactive-LDTR fault-code completion remain active.

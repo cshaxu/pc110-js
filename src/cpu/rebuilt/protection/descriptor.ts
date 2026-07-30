@@ -1,5 +1,5 @@
 import type { RebuiltMemoryBus } from "../memory/segmented-memory.js";
-import type { DescriptorTable } from "../state/cpu-state.js";
+import type { DescriptorTable, RebuiltCpuState } from "../state/cpu-state.js";
 
 export interface SegmentDescriptor {
   readonly base: number;
@@ -28,10 +28,30 @@ export function readGdtDescriptor(
 ): SegmentDescriptor {
   if (selector & 0x0004)
     throw new DescriptorLookupError(selector, "LDT selector is not yet rebuilt");
+  return readTableDescriptor(memory, gdtr, selector);
+}
+
+export function readDescriptor(
+  memory: RebuiltMemoryBus,
+  state: RebuiltCpuState,
+  selector: number
+): SegmentDescriptor {
+  if (!(selector & 0x0004)) return readTableDescriptor(memory, state.readGdtr(), selector);
+  const ldtr = state.readLdtr();
+  if ((ldtr.selector & 0xfff8) === 0)
+    throw new DescriptorLookupError(selector, "LDT selector is present without an active LDTR");
+  return readTableDescriptor(memory, ldtr, selector);
+}
+
+function readTableDescriptor(
+  memory: RebuiltMemoryBus,
+  table: DescriptorTable,
+  selector: number
+): SegmentDescriptor {
   const offset = selector & 0xfff8;
-  if (offset === 0 || offset + 7 > gdtr.limit)
-    throw new DescriptorLookupError(selector, "Selector is outside the GDT limit");
-  const address = (gdtr.base + offset) >>> 0;
+  if (offset === 0 || offset + 7 > table.limit)
+    throw new DescriptorLookupError(selector, "Selector is outside the descriptor-table limit");
+  const address = (table.base + offset) >>> 0;
   const low = read32(memory, address);
   const high = read32(memory, address + 4);
   const limit20 = (low & 0xffff) | (((high >>> 16) & 0x0f) << 16);

@@ -1139,6 +1139,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P388 aligns project-native segment loaders with NXVM's CS hidden-CPL
   model, affecting existing far-control and data-segment consumers without a
   runtime reference import.
+- M2 T2 S3 P389 adapts NXVM's XDT table selection into a project-native
+  GDT/LDTR descriptor lookup shared by segment loading and selector verification.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
