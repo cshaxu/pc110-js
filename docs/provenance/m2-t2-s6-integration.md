@@ -51,3 +51,9 @@ changed.
 P14 passes real-mode byte streams and instruction budgets through the existing
 rebuilt dispatcher and isolated PCjs CPU. It adds no PCjs source,
 opcode-specific oracle implementation, or runtime dependency.
+
+## P15 Changed-Byte Normalization
+
+The rebuilt memory journal now records only writes that alter the RAM image,
+matching the PCjs before/after snapshot delta. This is observation
+normalization, not a CPU memory-write behavior change.

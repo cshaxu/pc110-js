@@ -126,6 +126,27 @@ describe("PCjs differential CPU harness", () => {
       instructionCount: 16
     },
     {
+      name: "60-61 PUSHA and POPA frame pair",
+      bytes: [0x60, 0x61],
+      registers: {
+        eax: 0x1001,
+        ecx: 0x1002,
+        edx: 0x1003,
+        ebx: 0x1004,
+        esp: 0x800,
+        ebp: 0x1006,
+        esi: 0x1007,
+        edi: 0x1008
+      },
+      instructionCount: 2
+    },
+    {
+      name: "68-6B immediate stack and IMUL forms",
+      bytes: [0x68, 0x34, 0x12, 0x58, 0x6a, 0x80, 0x59, 0x69, 0xc1, 0x03, 0x00, 0x6b, 0xc2, 0xfe],
+      registers: { ecx: 3, edx: 5, esp: 0x800 },
+      instructionCount: 5
+    },
+    {
       name: "B0-BF immediate register interval",
       bytes: [
         0xb0, 0x10, 0xb1, 0x11, 0xb2, 0x12, 0xb3, 0x13, 0xb4, 0x14, 0xb5, 0x15, 0xb6, 0x16, 0xb7,

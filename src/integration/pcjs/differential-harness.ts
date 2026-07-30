@@ -461,7 +461,8 @@ class RecordingMemory {
   public writeUint8(address: number, value: number): void {
     const normalizedAddress = address >>> 0;
     const normalizedValue = value & 0xff;
-    this.recordedWrites.set(normalizedAddress, normalizedValue);
+    if (this.memory.readUint8(normalizedAddress) !== normalizedValue)
+      this.recordedWrites.set(normalizedAddress, normalizedValue);
     this.memory.writeUint8(normalizedAddress, normalizedValue);
   }
 

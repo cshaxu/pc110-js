@@ -24,6 +24,8 @@ It does not yet record writes whose value is unchanged.
 | `00-3F` arithmetic slice | ADD, ADC, SBB, SUB, CMP accumulator forms | automatic register and flag lockstep |
 | `40-4F` program | all INC and DEC register forms | automatic register and EFLAGS lockstep |
 | `50-5F` program | all PUSH and POP register forms | automatic stack-memory and register lockstep |
+| `60-61` program | PUSHA and POPA | automatic frame-memory and register lockstep |
+| `68-6B` program | PUSH immediate and immediate IMUL forms | automatic stack, register, and flag lockstep |
 | `B0-BF` program | every byte and word immediate-register form | automatic register-width and EIP lockstep |
 
 ## Active Expansion Order

@@ -157,6 +157,12 @@ stack sequences, and every `B0-BF` immediate-register encoding. This is S6
 differential evidence only and does not replace focused S3 tests or claim
 default-32, protected-mode, paging, or exception closure.
 
+## S6 P15 Differential Evidence
+
+The normalized changed-byte memory delta passes generic real-mode programs for
+`PUSHA`/`POPA` and immediate `PUSH` plus immediate `IMUL` forms. BOUND, ARPL,
+FS/GS, and string-I/O forms remain separate `60-6F` S6 matrices.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
