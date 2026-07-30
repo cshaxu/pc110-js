@@ -6,10 +6,11 @@ import { executeShiftRotate } from "./shift-rotate.js";
 
 function execute(
   bytes: readonly number[],
-  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  codeDefault32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeEip(0);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
   setup?.(state, memory);
@@ -66,6 +67,17 @@ describe("rebuilt C0/C1/D0-D3 Group Two", () => {
     );
     expect(memory.memory.get(0x1000)).toBe(0);
     expect(memory.state.flags.has(EFLAGS_ZERO)).toBe(true);
+  });
+
+  it("uses the default dword C1 form in default-32 code", () => {
+    const result = execute(
+      [0xc1, 0xe8, 0x01],
+      (state) => state.registers.write32(0, 0x8000_0000),
+      true
+    );
+    expect(result.state.registers.read32(0)).toBe(0x4000_0000);
+    expect(result.state.flags.has(EFLAGS_OVERFLOW)).toBe(true);
+    expect(result.state.readEip()).toBe(3);
   });
 
   it("maintains carry rings for RCL/RCR and clears overflow for one-bit SAR", () => {

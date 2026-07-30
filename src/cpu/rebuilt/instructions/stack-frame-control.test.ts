@@ -132,4 +132,32 @@ describe("rebuilt near return and stack-frame control", () => {
     expect(result.memory.get(0x1fc)).toBe(0x78);
     expect(result.memory.get(0x1ff)).toBe(0x12);
   });
+
+  it("uses default-32 return data and cleanup for near and far return forms", () => {
+    const near = execute([0xc2, 0x04, 0x00], {
+      code32: true,
+      stack32: true,
+      setup: (state, memory) => {
+        state.registers.write32(4, 0x100);
+        [0x78, 0x56, 0x34, 0x12].forEach((value, index) => memory.set(0x100 + index, value));
+      }
+    });
+    expect(near.state.snapshot()).toMatchObject({ eip: 0x1234_5678, registers: { esp: 0x108 } });
+
+    const far = execute([0xca, 0x04, 0x00], {
+      code32: true,
+      stack32: true,
+      setup: (state, memory) => {
+        state.registers.write32(4, 0x100);
+        [0x78, 0x56, 0x34, 0x12, 0x00, 0x20, 0, 0].forEach((value, index) =>
+          memory.set(0x100 + index, value)
+        );
+      }
+    });
+    expect(far.state.snapshot()).toMatchObject({
+      eip: 0x1234_5678,
+      registers: { esp: 0x10c },
+      segments: { cs: { selector: 0x2000, base: 0x20000 } }
+    });
+  });
 });

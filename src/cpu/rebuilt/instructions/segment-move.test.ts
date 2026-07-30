@@ -160,6 +160,35 @@ describe("rebuilt LES and LDS", () => {
     });
   });
 
+  it("loads default-32 LES and LDS far pointers through 32-bit addressing", () => {
+    for (const [opcode, segment] of [
+      [0xc4, "es"],
+      [0xc5, "ds"]
+    ] as const) {
+      const state = new RebuiltCpuState();
+      const memory = new Uint8Array(0x1000);
+      memory.set([opcode, 0x05, 0x20, 0, 0, 0]);
+      memory.set([0x78, 0x56, 0x34, 0x12, 0x00, 0x30], 0x20);
+      state.writeSegment("cs", {
+        selector: 0,
+        base: 0,
+        limit: 0xffff_ffff,
+        default32: true,
+        valid: true
+      });
+      state.writeEip(0);
+      new RebuiltCpuExecutor(state, {
+        readUint8: (address) => memory[address]!,
+        writeUint8: () => undefined
+      }).step(executeLoadFarPointer);
+      expect(state.snapshot()).toMatchObject({
+        eip: 6,
+        registers: { eax: 0x1234_5678 },
+        segments: { [segment]: { selector: 0x3000, base: 0x30000 } }
+      });
+    }
+  });
+
   it("delivers #UD when LES or LDS uses a register ModR/M form", () => {
     for (const opcode of [0xc4, 0xc5]) {
       const state = new RebuiltCpuState();

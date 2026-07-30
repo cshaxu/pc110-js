@@ -5,10 +5,11 @@ import { executeImmediateModRmMove } from "./immediate-modrm-move.js";
 
 function execute(
   bytes: readonly number[],
-  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  codeDefault32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeEip(0);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
   setup?.(state, memory);
@@ -47,5 +48,11 @@ describe("rebuilt C6/C7 immediate ModR/M MOV", () => {
       [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value));
     });
     expect(result.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+  });
+
+  it("uses C7's default dword immediate in default-32 code", () => {
+    const result = execute([0xc7, 0xc3, 0x78, 0x56, 0x34, 0x12], undefined, true);
+    expect(result.state.registers.read32(3)).toBe(0x1234_5678);
+    expect(result.state.readEip()).toBe(6);
   });
 });

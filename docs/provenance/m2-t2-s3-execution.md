@@ -1244,6 +1244,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P424 records complete project-native evidence for executable NXVM
   `B0-BF` immediate-register MOV handlers across both code defaults and `66`.
   It imports no reference runtime and introduces no device or guest-service path.
+- M2 T2 S3 P425 records complete project-native evidence for executable NXVM
+  `C0-CF` handlers by extending default-32 focused tests and joining existing
+  rebuilt group, frame, event, selector, and fault paths. It imports no NXVM,
+  PCjs, or legacy runtime code and adds no device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
