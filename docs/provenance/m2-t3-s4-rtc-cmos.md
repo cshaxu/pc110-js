@@ -20,3 +20,10 @@ P1 records the selected MC146818-compatible contract before executable work.
 It excludes PCjs model-specific ROM-test accommodations, host-date policy, and
 any firmware or storage configuration shortcut. Future configuration bytes must
 be tied to the selected M1 PC/AT contract and accompanied by focused evidence.
+
+## P2 RTC/CMOS State Core
+
+P2 implements a local register and calendar model using explicit emulated ticks
+only. It has no port-bus, PIC, NMI, host-date, firmware, media, storage, or
+PCjs dependency. The fixed default date makes focused tests deterministic;
+callers may provide a test-owned initial date without consulting host time.
