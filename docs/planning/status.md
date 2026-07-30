@@ -12,9 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T3 S6: active. Implement selected project-native 8042 and keyboard-
-  controller behavior. Preserve the verified T2 CPU oracle baseline, native
-  PIC/PIT/DMA/RTC/system-port browser checkpoint, and no-PCjs-runtime boundary.
+- M2 T3 S7: active. Verify selected BIOS POST checkpoints through the existing
+  project-native device paths. Preserve the verified T2 CPU oracle baseline,
+  native PIC/PIT/DMA/RTC/system-port/8042 browser checkpoint, and no-PCjs-
+  runtime boundary.
 
 ## Delivery Nodes
 

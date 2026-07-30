@@ -22,7 +22,11 @@ describe("NativeCoreCheckpoint", () => {
       systemPortControl: "00",
       systemTimer2Gate: "0",
       systemSpeakerOutput: "0",
-      a20Enabled: "1"
+      a20Enabled: "1",
+      keyboardControllerStatus: "00",
+      keyboardControllerCommandByte: "10",
+      keyboardControllerOutputBuffer: "--",
+      keyboardControllerKeyboardEnabled: "0"
     });
 
     checkpoint.core.pic.master.raise(1);

@@ -20,6 +20,10 @@ export interface NativeCoreCheckpointSnapshot {
   readonly systemTimer2Gate: string;
   readonly systemSpeakerOutput: string;
   readonly a20Enabled: string;
+  readonly keyboardControllerStatus: string;
+  readonly keyboardControllerCommandByte: string;
+  readonly keyboardControllerOutputBuffer: string;
+  readonly keyboardControllerKeyboardEnabled: string;
 }
 
 export class NativeCoreCheckpoint {
@@ -34,6 +38,7 @@ export class NativeCoreCheckpoint {
   public snapshot(): NativeCoreCheckpointSnapshot {
     const cpu = this.core.runner.state.snapshot();
     const pic = this.core.pic.snapshot();
+    const keyboardController = this.core.keyboardController.snapshot();
     return {
       codeAddress: `${hex16(cpu.segments.cs.selector)}:${hex16(cpu.eip)}`,
       masterRequest: hex8(pic.master.request),
@@ -52,7 +57,14 @@ export class NativeCoreCheckpoint {
       systemPortControl: hex8(this.core.systemPort.snapshot().control),
       systemTimer2Gate: bit(this.core.systemPort.snapshot().timer2Gate),
       systemSpeakerOutput: bit(this.core.systemPort.speakerOutput()),
-      a20Enabled: bit(this.core.keyboardOutputPort.snapshot().a20Enabled)
+      a20Enabled: bit(this.core.keyboardOutputPort.snapshot().a20Enabled),
+      keyboardControllerStatus: hex8(keyboardController.status),
+      keyboardControllerCommandByte: hex8(keyboardController.commandByte),
+      keyboardControllerOutputBuffer:
+        keyboardController.outputBuffer === undefined
+          ? "--"
+          : hex8(keyboardController.outputBuffer),
+      keyboardControllerKeyboardEnabled: bit(keyboardController.keyboardEnabled)
     };
   }
 }
