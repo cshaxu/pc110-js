@@ -903,6 +903,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   width from the operand context and count/SI or ESI width from the address
   context, retaining the last loaded accumulator value and direction-flag
   progression.
+- M2 T2 S3 P312 routes XLAT through the execution context. AL remains byte
+  data while the DS table index selects BX or EBX from the address size.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

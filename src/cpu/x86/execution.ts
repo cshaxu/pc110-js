@@ -1989,6 +1989,16 @@ function executeContextualInstruction(
       );
     return { halted: false, fetched };
   }
+  if (context.opcode === 0xd7) {
+    const base = context.addressSize === 32 ? state.readRegister(3) : state.readRegister16(3);
+    const offset =
+      context.addressSize === 32
+        ? (base + state.readRegister8(0)) >>> 0
+        : (base + state.readRegister8(0)) & 0xffff;
+    state.writeRegister8(0, readSegmentUint8(memory, state, "ds", offset, context.addressSize));
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
   if (context.opcode === 0x0f) {
     const extension = fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode;
     if (NXVM_UNDEFINED_TWO_BYTE_EXTENSIONS.has(extension)) {

@@ -365,6 +365,30 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0xddccbbaa, esi: 0xabcd2004 } });
   });
 
+  it("selects XLAT table index width through the context", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xd7],
+      [0x00000101, 0x67],
+      [0x00000102, 0xd7],
+      [0x00012001, 0x5a],
+      [0x00002001, 0xa5]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(3, 0x00012000);
+    state.writeRegister8(0, 1);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x5a }, eip: 0x101 });
+
+    state.writeRegister(3, 0xabcd2000);
+    state.writeRegister8(0, 1);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xa5 }, eip: 0x103 });
+  });
+
   it("repeats LODS through contextual data and address widths", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xf3],
