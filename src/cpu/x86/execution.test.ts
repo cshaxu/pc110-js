@@ -8030,6 +8030,32 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(11);
   });
 
+  it("executes contextual FE byte increment and decrement through 67 addressing", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0xfe],
+      [0x00000001, 0xc0],
+      [0x00000002, 0x67],
+      [0x00000003, 0xfe],
+      [0x00000004, 0x0e],
+      [0x00000005, 0x00],
+      [0x00000006, 0x20],
+      [0x00002000, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister8(0, 0x7f);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x80 }, eflags: 0x892, eip: 2 });
+
+    stepInstruction(memory, state);
+    expect(values.get(0x00002000)).toBe(0xff);
+    expect(state.snapshot().eip).toBe(7);
+  });
+
   it("uses 32-bit addressing for dword F7 memory operands", () => {
     const values = new Map<number, number>([
       [0x00000000, 0x66],

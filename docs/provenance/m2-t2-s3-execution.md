@@ -882,6 +882,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   selects ModR/M addressing. Existing tests that used 66 as a dword selector in
   a default-32 code segment were corrected to use a default-16 code segment;
   a malformed 32-bit-address immediate TEST fixture was also corrected.
+- M2 T2 S3 P306 routes FE byte INC/DEC through a project-native contextual
+  helper. It preserves the existing byte flags and register rules while using
+  the execution context for ModR/M address width.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

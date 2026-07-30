@@ -924,6 +924,36 @@ function executeContextualByteGroupTwo(
   state.advanceEip(instructionBytes);
 }
 
+function executeContextualByteIncrementDecrement(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): boolean {
+  if (context.opcode !== 0xfe) return false;
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x00 && modRm.reg !== 0x01) return false;
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const source = modRm.registerDirect
+    ? state.readRegister8(modRm.rm)
+    : readSegmentUint8(memory, state, address!.segment, address!.offset, context.addressSize);
+  const result = modRm.reg === 0x00 ? source + 1 : source - 1;
+  if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+  else
+    writeSegmentUint8(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  if (modRm.reg === 0x00) state.writeIncrementFlags8(source);
+  else state.writeDecrementFlags8(source);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
+  return true;
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1784,6 +1814,8 @@ function executeContextualInstruction(
   if (loop) return loop;
   const moffs = executeContextualMoffs(memory, state, context, fetched);
   if (moffs) return moffs;
+  if (executeContextualByteIncrementDecrement(memory, state, context))
+    return { halted: false, fetched };
   if (context.opcode === 0xf7) {
     if (context.operandSize === 32)
       executeDwordF7(
