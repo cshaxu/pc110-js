@@ -1,8 +1,14 @@
 import { decodeInstruction, type DecodedInstruction } from "./decode/decoder.js";
 import type { InstructionReader } from "./decode/instruction-reader.js";
 import type { RebuiltTraceHook } from "./debug/trace.js";
+import { PageFaultError } from "../../memory/address-translation.js";
+import { deliverFault } from "./events/interrupt-delivery.js";
 import type { RebuiltPortBus } from "./io/port-bus.js";
-import { SegmentedMemory, type RebuiltMemoryBus } from "./memory/segmented-memory.js";
+import {
+  SegmentAccessError,
+  SegmentedMemory,
+  type RebuiltMemoryBus
+} from "./memory/segmented-memory.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
 export interface RebuiltExecutionContext {
@@ -44,7 +50,11 @@ export class RebuiltCpuExecutor {
         this.memory.read8("cs", before.eip + offset, codeAddressSize)
     };
     const instruction = decodeInstruction(reader, before.eip, before.segments.cs.default32);
-    dispatch({ state: this.state, memory: this.memory, instruction, reader, io: this.io });
+    try {
+      dispatch({ state: this.state, memory: this.memory, instruction, reader, io: this.io });
+    } catch (error) {
+      if (!this.deliverAccessFault(error, before.eip)) throw error;
+    }
     this.trace?.({
       before,
       opcodeOffset: instruction.opcodeOffset,
@@ -52,5 +62,19 @@ export class RebuiltCpuExecutor {
       after: this.state.snapshot()
     });
     return instruction;
+  }
+
+  private deliverAccessFault(error: unknown, faultEip: number): boolean {
+    if (error instanceof PageFaultError) {
+      const errorCode =
+        (error.present ? 1 : 0) | (error.access.write ? 2 : 0) | (error.access.user ? 4 : 0);
+      deliverFault(this.memory, this.state, 14, faultEip, errorCode);
+      return true;
+    }
+    if (error instanceof SegmentAccessError) {
+      deliverFault(this.memory, this.state, error.segment === "ss" ? 12 : 13, faultEip, 0);
+      return true;
+    }
+    return false;
   }
 }

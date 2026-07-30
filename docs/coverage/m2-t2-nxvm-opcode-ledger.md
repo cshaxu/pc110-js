@@ -517,3 +517,12 @@ P393 completes NXVM's remaining undefined extended intervals, `0F 40-7F` and
 `0F C0-FF`, through the rebuilt vector-six delivery path. A focused exhaustive
 test enumerates every NXVM undefined extended opcode and verifies the faulting
 EIP return target. No unsupported host-error path remains for those encodings.
+
+## P394 Rebuilt Access-Fault Delivery Checklist
+
+P394 converts typed rebuilt page and segment access errors raised after decode
+into architected #PF, #GP, or #SS delivery. Page-fault error codes preserve
+present, write, and user bits; segment faults use the faulting instruction EIP.
+Focused evidence covers a protected IDT page-fault frame, error code, CR2, and
+same-privilege target transfer. Decode-fetch faults, descriptor-specific codes,
+double-fault escalation, and outer-privilege delivery remain active work.

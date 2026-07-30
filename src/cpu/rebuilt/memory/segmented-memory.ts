@@ -13,7 +13,14 @@ export interface RebuiltMemoryBus {
   runAtomically?<T>(operation: () => T): T;
 }
 
-export class SegmentAccessError extends Error {}
+export class SegmentAccessError extends Error {
+  public constructor(
+    readonly segment: SegmentName,
+    message: string
+  ) {
+    super(message);
+  }
+}
 
 export class SegmentedMemory {
   public constructor(
@@ -75,7 +82,7 @@ export class SegmentedMemory {
     const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
     const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
     if (protectedMode && (segment.valid === false || normalizedOffset > segment.limit)) {
-      throw new SegmentAccessError(`Segment ${segmentName} limit exceeded`);
+      throw new SegmentAccessError(segmentName, `Segment ${segmentName} limit exceeded`);
     }
     const linear = (segment.base + normalizedOffset) >>> 0;
     try {

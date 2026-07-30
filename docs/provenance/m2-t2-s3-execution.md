@@ -1152,6 +1152,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P393 adapts NXVM's remaining undefined extended-opcode table ranges
   into the project-native rebuilt vector-six path with no reference runtime
   import.
+- M2 T2 S3 P394 adapts NXVM-style typed memory-access fault conversion into the
+  rebuilt execution boundary and existing project-native interrupt delivery.
+  It introduces no reference runtime dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
