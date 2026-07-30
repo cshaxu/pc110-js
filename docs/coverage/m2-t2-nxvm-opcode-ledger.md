@@ -310,3 +310,11 @@ and 66 frames, protected 32-bit gates, gate DPL rejection, trap-gate decoding,
 and dispatcher execution. TSS stack switching, outer-privilege IRET, task
 gates, hardware interrupt admission, and architected fault delivery remain
 active protection-system work.
+
+## P363 `D6-D8-DF` Undefined Opcode Checklist
+
+NXVM explicitly routes D6 and every D8-DF opcode to UndefinedOpcode. P363
+preserves that coverage by delivering vector 6 through the rebuilt event path,
+with a real-mode fault frame that returns to the faulting EIP. It deliberately
+does not synthesize FPU execution. Protected fault delivery, error-code faults,
+and double-fault escalation remain active event-system work.

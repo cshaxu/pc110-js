@@ -1082,6 +1082,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P362 adapts NXVM INT, INTO, and IRET handler structure into native
   TypeScript through project-owned IVT/IDT gate delivery. It uses NXVM-selected
   operand widths, Intel 80386 gate semantics, and no runtime reference import.
+- M2 T2 S3 P363 records NXVM's D6 and D8-DF UndefinedOpcode coverage through
+  project-native vector-6 fault delivery, without treating absent FPU behavior
+  as an executable instruction or importing a reference runtime.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

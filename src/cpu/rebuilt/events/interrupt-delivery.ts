@@ -54,6 +54,20 @@ export function deliverInterrupt(
   state.writeEip(gate.operandSize === 16 ? gate.offset & 0xffff : gate.offset);
 }
 
+export function deliverFault(
+  memory: SegmentedMemory,
+  state: RebuiltCpuState,
+  vector: number,
+  faultEip: number
+): void {
+  deliverInterrupt(memory, state, {
+    vector,
+    returnEip: faultEip,
+    operandSize: 16,
+    software: false
+  });
+}
+
 function deliverRealModeInterrupt(
   memory: SegmentedMemory,
   state: RebuiltCpuState,

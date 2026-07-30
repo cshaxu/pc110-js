@@ -28,6 +28,7 @@ import { executeSignExtension } from "./instructions/sign-extension.js";
 import { executeShortConditionalJump } from "./instructions/control.js";
 import { executeStackFrameControl } from "./instructions/stack-frame-control.js";
 import { executeTestModRm } from "./instructions/test.js";
+import { executeUndefinedOpcode } from "./instructions/undefined.js";
 import { executeXlat } from "./instructions/xlat.js";
 
 export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): void {
@@ -53,6 +54,7 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if ([0xc2, 0xc3, 0xc8, 0xc9, 0xca, 0xcb].includes(opcode))
     return executeStackFrameControl(context);
   if ([0xcc, 0xcd, 0xce, 0xcf].includes(opcode)) return executeInterrupt(context);
+  if (opcode === 0xd6 || (opcode >= 0xd8 && opcode <= 0xdf)) return executeUndefinedOpcode(context);
   if (opcode === 0xc6 || opcode === 0xc7) return executeImmediateModRmMove(context);
   if (opcode === 0xc4 || opcode === 0xc5) return executeLoadFarPointer(context);
   if (opcode === 0xd4 || opcode === 0xd5) return executeAsciiAdjust(context);
