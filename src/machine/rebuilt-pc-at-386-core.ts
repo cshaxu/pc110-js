@@ -22,6 +22,8 @@ import { VGA_MEMORY_SIZE, VGA_MEMORY_START, VgaMemory } from "../devices/vga-mem
 import { VgaCrtc } from "../devices/vga-crtc.js";
 import { VgaDac } from "../devices/vga-dac.js";
 import { VgaMiscellaneousOutput } from "../devices/vga-miscellaneous-output.js";
+import { VgaInputStatus0 } from "../devices/vga-input-status0.js";
+import { VgaFeatureControl } from "../devices/vga-feature-control.js";
 import { Uart16550 } from "../devices/uart16550.js";
 import { ParallelPort } from "../devices/parallel-port.js";
 import { AtFixedDiskController } from "../devices/at-fixed-disk-controller.js";
@@ -95,6 +97,8 @@ export class RebuiltPcAt386Core {
   public readonly vgaMemory = new VgaMemory(this.sequencer, this.graphicsController);
   public readonly crtc = new VgaCrtc();
   public readonly dac = new VgaDac();
+  public readonly inputStatus0 = new VgaInputStatus0(this.dac);
+  public readonly featureControl = new VgaFeatureControl();
   public readonly miscellaneousOutput = new VgaMiscellaneousOutput();
   public readonly cgaCompatibility = new CgaCompatibility(
     () => this.attributeController.resetAddressDataFlipFlop(),
@@ -138,6 +142,8 @@ export class RebuiltPcAt386Core {
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.crtc.portRanges()) this.registerPorts(range);
     for (const range of this.dac.portRanges()) this.registerPorts(range);
+    for (const range of this.inputStatus0.portRanges()) this.registerPorts(range);
+    for (const range of this.featureControl.portRanges()) this.registerPorts(range);
     for (const range of this.miscellaneousOutput.portRanges()) this.registerPorts(range);
     for (const range of this.attributeController.portRanges()) this.registerPorts(range);
     for (const range of this.sequencer.portRanges()) this.registerPorts(range);
@@ -173,6 +179,7 @@ export class RebuiltPcAt386Core {
     this.vgaMemory.reset();
     this.crtc.reset();
     this.dac.reset();
+    this.featureControl.reset();
     this.miscellaneousOutput.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
