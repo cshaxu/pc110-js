@@ -1742,6 +1742,33 @@ function executeContextualMoffs(
   return { halted: false, fetched };
 }
 
+function executeContextualLoad(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.repeatPrefix || (context.opcode !== 0xac && context.opcode !== 0xad))
+    return undefined;
+  const width = context.opcode === 0xac ? 1 : context.operandSize === 32 ? 4 : 2;
+  const source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
+  const segment = context.segmentOverride ?? "ds";
+  const value =
+    width === 1
+      ? readSegmentUint8(memory, state, segment, source, context.addressSize)
+      : width === 2
+        ? readSegmentUint16(memory, state, segment, source, context.addressSize)
+        : readSegmentUint32(memory, state, segment, source, context.addressSize);
+  if (width === 1) state.writeRegister8(0, value);
+  else if (width === 2) state.writeRegister16(0, value);
+  else state.writeRegister(0, value);
+  const nextSource = state.directionFlag() ? source - width : source + width;
+  if (context.addressSize === 32) state.writeRegister(6, nextSource);
+  else state.writeRegister16(6, nextSource);
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1752,6 +1779,8 @@ function executeContextualInstruction(
   if (context.segmentOverride) {
     const moffs = executeContextualMoffs(memory, state, context, fetched);
     if (moffs) return moffs;
+    const load = executeContextualLoad(memory, state, context, fetched);
+    if (load) return load;
     const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);
     if (repeatedTransfer) return repeatedTransfer;
     return executeContextualRepeatLoad(memory, state, context, fetched);

@@ -463,6 +463,29 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("loads through a contextual source-segment override without REP", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x64],
+      [0x00000101, 0xad],
+      [0x00012000, 0x78],
+      [0x00012001, 0x56],
+      [0x00012002, 0x34],
+      [0x00012003, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x100, true);
+    state.loadProtectedModeSegment("fs", 0x0030, 0x00010000, 0xffffffff, true);
+    state.writeRegister(6, 0x2000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x12345678, esi: 0x2004 },
+      eip: 0x102
+    });
+  });
+
   it("repeats MOVS through a contextual source-segment override", () => {
     const values = new Map<number, number>([
       [0x00000100, 0x64],
