@@ -6398,7 +6398,7 @@ describe("80386 instruction fetch", () => {
 
     stepInstruction(resetAliasMemory(rcrValues), rcrState);
 
-    expect(rcrState.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x0002 });
+    expect(rcrState.snapshot()).toMatchObject({ registers: { eax: 0 }, eflags: 0x0003 });
   });
 
   it("rotates observed byte and word registers left through CL", () => {

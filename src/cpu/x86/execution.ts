@@ -853,18 +853,23 @@ function executeContextualRotateThroughCarry(
 function executeContextualByteGroupTwo(
   memory: InstructionMemory,
   state: Cpu386State,
-  context: ExecutionContext
+  context: ExecutionContext,
+  count: number,
+  immediateBytes = 0
 ): void {
   const modRmOffset = context.opcodeOffset + 1;
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
-  const instructionBytes = modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + 1;
-  const count = fetchCodeByte(memory, state, instructionBytes - 1).opcode;
+  const instructionBytes =
+    modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + immediateBytes;
+  const effectiveCount = immediateBytes
+    ? fetchCodeByte(memory, state, instructionBytes - 1).opcode
+    : count;
   if (modRm.reg === 0x06) throw new UnsupportedOpcodeError("Undefined Group 2 form");
   const source = modRm.registerDirect
     ? state.readRegister8(modRm.rm)
     : readSegmentUint8(memory, state, address!.segment, address!.offset, context.addressSize);
-  const logicalCount = count & 0x1f;
+  const logicalCount = effectiveCount & 0x1f;
   let result = source;
   let carry = state.carryFlag();
   if (modRm.reg === 0x00 || modRm.reg === 0x01) {
@@ -1618,7 +1623,19 @@ function executeContextualInstruction(
   if (context.opcode === 0xc0) {
     const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
     if (modRm.reg !== 0x06) {
-      executeContextualByteGroupTwo(memory, state, context);
+      executeContextualByteGroupTwo(memory, state, context, 0, 1);
+      return { halted: false, fetched };
+    }
+  }
+  if (context.opcode === 0xd0 || context.opcode === 0xd2) {
+    const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    if (modRm.reg !== 0x06) {
+      executeContextualByteGroupTwo(
+        memory,
+        state,
+        context,
+        context.opcode === 0xd0 ? 1 : state.readRegister8(1)
+      );
       return { halted: false, fetched };
     }
   }

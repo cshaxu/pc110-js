@@ -870,6 +870,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   contextual helper. It keeps /6 on the existing invalid-opcode path, selects
   ModR/M address width from the execution context, and records undefined OF by
   preserving it when a multi-bit operation does not define it.
+- M2 T2 S3 P303 reuses that helper for D0 fixed-count and D2 CL-count byte
+  forms. The shared RCR path keeps CF as the outgoing low bit, correcting the
+  previous byte-specific result-bit inference.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
