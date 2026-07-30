@@ -1042,6 +1042,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P348 translates NXVM near RET, ENTER, and LEAVE algorithms into
   native TypeScript. Operand data width remains separate from SS D/B stack
   addressing; the module does not import NXVM, PCjs, or legacy code at runtime.
+- M2 T2 S3 P349 translates NXVM F6/F7 Group Three algorithms into native
+  TypeScript. It uses BigInt only for width-bounded product and dividend
+  arithmetic, exposes divide faults without host fallback, and has no external
+  runtime dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
