@@ -1,7 +1,11 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { deliverFault } from "../events/interrupt-delivery.js";
-import { readDescriptor, readGdtDescriptor } from "../protection/descriptor.js";
+import {
+  DescriptorLookupError,
+  readDescriptor,
+  readGdtDescriptor
+} from "../protection/descriptor.js";
 import type { DescriptorTable } from "../state/cpu-state.js";
 import type { SegmentName } from "../state/segments.js";
 
@@ -63,8 +67,9 @@ function readSelectorDescriptor(context: RebuiltExecutionContext, selector: numb
       context.state,
       selector
     );
-  } catch {
-    return undefined;
+  } catch (error) {
+    if (error instanceof DescriptorLookupError) return undefined;
+    throw error;
   }
 }
 
@@ -258,8 +263,9 @@ function verifySelector(
       (currentPrivilege(context) <= descriptor.dpl && (selector & 3) <= descriptor.dpl);
     valid =
       descriptor.system && privilegeAllowed && (write ? !code && readable : !code || readable);
-  } catch {
-    valid = false;
+  } catch (error) {
+    if (error instanceof DescriptorLookupError) valid = false;
+    else throw error;
   }
   if (valid) context.state.flags.set(0x40);
   else context.state.flags.clear(0x40);

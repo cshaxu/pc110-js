@@ -227,4 +227,52 @@ describe("rebuilt 0F 00 selector group", () => {
       );
     }
   });
+
+  it("delivers #PF instead of clearing ZF when VERR reads an unmapped LDT", () => {
+    const result = machine([]);
+    result.state.writeCr0(0x80000001);
+    result.state.writeCr3(0x1000);
+    result.state.writeSegment("cs", {
+      selector: 8,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    result.state.writeSegment("ss", {
+      selector: 0x10,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    result.state.writeGdtr({ base: 0x6000, limit: 0x17 });
+    result.state.writeIdtr({ base: 0x5000, limit: 0x7f });
+    result.state.writeLdtr({ selector: 0x18, base: 0x4000, limit: 0x17, default32: false });
+    result.state.registers.write32(4, 0x1000);
+    result.state.registers.write16(0, 0x0c);
+    write32(result.memory, 0x1000, 0x2003);
+    write32(result.memory, 0x2000, 0x3003);
+    write32(result.memory, 0x2014, 0x5003);
+    write32(result.memory, 0x2018, 0x6003);
+    [0x0f, 0x00, 0xe0].forEach((value, index) => result.memory.set(0x3000 + index, value));
+    [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0].forEach((value, index) =>
+      result.memory.set(0x6008 + index, value)
+    );
+    [0x40, 0, 8, 0, 0, 0x8e, 0, 0].forEach((value, index) =>
+      result.memory.set(0x5070 + index, value)
+    );
+
+    result.step();
+
+    expect(result.state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xff0 } });
+    expect(result.state.readCr2()).toBe(0x4008);
+  });
 });
+
+function write32(memory: Map<number, number>, address: number, value: number): void {
+  memory.set(address, value & 0xff);
+  memory.set(address + 1, (value >>> 8) & 0xff);
+  memory.set(address + 2, (value >>> 16) & 0xff);
+  memory.set(address + 3, (value >>> 24) & 0xff);
+}

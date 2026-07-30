@@ -1314,6 +1314,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P447 adapts NXVM supervisor-paged system-table access into
   project-native segmented memory and table consumers. It imports no reference
   runtime and adds no device or guest-service behavior.
+- M2 T2 S3 P448 preserves project-native page-fault propagation from selector
+  query descriptor reads while retaining NXVM invalid-selector ZF behavior.
+  It imports no reference runtime and adds no device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
