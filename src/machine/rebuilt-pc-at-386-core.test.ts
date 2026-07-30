@@ -137,4 +137,15 @@ describe("RebuiltPcAt386Core", () => {
     core.step();
     expect(core.runner.state.readEip()).toBe(0x40);
   });
+
+  it("registers native DMA ports and resets their project-owned state", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x81, 0x4a, 8);
+    core.dma.setHardwareRequest(2, true);
+    expect(core.ports.read(0x81, 8)).toBe(0x4a);
+    expect(core.dma.snapshot(2).requested).toBe(true);
+    core.reset();
+    expect(core.dma.snapshot(2)).toMatchObject({ page: 0, requested: false, masked: true });
+  });
 });

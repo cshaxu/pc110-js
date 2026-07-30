@@ -4,6 +4,7 @@ import type { RebuiltCpuSnapshot } from "../cpu/rebuilt/state/cpu-state.js";
 import type { PhysicalMemory } from "../memory/physical-memory.js";
 import { PcAtPic } from "../devices/pc-at-pic.js";
 import { PcAtPit } from "../devices/pc-at-pit.js";
+import { PcAtDma } from "../devices/pc-at-dma.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -33,6 +34,7 @@ export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 export class RebuiltPcAt386Core {
   public readonly pic = new PcAtPic();
   public readonly pit = new PcAtPit((irq) => this.pic.raiseIrq(irq));
+  public readonly dma = new PcAtDma();
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
 
@@ -46,6 +48,7 @@ export class RebuiltPcAt386Core {
     );
     for (const range of this.pic.portRanges()) this.registerPorts(range);
     for (const range of this.pit.portRanges()) this.registerPorts(range);
+    for (const range of this.dma.portRanges()) this.registerPorts(range);
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -55,6 +58,7 @@ export class RebuiltPcAt386Core {
   public reset(): void {
     this.pic.reset();
     this.pit.reset();
+    this.dma.reset();
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
   }

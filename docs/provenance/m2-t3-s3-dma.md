@@ -18,3 +18,9 @@ protected media remain outside T3 S3.
 P2 implements local 8237-style controller state and explicit transfer grants
 from the selected component protocol. It has no PCjs import, port bus, memory
 bus, FDC, firmware, media, or host-timing dependency.
+
+## P3 PC/AT Port Composition
+
+P3 composes two local controller instances and the selected page-register ports
+with the rebuilt machine bus. The implementation remains independent of PCjs,
+memory movement, FDC, firmware, media, and host scheduling.
