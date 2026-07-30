@@ -4,9 +4,13 @@ import { RebuiltCpuState } from "../state/cpu-state.js";
 import { EFLAGS_ZERO } from "./arithmetic.js";
 import { executeLoop } from "./loop.js";
 
-function execute(bytes: readonly number[], setup?: (state: RebuiltCpuState) => void) {
+function execute(
+  bytes: readonly number[],
+  setup?: (state: RebuiltCpuState) => void,
+  codeDefault32 = false
+) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeEip(0);
   setup?.(state);
   new RebuiltCpuExecutor(state, {
@@ -39,5 +43,13 @@ describe("rebuilt LOOP family", () => {
     const jcxz = execute([0xe3, 0x05]);
     expect(jcxz.readEip()).toBe(7);
     expect(jcxz.registers.read16(1)).toBe(0);
+  });
+
+  it("uses ECX and a dword code offset by default in 32-bit code", () => {
+    const loop = execute([0xe2, 0xfe], (cpu) => cpu.registers.write32(1, 2), true);
+    expect(loop.registers.read32(1)).toBe(1);
+    expect(loop.readEip()).toBe(0);
+    const jecxz = execute([0xe3, 0x05], undefined, true);
+    expect(jecxz.readEip()).toBe(7);
   });
 });

@@ -71,6 +71,14 @@ describe("rebuilt FE/FF Group Four/Five", () => {
     expect(jump.state.readEip()).toBe(0x3456);
   });
 
+  it("uses default-32 FF near targets without an operand override", () => {
+    const result = execute([0xff, 0xe0], {
+      code32: true,
+      setup: (state) => state.registers.write32(0, 0x1234_5678)
+    });
+    expect(result.state.readEip()).toBe(0x1234_5678);
+  });
+
   it("pushes FF /6 through the independent SS stack boundary", () => {
     const result = execute([0x66, 0xff, 0xf0], {
       stack32: true,

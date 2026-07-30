@@ -5,10 +5,11 @@ import { executeNearControl } from "./near-control.js";
 
 function execute(
   bytes: readonly number[],
-  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  codeDefault32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
   state.writeEip(0);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
@@ -108,5 +109,15 @@ describe("rebuilt near CALL and JMP", () => {
     });
     expect(result.memory.get(0xfc)).toBe(5);
     expect(result.memory.get(0xfe)).toBe(0);
+  });
+
+  it("uses default-32 E9 and EA displacement widths", () => {
+    const near = execute([0xe9, 0x02, 0, 0, 0], undefined, true);
+    expect(near.state.readEip()).toBe(7);
+    const far = execute([0xea, 0x78, 0x56, 0x34, 0x12, 0, 0x20], undefined, true);
+    expect(far.state.snapshot()).toMatchObject({
+      eip: 0x1234_5678,
+      segments: { cs: { selector: 0x2000, base: 0x20000 } }
+    });
   });
 });
