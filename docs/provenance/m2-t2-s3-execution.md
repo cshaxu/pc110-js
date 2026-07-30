@@ -1091,6 +1091,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native vector-6 event path without reference runtime imports.
 - M2 T2 S3 P369 adapts NXVM LOCK prefix behavior through a project-native
   memory-bus atomic boundary and vector-6 validation without runtime imports.
+- M2 T2 S3 P370 adapts NXVM POP r/m through project-native stack, ModR/M, and
+  segmented-memory modules without reference runtime imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

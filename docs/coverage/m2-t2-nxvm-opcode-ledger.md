@@ -340,3 +340,9 @@ executes the complete instruction through the rebuilt memory bus atomic
 boundary. Register-only, read-only, and unsupported forms deliver #UD. A bus
 without an explicit atomic callback remains synchronous; device buses may
 provide the callback to preserve the same boundary under reentry.
+
+## P370 `8F /0` POP r/m Checklist
+
+P370 implements NXVM POP r/m through rebuilt ModR/M, stack, and segmented
+memory paths. Tests cover register and memory destinations, operand and
+address-size overrides, independent SS stack width, and #UD for `/1-7`.

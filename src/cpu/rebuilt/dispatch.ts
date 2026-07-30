@@ -22,6 +22,7 @@ import { executeMoveModRm } from "./instructions/move.js";
 import { executeNearConditionalJump } from "./instructions/near-conditional-control.js";
 import { executeNearControl } from "./instructions/near-control.js";
 import { executePortIo } from "./instructions/port-io.js";
+import { executePopModRm } from "./instructions/pop-modrm.js";
 import { executeProcessorControl } from "./instructions/processor-control.js";
 import { executeRegisterStackInterval } from "./instructions/register-stack.js";
 import { executeSetCondition } from "./instructions/set-condition.js";
@@ -84,6 +85,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode >= 0x88 && opcode <= 0x8b) return executeMoveModRm(context);
   if (opcode === 0x8c || opcode === 0x8e) return executeSegmentMove(context);
   if (opcode === 0x8d) return executeLea(context);
+  if (opcode === 0x8f) return executePopModRm(context);
   if (opcode >= 0x90 && opcode <= 0x97) return executeAccumulatorExchange(context);
   if (opcode === 0x98 || opcode === 0x99) return executeSignExtension(context);
   if (opcode === 0x9e || opcode === 0x9f) return executeFlagTransfer(context);
