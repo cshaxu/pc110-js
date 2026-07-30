@@ -30,9 +30,9 @@ function machine() {
   return { state, bytes, memory };
 }
 
-function writeDescriptor(bytes: Map<number, number>, type: number) {
-  [0xff, 0x0f, 0, 0, 0, type | 0x90, 0x40, 0].forEach((value, index) =>
-    bytes.set(0x108 + index, value)
+function writeDescriptor(bytes: Map<number, number>, type: number, dpl = 0, present = true) {
+  [0xff, 0x0f, 0, 0, 0, type | 0x10 | (dpl << 5) | (present ? 0x80 : 0), 0x40, 0].forEach(
+    (value, index) => bytes.set(0x108 + index, value)
   );
 }
 
@@ -131,6 +131,38 @@ describe("rebuilt segment loader hidden CPL", () => {
       loadStackSegment(stack.memory, stack.state, 0);
     } catch (error) {
       expect(error).toMatchObject({ vector: 13, errorCode: 0 });
+    }
+  });
+
+  it("classifies code, data, and stack selector faults without committing a cache", () => {
+    for (const [load, type, selector, dpl, present, vector, errorCode] of [
+      [loadCodeSegment, 2, 8, 0, true, 13, 8],
+      [loadCodeSegment, 10, 8, 0, false, 11, 8],
+      [loadCodeSegment, 10, 0x0b, 0, true, 13, 0x0b],
+      [loadDataSegment, 8, 8, 0, true, 13, 8],
+      [loadDataSegment, 2, 0x0b, 0, true, 13, 0x0b],
+      [loadDataSegment, 2, 8, 0, false, 11, 8],
+      [loadStackSegment, 0, 8, 0, true, 13, 8],
+      [loadStackSegment, 2, 0x0b, 0, true, 13, 0x0b],
+      [loadStackSegment, 2, 8, 0, false, 12, 8]
+    ] as const) {
+      const result = machine();
+      writeDescriptor(result.bytes, type, dpl, present);
+      const name = load === loadCodeSegment ? "cs" : load === loadStackSegment ? "ss" : "ds";
+      const before = result.state.readSegment(name);
+      const invoke = () => {
+        if (name === "cs") return loadCodeSegment(result.memory, result.state, selector);
+        if (name === "ss") return loadStackSegment(result.memory, result.state, selector);
+        return loadDataSegment(result.memory, result.state, "ds", selector);
+      };
+
+      expect(invoke).toThrow(SegmentLoadError);
+      try {
+        invoke();
+      } catch (error) {
+        expect(error).toMatchObject({ vector, errorCode });
+      }
+      expect(result.state.readSegment(name)).toEqual(before);
     }
   });
 

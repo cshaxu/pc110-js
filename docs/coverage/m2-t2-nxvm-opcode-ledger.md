@@ -111,6 +111,14 @@ descriptor-table lookup errors into `#GP(selector)`; a real GDT paging fault
 now propagates through the CPU fault path. Focused direct-system-group evidence
 executes LLDT with an unmapped GDT descriptor page and verifies `#PF` plus CR2.
 
+## P450 Segment-Load Fault Matrix Checklist
+
+P450 completes focused NXVM `_ksa_load_sreg` fault evidence for project-native
+code, data, and stack segment loads. Tests cover incompatible descriptor types,
+non-present descriptors, code/data RPL-DPL violations, stack RPL mismatch, and
+the required `#GP`, `#NP`, or `#SS` selector error codes. Each failure retains
+the original hidden segment cache; successful access-bit behavior remains P443.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
