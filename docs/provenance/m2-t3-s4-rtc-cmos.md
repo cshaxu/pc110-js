@@ -27,3 +27,10 @@ P2 implements a local register and calendar model using explicit emulated ticks
 only. It has no port-bus, PIC, NMI, host-date, firmware, media, storage, or
 PCjs dependency. The fixed default date makes focused tests deterministic;
 callers may provide a test-owned initial date without consulting host time.
+
+## P3 PC/AT Composition
+
+P3 composes the local model with project-native port and PIC interfaces only.
+The `0x70` NMI-disable bit is exposed as state for the future S5 system-port
+owner; no NMI behavior is added. IRQ8 originates only after a caller advances
+the local RTC, so no host-timer or PCjs scheduler dependency exists.

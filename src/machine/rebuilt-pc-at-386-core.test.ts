@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory } from "../memory/physical-memory.js";
+import { RTC_TICKS_PER_SECOND, RtcCmosRegister } from "../devices/rtc-cmos.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
@@ -147,5 +148,27 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.dma.snapshot(2).requested).toBe(true);
     core.reset();
     expect(core.dma.snapshot(2)).toMatchObject({ page: 0, requested: false, masked: true });
+  });
+
+  it("routes explicit native RTC events through IRQ8 and preserves port state across reset", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x70, RtcCmosRegister.StatusB, 8);
+    core.ports.write(0x71, 0x42, 8);
+    core.ports.write(0x70, RtcCmosRegister.StatusA, 8);
+    core.ports.write(0x71, 0x26, 8);
+    core.ports.write(0xa0, 0x11, 8);
+    core.ports.write(0xa1, 0x28, 8);
+    core.ports.write(0xa1, 0x02, 8);
+    core.ports.write(0xa1, 0x01, 8);
+    core.ports.write(0x20, 0x11, 8);
+    core.ports.write(0x21, 0x20, 8);
+    core.ports.write(0x21, 0x04, 8);
+    core.ports.write(0x21, 0x01, 8);
+
+    core.advanceRtc(RTC_TICKS_PER_SECOND);
+    expect(core.pic.pendingVector()).toBe(0x28);
+    core.reset();
+    expect(core.rtc.snapshot()).toMatchObject({ statusC: 0, statusD: 0x80 });
   });
 });

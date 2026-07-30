@@ -5,6 +5,7 @@ import type { PhysicalMemory } from "../memory/physical-memory.js";
 import { PcAtPic } from "../devices/pc-at-pic.js";
 import { PcAtPit } from "../devices/pc-at-pit.js";
 import { PcAtDma } from "../devices/pc-at-dma.js";
+import { PcAtRtc } from "../devices/pc-at-rtc.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -35,6 +36,7 @@ export class RebuiltPcAt386Core {
   public readonly pic = new PcAtPic();
   public readonly pit = new PcAtPit((irq) => this.pic.raiseIrq(irq));
   public readonly dma = new PcAtDma();
+  public readonly rtc = new PcAtRtc({}, (irq) => this.pic.raiseIrq(irq));
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
 
@@ -49,6 +51,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.pic.portRanges()) this.registerPorts(range);
     for (const range of this.pit.portRanges()) this.registerPorts(range);
     for (const range of this.dma.portRanges()) this.registerPorts(range);
+    for (const range of this.rtc.portRanges()) this.registerPorts(range);
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -59,6 +62,7 @@ export class RebuiltPcAt386Core {
     this.pic.reset();
     this.pit.reset();
     this.dma.reset();
+    this.rtc.reset();
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
   }
@@ -71,6 +75,10 @@ export class RebuiltPcAt386Core {
 
   public advancePit(ticks: number): void {
     this.pit.advance(ticks);
+  }
+
+  public advanceRtc(ticks: number): void {
+    this.rtc.advance(ticks);
   }
 
   public run(maxInstructions: number): RebuiltMachineRunResult {
