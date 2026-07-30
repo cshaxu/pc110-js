@@ -4283,7 +4283,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.writeRegister(3, 0x80000010);
     const memory = resetAliasMemory(values);
 
@@ -4295,6 +4295,39 @@ describe("80386 instruction fetch", () => {
     state.writeRegister(0, 0x12345678);
     stepInstruction(memory, state);
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x12345678 }, eflags: 0x00000042 });
+  });
+
+  it("uses CS defaults and independent 66/67 overrides for bit scans", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0xbc],
+      [0x0102, 0x05],
+      [0x0103, 0x00],
+      [0x0104, 0x20],
+      [0x0105, 0x01],
+      [0x0106, 0x00],
+      [0x0107, 0x66],
+      [0x0108, 0x67],
+      [0x0109, 0x0f],
+      [0x010a, 0xbd],
+      [0x010b, 0x0e],
+      [0x010c, 0x34],
+      [0x010d, 0x12],
+      [0x12000, 0x10],
+      [0x1234, 0x00],
+      [0x1235, 0x80]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(1, 0xabcd0000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 4 }, eip: 0x0107 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xabcd000f }, eip: 0x010e });
   });
 
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {

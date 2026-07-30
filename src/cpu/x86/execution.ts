@@ -1089,6 +1089,17 @@ function executeContextualInstruction(
       );
       return { halted: false, fetched };
     }
+    if (extension === 0xbc || extension === 0xbd) {
+      executeBitScanModRm(
+        memory,
+        state,
+        extension,
+        context.opcodeOffset + 2,
+        context.addressSize,
+        context.operandSize
+      );
+      return { halted: false, fetched };
+    }
   }
 
   const byteAluOperation = byteModRmAluOperation(context.opcode);
@@ -2688,25 +2699,35 @@ function executeBitScanDwordModRm(
   extension: 0xbc | 0xbd,
   modRmOffset: number
 ): void {
+  executeBitScanModRm(memory, state, extension, modRmOffset, 16, 32);
+}
+
+function executeBitScanModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  extension: 0xbc | 0xbd,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  operandSize: 16 | 32
+): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
-  const address = modRm.registerDirect
-    ? undefined
-    : decodeModRm16Address(
-        modRm,
-        (index) => state.readRegister16(index),
-        (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-      );
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
   const source = modRm.registerDirect
-    ? state.readRegister(modRm.rm)
-    : readSegmentUint32(memory, state, address!.segment, address!.offset, 16);
+    ? operandSize === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : operandSize === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
   state.writeBitScanZeroFlag(source === 0);
   if (source !== 0) {
-    let index = extension === 0xbc ? 0 : 31;
+    let index = extension === 0xbc ? 0 : operandSize - 1;
     if (extension === 0xbc) while (!(source & (1 << index))) index += 1;
     else while (!(source & (1 << index))) index -= 1;
-    state.writeRegister(modRm.reg, index);
+    if (operandSize === 32) state.writeRegister(modRm.reg, index);
+    else state.writeRegister16(modRm.reg, index);
   }
-  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0));
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 
 function executeStoreDescriptorTable(

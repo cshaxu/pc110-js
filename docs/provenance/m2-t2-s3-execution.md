@@ -731,6 +731,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native destination-width helper and routes `0F B6/B7/BE/BF` through
   context. PCjs operand/address-size selection controls destination and ModR/M
   width; byte/word source selection remains opcode-defined.
+- M2 T2 S3 P268 replaces the dword-only BSF/BSR helper with a generic
+  project-native operand-width helper and routes `0F BC/BD` through context.
+  PCjs operand/address-size selection controls the scan width and ModR/M
+  address form; zero-source destination preservation and ZF handling remain
+  shared behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
