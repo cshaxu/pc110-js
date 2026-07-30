@@ -1189,6 +1189,28 @@ function executeContextualInstruction(
       );
       return { halted: false, fetched };
     }
+    if (extension === 0x20 || extension === 0x22) {
+      const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 2).opcode);
+      const snapshot = state.snapshot();
+      if (
+        addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+        (snapshot.cs.selector & 0x03) !== 0
+      ) {
+        deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+        return { halted: false, fetched };
+      }
+      if (modRm.reg !== 0x00 && modRm.reg !== 0x02 && modRm.reg !== 0x03)
+        throw new UnsupportedOpcodeError("Unsupported control-register MOV form");
+      if (extension === 0x20) {
+        const value =
+          modRm.reg === 0x00 ? snapshot.cr0 : modRm.reg === 0x02 ? snapshot.cr2 : snapshot.cr3;
+        state.writeRegister(modRm.rm, value);
+      } else if (modRm.reg === 0x00) state.writeCr0(state.readRegister(modRm.rm));
+      else if (modRm.reg === 0x02) state.writeCr2(state.readRegister(modRm.rm));
+      else state.writeCr3(state.readRegister(modRm.rm));
+      state.advanceEip(context.opcodeOffset + 3);
+      return { halted: false, fetched };
+    }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
       executeMovExtendModRm(
         memory,

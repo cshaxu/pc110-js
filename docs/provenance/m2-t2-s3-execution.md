@@ -792,6 +792,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   operand size and ModR/M effective-address width from address size. SGDT/SIDT
   preserve their existing six-byte store behavior, and SMSW/LMSW retain fixed
   16-bit data semantics.
+- M2 T2 S3 P283 routes implemented `0F 20` and `0F 22` control-register
+  transfers through the project-native execution context. PCjs remains the
+  behavioral authority: their data width is fixed at 32 bits, operand and
+  address prefixes do not change it, and existing CPL-zero fault delivery
+  occurs before state transfer.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -4849,6 +4849,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x010d);
   });
 
+  it("moves control registers through the default-32 contextual path", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0x20],
+      [0x0102, 0xd0],
+      [0x0103, 0x66],
+      [0x0104, 0x0f],
+      [0x0105, 0x22],
+      [0x0106, 0xd8]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeCr2(0xcafebabe);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xcafebabe }, eip: 0x0103 });
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ cr3: 0xcafeb000 | 0, eip: 0x0107 });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
