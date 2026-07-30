@@ -952,6 +952,35 @@ function executeContextualImmediateMov(
   return { halted: false, fetched };
 }
 
+function executeContextualLoop(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode < 0xe0 || context.opcode > 0xe3) return undefined;
+  const displacement = signedByte(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+  const count = context.addressSize === 32 ? state.readRegister(1) : state.readRegister16(1);
+  const nextInstruction = fetched.instructionPointer + context.opcodeOffset + 2;
+  let continueLoop: boolean;
+  if (context.opcode === 0xe3) continueLoop = count === 0;
+  else {
+    const nextCount = context.addressSize === 32 ? (count - 1) >>> 0 : (count - 1) & 0xffff;
+    if (context.addressSize === 32) state.writeRegister(1, nextCount);
+    else state.writeRegister16(1, nextCount);
+    continueLoop =
+      nextCount !== 0 &&
+      (context.opcode === 0xe2 ||
+        (context.opcode === 0xe1 && state.zeroFlag()) ||
+        (context.opcode === 0xe0 && !state.zeroFlag()));
+  }
+  if (continueLoop) {
+    if (state.snapshot().cs.default32) state.writeEip(nextInstruction + displacement);
+    else state.writeEip16(nextInstruction + displacement);
+  } else state.advanceEip(context.opcodeOffset + 2);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -984,6 +1013,8 @@ function executeContextualInstruction(
   if (lea) return lea;
   const immediateMov = executeContextualImmediateMov(memory, state, context, fetched);
   if (immediateMov) return immediateMov;
+  const loop = executeContextualLoop(memory, state, context, fetched);
+  if (loop) return loop;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
