@@ -909,3 +909,13 @@ coverage; P331 records all `70-7F` predicates and EIP behavior; P332 records
 all Group One extensions and addressing forms; and P424 records every `B0-BF`
 encoding in both code defaults. The correction adds no CPU behavior and does
 not close shared protection or later M2 T2 gates.
+
+## P437 Protected IRET Fault-Delivery Checklist
+
+P437 replaces the rebuilt host-error path for an invalid protected IRET from an
+outer CPL to a more-privileged target with project-native `#GP(selector)`
+delivery. The original stack pointer is restored before fault delivery so the
+new TSS-selected fault frame records the faulting instruction state. Focused
+evidence executes CPL3 IRET to a ring-zero selector through a ring-zero TSS
+stack and verifies the `#GP` handler, error code, and frame. The invalid v86
+non-dword IRET path likewise routes to rebuilt `#GP(0)`.

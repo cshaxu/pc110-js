@@ -441,4 +441,47 @@ describe("rebuilt INT and IRET", () => {
     );
     expect(state.readEip()).toBe(0);
   });
+
+  it("delivers #GP from an invalid outer-to-inner protected IRET without leaking a host error", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("cs", {
+      selector: 0x1b,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeSegment("ss", {
+      selector: 0x23,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x2f });
+    state.writeIdtr({ base: 0x300, limit: 0x7f });
+    state.writeTr({ selector: 0x28, base: 0x400, limit: 0x67, default32: true, type: 9 });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    const memory = new Map<number, number>();
+    write(memory, 0, [0xcf]);
+    write(memory, 0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0]);
+    write(memory, 0x218, [0xff, 0xff, 0, 0, 0, 0xfa, 0xcf, 0]);
+    write(memory, 0x220, [0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0]);
+    write(memory, 0x368, [0x80, 0, 8, 0, 0, 0x8e, 0, 0]);
+    write(memory, 0x404, [0, 2, 0, 0, 0x10, 0]);
+    write(memory, 0x100, [0x34, 0x12, 0, 0, 8, 0, 0, 0, 2, 0, 0, 0]);
+
+    expect(() => executor(state, memory).step(dispatchRebuiltInstruction)).not.toThrow();
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x80,
+      registers: { esp: 0x1e8 },
+      segments: { cs: { selector: 8, dpl: 0 }, ss: { selector: 0x10, dpl: 0 } }
+    });
+    expect([0x1e8, 0x1e9, 0x1ea, 0x1eb].map((address) => memory.get(address))).toEqual([
+      8, 0, 0, 0
+    ]);
+  });
 });

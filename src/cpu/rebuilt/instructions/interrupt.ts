@@ -48,8 +48,16 @@ function executeIret(context: RebuiltExecutionContext): void {
     const currentPrivilege =
       context.state.readSegment("cs").dpl ?? context.state.readSegment("cs").selector & 3;
     const targetPrivilege = selector & 3;
-    if (targetPrivilege < currentPrivilege)
-      throw new Error("Protected-mode IRET cannot return to a more-privileged code segment");
+    if (targetPrivilege < currentPrivilege) {
+      restorePoppedFrame(context, operandSize);
+      return deliverFault(
+        context.memory,
+        context.state,
+        13,
+        context.state.readEip(),
+        selector & 0xfffc
+      );
+    }
     if (targetPrivilege > currentPrivilege) {
       const stackPointer = popStack(context.memory, context.state, operandSize);
       const stackSelector = popStack(context.memory, context.state, operandSize) & 0xffff;
@@ -74,7 +82,7 @@ function restoreVirtual8086(
   flags: number
 ): void {
   if (context.instruction.prefixes.operandSize !== 32)
-    throw new Error("Virtual-8086 IRET requires a rebuilt 32-bit frame");
+    return deliverInvalidVirtual8086Iret(context);
   const stackPointer = popStack(context.memory, context.state, 32);
   const stackSelector = popStack(context.memory, context.state, 32) & 0xffff;
   const es = popStack(context.memory, context.state, 32) & 0xffff;
@@ -90,4 +98,16 @@ function restoreVirtual8086(
   loadDataSegment(context.memory, context.state, "gs", gs);
   context.state.registers.write32(4, stackPointer);
   context.state.writeEip(target & 0xffff);
+}
+
+function deliverInvalidVirtual8086Iret(context: RebuiltExecutionContext): void {
+  restorePoppedFrame(context, context.instruction.prefixes.operandSize);
+  deliverFault(context.memory, context.state, 13, context.state.readEip(), 0);
+}
+
+function restorePoppedFrame(context: RebuiltExecutionContext, operandSize: 16 | 32): void {
+  const bytes = (operandSize / 8) * 3;
+  if (context.state.stackDefault32())
+    context.state.registers.write32(4, context.state.registers.read32(4) + bytes);
+  else context.state.registers.write16(4, context.state.registers.read16(4) + bytes);
 }
