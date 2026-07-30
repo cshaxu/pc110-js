@@ -28,4 +28,20 @@ describe("RebuiltCpuRunner", () => {
       segments: { cs: { selector: 0xf000, base: 0x000f0000 } }
     });
   });
+
+  it("routes immediate port output through a supplied project I/O boundary", () => {
+    const writes: Array<[number, number, number]> = [];
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0, 0xe6);
+    memory.writeUint8(1, 0x84);
+    const runner = new RebuiltCpuRunner(memory, {
+      read: () => 0,
+      write: (port, value, width) => writes.push([port, value, width])
+    });
+    runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeEip(0);
+    runner.state.registers.write8(0, 0x5a);
+    runner.step();
+    expect(writes).toEqual([[0x84, 0x5a, 8]]);
+  });
 });

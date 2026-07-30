@@ -1,5 +1,6 @@
 import { dispatchRebuiltInstruction } from "./dispatch.js";
 import { RebuiltCpuExecutor } from "./execution.js";
+import type { RebuiltPortBus } from "./io/port-bus.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 import type { RebuiltMemoryBus } from "./memory/segmented-memory.js";
 
@@ -7,8 +8,8 @@ export class RebuiltCpuRunner {
   public readonly state = new RebuiltCpuState();
   private readonly executor: RebuiltCpuExecutor;
 
-  public constructor(memory: RebuiltMemoryBus) {
-    this.executor = new RebuiltCpuExecutor(this.state, memory);
+  public constructor(memory: RebuiltMemoryBus, io?: RebuiltPortBus) {
+    this.executor = new RebuiltCpuExecutor(this.state, memory, undefined, io);
   }
 
   public reset(): void {

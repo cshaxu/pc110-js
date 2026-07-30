@@ -1,6 +1,7 @@
 import { decodeInstruction, type DecodedInstruction } from "./decode/decoder.js";
 import type { InstructionReader } from "./decode/instruction-reader.js";
 import type { RebuiltTraceHook } from "./debug/trace.js";
+import type { RebuiltPortBus } from "./io/port-bus.js";
 import { SegmentedMemory, type RebuiltMemoryBus } from "./memory/segmented-memory.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
@@ -9,6 +10,7 @@ export interface RebuiltExecutionContext {
   readonly memory: SegmentedMemory;
   readonly instruction: DecodedInstruction;
   readonly reader: InstructionReader;
+  readonly io?: RebuiltPortBus;
 }
 
 export type RebuiltInstructionDispatcher = (context: RebuiltExecutionContext) => void;
@@ -28,7 +30,8 @@ export class RebuiltCpuExecutor {
   public constructor(
     private readonly state: RebuiltCpuState,
     bus: RebuiltMemoryBus,
-    private readonly trace?: RebuiltTraceHook
+    private readonly trace?: RebuiltTraceHook,
+    private readonly io?: RebuiltPortBus
   ) {
     this.memory = new SegmentedMemory(bus, state);
   }
@@ -41,7 +44,7 @@ export class RebuiltCpuExecutor {
         this.memory.read8("cs", before.eip + offset, codeAddressSize)
     };
     const instruction = decodeInstruction(reader, before.eip, before.segments.cs.default32);
-    dispatch({ state: this.state, memory: this.memory, instruction, reader });
+    dispatch({ state: this.state, memory: this.memory, instruction, reader, io: this.io });
     this.trace?.({
       before,
       opcodeOffset: instruction.opcodeOffset,

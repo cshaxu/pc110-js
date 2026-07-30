@@ -274,3 +274,12 @@ rebuilt runner executes the reset `EA` and the following `MOV AL, 0`, then
 stops at `F000:F907` on `E6` (`OUT`). This validates the rebuilt reset, ROM,
 dispatcher, and direct far-JMP path without adding I/O behavior. The `E6-E7`
 I/O family and its device-bus integration remain active S3/S5 dependencies.
+
+## P359 `E4-E7-EC-EF` Port I/O Checklist
+
+P359 implements the NXVM immediate-port and DX-port `IN`/`OUT` forms through a
+project-native width-aware port boundary. Focused tests cover byte/word/dword,
+immediate/DX ports, 16-bit-default and 32-bit-default operand width, `66`,
+dispatcher integration, and fault-EIP preservation when no boundary is
+supplied. Protected-mode IOPL and TSS I/O-permission checks remain explicit
+protection-system dependencies; no device response is synthesized.

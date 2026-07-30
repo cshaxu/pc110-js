@@ -18,6 +18,7 @@ import { executeMoffsMove } from "./instructions/moffs-move.js";
 import { executeMoveModRm } from "./instructions/move.js";
 import { executeNearConditionalJump } from "./instructions/near-conditional-control.js";
 import { executeNearControl } from "./instructions/near-control.js";
+import { executePortIo } from "./instructions/port-io.js";
 import { executeRegisterStackInterval } from "./instructions/register-stack.js";
 import { executeSetCondition } from "./instructions/set-condition.js";
 import { executeShiftRotate } from "./instructions/shift-rotate.js";
@@ -52,6 +53,8 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if (opcode === 0xd4 || opcode === 0xd5) return executeAsciiAdjust(context);
   if (opcode === 0xd7) return executeXlat(context);
   if ([0xe0, 0xe1, 0xe2, 0xe3].includes(opcode)) return executeLoop(context);
+  if ([0xe4, 0xe5, 0xe6, 0xe7, 0xec, 0xed, 0xee, 0xef].includes(opcode))
+    return executePortIo(context);
   if ([0xe8, 0xe9, 0xea, 0xeb].includes(opcode)) return executeNearControl(context);
   if ([0xf5, 0xf8, 0xf9, 0xfc, 0xfd].includes(opcode)) return executeFlagControl(context);
   if (opcode === 0xf6 || opcode === 0xf7) return executeGroupThree(context);

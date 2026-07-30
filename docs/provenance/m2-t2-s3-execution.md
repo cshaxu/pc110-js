@@ -1070,6 +1070,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P358 reads the pinned PCjs ROM only from the sibling checkout for a
   local validation command. It does not copy firmware bytes, create device
   behavior, or introduce PCjs runtime dependencies into the rebuilt CPU.
+- M2 T2 S3 P359 adapts NXVM immediate and DX port-I/O handler structure into
+  project-native TypeScript. It introduces a width-aware CPU boundary, not
+  PCjs, NXVM, BIOS, POST, or device-specific behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
