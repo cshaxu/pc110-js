@@ -10,6 +10,7 @@ import { PcAtSystemControl } from "../devices/pc-at-system-control.js";
 import { KeyboardOutputPort } from "../devices/keyboard-output-port.js";
 import { PcAtKeyboardController } from "../devices/pc-at-keyboard-controller.js";
 import { PcAtFpuControl } from "../devices/pc-at-fpu-control.js";
+import { DeskPro386SecondaryPit } from "../devices/deskpro386-secondary-pit.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -19,6 +20,10 @@ import {
 export interface RebuiltMachineRunResult {
   readonly executed: number;
   readonly halted: boolean;
+}
+
+export interface RebuiltPcAt386Options {
+  readonly deskProSecondaryPit?: boolean;
 }
 
 export type RebuiltMachineTraceEvent =
@@ -49,13 +54,15 @@ export class RebuiltPcAt386Core {
     () => this.runner.reset()
   );
   public readonly fpuControl = new PcAtFpuControl();
+  public readonly deskProSecondaryPit: DeskPro386SecondaryPit | undefined;
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
   private nmiPending = false;
 
   public constructor(
     private readonly memory: PhysicalMemory,
-    private readonly trace?: RebuiltMachineTrace
+    private readonly trace?: RebuiltMachineTrace,
+    options: RebuiltPcAt386Options = {}
   ) {
     this.ports = new RebuiltMachinePortBus((event) => this.trace?.({ kind: "port", event }));
     this.runner = new RebuiltCpuRunner(memory, this.ports, (event) =>
@@ -68,6 +75,10 @@ export class RebuiltPcAt386Core {
     for (const range of this.systemPort.portRanges()) this.registerPorts(range);
     for (const range of this.keyboardController.portRanges()) this.registerPorts(range);
     for (const range of this.fpuControl.portRanges()) this.registerPorts(range);
+    if (options.deskProSecondaryPit) {
+      this.deskProSecondaryPit = new DeskPro386SecondaryPit();
+      for (const range of this.deskProSecondaryPit.portRanges()) this.registerPorts(range);
+    }
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -82,6 +93,7 @@ export class RebuiltPcAt386Core {
     this.systemPort.reset();
     this.keyboardController.reset();
     this.fpuControl.reset();
+    this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.memory.setA20Enabled(true);
     this.nmiPending = false;
@@ -98,6 +110,7 @@ export class RebuiltPcAt386Core {
 
   public advancePit(ticks: number): void {
     this.pit.advance(ticks);
+    this.deskProSecondaryPit?.advance(ticks);
   }
 
   public advanceRtc(ticks: number): void {

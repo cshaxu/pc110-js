@@ -50,3 +50,13 @@ No RAM, ROM, firmware, or port response was synthesized.
 The native control pair advances the selected trace to 197 instructions at
 `F000:BAFF`, where it stops at `Unmapped I/O write port: 0x4B`. The next part
 must classify that owner before extending the machine.
+
+## P5 Secondary-PIT Result
+
+- Level: Strong.
+- Source: pinned read-only PCjs `chipset.js`, `PIT1` and the DeskPro 386
+  input/output tables for `0x48`-`0x4B`.
+- Accepted boundary: the selected second 8254 is an opt-in DeskPro device with
+  no synthetic IRQ or output-side behavior.
+- Trace: the selected ROM advances to 216 instructions at `F000:BB26` and
+  stops at `Unmapped I/O write port: 0x3F2`, the next FDC boundary.

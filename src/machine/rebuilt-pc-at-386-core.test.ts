@@ -250,4 +250,17 @@ describe("RebuiltPcAt386Core", () => {
     core.reset();
     expect(core.fpuControl.snapshot()).toEqual({ clearCount: 0, resetCount: 0 });
   });
+
+  it("enables the secondary PIT only for the selected DeskPro configuration", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const generic = new RebuiltPcAt386Core(memory);
+    expect(() => generic.ports.write(0x4b, 0x34, 8)).toThrow("Unmapped I/O write");
+
+    const deskPro = new RebuiltPcAt386Core(memory, undefined, { deskProSecondaryPit: true });
+    deskPro.ports.write(0x4b, 0x34, 8);
+    deskPro.ports.write(0x48, 2, 8);
+    deskPro.ports.write(0x48, 0, 8);
+    deskPro.advancePit(3);
+    expect(deskPro.deskProSecondaryPit?.snapshot(0)).toMatchObject({ output: true });
+  });
 });

@@ -56,7 +56,9 @@ function main(): void {
     [0xf8000, 0xf0000, 0xffff0000]
   );
   const trace: RebuiltMachineTraceEvent[] = [];
-  const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event));
+  const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event), {
+    deskProSecondaryPit: true
+  });
   try {
     const result = core.run(1_000);
     process.stdout.write(

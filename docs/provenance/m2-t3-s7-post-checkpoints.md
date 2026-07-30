@@ -46,3 +46,11 @@ after 63 instructions and stops at I/O write `0xF1`.
 PCjs assigns `0xF0` to FPU clear-busy and `0xF1` to FPU reset on the 5170
 port table, with zero as the only expected output. The native control adapter
 models those signals independently from any x87 implementation.
+
+## P5 DeskPro Secondary PIT
+
+PCjs declares a second 8253/8254 only for the DeskPro 386: counters at
+`0x48`-`0x4A` and control at `0x4B`. It identifies the counters as fail-safe,
+unassigned, and refresh-request extension/speed control. The native adapter
+therefore enables the full port group only through an explicit selected-machine
+option and keeps external output wiring outside its port semantics.
