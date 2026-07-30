@@ -4330,6 +4330,36 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xabcd000f }, eip: 0x010e });
   });
 
+  it("uses CS defaults and independent 66/67 overrides for IMUL", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0xaf],
+      [0x0102, 0xc3],
+      [0x0103, 0x66],
+      [0x0104, 0x67],
+      [0x0105, 0x0f],
+      [0x0106, 0xaf],
+      [0x0107, 0x0e],
+      [0x0108, 0x34],
+      [0x0109, 0x12],
+      [0x1234, 0xfd],
+      [0x1235, 0xff]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(0, 0xfffffffe);
+    state.writeRegister(3, 3);
+    state.writeRegister(1, 0xabcd0002);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xfffffffa }, eip: 0x0103 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0xabcdfffa }, eip: 0x010a });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
@@ -6931,19 +6961,16 @@ describe("80386 instruction fetch", () => {
 
   it("multiplies 32-bit register and 32-bit-addressed memory operands through IMUL", () => {
     const values = new Map<number, number>([
-      [0x00000000, 0x66],
-      [0x00000001, 0x0f],
-      [0x00000002, 0xaf],
-      [0x00000003, 0xc3],
-      [0x00000004, 0x66],
-      [0x00000005, 0x67],
-      [0x00000006, 0x0f],
-      [0x00000007, 0xaf],
-      [0x00000008, 0x15],
+      [0x00000000, 0x0f],
+      [0x00000001, 0xaf],
+      [0x00000002, 0xc3],
+      [0x00000003, 0x0f],
+      [0x00000004, 0xaf],
+      [0x00000005, 0x15],
+      [0x00000006, 0x00],
+      [0x00000007, 0x20],
+      [0x00000008, 0x00],
       [0x00000009, 0x00],
-      [0x0000000a, 0x20],
-      [0x0000000b, 0x00],
-      [0x0000000c, 0x00],
       [0x00002000, 0x01],
       [0x00002001, 0x00],
       [0x00002002, 0x00],

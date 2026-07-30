@@ -1100,6 +1100,16 @@ function executeContextualInstruction(
       );
       return { halted: false, fetched };
     }
+    if (extension === 0xaf) {
+      executeImulModRm(
+        memory,
+        state,
+        context.opcodeOffset + 2,
+        context.addressSize,
+        context.operandSize
+      );
+      return { halted: false, fetched };
+    }
   }
 
   const byteAluOperation = byteModRmAluOperation(context.opcode);
@@ -2573,30 +2583,35 @@ function executeDwordImul(
   modRmOffset: number,
   addressSize: 16 | 32
 ): void {
+  executeImulModRm(memory, state, modRmOffset, addressSize, 32);
+}
+
+function executeImulModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  operandSize: 16 | 32
+): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
-  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
-    ? undefined
-    : addressSize === 16
-      ? decodeModRm16Address(
-          modRm,
-          (index) => state.readRegister16(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        )
-      : decodeModRm32Address(
-          modRm,
-          (index) => state.readRegister(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        );
-  const sibBytes =
-    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
-  const source = modRm.registerDirect
-    ? state.readRegister(modRm.rm)
-    : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
-  const product =
-    BigInt.asIntN(32, BigInt(state.readRegister(modRm.reg))) * BigInt.asIntN(32, BigInt(source));
-  state.writeRegister(modRm.reg, Number(BigInt.asUintN(32, product)));
-  state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
-  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  if (operandSize === 32) {
+    const source = modRm.registerDirect
+      ? state.readRegister(modRm.rm)
+      : readSegmentUint32(memory, state, address!.segment, address!.offset, addressSize);
+    const product =
+      BigInt.asIntN(32, BigInt(state.readRegister(modRm.reg))) * BigInt.asIntN(32, BigInt(source));
+    state.writeRegister(modRm.reg, Number(BigInt.asUintN(32, product)));
+    state.writeSignedMultiplyFlags32(product < -0x80000000n || product > 0x7fffffffn);
+  } else {
+    const source = modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
+    const product = signedWord(state.readRegister16(modRm.reg)) * signedWord(source);
+    state.writeRegister16(modRm.reg, product);
+    state.writeSignedMultiplyFlags16(product > 0x7fff || product < -0x8000);
+  }
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 
 function executeMovImmediateDwordModRm(

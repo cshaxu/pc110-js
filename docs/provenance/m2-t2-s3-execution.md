@@ -736,6 +736,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   PCjs operand/address-size selection controls the scan width and ModR/M
   address form; zero-source destination preservation and ZF handling remain
   shared behavior.
+- M2 T2 S3 P269 replaces the dword-only two-operand IMUL helper with a generic
+  project-native operand-width helper and routes `0F AF` through context.
+  PCjs operand/address-size selection controls signed data width and ModR/M
+  address form; established CF/OF overflow handling remains shared behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
