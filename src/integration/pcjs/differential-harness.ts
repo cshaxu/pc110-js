@@ -32,13 +32,13 @@ export interface DifferentialMemoryByte {
 }
 
 export interface DifferentialIoConfiguration {
-  readonly inputs?: readonly DifferentialIoInput[];
+  readonly ports?: readonly DifferentialIoPort[];
 }
 
-export interface DifferentialIoInput {
+export interface DifferentialIoPort {
   readonly port: number;
-  readonly value: number;
   readonly width: PortWidth;
+  readonly inputValue?: number;
 }
 
 export interface DifferentialIoAccess {
@@ -430,12 +430,15 @@ function validateCase(differentialCase: DifferentialCase): void {
       throw new RangeError("Differential instruction bytes must be unsigned bytes");
   });
   differentialCase.memory?.forEach(({ address, value }) => validateMemoryByte(address, value));
-  differentialCase.io?.inputs?.forEach(({ port, value, width }) => {
+  differentialCase.io?.ports?.forEach(({ port, inputValue, width }) => {
     if (!Number.isInteger(port) || port < 0 || port > 0xffff)
       throw new RangeError("Differential I/O port must be 16-bit");
     if (![8, 16, 32].includes(width)) throw new RangeError("Differential I/O width is invalid");
     const mask = width === 8 ? 0xff : width === 16 ? 0xffff : 0xffffffff;
-    if (!Number.isInteger(value) || value < 0 || value > mask)
+    if (
+      inputValue !== undefined &&
+      (!Number.isInteger(inputValue) || inputValue < 0 || inputValue > mask)
+    )
       throw new RangeError("Differential I/O value exceeds its width");
   });
   if (
@@ -473,15 +476,14 @@ class RecordingMemory {
 
 class RecordingRebuiltIo implements RebuiltPortBus {
   private readonly recorded: DifferentialIoAccess[] = [];
-  private readonly inputs = new Map<number, DifferentialIoInput>();
+  private readonly ports = new Map<number, DifferentialIoPort>();
 
   public constructor(configuration: DifferentialIoConfiguration | undefined) {
-    configuration?.inputs?.forEach((input) => this.inputs.set(input.port, input));
+    configuration?.ports?.forEach((port) => this.ports.set(port.port, port));
   }
 
   public read(port: number, width: PortWidth): number {
-    const input = this.inputs.get(port);
-    const value = input?.value ?? 0xff;
+    const value = this.ports.get(port)?.inputValue ?? 0xff;
     this.recorded.push({ direction: "read", port, value, width });
     return value;
   }
@@ -501,22 +503,23 @@ class RecordingRebuiltIo implements RebuiltPortBus {
 
 class RecordingPcjsIo {
   private readonly recorded: DifferentialIoAccess[] = [];
-  private readonly inputs = new Map<number, DifferentialIoInput>();
+  private readonly ports = new Map<number, DifferentialIoPort>();
 
   public constructor(configuration: DifferentialIoConfiguration | undefined) {
-    configuration?.inputs?.forEach((input) => this.inputs.set(input.port, input));
+    configuration?.ports?.forEach((port) => this.ports.set(port.port, port));
   }
 
   public attach(bus: PcjsBus): void {
-    this.inputs.forEach((input, port) => {
-      bus.addPortInputWidth(port, input.width / 8);
+    this.ports.forEach((configuration, port) => {
+      bus.addPortInputWidth(port, configuration.width / 8);
       bus.addPortInputNotify(port, port, () => {
-        this.recorded.push({ direction: "read", port, value: input.value, width: input.width });
-        return input.value;
+        const value = configuration.inputValue ?? 0xff;
+        this.recorded.push({ direction: "read", port, value, width: configuration.width });
+        return value;
       });
-      bus.addPortOutputWidth(port, input.width / 8);
+      bus.addPortOutputWidth(port, configuration.width / 8);
       bus.addPortOutputNotify(port, port, (_port, value) => {
-        this.recorded.push({ direction: "write", port, value, width: input.width });
+        this.recorded.push({ direction: "write", port, value, width: configuration.width });
       });
     });
   }
