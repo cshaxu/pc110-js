@@ -650,6 +650,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   uses per-instruction data and address sizes selected from the CS hidden cache
   and prefixes; the project will replace prefix-special-case dispatch with a
   project-native context while retaining PCjs as behavior authority.
+- M2 T2 S3 P239 introduces project-native context parsing only. Its repeated
+  prefix behavior follows the owner-approved selection rule; no PCjs or NXVM
+  source was copied, and no guest-visible execution behavior changed.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
