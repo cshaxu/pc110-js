@@ -1,5 +1,6 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import type { SegmentName } from "../state/segments.js";
 import {
   logical,
@@ -37,7 +38,10 @@ export function executeGroupThree(context: RebuiltExecutionContext): void {
     context.state.advanceEip(context.instruction.length + modRm.bytes + immediateBytes);
     return;
   }
-  if (modRm.reg === 1) throw new Error("F6/F7 /1 requires rebuilt #UD delivery");
+  if (modRm.reg === 1) {
+    deliverFault(context.memory, context.state, 6, context.state.readEip());
+    return;
+  }
   if (modRm.reg === 2) writeRm(context, modRm, width, ~operand);
   else if (modRm.reg === 3) {
     const result = subtract(context.state.flags.read(), 0, operand, width);

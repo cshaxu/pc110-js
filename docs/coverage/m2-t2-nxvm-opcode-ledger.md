@@ -617,3 +617,12 @@ current carry state. A focused DAS case verifies that `AL=9A, AF=1` stops at
 `94` rather than applying a stale-input high-digit adjustment. The wider
 `00-3F` interval remains incomplete until its recorded closure dependencies
 are satisfied.
+
+## P406 F6/F7 Fault-Delivery Checklist
+
+P406 completes the explicit Group Three fault paths: `/1` delivers rebuilt
+#UD, and DIV/IDIV zero-divisor or quotient-overflow errors deliver rebuilt #DE
+at the faulting EIP. Focused tests cover byte and operand-sized division plus
+the undefined extension through real-mode vector frames. Remaining Group Three
+completion evidence continues to require the scheduled width and protection
+coverage.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { RebuiltCpuExecutor } from "../execution.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
 import { EFLAGS_CARRY, EFLAGS_OVERFLOW, EFLAGS_ZERO } from "./arithmetic.js";
-import { executeGroupThree, RebuiltDivideError } from "./group-three.js";
+import { executeGroupThree } from "./group-three.js";
 
 function execute(
   bytes: readonly number[],
@@ -108,7 +108,7 @@ describe("rebuilt F6/F7 Group Three", () => {
     expect(dword.state.registers.read32(2)).toBe(0);
   });
 
-  it("uses ModR/M memory with 66 and 67 and preserves faulting EIP for divide errors", () => {
+  it("uses ModR/M memory with 66 and 67", () => {
     const memory = execute([0x66, 0x67, 0xf7, 0x25, 0x00, 0x10, 0x00, 0x00], {
       setup: (state, bytes) => {
         state.writeSegment("ds", {
@@ -123,11 +123,30 @@ describe("rebuilt F6/F7 Group Three", () => {
     });
     memory.step();
     expect(memory.state.registers.read32(0)).toBe(8);
+  });
 
-    const fault = execute([0xf6, 0xf3], {
-      setup: (state) => state.registers.write8(3, 0)
-    });
-    expect(fault.step).toThrow(RebuiltDivideError);
-    expect(fault.state.readEip()).toBe(0);
+  it("delivers #DE and #UD at the faulting EIP instead of leaking host errors", () => {
+    for (const bytes of [
+      [0xf6, 0xf3],
+      [0xf7, 0xf3],
+      [0xf6, 0xcb]
+    ]) {
+      const fault = execute(bytes, {
+        setup: (state, memory) => {
+          state.writeEip(0x20);
+          state.registers.write8(3, 0);
+          bytes.forEach((value, index) => memory.set(0x20 + index, value));
+          state.registers.write16(4, 0x100);
+          const vector = bytes[1] === 0xcb ? 6 : 0;
+          memory.set(vector * 4, 0x40);
+          memory.set(vector * 4 + 1, 0);
+          memory.set(vector * 4 + 2, 0);
+          memory.set(vector * 4 + 3, 0);
+        }
+      });
+      fault.step();
+      expect(fault.state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xfa } });
+      expect(fault.memory.get(0xfa)).toBe(0x20);
+    }
   });
 });

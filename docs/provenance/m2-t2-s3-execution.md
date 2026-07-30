@@ -1186,6 +1186,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P405 aligns project-native DAA/DAS high-digit adjustment with
   NXVM's post-low-adjust state and current-carry flow without a reference
   runtime import.
+- M2 T2 S3 P406 adapts NXVM F6/F7 divide and undefined-extension faults into
+  project-native event delivery without a reference runtime or host-error
+  escape path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

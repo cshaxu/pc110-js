@@ -3,6 +3,7 @@ import type { InstructionReader } from "./decode/instruction-reader.js";
 import type { RebuiltTraceHook } from "./debug/trace.js";
 import { PageFaultError } from "../../memory/address-translation.js";
 import { deliverFault } from "./events/interrupt-delivery.js";
+import { RebuiltDivideError } from "./instructions/group-three.js";
 import type { RebuiltPortBus } from "./io/port-bus.js";
 import {
   SegmentAccessError,
@@ -73,6 +74,10 @@ export class RebuiltCpuExecutor {
   }
 
   private deliverAccessFault(error: unknown, faultEip: number): boolean {
+    if (error instanceof RebuiltDivideError) {
+      deliverFault(this.memory, this.state, 0, error.faultEip);
+      return true;
+    }
     if (error instanceof PageFaultError) {
       const errorCode =
         (error.present ? 1 : 0) | (error.access.write ? 2 : 0) | (error.access.user ? 4 : 0);
