@@ -61,6 +61,17 @@ describe("PC/AT physical memory", () => {
     ).toThrow(PhysicalMemoryError);
   });
 
+  it("can model a selected machine's floating physical bus without weakening strict defaults", () => {
+    const memory = new PhysicalMemory({
+      ramBytes: 0xa0000,
+      unmappedReadValue: 0xff,
+      ignoreUnmappedWrites: true
+    });
+    expect(memory.readUint8(0xe0000)).toBe(0xff);
+    expect(() => memory.writeUint8(0xe0000, 0x55)).not.toThrow();
+    expect(memory.readUint8(0xe0000)).toBe(0xff);
+  });
+
   it("preserves the existing reset-ROM far-jump table trace through mapped ROM", () => {
     const bytes = new Uint8Array(0x8000);
     bytes.set([0x2e, 0xff, 0x2e, 0xfd, 0xf8], 0x7ff0);

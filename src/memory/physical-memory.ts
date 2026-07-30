@@ -10,6 +10,8 @@ interface MemoryRegion {
 export interface PhysicalMemoryOptions {
   readonly ramBytes: number;
   readonly a20Enabled?: boolean;
+  readonly unmappedReadValue?: number;
+  readonly ignoreUnmappedWrites?: boolean;
 }
 
 export class PhysicalMemoryError extends Error {}
@@ -17,6 +19,8 @@ export class PhysicalMemoryError extends Error {}
 export class PhysicalMemory {
   private readonly regions: MemoryRegion[];
   private a20Enabled: boolean;
+  private readonly unmappedReadValue: number | undefined;
+  private readonly ignoreUnmappedWrites: boolean;
 
   public constructor(options: PhysicalMemoryOptions) {
     if (!Number.isSafeInteger(options.ramBytes) || options.ramBytes <= 0) {
@@ -24,6 +28,11 @@ export class PhysicalMemory {
     }
     this.regions = [this.createRegion(0, new Uint8Array(options.ramBytes), true)];
     this.a20Enabled = options.a20Enabled ?? false;
+    if (options.unmappedReadValue !== undefined && !Number.isInteger(options.unmappedReadValue))
+      throw new PhysicalMemoryError("Unmapped read value must be an integer");
+    this.unmappedReadValue =
+      options.unmappedReadValue === undefined ? undefined : options.unmappedReadValue & 0xff;
+    this.ignoreUnmappedWrites = options.ignoreUnmappedWrites ?? false;
   }
 
   public setA20Enabled(enabled: boolean): void {
@@ -51,6 +60,7 @@ export class PhysicalMemory {
   public readUint8(address: number): number {
     const normalized = this.normalizeAddress(address);
     const region = this.findRegion(normalized);
+    if (!region && this.unmappedReadValue !== undefined) return this.unmappedReadValue;
     if (!region)
       throw new PhysicalMemoryError(`Unmapped physical read at 0x${normalized.toString(16)}`);
     return region.bytes[normalized - region.start];
@@ -59,6 +69,7 @@ export class PhysicalMemory {
   public writeUint8(address: number, value: number): void {
     const normalized = this.normalizeAddress(address);
     const region = this.findRegion(normalized);
+    if (!region && this.ignoreUnmappedWrites) return;
     if (!region)
       throw new PhysicalMemoryError(`Unmapped physical write at 0x${normalized.toString(16)}`);
     if (region.writable) region.bytes[normalized - region.start] = value & 0xff;

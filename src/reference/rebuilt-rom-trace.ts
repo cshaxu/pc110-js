@@ -44,7 +44,12 @@ function formatAddress(core: RebuiltPcAt386Core): string {
 }
 
 function main(): void {
-  const memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+  const memory = new PhysicalMemory({
+    ramBytes: 0xa0000,
+    a20Enabled: true,
+    unmappedReadValue: 0xff,
+    ignoreUnmappedWrites: true
+  });
   memory.mapRom(
     createRomImage("deskpro386", loadRom()),
     0xffff8000,
