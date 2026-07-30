@@ -1189,6 +1189,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P406 adapts NXVM F6/F7 divide and undefined-extension faults into
   project-native event delivery without a reference runtime or host-error
   escape path.
+- M2 T2 S3 P407 adapts NXVM undefined FE/FF extension handling into the
+  project-native Group Four/Five fault path without runtime reference imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

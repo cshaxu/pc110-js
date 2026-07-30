@@ -112,4 +112,22 @@ describe("rebuilt FE/FF Group Four/Five", () => {
       segments: { cs: { selector: 0x3000 } }
     });
   });
+
+  it("delivers #UD for unsupported FE/FF extensions and register far pointers", () => {
+    for (const bytes of [
+      [0xfe, 0xd0],
+      [0xff, 0xf8],
+      [0xff, 0xd8],
+      [0xff, 0xe8]
+    ]) {
+      const result = execute(bytes, {
+        setup: (state, memory) => {
+          state.registers.write16(4, 0x100);
+          [0x40, 0, 0, 0].forEach((value, index) => memory.set(0x18 + index, value));
+        }
+      });
+      expect(result.state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xfa } });
+      expect(result.memory.get(0xfa)).toBe(0);
+    }
+  });
 });

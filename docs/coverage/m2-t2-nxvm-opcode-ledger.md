@@ -626,3 +626,11 @@ at the faulting EIP. Focused tests cover byte and operand-sized division plus
 the undefined extension through real-mode vector frames. Remaining Group Three
 completion evidence continues to require the scheduled width and protection
 coverage.
+
+## P407 FE/FF Undefined-Extension Checklist
+
+P407 routes unsupported FE extensions, FF `/7`, and register-direct FF far
+CALL/JMP forms through rebuilt #UD delivery. Focused real-mode vector-frame
+tests cover each invalid form while preserving the existing legal Group Four/
+Five paths. Far gate, task, and privilege-transfer behavior remain separate
+protection-system work.

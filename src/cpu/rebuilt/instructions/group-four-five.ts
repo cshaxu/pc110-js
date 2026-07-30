@@ -1,5 +1,6 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import { pushStack } from "../memory/stack.js";
 import { loadCodeSegment } from "../protection/segment-loader.js";
 import type { SegmentName } from "../state/segments.js";
@@ -22,8 +23,10 @@ export function executeGroupFourFive(context: RebuiltExecutionContext): void {
     context.state.advanceEip(context.instruction.length + modRm.bytes);
     return;
   }
-  if (opcode === 0xfe || modRm.reg === 7)
-    throw new Error("FE/FF extension requires rebuilt #UD delivery");
+  if (opcode === 0xfe || modRm.reg === 7) {
+    deliverFault(context.memory, context.state, 6, context.state.readEip());
+    return;
+  }
   if (modRm.reg === 3 || modRm.reg === 5) return executeFarControl(context, modRm);
   const operand = readRm(context, modRm, width);
   const operandSize = context.instruction.prefixes.operandSize;
@@ -35,11 +38,14 @@ export function executeGroupFourFive(context: RebuiltExecutionContext): void {
   else if (modRm.reg === 6) {
     pushStack(context.memory, context.state, operandSize, operand);
     context.state.advanceEip(context.instruction.length + modRm.bytes);
-  } else throw new Error("Unsupported rebuilt Group Five extension");
+  }
 }
 
 function executeFarControl(context: RebuiltExecutionContext, modRm: DecodedModRm): void {
-  if (modRm.registerDirect) throw new Error("FF far control requires a memory pointer");
+  if (modRm.registerDirect) {
+    deliverFault(context.memory, context.state, 6, context.state.readEip());
+    return;
+  }
   const width = context.instruction.prefixes.operandSize;
   const memory = modRm.memory!;
   const segment: SegmentName = context.instruction.prefixes.segmentOverride ?? memory.segment;
