@@ -2,7 +2,7 @@ import { decodeInstruction, type DecodedInstruction } from "./decode/decoder.js"
 import type { InstructionReader } from "./decode/instruction-reader.js";
 import type { RebuiltTraceHook } from "./debug/trace.js";
 import { PageFaultError } from "../../memory/address-translation.js";
-import { deliverFault } from "./events/interrupt-delivery.js";
+import { deliverFault, deliverInterrupt } from "./events/interrupt-delivery.js";
 import { RebuiltDivideError } from "./instructions/group-three.js";
 import type { RebuiltPortBus } from "./io/port-bus.js";
 import {
@@ -71,6 +71,20 @@ export class RebuiltCpuExecutor {
       after: this.state.snapshot()
     });
     return instruction;
+  }
+
+  public serviceExternalInterrupt(vector: number): boolean {
+    if (!Number.isInteger(vector) || vector < 0 || vector > 0xff)
+      throw new RangeError("Interrupt vector must be an 8-bit integer");
+    if (!(this.state.flags.read() & 0x00000200)) return false;
+    deliverInterrupt(this.memory, this.state, {
+      vector,
+      returnEip: this.state.readEip(),
+      operandSize: this.state.codeDefault32() ? 32 : 16,
+      software: false
+    });
+    this.state.resume();
+    return true;
   }
 
   private deliverAccessFault(error: unknown, faultEip: number): boolean {

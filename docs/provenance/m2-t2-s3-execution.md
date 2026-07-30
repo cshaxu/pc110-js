@@ -1195,6 +1195,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   entries into the project-native dispatcher without a runtime reference import.
 - M2 T2 S3 P409 adapts the NXVM Group Two `/6` undefined extension into the
   project-native fault path without a runtime reference import.
+- M2 T2 S3 P410 adds a project-native IF-gated external-interrupt runner
+  boundary using the rebuilt event path without PIC or device behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -647,3 +647,9 @@ and unrelated incomplete instruction families.
 P409 routes Group Two `/6` for C0/C1/D0-D3 through rebuilt #UD delivery.
 Focused tests retain every defined byte operation and verify the faulting
 real-mode vector frame for `/6`.
+
+## P410 External-Interrupt Admission Checklist
+
+P410 provides a project-native rebuilt runner boundary for IF-gated external
+interrupt delivery. A successful delivery uses the existing hardware-interrupt
+frame path and resumes a halted CPU; no PIC or device behavior is introduced.

@@ -44,4 +44,28 @@ describe("RebuiltCpuRunner", () => {
     runner.step();
     expect(writes).toEqual([[0x84, 0x5a, 8]]);
   });
+
+  it("admits an IF-enabled external interrupt and wakes HLT through the IVT", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0x20, 0x40);
+    memory.writeUint8(0x21, 0);
+    memory.writeUint8(0x22, 0);
+    memory.writeUint8(0x23, 0);
+    const runner = new RebuiltCpuRunner(memory);
+    runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    runner.state.writeEip(0x10);
+    runner.state.registers.write16(4, 0x100);
+    runner.state.halt();
+    expect(runner.serviceExternalInterrupt(8)).toBe(false);
+    runner.state.flags.set(0x200);
+    expect(runner.serviceExternalInterrupt(8)).toBe(true);
+    expect(runner.state.snapshot()).toMatchObject({
+      eip: 0x40,
+      halted: false,
+      registers: { esp: 0xfa }
+    });
+    expect(memory.readUint8(0xfa)).toBe(0x10);
+    expect(runner.state.flags.read() & 0x200).toBe(0);
+  });
 });
