@@ -6,6 +6,16 @@ import { FloppyDrive } from "../devices/floppy-drive.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
+  it("composes COM1 with the native IRQ4 path", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x3f9, 0x01, 8);
+    core.com1.receiveByte(0x5a);
+    expect(core.pic.snapshot().master.request).toBe(0x10);
+    expect(core.ports.read(0x3fa, 8)).toBe(0x04);
+    expect(core.ports.read(0x3f8, 8)).toBe(0x5a);
+  });
+
   it("composes rebuilt CPU stepping, port dispatch, and trace hooks", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0xe6);
