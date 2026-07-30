@@ -17,6 +17,17 @@ const PAGE_PORTS = new Map<number, { readonly controller: 0 | 1; readonly channe
   [0x8f, { controller: 1, channel: 0 }]
 ]);
 
+const SPARE_PAGE_PORTS = new Map<number, number>([
+  [0x84, 0],
+  [0x85, 1],
+  [0x86, 2],
+  [0x88, 3],
+  [0x8c, 4],
+  [0x8d, 5],
+  [0x8e, 6],
+  [0x80, 7]
+]);
+
 export interface PcAtDmaPortRange {
   readonly start: number;
   readonly end: number;
@@ -27,16 +38,20 @@ export interface PcAtDmaPortRange {
 export class PcAtDma {
   public readonly dma0 = new Dma8237();
   public readonly dma1 = new Dma8237({ wordAddressed: true });
+  private readonly sparePages = new Uint8Array(8);
 
   public reset(): void {
     this.dma0.reset();
     this.dma1.reset();
+    this.sparePages.fill(0);
   }
 
   public read(port: number, width: PortWidth): number {
     this.requireByteWidth(width);
     const page = PAGE_PORTS.get(port);
     if (page) return this.controller(page.controller).page(page.channel);
+    const sparePage = SPARE_PAGE_PORTS.get(port);
+    if (sparePage !== undefined) return this.sparePages[sparePage]!;
     const decoded = this.decodeControllerPort(port);
     if (!decoded) throw new RangeError(`PC/AT DMA port is not readable: 0x${port.toString(16)}`);
     const { controller, offset } = decoded;
@@ -52,6 +67,11 @@ export class PcAtDma {
     this.requireByteWidth(width);
     const page = PAGE_PORTS.get(port);
     if (page) return this.controller(page.controller).setPage(page.channel, value);
+    const sparePage = SPARE_PAGE_PORTS.get(port);
+    if (sparePage !== undefined) {
+      this.sparePages[sparePage] = value & 0xff;
+      return;
+    }
     const decoded = this.decodeControllerPort(port);
     if (!decoded) throw new RangeError(`PC/AT DMA port is not mapped: 0x${port.toString(16)}`);
     const { controller, offset } = decoded;
@@ -109,6 +129,13 @@ export class PcAtDma {
     return masks;
   }
 
+  public sparePage(port: number): number {
+    const index = SPARE_PAGE_PORTS.get(port);
+    if (index === undefined)
+      throw new RangeError(`PC/AT DMA spare page port is not mapped: 0x${port.toString(16)}`);
+    return this.sparePages[index]!;
+  }
+
   public grantFromController(index: 0 | 1): DmaGrant | undefined {
     return this.controller(index).grant();
   }
@@ -141,6 +168,13 @@ export class PcAtDma {
         write: (port, value, width) => this.write(port, value, width)
       },
       ...Array.from(PAGE_PORTS.keys(), (port) => ({
+        start: port,
+        end: port,
+        read: (mappedPort: number, width: PortWidth) => this.read(mappedPort, width),
+        write: (mappedPort: number, value: number, width: PortWidth) =>
+          this.write(mappedPort, value, width)
+      })),
+      ...Array.from(SPARE_PAGE_PORTS.keys(), (port) => ({
         start: port,
         end: port,
         read: (mappedPort: number, width: PortWidth) => this.read(mappedPort, width),

@@ -24,3 +24,13 @@ existing project-native DMA composition. It will preserve normal channel page
 register behavior and advance the ROM only after focused tests and a fresh
 bounded trace prove the path. Future device work remains classified trace work,
 not a BIOS workaround.
+
+## P2 Spare DMA Page Registers
+
+P2 adds original TypeScript retained state for all eight selected spare ports.
+It is separate from normal DMA channel pages and has no transfer-side effect,
+PCjs import, firmware modification, or POST-specific shortcut.
+
+The post-P2 trace reaches `F000:F94F` after 34 instructions and stops on the
+next unclaimed physical read at `0xE0000`. This moves the S7 investigation to
+selected option-ROM mapping rather than a DMA or POST-checkpoint workaround.

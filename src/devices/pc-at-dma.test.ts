@@ -55,6 +55,31 @@ describe("project-native PC/AT DMA", () => {
     expect(dma.snapshot(5)).toMatchObject({ requested: false, masked: true });
   });
 
+  it("retains selected spare DMA page registers independently from channel pages", () => {
+    const dma = new PcAtDma();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of dma.portRanges()) bus.register(range);
+    const values = new Map([
+      [0x80, 0x80],
+      [0x84, 0x84],
+      [0x85, 0x85],
+      [0x86, 0x86],
+      [0x88, 0x88],
+      [0x8c, 0x8c],
+      [0x8d, 0x8d],
+      [0x8e, 0x8e]
+    ]);
+    for (const [port, value] of values) bus.write(port, value, 8);
+    bus.write(0x81, 0x5a, 8);
+
+    for (const [port, value] of values) expect(bus.read(port, 8)).toBe(value);
+    expect(bus.read(0x81, 8)).toBe(0x5a);
+    expect(dma.sparePage(0x84)).toBe(0x84);
+    expect(() => bus.read(0x84, 16)).toThrow("8-bit");
+    dma.reset();
+    expect(bus.read(0x84, 8)).toBe(0);
+  });
+
   it("arbitrates a DMA0 request through unmasked DMA1 channel 4 cascade", () => {
     const dma = new PcAtDma();
     const bus = new RebuiltMachinePortBus();

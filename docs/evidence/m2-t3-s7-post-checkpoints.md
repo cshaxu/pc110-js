@@ -21,3 +21,11 @@ byte-register behavior, not an ignored diagnostic-port write.
 The spare cells are project-native hardware state. They do not imply a DMA
 transfer, storage device, display device, firmware modification, browser
 presentation, DOS execution, or PC110 behavior.
+
+## P2 Trace Result
+
+After native spare-register composition, `pnpm run trace:rebuilt-rom` executed
+34 instructions and reached `F000:F94F` before stopping on
+`Unmapped physical read at 0xE0000`. This proves the source-established `0x84`
+path advances through real device state and identifies option-ROM mapping as
+the next hardware boundary.
