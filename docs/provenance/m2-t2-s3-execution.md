@@ -1129,6 +1129,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P384 adapts NXVM TR6/TR7 transfer handlers into project-native CPU
   state and system-instruction decoding. The shared privilege helper returns
   CPL zero outside protected mode and otherwise uses the CS hidden cache.
+- M2 T2 S3 P385 adapts NXVM's explicit undefined `0F` extension map into the
+  rebuilt dispatcher. It uses the existing project-native vector-six delivery
+  path and deliberately leaves other incomplete opcode families visible.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

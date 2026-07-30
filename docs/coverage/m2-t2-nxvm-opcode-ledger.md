@@ -447,3 +447,11 @@ test-register encodings and memory forms through vector six, and applies the
 shared CPL-zero authorization before state transfer. Tests cover both transfer
 directions, prefix-inclusive length, and invalid encoding faults. The test
 registers are an NXVM-required compatibility extension, not a PC110 behavior.
+
+## P385 Explicit NXVM Undefined-Extension Checklist
+
+P385 routes only NXVM's explicit undefined extended encodings (`0F 04-05`,
+`07-1F`, `25`, `27-2F`, `30-3F`, `A2`, `A6-A7`, `AA`, `AE`, and `B0-B1`) to
+the rebuilt vector-six delivery path. It does not convert other unimplemented
+opcode families into undefined behavior. Tests enumerate every listed encoding
+through its faulting-EIP interrupt path.

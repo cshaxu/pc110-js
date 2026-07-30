@@ -128,6 +128,8 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
 
 function dispatchExtended(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.secondaryOpcode;
+  if (opcode !== undefined && nxvmUndefinedExtendedOpcode(opcode))
+    return executeUndefinedOpcode(context);
   if (opcode !== undefined && opcode >= 0x80 && opcode <= 0x8f)
     return executeNearConditionalJump(context);
   if (opcode !== undefined && opcode >= 0x90 && opcode <= 0x9f) return executeSetCondition(context);
@@ -144,4 +146,15 @@ function dispatchExtended(context: RebuiltExecutionContext): void {
   )
     return executeExtended(context);
   throw new Error(`Unsupported rebuilt 0F opcode 0x${opcode?.toString(16) ?? "??"}`);
+}
+
+function nxvmUndefinedExtendedOpcode(opcode: number): boolean {
+  return (
+    [0x04, 0x05, 0x07, 0x08, 0x09, 0x25, 0xa2, 0xa6, 0xa7, 0xaa, 0xae, 0xb0, 0xb1].includes(
+      opcode
+    ) ||
+    (opcode >= 0x0a && opcode <= 0x1f) ||
+    (opcode >= 0x27 && opcode <= 0x2f) ||
+    (opcode >= 0x30 && opcode <= 0x3f)
+  );
 }
