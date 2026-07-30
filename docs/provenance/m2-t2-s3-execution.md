@@ -941,6 +941,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   prefix decoding, event contracts, and trace contracts. The scaffold has no
   runtime import from legacy CPU modules, PCjs, or NXVM, and does not execute
   an instruction or alter the active machine composition.
+- M2 T2 S3 P322 adds a project-native decoded-instruction boundary informed by
+  NXVM `ExecInit` and `ExecIns`: each decode retains instruction-start EIP,
+  receives CS D/B defaults, consumes prefixes as instruction-local state, and
+  rejects a sixteenth instruction byte. It does not copy NXVM code or make a
+  CPU exception-delivery claim.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

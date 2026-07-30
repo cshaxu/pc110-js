@@ -10,7 +10,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 
 | Opcode or family | NXVM source location | 80386 behavior | Rebuilt destination | Legacy coverage | Required tests | PCjs comparison | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Prefixes | 1246-1282, 5545-5977, 7041-7073, 10968-11058 | Segment, LOCK, REP, operand-size, address-size, decode length, fault EIP | `decode/prefix.ts` | Partial | Repeated prefixes; 16/default-32; 66/67; overrides; fault EIP | Required | In progress: P321 foundation |
+| Prefixes | 1246-1282, 5545-5977, 7041-7073, 10968-11058 | Segment, LOCK, REP, operand-size, address-size, decode length, fault EIP | `decode/prefix.ts`, `decode/decoder.ts` | Partial | Repeated prefixes; 16/default-32; 66/67; overrides; fault EIP | Required | In progress: P321-P322 decode boundary |
 | 00-05 ADD | 4861-4941 | Byte and operand-sized add; ModR/M and accumulator immediates; flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; CF/OF/AF/SF/ZF/PF | Required | Planned |
 | 08-0D OR | 5001-5081 | Logical OR forms and defined flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; 66/67 | Required | Planned |
 | 10-15 ADC | 5153-5233 | Add with carry forms and flags | `instructions/arithmetic.ts` | Partial | Carry boundaries; register/memory; widths | Required | Planned |
