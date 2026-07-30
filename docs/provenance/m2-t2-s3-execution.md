@@ -782,6 +782,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   resolves an LDT descriptor in the GDT, and supports a null selector; `SLDT`
   exposes the cached selector. Existing descriptor loading now receives the
   active LDT for TI-selected segment selectors.
+- M2 T2 S3 P281 routes `0F 00` system selector forms through the project-native
+  execution context. PCjs prefix behavior selects ModR/M effective-address
+  width, while SLDT, STR, LLDT, and LTR selector data remains architecturally
+  16-bit. The shared helper accepts the context's ModR/M offset and address
+  size without changing the existing privilege or descriptor behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

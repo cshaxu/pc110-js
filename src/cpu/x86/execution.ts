@@ -1168,6 +1168,16 @@ function executeContextualInstruction(
   if (moffs) return moffs;
   if (context.opcode === 0x0f) {
     const extension = fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode;
+    if (extension === 0x00) {
+      executeSystemSelectorInstruction(
+        memory,
+        state,
+        fetched.instructionPointer,
+        context.opcodeOffset + 2,
+        context.addressSize
+      );
+      return { halted: false, fetched };
+    }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
       executeMovExtendModRm(
         memory,
@@ -3021,20 +3031,24 @@ function executeStoreDescriptorTable(
 function executeSystemSelectorInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
-  faultInstructionPointer: number
+  faultInstructionPointer: number,
+  modRmOffset = 2,
+  addressSize: 16 | 32 = 16
 ): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
     throw new UnsupportedOpcodeError("System selector instructions require protected mode");
-  const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.reg !== 0x00 && modRm.reg !== 0x01 && modRm.reg !== 0x02 && modRm.reg !== 0x03)
     throw new UnsupportedOpcodeError("Unsupported 0F 00 opcode form");
-  const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const instructionBytes = modRmOffset + 1 + decodedAddressBytes(address, addressSize);
   if (modRm.reg === 0x00 || modRm.reg === 0x01) {
     const selector = modRm.reg === 0x00 ? snapshot.ldtr.selector : snapshot.tr.selector;
     if (modRm.registerDirect) state.writeRegister16(modRm.rm, selector);
-    else writeSegmentUint16(memory, state, address!.segment, address!.offset, selector);
-    state.advanceEip(3 + (address?.displacementBytes ?? 0));
+    else
+      writeSegmentUint16(memory, state, address!.segment, address!.offset, selector, addressSize);
+    state.advanceEip(instructionBytes);
     return;
   }
   if ((snapshot.cs.selector & 0x03) !== 0) {
@@ -3050,11 +3064,11 @@ function executeSystemSelectorInstruction(
   };
   const selector = modRm.registerDirect
     ? state.readRegister16(modRm.rm)
-    : readSegmentUint16(memory, state, address!.segment, address!.offset);
+    : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
   if (modRm.reg === 0x02) {
     const table = resolveLocalDescriptorTable(descriptorMemory, snapshot.gdtr, selector);
     state.loadLocalDescriptorTable(selector, table?.base ?? 0, table?.limit ?? 0);
-    state.advanceEip(3 + (address?.displacementBytes ?? 0));
+    state.advanceEip(instructionBytes);
     return;
   }
   if (selector & 0x04) throw new UnsupportedOpcodeError("LTR requires a GDT selector");
@@ -3070,7 +3084,7 @@ function executeSystemSelectorInstruction(
     (memory.readUint8(descriptorAddress + 5) & 0xf0) | (descriptor.type | 0x02)
   );
   state.loadTaskRegister(selector, descriptor.base, descriptor.limit, descriptor.type === 0x09);
-  state.advanceEip(3 + (address?.displacementBytes ?? 0));
+  state.advanceEip(instructionBytes);
 }
 
 function executeShiftWord(

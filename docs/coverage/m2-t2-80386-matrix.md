@@ -21,7 +21,7 @@ focused tests and a PCjs behavior record. `Partial` is not completion credit.
 | --- | --- | --- |
 | 32-bit general registers and EFLAGS | Implemented | Project CPU state and focused state tests. |
 | Segment selectors and hidden caches | Partial | Base, limit, D/B, and selected protected-mode loads exist; complete descriptor validation remains required. |
-| GDTR, IDTR, TR, CR0, CR2, and CR3 | Partial | State and selected system instructions exist; LDTR, debug registers, and complete control-register semantics remain absent. |
+| GDTR, IDTR, LDTR, TR, CR0, CR2, and CR3 | Partial | State and selected system instructions exist, including bounded SLDT/LLDT; debug registers and complete control-register semantics remain absent. |
 | Real/protected address translation | Partial | Segment translation and selected protection checks exist. |
 | 80386 paging and page faults | Partial | Page-table translation helpers exist; complete execution-core integration and fault matrix remain required. |
 
@@ -42,7 +42,7 @@ focused tests and a PCjs behavior record. `Partial` is not completion credit.
 | --- | --- | --- |
 | Near and far control transfers | Partial | Selected near/far calls, jumps, returns, and conditions exist; complete privilege and gate cases remain. |
 | Interrupts, traps, and IRET | Partial | Real mode and selected same-/cross-privilege protected-mode paths exist; complete gate, error-code, and nested-fault behavior remains. |
-| Descriptor-table and system instructions | Partial | Selected LGDT/LIDT/SGDT/SIDT/LTR/STR/LMSW/SMSW/CLTS and CR moves exist; LDT, task, call-gate, and full validation remain. |
+| Descriptor-table and system instructions | Partial | Selected LGDT/LIDT/SGDT/SIDT/LTR/STR/SLDT/LLDT/LMSW/SMSW/CLTS and CR moves exist; task, call-gate, and full validation remain. |
 | Privilege model | Partial | Selected CPL-zero checks and TSS stack switching exist; complete CPL/RPL/DPL and conforming-segment behavior remains. |
 | Exceptions and fault restart | Partial | Selected no-error and general-protection delivery exists; full architectural exception matrix, #PF codes, and restart coverage remain. |
 

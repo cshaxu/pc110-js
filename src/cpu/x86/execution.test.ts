@@ -4774,6 +4774,41 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ ds: { selector: 0x000c, base: 0x4000 }, eip: 0x010b });
   });
 
+  it("uses contextual address size for system selector instructions", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0x00],
+      [0x0102, 0xd0],
+      [0x0103, 0x67],
+      [0x0104, 0x0f],
+      [0x0105, 0x00],
+      [0x0106, 0x06],
+      [0x0107, 0x34],
+      [0x0108, 0x12],
+      [0x2010, 0x0f],
+      [0x2011, 0x00],
+      [0x2012, 0x00],
+      [0x2013, 0x30],
+      [0x2015, 0x82]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x2000, 0x0017);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister16(0, 0x0010);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x0103,
+      ldtr: { selector: 0x0010, base: 0x3000, limit: 0x000f }
+    });
+    stepInstruction(memory, state);
+    expect([values.get(0x1234), values.get(0x1235)]).toEqual([0x10, 0x00]);
+    expect(state.snapshot().eip).toBe(0x0109);
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
