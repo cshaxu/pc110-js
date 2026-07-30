@@ -41,3 +41,9 @@ P4 derives only the M1 contract's standard memory declaration: 640 KiB low RAM
 and 3072 KiB extended RAM. The DeskPro RAM window, chipset wiring, ROM map,
 and all unrecorded equipment details remain DeskPro-profile concerns and are
 not fabricated as generic CMOS defaults.
+
+## P5 Browser Checkpoint
+
+P5 exposes only the local RTC reset status and NMI-mask boundary beside the
+existing native CPU, PIC, PIT, and DMA checkpoint. It does not start a clock,
+attach host time, deliver an NMI, or load firmware, media, storage, or DOS.

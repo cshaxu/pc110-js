@@ -12,9 +12,9 @@
 
 ## Next Eligible Work
 
-- M2 T3 S4: active. Implement project-native RTC/CMOS and selected-machine
-  configuration state. Preserve the verified T2 CPU oracle baseline, native
-  PIC/PIT/DMA browser checkpoint, and no-PCjs-runtime boundary.
+- M2 T3 S5: active. Implement project-native system ports, NMI, reset, and A20
+  glue. Preserve the verified T2 CPU oracle baseline, native PIC/PIT/DMA/RTC
+  browser checkpoint, and no-PCjs-runtime boundary.
 
 ## Delivery Nodes
 

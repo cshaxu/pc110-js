@@ -13,7 +13,12 @@ describe("NativeCoreCheckpoint", () => {
       timer0Output: "0",
       timer2Output: "0",
       dma0Masks: "0F",
-      dma1Masks: "0F"
+      dma1Masks: "0F",
+      rtcStatusA: "26",
+      rtcStatusB: "02",
+      rtcStatusC: "00",
+      rtcStatusD: "80",
+      rtcNmiDisabled: "0"
     });
 
     checkpoint.core.pic.master.raise(1);

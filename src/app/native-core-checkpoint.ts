@@ -11,6 +11,11 @@ export interface NativeCoreCheckpointSnapshot {
   readonly timer2Output: string;
   readonly dma0Masks: string;
   readonly dma1Masks: string;
+  readonly rtcStatusA: string;
+  readonly rtcStatusB: string;
+  readonly rtcStatusC: string;
+  readonly rtcStatusD: string;
+  readonly rtcNmiDisabled: string;
 }
 
 export class NativeCoreCheckpoint {
@@ -34,7 +39,12 @@ export class NativeCoreCheckpoint {
       timer0Output: bit(this.core.pit.snapshot(0).output),
       timer2Output: bit(this.core.pit.counter2Output()),
       dma0Masks: hex8(this.core.dma.maskBits(0)),
-      dma1Masks: hex8(this.core.dma.maskBits(1))
+      dma1Masks: hex8(this.core.dma.maskBits(1)),
+      rtcStatusA: hex8(this.core.rtc.snapshot().statusA),
+      rtcStatusB: hex8(this.core.rtc.snapshot().statusB),
+      rtcStatusC: hex8(this.core.rtc.snapshot().statusC),
+      rtcStatusD: hex8(this.core.rtc.snapshot().statusD),
+      rtcNmiDisabled: bit(this.core.rtc.nmiDisabled())
     };
   }
 }
