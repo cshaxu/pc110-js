@@ -156,12 +156,13 @@ function writePitState(core: RebuiltPcAt386Core): void {
 interface WatchHit {
   readonly count: number;
   readonly lastEcx: number;
+  readonly lastNextAddress: string;
 }
 
 function writeWatchCounts(hits: ReadonlyMap<string, WatchHit>): void {
   for (const [address, hit] of hits)
     process.stdout.write(
-      `  watch ${address} hits=${hit.count} last-cx=${hit.lastEcx.toString(16)}\n`
+      `  watch ${address} hits=${hit.count} last-cx=${hit.lastEcx.toString(16)} next=${hit.lastNextAddress}\n`
     );
 }
 
@@ -181,7 +182,7 @@ function main(): void {
   const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
   const watches = watchedAddresses();
   const watchHits = new Map<string, WatchHit>(
-    [...watches].map((address) => [address, { count: 0, lastEcx: 0 }])
+    [...watches].map((address) => [address, { count: 0, lastEcx: 0, lastNextAddress: "none" }])
   );
   const memory = new PhysicalMemory({
     ramBytes: 0xa0000,
@@ -213,7 +214,8 @@ function main(): void {
         if (prior)
           watchHits.set(address, {
             count: prior.count + 1,
-            lastEcx: event.event.before.registers.ecx
+            lastEcx: event.event.before.registers.ecx,
+            lastNextAddress: `${event.event.after.segments.cs.selector.toString(16)}:${event.event.after.eip.toString(16)}`
           });
       }
     },
