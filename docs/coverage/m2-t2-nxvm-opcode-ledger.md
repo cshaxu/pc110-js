@@ -595,3 +595,10 @@ operand-sized register/ModR/M/accumulator form. Focused tests cover carry-in
 neighboring ALU regressions, destination preservation for CMP, default-32
 execution, and `66`/`67` memory paths. The preceding `00-2D` ALU families and
 adjustment forms remain separately in progress under P327 evidence.
+
+## P403 Virtual-8086 Processor-Control Checklist
+
+P403 applies NXVM's virtual-8086 CPL-three interpretation to the existing HLT,
+CLI, and STI privilege boundary. Focused tests cover IOPL-three CLI/STI state
+changes and low-IOPL #GP(0) delivery through the rebuilt v86 TSS frame. I/O
+permission maps and external interrupt admission remain active dependencies.

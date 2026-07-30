@@ -34,6 +34,7 @@ function protectedMode(context: RebuiltExecutionContext): boolean {
 }
 
 function currentPrivilege(context: RebuiltExecutionContext): number {
+  if (context.state.isVirtual8086()) return 3;
   return context.state.readSegment("cs").selector & 3;
 }
 

@@ -1177,6 +1177,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P402 adapts NXVM virtual-8086 PUSHF/POPF IOPL admission through
   project-native flag-stack and event-delivery modules without a reference
   runtime dependency.
+- M2 T2 S3 P403 adapts NXVM's virtual-8086 CPL-three interpretation for HLT,
+  CLI, and STI into the existing project-native processor-control module,
+  without importing a reference runtime or adding device behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
