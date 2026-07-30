@@ -32,4 +32,19 @@ describe("CycleScheduler", () => {
         new CycleScheduler({ cpuCyclesPerSecond: 1n, pitTicksPerSecond: 1n, rtcTicksPerSecond: 0n })
     ).toThrow("positive");
   });
+
+  it("converts CPU cycles to FDC DMA slots with an independent remainder", () => {
+    const scheduler = new CycleScheduler({
+      cpuCyclesPerSecond: 10n,
+      pitTicksPerSecond: 3n,
+      rtcTicksPerSecond: 4n
+    });
+    expect(scheduler.advanceFdcDmaSlots(3, 3)).toBe(0);
+    expect(scheduler.advanceFdcDmaSlots(1, 3)).toBe(1);
+    expect(scheduler.advanceFdcDmaSlots(6, 3)).toBe(2);
+    scheduler.resetFdcDmaSlots();
+    expect(scheduler.advanceFdcDmaSlots(3, 3)).toBe(0);
+    expect(() => scheduler.advanceFdcDmaSlots(-1, 1)).toThrow("non-negative");
+    expect(() => scheduler.advanceFdcDmaSlots(1, -1)).toThrow("non-negative");
+  });
 });

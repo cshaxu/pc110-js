@@ -12,6 +12,17 @@ function enable(controller: Fdc765, interrupts = true): void {
 }
 
 describe("project-native 765/8272 controller state", () => {
+  it("exposes the selected data-rate byte clocks", () => {
+    const controller = new Fdc765();
+    expect(controller.dmaBytesPerSecond()).toBe(62_500);
+    controller.writeControl(0x01);
+    expect(controller.dmaBytesPerSecond()).toBe(31_250);
+    controller.writeControl(0x02);
+    expect(controller.dmaBytesPerSecond()).toBe(37_500);
+    controller.writeControl(0x03);
+    expect(controller.dmaBytesPerSecond()).toBe(0);
+  });
+
   it("resets through DOR and exposes four reset completion senses after enable", () => {
     const controller = new Fdc765();
     expect(controller.writeDor(FDC_DOR_ENABLE | FDC_DOR_INTERRUPT_ENABLE)).toMatchObject({

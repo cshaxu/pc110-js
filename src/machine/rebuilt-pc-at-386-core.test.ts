@@ -406,6 +406,55 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.pic.master.snapshot().request & 0x40).toBe(0x40);
   });
 
+  it("services a requested native FDC DMA transfer from CPU-cycle time", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x4000, a20Enabled: true });
+    memory.writeUint8(0, 0x90);
+    const core = new RebuiltPcAt386Core(memory, undefined, {
+      cycleSchedulerProfile: {
+        cpuCyclesPerSecond: 3n,
+        pitTicksPerSecond: 1n,
+        rtcTicksPerSecond: 1n
+      }
+    });
+    const drive = new FloppyDrive({
+      cylinders: 1,
+      heads: 1,
+      sectorsPerTrack: 1,
+      bytesPerSector: 128
+    });
+    const sector = Uint8Array.from({ length: 128 }, (_, index) => index ^ 0xa5);
+    drive.attach(sector);
+    core.fdc.controller.attachDrive(0, drive);
+    core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeEip(0);
+    core.ports.write(0x0c, 0, 8);
+    core.ports.write(0x04, 0, 8);
+    core.ports.write(0x04, 0x02, 8);
+    core.ports.write(0x05, 0x03, 8);
+    core.ports.write(0x05, 0, 8);
+    core.ports.write(0x81, 0, 8);
+    core.ports.write(0x0a, 0x02, 8);
+    core.ports.write(0x0b, 0x46, 8);
+    core.ports.write(0xdc, 0, 8);
+    core.ports.write(0x3f2, 0x0c, 8);
+    for (let count = 0; count < 4; count += 1) {
+      core.ports.write(0x3f5, 0x08, 8);
+      core.ports.read(0x3f5, 8);
+      core.ports.read(0x3f5, 8);
+    }
+    for (const byte of [0x06, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00])
+      core.ports.write(0x3f5, byte, 8);
+
+    expect(core.dma.snapshot(2).requested).toBe(true);
+    core.run(1);
+
+    expect(Array.from({ length: 4 }, (_, index) => memory.readUint8(0x200 + index))).toEqual([
+      0xa5, 0xa4, 0xa7, 0xa6
+    ]);
+    expect(core.fdc.controller.snapshot()).toMatchObject({ phase: "result", dmaBytesPending: 0 });
+    expect(core.pic.master.snapshot().request & 0x40).toBe(0x40);
+  });
+
   it("registers retained MDA compatibility state for selected VGA firmware probes", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     const core = new RebuiltPcAt386Core(memory);

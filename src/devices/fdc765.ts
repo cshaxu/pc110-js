@@ -1,5 +1,6 @@
 export const FDC_DOR_ENABLE = 0x04;
 export const FDC_DOR_INTERRUPT_ENABLE = 0x08;
+const FDC_DATA_RATE_BYTES_PER_SECOND = [62_500, 31_250, 37_500, 0] as const;
 
 const STATUS_BUSY = 0x10;
 const STATUS_NON_DMA = 0x20;
@@ -130,6 +131,10 @@ export class Fdc765 {
   public readInput(): number {
     const drive = this.drives[this.selectedDrive]!;
     return drive.ready ? 0 : 0x80;
+  }
+
+  public dmaBytesPerSecond(): number {
+    return FDC_DATA_RATE_BYTES_PER_SECOND[this.control]!;
   }
 
   public readMainStatus(): number {

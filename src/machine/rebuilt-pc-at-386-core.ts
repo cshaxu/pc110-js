@@ -310,6 +310,13 @@ export class RebuiltPcAt386Core {
     const scheduled = this.scheduler.advance(cycles);
     if (scheduled.pitTicks > 0) this.advancePit(scheduled.pitTicks);
     if (scheduled.rtcTicks > 0) this.advanceRtc(scheduled.rtcTicks);
+    if (this.dma.snapshot(2).requested) {
+      const slots = this.scheduler.advanceFdcDmaSlots(
+        cycles,
+        this.fdc.controller.dmaBytesPerSecond()
+      );
+      if (slots > 0) this.advanceFdcDma(slots);
+    } else this.scheduler.resetFdcDmaSlots();
     this.advanceVideo(1);
   }
 
