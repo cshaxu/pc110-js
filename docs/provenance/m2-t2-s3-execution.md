@@ -1030,6 +1030,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P344 translates NXVM AAM/AAD normal execution into native TypeScript.
   It preserves the undefined CF/AF/OF boundary and surfaces AAM base zero as
   pending `#DE` delivery rather than synthesizing a host behavior.
+- M2 T2 S3 P345 translates NXVM XLAT into native TypeScript through rebuilt
+  segmented-memory access. It selects BX or EBX from address size and never
+  imports NXVM, PCjs, or legacy CPU code at runtime.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

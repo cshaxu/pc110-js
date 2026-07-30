@@ -31,7 +31,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/moffs-move.ts`, `instructions/accumulator-test.ts`, `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | In progress: P341-P342 implement A0-A3 and A8-A9 |
 | B0-BF immediate register moves | 9325-9589 | Byte and operand-sized register immediates | `instructions/immediate-move.ts` | Partial | All registers; instruction length; 66 | Required | Implemented: P340; broader differential evidence remains active |
 | C0-CF groups, returns, interrupts, frame | 9613-10338 | Shifts/rotates, RET, LES/LDS, MOV immediate groups, ENTER/LEAVE, RETF, INT, IRET | `instructions/immediate-modrm-move.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/interrupt.ts` | Partial | Every group extension; count/flags; privilege; fault EIP | Required | In progress: P343 implements C6/C7 /0 |
-| D0-DF shifts, adjust, XLAT, loops, port I/O | 10250-10941 | Shift/rotate count variants, AAM/AAD, XLAT, LOOP, JCXZ, IN/OUT | `instructions/ascii-adjust.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/io.ts` | Partial | Count zero; CL; 66/67; I/O permissions | Required | In progress: P344 implements D4/D5 normal paths |
+| D0-DF shifts, adjust, XLAT, loops, port I/O | 10250-10941 | Shift/rotate count variants, AAM/AAD, XLAT, LOOP, JCXZ, IN/OUT | `instructions/ascii-adjust.ts`, `instructions/xlat.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/io.ts` | Partial | Count zero; CL; 66/67; I/O permissions | Required | In progress: P344-P345 implement D4/D5 and D7 |
 | E0-FF control, flags, Groups Three/Four/Five | 10795-11610 | Near/far call and jump, flag control, F6/F7, FE/FF | `instructions/control.ts`, `instructions/groups.ts` | Partial | All extensions; divide faults; far privilege; SS width | Required | Planned |
 | 0F decode and system groups | 5141, 11629-12637 | Escape decoding, descriptor/table, CR/DR/TR, LAR/LSL, CLTS | `decode/decoder.ts`, `instructions/system.ts` | Partial | CPL; descriptor faults; 16/default-32; 66/67 | Required | Planned |
 | 0F 80-8F near Jcc and SETcc | 12649-12898 | Near conditional transfers and byte condition stores | `instructions/control.ts` | Partial | Taken/not-taken; ModR/M; fault EIP | Required | Planned |
@@ -180,6 +180,12 @@ explicit `#UD` dependencies until structured exception delivery is rebuilt.
 P344 follows NXVM AAM/AAD normal paths. Focused tests cover AAM quotient and
 remainder, AAD combine-and-clear, defined SF/ZF/PF, and preservation of
 undefined flags. AAM base zero remains an explicit `#DE` delivery dependency.
+
+## P345 `D7` XLAT Checklist
+
+P345 follows NXVM XLAT and completes D7. Focused tests cover BX/EBX selection,
+AL indexing, 16-bit wrapping, `67`, segment override, and EIP length. EFLAGS
+are unchanged; no I/O, privilege, or exception behavior applies.
 
 ## Status Rule
 
