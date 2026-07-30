@@ -4979,6 +4979,57 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x23451678 }, eip: 0x0109 });
   });
 
+  it("uses contextual operand and address sizes for LFS and LGS", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0xb4],
+      [0x0102, 0x05],
+      [0x0103, 0x00],
+      [0x0104, 0x40],
+      [0x0105, 0x00],
+      [0x0106, 0x00],
+      [0x0107, 0x67],
+      [0x0108, 0x66],
+      [0x0109, 0x0f],
+      [0x010a, 0xb5],
+      [0x010b, 0x06],
+      [0x010c, 0x34],
+      [0x010d, 0x12],
+      [0x4000, 0x78],
+      [0x4001, 0x56],
+      [0x4002, 0x34],
+      [0x4003, 0x12],
+      [0x4004, 0x10],
+      [0x4005, 0x00],
+      [0x1234, 0xbc],
+      [0x1235, 0x9a],
+      [0x1236, 0x10],
+      [0x1237, 0x00],
+      [0x3010, 0xff],
+      [0x3011, 0xff],
+      [0x3015, 0x92],
+      [0x3016, 0xcf]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x3000, 0x001f);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x12345678 },
+      fs: { selector: 0x0010 },
+      eip: 0x0107
+    });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x12349abc },
+      gs: { selector: 0x0010 },
+      eip: 0x010e
+    });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

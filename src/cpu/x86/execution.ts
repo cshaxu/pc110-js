@@ -401,24 +401,31 @@ function executeBitTest(
 function executeLoadSegmentPointer(
   memory: InstructionMemory,
   state: Cpu386State,
-  segment: "ss" | "fs" | "gs"
+  segment: "ss" | "fs" | "gs",
+  modRmOffset = 2,
+  addressSize: 16 | 32 = 16,
+  operandSize: 16 | 32 = 16
 ): void {
-  const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.registerDirect)
     throw new UnsupportedOpcodeError("Segment pointer source must be memory");
-  const address = decodeModRm16Address(
-    modRm,
-    (index) => state.readRegister16(index),
-    (offset) => fetchCodeByte(memory, state, 1 + offset).opcode
-  );
-  const value = readSegmentUint16(memory, state, address.segment, address.offset);
-  const selector = readSegmentUint16(memory, state, address.segment, (address.offset + 2) & 0xffff);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize)!;
+  const value =
+    operandSize === 32
+      ? readSegmentUint32(memory, state, address.segment, address.offset, addressSize)
+      : readSegmentUint16(memory, state, address.segment, address.offset, addressSize);
+  const selectorOffset =
+    addressSize === 16
+      ? (address.offset + operandSize / 8) & 0xffff
+      : (address.offset + operandSize / 8) >>> 0;
+  const selector = readSegmentUint16(memory, state, address.segment, selectorOffset, addressSize);
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
     state.loadRealModeSegment(segment, selector);
   else loadProtectedModeSegment(memory, state, segment, selector);
-  state.writeRegister16(modRm.reg, value);
-  state.advanceEip(3 + address.displacementBytes);
+  if (operandSize === 32) state.writeRegister(modRm.reg, value);
+  else state.writeRegister16(modRm.reg, value);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 
 function executeDoubleShiftWord(
@@ -1320,6 +1327,17 @@ function executeContextualInstruction(
     }
     if (extension === 0xa4 || extension === 0xa5 || extension === 0xac || extension === 0xad) {
       executeContextualDoubleShift(memory, state, context, extension);
+      return { halted: false, fetched };
+    }
+    if (extension === 0xb2 || extension === 0xb4 || extension === 0xb5) {
+      executeLoadSegmentPointer(
+        memory,
+        state,
+        extension === 0xb2 ? "ss" : extension === 0xb4 ? "fs" : "gs",
+        context.opcodeOffset + 2,
+        context.addressSize,
+        context.operandSize
+      );
       return { halted: false, fetched };
     }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {

@@ -813,6 +813,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   SHLD/SHRD through the execution context. PCjs prefix behavior selects data
   and ModR/M address widths; the shared count, carry, sign, zero, and parity
   model mirrors the established 16-bit project behavior.
+- M2 T2 S3 P288 routes LSS/LFS/LGS through a parameterized project-native
+  segment-pointer loader. PCjs prefix behavior selects pointer offset and
+  destination-register width separately from ModR/M address width; the selector
+  remains 16-bit and uses the existing real/protected segment loaders.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
