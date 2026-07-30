@@ -63,3 +63,11 @@ PCjs represents VGA memory as a hardware-controlled aperture rather than host
 RAM. Original TypeScript now has an explicit physical-memory device aperture
 with A20-normalized lookup and ROM-protection boundaries. It imports no PCjs
 memory, video, firmware, renderer, or browser code.
+
+## P9 VGA Graphics Controller
+
+PCjs maps the nine VGA Graphics Controller register classes at `0x3CE`/`0x3CF`
+and uses them to select VGA memory access behavior. Original TypeScript retains
+the native index/data bank and defined masks as state for the next memory part.
+It imports no PCjs graphics-controller, memory, renderer, firmware, or browser
+code.

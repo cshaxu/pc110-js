@@ -17,6 +17,7 @@ import { MdaCompatibility } from "../devices/mda-compatibility.js";
 import { CgaCompatibility } from "../devices/cga-compatibility.js";
 import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
 import { VgaSequencer } from "../devices/vga-sequencer.js";
+import { VgaGraphicsController } from "../devices/vga-graphics-controller.js";
 import { Uart16550 } from "../devices/uart16550.js";
 import { ParallelPort } from "../devices/parallel-port.js";
 import { AtFixedDiskController } from "../devices/at-fixed-disk-controller.js";
@@ -86,6 +87,7 @@ export class RebuiltPcAt386Core {
   public readonly mdaCompatibility = new MdaCompatibility();
   public readonly attributeController = new VgaAttributeController();
   public readonly sequencer = new VgaSequencer();
+  public readonly graphicsController = new VgaGraphicsController();
   public readonly cgaCompatibility = new CgaCompatibility(() =>
     this.attributeController.resetAddressDataFlipFlop()
   );
@@ -126,6 +128,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.attributeController.portRanges()) this.registerPorts(range);
     for (const range of this.sequencer.portRanges()) this.registerPorts(range);
+    for (const range of this.graphicsController.portRanges()) this.registerPorts(range);
     if (options.deskProSecondaryPit) {
       this.deskProSecondaryPit = new DeskPro386SecondaryPit();
       for (const range of this.deskProSecondaryPit.portRanges()) this.registerPorts(range);
@@ -153,6 +156,7 @@ export class RebuiltPcAt386Core {
     this.cgaCompatibility.reset();
     this.attributeController.reset();
     this.sequencer.reset();
+    this.graphicsController.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.scheduler.reset();

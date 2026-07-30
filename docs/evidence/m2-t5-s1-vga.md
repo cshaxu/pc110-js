@@ -93,3 +93,13 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
   rejects overlap with immutable ROM or another device.
 - Boundary: no VGA plane, graphics-controller, renderer, or browser behavior
   is claimed by this prerequisite part.
+
+## P9 VGA Graphics Controller Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `video.js` Graphics Controller definitions,
+  index/data port mapping, and video-memory access selection.
+- Tests: all nine defined register classes, masks, index/data behavior, invalid
+  widths and indexes, reset, and machine composition.
+- Boundary: no graphics-controller memory mode is claimed until the native VGA
+  plane/latch aperture consumes this register state.
