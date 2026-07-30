@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { PageFaultError } from "../../../memory/address-translation.js";
+import { decodeInstruction } from "../decode/decoder.js";
 import { dispatchRebuiltInstruction } from "../dispatch.js";
 import { RebuiltCpuExecutor } from "../execution.js";
+import { SegmentedMemory } from "../memory/segmented-memory.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
+import { executeSystemGroup } from "./system.js";
 
 function machine(bytes: number[]) {
   const state = new RebuiltCpuState();
@@ -267,6 +271,31 @@ describe("rebuilt 0F 00 selector group", () => {
 
     expect(result.state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xff0 } });
     expect(result.state.readCr2()).toBe(0x4008);
+  });
+
+  it("propagates a paged GDT fault from LLDT instead of converting it to #GP", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(0x80000001);
+    state.writeCr3(0x1000);
+    state.writeGdtr({ base: 0x4000, limit: 0x17 });
+    state.registers.write16(0, 8);
+    const bytes = new Map<number, number>();
+    write32(bytes, 0x1000, 0x2003);
+    const memory = new SegmentedMemory(
+      {
+        readUint8: (address) => bytes.get(address) ?? 0,
+        writeUint8: (address, value) => bytes.set(address, value)
+      },
+      state
+    );
+    const instructionBytes = [0x0f, 0x00, 0xd0];
+    const reader = { readCodeByte: (offset: number) => instructionBytes[offset] ?? 0 };
+    const instruction = decodeInstruction(reader, 0, false);
+
+    expect(() => executeSystemGroup({ state, memory, instruction, reader })).toThrow(
+      PageFaultError
+    );
+    expect(state.readCr2()).toBe(0x4008);
   });
 });
 

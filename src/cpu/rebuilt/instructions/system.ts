@@ -200,9 +200,12 @@ function loadSystemSelector(
       context.state.readGdtr(),
       selector
     );
-  } catch {
-    deliverSelectorLoadFault(context, 13, selector);
-    return false;
+  } catch (error) {
+    if (error instanceof DescriptorLookupError) {
+      deliverSelectorLoadFault(context, 13, selector);
+      return false;
+    }
+    throw error;
   }
   const valid = ldt
     ? !descriptor.system && descriptor.type === 2
