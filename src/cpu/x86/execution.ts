@@ -778,6 +778,34 @@ function executeContextualImmediatePush(
   return { halted: false, fetched };
 }
 
+function executeContextualPushfPopf(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0x9c && context.opcode !== 0x9d) return undefined;
+  const snapshot = state.snapshot();
+  const protectedMode = addressMode(snapshot.cr0, snapshot.eflags) === "protected";
+  if (context.opcode === 0x9d && protectedMode && (snapshot.cs.selector & 0x03) !== 0) {
+    deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+    return { halted: false, fetched };
+  }
+  if (context.opcode === 0x9c) {
+    const flags =
+      context.operandSize === 32 ? snapshot.eflags & ~0x00030000 : snapshot.eflags & 0xffff;
+    pushContextOperand(memory, state, context, flags);
+  } else {
+    const flags = popContextOperand(memory, state, context);
+    if (context.operandSize === 32)
+      state.writeEflags((flags & ~0x00030000) | (snapshot.eflags & 0x00030000));
+    else if (protectedMode) state.writeEflags((snapshot.eflags & ~0xffff) | flags);
+    else state.writeEflags(flags);
+  }
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualPushAllPopAll(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1030,6 +1058,8 @@ function executeContextualInstruction(
   if (signExtension) return signExtension;
   const immediatePush = executeContextualImmediatePush(memory, state, context, fetched);
   if (immediatePush) return immediatePush;
+  const pushfPopf = executeContextualPushfPopf(memory, state, context, fetched);
+  if (pushfPopf) return pushfPopf;
   const pushAllPopAll = executeContextualPushAllPopAll(memory, state, context, fetched);
   if (pushAllPopAll) return pushAllPopAll;
   const nearJump = executeContextualNearJump(memory, state, context, fetched);

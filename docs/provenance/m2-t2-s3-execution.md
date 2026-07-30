@@ -724,6 +724,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P265 routes accumulator moffs `A0` through `A3` through context.
   PCjs size selection makes address-immediate width follow address size and
   word/dword data width follow operand size; byte forms remain byte-width.
+- M2 T2 S3 P266 routes PUSHF/POPF through context. PCjs-selected flags width
+  follows operand size while project-native context keeps SS stack-address width
+  independent; protected-mode privilege faults still occur before a POP reads.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

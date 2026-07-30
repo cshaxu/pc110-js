@@ -844,7 +844,7 @@ describe("80386 instruction fetch", () => {
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
     state.writeGdtr(0x00001000, 0x00000017);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
 
     stepInstruction(resetAliasMemory(values), state);
 
@@ -2102,7 +2102,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(4, 0x2000);
     state.writeEflags(0x00010257);
@@ -2125,6 +2125,30 @@ describe("80386 instruction fetch", () => {
       registers: { esp: 0x2000 },
       eip: 0x00000004
     });
+  });
+
+  it("uses SS address size independently for default-32 PUSHF and POPF", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x9c],
+      [0x00000101, 0x9d]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, false);
+    state.writeRegister(4, 0xcafe0002);
+    state.writeEflags(0x00000257);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect([values.get(0x0000fffe), values.get(0x0000ffff), values.get(0), values.get(1)]).toEqual([
+      0x57, 0x02, 0x00, 0x00
+    ]);
+    expect(state.snapshot().registers.esp).toBe(0xcafefffe);
+
+    values.set(0x0000fffe, 0xd5);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x000002d7, registers: { esp: 0xcafe0002 } });
   });
 
   it("loads a real-mode data segment from a direct memory operand", () => {
