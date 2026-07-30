@@ -27,6 +27,8 @@ export function readInterruptGate(
   const high = read32(memory, address + 4);
   const access = (high >>> 8) & 0xff;
   const type = access & 0x0f;
+  // TODO(High): Match NXVM's explicit TODO boundary for IDT task gates and
+  // the task-switch state transition they require.
   if (access & 0x10 || ![0x06, 0x07, 0x0e, 0x0f].includes(type))
     throw new InterruptGateLookupError("IDT entry is not an interrupt or trap gate");
   return {

@@ -935,3 +935,20 @@ loading fails, then lets the existing executor deliver the resulting fault.
 Focused CPL3 evidence returns through a null selector, reaches the ring-zero
 `#GP(0)` handler through the TSS stack, and preserves the original return-frame
 stack pointer for fault-frame construction.
+
+## P441 NXVM TODO Boundary Alignment Checklist
+
+P441 records the owner-authorized rule that every NXVM `_______todo` CPU path
+must have an explicit project-native prioritized TODO instead of being treated
+as an unowned S3 blocker. The rebuilt sources now mark `TODO(High)` at direct
+and indirect protected far CALL/JMP dispatch, protected RETF outer-privilege
+return, and IDT task-gate decoding. These correspond to NXVM
+`_kec_task_switch` (2153), `_ser_call_far_cs_conf` (2271),
+`_ser_call_far_cs_nonc` (2290), `_ser_call_far_call_gate` (2310),
+`_ser_call_far_task_gate` (2319), `_ser_call_far_tss` (2328),
+`_ser_ret_far_outer` (2610), `_ser_jmp_far_call_gate` (2661),
+`_ser_jmp_far_task_gate` (2670), and `_ser_jmp_far_tss` (2679) in
+`../nxvm/src/device/vcpuins.c`. The project retains its independently tested
+interrupt/trap-gate, privilege-stack, and IRET behavior; NXVM's TODO-marked
+interrupt wrappers do not erase that completed project-native work. These
+boundaries remain visibly deferred and cannot be claimed as implemented.

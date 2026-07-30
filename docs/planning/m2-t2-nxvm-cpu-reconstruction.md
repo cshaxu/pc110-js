@@ -87,6 +87,17 @@ I/O, or guest-service behavior. Do not start M2 T3, hardware, storage, video,
 PC110, BIOS, DOS, guest-service, or filesystem work. Later-processor entries
 that NXVM marks as `UndefinedOpcode()` remain required `#UD` behavior only.
 
+## NXVM TODO Boundary Rule
+
+An NXVM handler declared with `_______todo` is an explicit coverage boundary,
+not an implicit requirement to invent a replacement before S3 closure. The
+corresponding project-native TypeScript boundary must carry a prioritized
+`TODO(High)` comment and the opcode ledger must identify the NXVM source
+location. It must not be claimed as implemented, silently routed through a
+host error, or counted as an active S3 gap solely because NXVM marks it TODO.
+Project-native behavior beyond an NXVM TODO remains permitted only when it is
+separately authorized and tested, as with the TSS I/O-map lookup.
+
 ## Completion Gate
 
 M2 T2 still requires complete NXVM-covered 80386 behavior, paging, faults,

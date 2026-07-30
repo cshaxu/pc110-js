@@ -26,6 +26,8 @@ function executeFarControl(context: RebuiltExecutionContext, operandSize: 16 | 3
   );
   const returnEip = context.state.readEip() + context.instruction.length + offsetBytes + 2;
   const returnCs = context.state.readSegment("cs").selector;
+  // TODO(High): Match NXVM's explicit TODO boundary for protected call gates,
+  // task gates, TSS transfers, and cross-privilege far CALL/JMP transitions.
   loadCodeSegment(context.memory, context.state, selector);
   if (context.instruction.opcode === 0x9a) {
     pushStack(context.memory, context.state, operandSize, returnCs);

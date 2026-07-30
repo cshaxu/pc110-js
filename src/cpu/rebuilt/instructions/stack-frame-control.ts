@@ -36,6 +36,8 @@ function executeFarReturn(context: RebuiltExecutionContext): void {
     context.instruction.opcode === 0xca
       ? readUint16(context, context.instruction.opcodeOffset + 1)
       : 0;
+  // TODO(High): Match NXVM's explicit TODO boundary for protected RETF returns
+  // to an outer privilege level, including its restored SS:ESP frame.
   try {
     loadCodeSegment(context.memory, context.state, selector);
   } catch (error) {
