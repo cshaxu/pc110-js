@@ -31,3 +31,10 @@ used by product runtime code.
 P4 snapshots the isolated PCjs RAM image before the step and diffs it after the
 step. This observes changed memory state even when PCjs writes through an
 internal memory-block path rather than the public Busx86 setter.
+
+## P11 Approved Compatibility Exception
+
+The pinned PCjs CPU oracle differs from NXVM for real-mode primary opcode D6.
+The owner approved retaining the project's NXVM/80386 vector-six behavior on
+2026-07-30. The exception does not copy or modify PCjs source and is recorded
+as EXC-001 in the sole S6 compatibility register.

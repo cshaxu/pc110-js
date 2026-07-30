@@ -20,7 +20,7 @@ and the rebuilt CPU already has focused vector-six coverage.
 
 ## Status
 
-This is not an excluded difference. Per the owner-approved differential rule,
-the harness stopped before changing either CPU behavior. Owner direction is
-required to decide whether D6 remains NXVM/80386 `#UD`, follows PCjs behavior,
-or is represented as an explicit compatibility-mode divergence.
+Resolved by owner approval on 2026-07-30. The rebuilt CPU retains the
+NXVM/80386 `#UD` behavior. The approved compatibility exception is recorded
+only in `docs/coverage/m2-t2-s6-differential-exclusions.md` as EXC-001; this
+file remains the pre-decision conflict evidence.
