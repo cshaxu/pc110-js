@@ -128,3 +128,10 @@ P28 uses the project-native dispatcher and independent real-mode RAM images
 for CA/CB far returns through prepared frames across two code segments. PCjs
 remains a verification-only oracle; no PCjs source, runtime dependency, or
 instruction-specific oracle logic enters the product.
+
+## P29 Software Interrupt Program
+
+P29 uses the project-native dispatcher and independent real-mode RAM images
+for CC/CD/CE software interrupts and CF IRET through prepared IVT entries.
+PCjs remains a verification-only oracle; no PCjs source, runtime dependency,
+or instruction-specific oracle logic enters the product.

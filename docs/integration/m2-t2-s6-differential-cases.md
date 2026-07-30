@@ -39,6 +39,7 @@ It does not yet record writes whose value is unchanged.
 | `C4-C5` slice | LES and LDS word far-pointer loads | automatic register, segment, and EIP lockstep |
 | `C8-C9` slice | ENTER and LEAVE frame operations | automatic frame, stack-memory, and EIP lockstep |
 | `CA-CB` slice | far returns with and without cleanup | automatic CS, EIP, and stack-pointer lockstep |
+| `CC-CF` slice | software interrupts, INTO, and IRET | automatic IVT, frame, flag, CS, EIP, and stack lockstep |
 
 ## Active Expansion Order
 

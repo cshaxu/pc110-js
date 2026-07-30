@@ -231,6 +231,13 @@ A generic real-mode program matches PCjs for CA/CB far returns with and
 without immediate cleanup across code-segment changes. Default-32 and
 protected-mode returns remain separate S6 work.
 
+## S6 P29 Differential Evidence
+
+A generic real-mode program matches PCjs for CC INT3, CD INT imm8, CE INTO
+with overflow set, and CF IRET through prepared IVT entries. Clear-overflow,
+default-32, virtual-8086, and protected interrupt-gate forms remain separate
+S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

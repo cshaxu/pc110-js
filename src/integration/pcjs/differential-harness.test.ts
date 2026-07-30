@@ -282,6 +282,25 @@ describe("PCjs differential CPU harness", () => {
         { address: 0x10200, value: 0xcb }
       ],
       instructionCount: 2
+    },
+    {
+      name: "CC-CF software interrupt slice",
+      bytes: [0xcc, 0xcd, 0x04, 0xce],
+      registers: { esp: 0x800 },
+      eflags: 0x00000802,
+      memory: [
+        { address: 0x0c, value: 0x00 },
+        { address: 0x0d, value: 0x02 },
+        { address: 0x0e, value: 0x00 },
+        { address: 0x0f, value: 0x00 },
+        { address: 0x10, value: 0x01 },
+        { address: 0x11, value: 0x02 },
+        { address: 0x12, value: 0x00 },
+        { address: 0x13, value: 0x00 },
+        { address: 0x200, value: 0xcf },
+        { address: 0x201, value: 0xcf }
+      ],
+      instructionCount: 6
     }
   ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
     const trace = await runPcjsDifferentialTrace(differentialCase);
