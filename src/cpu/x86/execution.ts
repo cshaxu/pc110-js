@@ -1072,6 +1072,13 @@ function executeContextualInstruction(
   if (lea) return lea;
   const immediateMov = executeContextualImmediateMov(memory, state, context, fetched);
   if (immediateMov) return immediateMov;
+  if (context.opcode === 0xff) {
+    const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    if (modRm.reg === 0x06) {
+      executeContextualPushModRm(memory, state, context);
+      return { halted: false, fetched };
+    }
+  }
   if (context.opcode === 0x8f) {
     executeContextualPopModRm(memory, state, context);
     return { halted: false, fetched };
@@ -1885,6 +1892,25 @@ function executePushModRm(
     readSegmentUint16(memory, state, segmentOverride ?? address.segment, address.offset)
   );
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
+function executeContextualPushModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const value = modRm.registerDirect
+    ? context.operandSize === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : context.operandSize === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  pushContextOperand(memory, state, context, value);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
 }
 
 function executePopModRm(

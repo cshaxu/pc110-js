@@ -751,6 +751,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   stack boundary. PCjs operand-size selects popped data width, address-size
   selects a memory destination, and SS D/B selects stack-address width; the
   memory effective address is decoded after the stack pointer advances.
+- M2 T2 S3 P273 routes `FF /6` through the existing project-native contextual
+  stack boundary. PCjs operand-size selects pushed data width, address-size
+  selects a memory source, and SS D/B selects stack-address width; the source
+  value is read before the stack pointer changes.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
