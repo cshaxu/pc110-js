@@ -8142,6 +8142,28 @@ describe("80386 instruction fetch", () => {
     expect([values.get(0x2ffa), values.get(0x2ffb)]).toEqual([5, 0]);
   });
 
+  it("executes contextual FF near jumps at both operand widths", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0xff],
+      [0x00000001, 0xe0],
+      [0x00000002, 0x66],
+      [0x00000003, 0xff],
+      [0x00000004, 0xe0]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(0, 0x12340100);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x12340100);
+
+    state.writeEip(2);
+    stepInstruction(memory, state);
+    expect(state.snapshot().eip).toBe(0x0100);
+  });
+
   it("uses 32-bit addressing for dword F7 memory operands", () => {
     const values = new Map<number, number>([
       [0x00000000, 0x66],

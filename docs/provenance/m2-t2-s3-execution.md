@@ -896,6 +896,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   helper. It reads a complete target before stack mutation, pushes an
   operand-sized return address through the existing SS stack boundary, and
   loads IP or EIP from the context-selected operand width.
+- M2 T2 S3 P310 routes FF /4 through a project-native contextual near-jump
+  helper. It uses the context-selected operand and ModR/M address widths and
+  does not alter stack state.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
