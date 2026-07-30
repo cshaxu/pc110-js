@@ -526,3 +526,12 @@ present, write, and user bits; segment faults use the faulting instruction EIP.
 Focused evidence covers a protected IDT page-fault frame, error code, CR2, and
 same-privilege target transfer. Decode-fetch faults, descriptor-specific codes,
 double-fault escalation, and outer-privilege delivery remain active work.
+
+## P395 Rebuilt Fetch-Fault Delivery Checklist
+
+P395 extends rebuilt access-fault delivery across instruction decode and fetch.
+A typed fetch fault delivers its architected frame before dispatcher invocation,
+returns no decoded instruction, and emits a fault trace event without inventing
+an opcode. Focused evidence covers protected paged fetch, fault EIP, error
+code, CR2, and trace state. Descriptor-specific codes, escalation, and
+outer-privilege delivery remain active work.

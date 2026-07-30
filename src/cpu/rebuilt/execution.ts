@@ -42,14 +42,21 @@ export class RebuiltCpuExecutor {
     this.memory = new SegmentedMemory(bus, state);
   }
 
-  public step(dispatch: RebuiltInstructionDispatcher): DecodedInstruction {
+  public step(dispatch: RebuiltInstructionDispatcher): DecodedInstruction | undefined {
     const before = this.state.snapshot();
     const codeAddressSize = before.segments.cs.default32 ? 32 : 16;
     const reader = {
       readCodeByte: (offset: number) =>
         this.memory.read8("cs", before.eip + offset, codeAddressSize)
     };
-    const instruction = decodeInstruction(reader, before.eip, before.segments.cs.default32);
+    let instruction: DecodedInstruction;
+    try {
+      instruction = decodeInstruction(reader, before.eip, before.segments.cs.default32);
+    } catch (error) {
+      if (!this.deliverAccessFault(error, before.eip)) throw error;
+      this.trace?.({ before, fault: true, after: this.state.snapshot() });
+      return undefined;
+    }
     try {
       dispatch({ state: this.state, memory: this.memory, instruction, reader, io: this.io });
     } catch (error) {
