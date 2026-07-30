@@ -198,6 +198,16 @@ describe("PCjs differential CPU harness", () => {
       instructionCount: 4
     },
     {
+      name: "A4-AE byte string interval",
+      bytes: [0xa4, 0xa6, 0xaa, 0xac, 0xae],
+      registers: { eax: 0x5a, esi: 0x200, edi: 0x300 },
+      memory: [
+        { address: 0x200, value: 0x5a },
+        { address: 0x201, value: 0x5a }
+      ],
+      instructionCount: 5
+    },
+    {
       name: "B0-BF immediate register interval",
       bytes: [
         0xb0, 0x10, 0xb1, 0x11, 0xb2, 0x12, 0xb3, 0x13, 0xb4, 0x14, 0xb5, 0x15, 0xb6, 0x16, 0xb7,
