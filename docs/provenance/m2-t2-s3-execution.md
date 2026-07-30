@@ -1039,6 +1039,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P347 translates NXVM near relative CALL/JMP behavior into native
   TypeScript. It derives the fallthrough address before a CALL stack push and
   applies CS D/B only to the resulting EIP width.
+- M2 T2 S3 P348 translates NXVM near RET, ENTER, and LEAVE algorithms into
+  native TypeScript. Operand data width remains separate from SS D/B stack
+  addressing; the module does not import NXVM, PCjs, or legacy code at runtime.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

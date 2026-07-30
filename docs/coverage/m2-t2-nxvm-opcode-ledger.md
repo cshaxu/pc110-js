@@ -30,7 +30,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 90-9F exchange, flags, far call, and flag transfer | 8143-8626 | NOP, XCHG AX, CBW/CWD, far call, PUSHF/POPF, SAHF/LAHF | `instructions/accumulator-exchange.ts`, `instructions/sign-extension.ts`, `instructions/flag-transfer.ts`, `instructions/control.ts`, `instructions/register-stack.ts` | Partial | Flag privilege; operand width; far control transfer | Required | In progress: P337-P339 implement 90-99 and 9E-9F |
 | A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/moffs-move.ts`, `instructions/accumulator-test.ts`, `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | In progress: P341-P342 implement A0-A3 and A8-A9 |
 | B0-BF immediate register moves | 9325-9589 | Byte and operand-sized register immediates | `instructions/immediate-move.ts` | Partial | All registers; instruction length; 66 | Required | Implemented: P340; broader differential evidence remains active |
-| C0-CF groups, returns, interrupts, frame | 9613-10338 | Shifts/rotates, RET, LES/LDS, MOV immediate groups, ENTER/LEAVE, RETF, INT, IRET | `instructions/immediate-modrm-move.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/interrupt.ts` | Partial | Every group extension; count/flags; privilege; fault EIP | Required | In progress: P343 implements C6/C7 /0 |
+| C0-CF groups, returns, interrupts, frame | 9613-10338 | Shifts/rotates, RET, LES/LDS, MOV immediate groups, ENTER/LEAVE, RETF, INT, IRET | `instructions/immediate-modrm-move.ts`, `instructions/stack-frame-control.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/interrupt.ts` | Partial | Every group extension; count/flags; privilege; fault EIP | Required | In progress: P348 implements C2/C3/C8/C9 |
 | D0-DF shifts, adjust, XLAT, loops, port I/O | 10250-10941 | Shift/rotate count variants, AAM/AAD, XLAT, LOOP, JCXZ, IN/OUT | `instructions/ascii-adjust.ts`, `instructions/xlat.ts`, `instructions/loop.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/io.ts` | Partial | Count zero; CL; 66/67; I/O permissions | Required | In progress: P344-P346 implement D4/D5, D7, E0-E3 |
 | E0-FF control, flags, Groups Three/Four/Five | 10795-11610 | Near/far call and jump, flag control, F6/F7, FE/FF | `instructions/near-control.ts`, `instructions/control.ts`, `instructions/groups.ts` | Partial | All extensions; divide faults; far privilege; SS width | Required | In progress: P347 implements E8/E9/EB |
 | 0F decode and system groups | 5141, 11629-12637 | Escape decoding, descriptor/table, CR/DR/TR, LAR/LSL, CLTS | `decode/decoder.ts`, `instructions/system.ts` | Partial | CPL; descriptor faults; 16/default-32; 66/67 | Required | Planned |
@@ -199,6 +199,14 @@ P347 follows NXVM near relative CALL/JMP behavior. Focused tests cover near and
 short relative displacements, 16/32-bit operand selection, CALL fallthrough
 push, independent SS D/B stack addressing, and EIP targets. Far control and
 I/O forms remain active work.
+
+## P348 `C2-C3-C8-C9` Stack-Frame Control Checklist
+
+P348 follows NXVM `RET_I16`, `RET`, `ENTER`, and `LEAVE`. Focused tests cover
+near return targets and cleanup, operand-size-selected return data, independent
+SS D/B addressing, ENTER nesting, LEAVE, `66`, and EIP length. C0/C1 shifts,
+LES/LDS, far returns, interrupts, IRET, selector validation, and protection
+fault delivery remain explicit dependencies for the active C0-CF interval.
 
 ## Status Rule
 
