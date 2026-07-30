@@ -673,6 +673,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   select zero or nonzero continuation without copying PCjs or NXVM source.
 - M2 T2 S3 P246 migrates F3 repeat transfer. Context now selects CX or ECX,
   transfer width, and source or destination indexes for MOVS and STOS.
+- M2 T2 S3 P247 migrates accumulator-immediate ALU forms so CS defaults and 66
+  select word or dword operands through one project-native path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

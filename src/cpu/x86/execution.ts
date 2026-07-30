@@ -646,6 +646,74 @@ function executeContextualRepeatTransfer(
   return { halted: false, fetched };
 }
 
+function executeContextualAccumulatorAlu(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (![0x05, 0x0d, 0x15, 0x1d, 0x25, 0x2d, 0x35, 0x3d].includes(context.opcode)) return undefined;
+  const width = context.operandSize;
+  const accumulator = width === 32 ? state.readRegister(0) : state.readRegister16(0);
+  const immediate =
+    width === 32
+      ? fetchCodeUint32(memory, state, context.opcodeOffset + 1)
+      : fetchCodeUint16(memory, state, context.opcodeOffset + 1);
+  const carry = state.carryFlag() ? 1 : 0;
+  const write = (value: number) => {
+    if (width === 32) state.writeRegister(0, value);
+    else state.writeRegister16(0, value);
+  };
+  const addFlags = (left: number, right: number, carryIn = 0) => {
+    if (width === 32) state.writeAddFlags32(left, right, carryIn);
+    else state.writeAddFlags16(left, right, carryIn);
+  };
+  const compareFlags = (left: number, right: number, borrow = 0) => {
+    if (width === 32) state.writeCompareFlags32(left, right, borrow);
+    else state.writeCompareFlags16(left, right, borrow);
+  };
+  const logicFlags = (value: number) => {
+    if (width === 32) state.writeLogicFlags32(value);
+    else state.writeLogicFlags16(value);
+  };
+
+  switch (context.opcode) {
+    case 0x05:
+      write(accumulator + immediate);
+      addFlags(accumulator, immediate);
+      break;
+    case 0x0d:
+      write(accumulator | immediate);
+      logicFlags(accumulator | immediate);
+      break;
+    case 0x15:
+      write(accumulator + immediate + carry);
+      addFlags(accumulator, immediate, carry);
+      break;
+    case 0x1d:
+      write(accumulator - immediate - carry);
+      compareFlags(accumulator, immediate, carry);
+      break;
+    case 0x25:
+      write(accumulator & immediate);
+      logicFlags(accumulator & immediate);
+      break;
+    case 0x2d:
+      write(accumulator - immediate);
+      compareFlags(accumulator, immediate);
+      break;
+    case 0x35:
+      write(accumulator ^ immediate);
+      logicFlags(accumulator ^ immediate);
+      break;
+    case 0x3d:
+      compareFlags(accumulator, immediate);
+      break;
+  }
+  state.advanceEip(context.opcodeOffset + 1 + width / 8);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -658,6 +726,8 @@ function executeContextualInstruction(
   const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);
   if (repeatedTransfer) return repeatedTransfer;
   if (context.repeatPrefix) return undefined;
+  const accumulatorAlu = executeContextualAccumulatorAlu(memory, state, context, fetched);
+  if (accumulatorAlu) return accumulatorAlu;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
