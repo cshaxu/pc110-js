@@ -57,6 +57,10 @@ export class NativeCoreCheckpoint {
     );
   }
 
+  public mapVgaRom(bytes: Uint8Array): void {
+    this.memory.mapRom(createRomImage("vga-rom", bytes), 0xc0000);
+  }
+
   public attachFloppy(bytes: Uint8Array): void {
     const drive = new FloppyDrive(FLOPPY_1440K_GEOMETRY);
     drive.attach(bytes);

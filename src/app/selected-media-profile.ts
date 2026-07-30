@@ -8,6 +8,14 @@ export const selectedDeskProRom: LocalAssetDescriptor = {
   required: true
 };
 
+export const selectedIbmVgaRom: LocalAssetDescriptor = {
+  id: "ibm-vga-rom",
+  relativePath: "ibm-vga-rom.bin",
+  expectedBytes: 24_576,
+  sha256: "14b8506381837caa7b1b99be671fa5fac650cc74cf1de28b2d13ad1101f51a3d",
+  required: true
+};
+
 export const selectedDosFloppy: LocalAssetDescriptor = {
   id: "dos-floppy",
   relativePath: "fdd.img",

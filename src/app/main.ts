@@ -2,7 +2,11 @@ import { pcAt386Profile } from "../machine/configurations/pc-at-386.js";
 import { MachineRuntime, type MachineSnapshot } from "../machine/machine-runtime.js";
 import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
 import { LocalAssetLoader } from "./local-asset-loader.js";
-import { selectedDeskProRom, selectedDosFloppy } from "./selected-media-profile.js";
+import {
+  selectedDeskProRom,
+  selectedDosFloppy,
+  selectedIbmVgaRom
+} from "./selected-media-profile.js";
 import { KeyboardByteQueue, set1ScancodeBytes } from "./keyboard-scancode-set1.js";
 import "./styles.css";
 
@@ -25,7 +29,8 @@ root.innerHTML = `
       <button id="run" type="button">Run</button>
       <button id="pause" type="button">Pause</button>
       <button id="reset" type="button">Reset</button>
-      <label>ROM <input id="rom" type="file" /></label>
+      <label>System ROM <input id="rom" type="file" /></label>
+      <label>VGA ROM <input id="vga-rom" type="file" /></label>
       <label>Floppy <input id="floppy" type="file" /></label>
       <button id="mount" type="button">Mount</button>
     </footer>
@@ -39,9 +44,21 @@ const reset = root.querySelector<HTMLButtonElement>("#reset");
 const nativeStatus = root.querySelector<HTMLElement>("#native-status");
 const screen = root.querySelector<HTMLCanvasElement>("#screen");
 const rom = root.querySelector<HTMLInputElement>("#rom");
+const vgaRom = root.querySelector<HTMLInputElement>("#vga-rom");
 const floppy = root.querySelector<HTMLInputElement>("#floppy");
 const mount = root.querySelector<HTMLButtonElement>("#mount");
-if (!state || !run || !pause || !reset || !nativeStatus || !screen || !rom || !floppy || !mount)
+if (
+  !state ||
+  !run ||
+  !pause ||
+  !reset ||
+  !nativeStatus ||
+  !screen ||
+  !rom ||
+  !vgaRom ||
+  !floppy ||
+  !mount
+)
   throw new Error("Missing machine controls");
 const context = screen.getContext("2d");
 if (!context) throw new Error("Canvas 2D context is unavailable");
@@ -111,13 +128,15 @@ controls.reset.addEventListener("click", () => {
 window.addEventListener("keydown", (event) => enqueueKeyboardEvent(event, true));
 window.addEventListener("keyup", (event) => enqueueKeyboardEvent(event, false));
 mount.addEventListener("click", async () => {
-  if (!rom.files?.[0] || !floppy.files?.[0]) return;
+  if (!rom.files?.[0] || !vgaRom.files?.[0] || !floppy.files?.[0]) return;
   try {
-    const [romBytes, floppyBytes] = await Promise.all([
+    const [romBytes, vgaRomBytes, floppyBytes] = await Promise.all([
       loader.load(rom.files[0], selectedDeskProRom),
+      loader.load(vgaRom.files[0], selectedIbmVgaRom),
       loader.load(floppy.files[0], selectedDosFloppy)
     ]);
     checkpoint.mapSystemRom(romBytes);
+    checkpoint.mapVgaRom(vgaRomBytes);
     checkpoint.attachFloppy(floppyBytes);
     checkpoint.reset();
     keyboardQueue.clear();
