@@ -1058,6 +1058,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P353 translates NXVM 0F near Jcc behavior into native TypeScript.
   The decoder exposes a project-owned secondary opcode and no external runtime
   dependency is introduced.
+- M2 T2 S3 P354 translates NXVM SETcc behavior into native TypeScript through
+  rebuilt ModR/M and segmented-memory access, with no external runtime import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
