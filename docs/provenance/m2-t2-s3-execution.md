@@ -927,6 +927,15 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P319 adds same-privilege protected-mode IRET through contextual
   frame widths. It peeks the return selector before mutation and only handles a
   matching privilege level; cross-privilege frames retain the existing path.
+- M2 T2 S3 P320 records the owner-authorized replacement of incremental
+  execution-context migration with a project-native CPU reconstruction in NXVM
+  opcode-family order. `cpu-legacy-reference` freezes the verified incremental
+  implementation at `26bd074`; the reference remains runnable for regression,
+  ROM trace, and differential evidence but is not the new CPU runtime path.
+  The reconstruction uses NXVM only for CPU coverage and behavior, Intel for
+  semantic conflicts, and PCjs for PC/AT and whole-machine comparison. No
+  NXVM C, macros, global state, BIOS, POST, device, I/O, or guest-service
+  behavior is copied or authorized.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

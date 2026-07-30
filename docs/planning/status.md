@@ -12,10 +12,11 @@
 
 ## Next Eligible Work
 
-- M2 T2: active. Complete T2 S3 execution-size migration and the remaining
-  80386 instruction and system paths, then close its ROM-trace, coverage-matrix,
-  and PCjs-comparison evidence. Do not begin T3 until every T2 completion gate
-  passes and the owner authorizes T3.
+- M2 T2: active. Reconstruct the project-native CPU in NXVM opcode-family
+  order; the frozen legacy/reference CPU remains differential evidence only.
+  Close ROM-trace, coverage-matrix, and PCjs-comparison evidence before T3.
+  Do not begin T3 until every T2 completion gate passes and the owner
+  authorizes T3.
 
 ## Delivery Nodes
 
@@ -35,5 +36,9 @@ low RAM, so the minimal S4 memory path was an explicit prerequisite for
 continuing CPU opcode work. S4 P4 verified that path through mapped ROM. This
 was the only authorized sequencing exception; the M2 objective and completion
 gate are unchanged.
+
+P320 froze the verified incremental CPU at `cpu-legacy-reference` commit
+`26bd074` and changed the active S3 method to a clean project-native TypeScript
+reconstruction in NXVM opcode-family order. No runtime behavior changed.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

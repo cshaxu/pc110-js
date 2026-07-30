@@ -71,6 +71,26 @@ record are mandatory `#UD` behavior only; later-processor functionality remains
 out of scope. T3 remains prohibited until T2's gates pass and the owner grants
 a new authorization.
 
+## Owner-Authorized Reconstruction Method Correction
+
+The owner replaced the incremental execution-context migration method on
+2026-07-29. The verified TypeScript CPU is frozen as legacy/reference evidence
+at `cpu-legacy-reference` commit `26bd074`. It remains executable for tests,
+trace evidence, and differential comparison, but receives no new primary CPU
+behavior. No broad source move accompanies the freeze.
+
+The primary implementation is now a clean project-native TypeScript 80386 CPU
+rebuilt in NXVM opcode-family order. The authoritative order and status are
+recorded in `docs/coverage/m2-t2-nxvm-opcode-ledger.md`; module boundaries and
+delivery rules are recorded in `docs/planning/m2-t2-nxvm-cpu-reconstruction.md`.
+Each family must be delivered as a complete relevant family rather than a
+single observed opcode or ModR/M extension. Existing execution-context work is
+legacy/reference evidence only and cannot be used to claim rebuilt coverage.
+
+This correction preserves all existing M2 T2 completion gates. It authorizes
+neither M2 T3 nor platform, firmware, guest-service, PC110, storage, video,
+BIOS, DOS, or filesystem work.
+
 ## Working Method
 
 1. Classify one observed reset, BIOS, protected-mode, or interrupt blocker.
