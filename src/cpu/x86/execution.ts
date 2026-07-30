@@ -954,6 +954,54 @@ function executeContextualByteIncrementDecrement(
   return true;
 }
 
+function executeContextualGroupFiveIncrementDecrement(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): boolean {
+  if (context.opcode !== 0xff) return false;
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x00 && modRm.reg !== 0x01) return false;
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const source = modRm.registerDirect
+    ? context.operandSize === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : context.operandSize === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  const result = modRm.reg === 0x00 ? source + 1 : source - 1;
+  if (modRm.registerDirect) {
+    if (context.operandSize === 32) state.writeRegister(modRm.rm, result);
+    else state.writeRegister16(modRm.rm, result);
+  } else if (context.operandSize === 32)
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  else
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  if (context.operandSize === 32) {
+    if (modRm.reg === 0x00) state.writeIncrementFlags32(source);
+    else state.writeDecrementFlags32(source);
+  } else if (modRm.reg === 0x00) state.writeIncrementFlags16(source);
+  else state.writeDecrementFlags16(source);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
+  return true;
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1815,6 +1863,8 @@ function executeContextualInstruction(
   const moffs = executeContextualMoffs(memory, state, context, fetched);
   if (moffs) return moffs;
   if (executeContextualByteIncrementDecrement(memory, state, context))
+    return { halted: false, fetched };
+  if (executeContextualGroupFiveIncrementDecrement(memory, state, context))
     return { halted: false, fetched };
   if (context.opcode === 0xf6) {
     executeByteF6(
