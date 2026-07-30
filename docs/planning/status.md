@@ -12,10 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T2 S5: active. Close project-native I/O port dispatch, reset, deterministic
-  stepping, and trace contracts. The frozen legacy/reference CPU remains
-  differential evidence only. Do not begin T3 until every T2 completion gate
-  passes and the owner authorizes T3.
+- M2 T2 S6: active. Establish the final PCjs-assisted integration gate with the
+  rebuilt CPU as the sole guest-instruction executor. The frozen legacy/reference
+  CPU remains differential evidence only. Do not begin T3 until every T2
+  completion gate passes and the owner authorizes T3.
 
 ## Delivery Nodes
 
@@ -68,5 +68,9 @@ followed by S5 and S6.
 
 P8 closed S4 after confirming the selected M1 physical map, A20 boundary,
 immutable ROM aliases, rebuilt-runner memory-bus use, and selected-ROM trace.
+
+P8 closed S5 after project-native width-aware port dispatch, reset, bounded
+stepping, and CPU/port/stop trace evidence classified the first unavailable
+ROM port without a synthetic response. S6 is now eligible.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

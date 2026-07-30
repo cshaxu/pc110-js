@@ -25,3 +25,8 @@ and port traces. It does not add any hardware device or reference runtime.
 P7 routes the selected-ROM trace through the rebuilt machine core and records
 halt, budget, or error stops with completed instruction count and CPU state.
 An unmapped port remains a diagnostic boundary rather than an emulated device.
+
+## P8 S5 Closure
+
+P8 closes S5 from P5-P7 evidence without introducing a device, a synthetic ROM
+response, or any PCjs, NXVM, or legacy CPU runtime dependency.
