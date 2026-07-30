@@ -737,6 +737,27 @@ function executeContextualIncrementDecrement(
   return { halted: false, fetched };
 }
 
+function executeContextualSignExtension(
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0x98 && context.opcode !== 0x99) return undefined;
+  if (context.opcode === 0x98) {
+    if (context.operandSize === 32) {
+      const value = state.readRegister16(0);
+      state.writeRegister(0, value & 0x8000 ? value | 0xffff0000 : value);
+    } else {
+      const value = state.readRegister8(0);
+      state.writeRegister16(0, value & 0x80 ? value | 0xff00 : value);
+    }
+  } else if (context.operandSize === 32) {
+    state.writeRegister(2, state.readRegister(0) & 0x80000000 ? 0xffffffff : 0);
+  } else state.writeRegister16(2, state.readRegister16(0) & 0x8000 ? 0xffff : 0);
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -753,6 +774,8 @@ function executeContextualInstruction(
   if (accumulatorAlu) return accumulatorAlu;
   const incrementDecrement = executeContextualIncrementDecrement(state, context, fetched);
   if (incrementDecrement) return incrementDecrement;
+  const signExtension = executeContextualSignExtension(state, context, fetched);
+  if (signExtension) return signExtension;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
