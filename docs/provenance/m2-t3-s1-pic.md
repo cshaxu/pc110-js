@@ -32,3 +32,10 @@ P4 registers the local PIC ranges in the rebuilt machine core and sends a
 non-destructive pending vector through the existing project-native CPU external
 interrupt boundary before acknowledging the PIC. It preserves CPU IF and
 instruction-inhibition rules without a PCjs runtime dependency.
+
+## P5 Browser Checkpoint
+
+P5 constructs project-native physical memory and the rebuilt PC/AT core inside
+the browser entry, then presents only CPU reset and PIC snapshot data. No PCjs
+resource, local firmware, disk image, or synthetic device behavior enters the
+browser bundle.
