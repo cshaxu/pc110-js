@@ -1076,6 +1076,20 @@ function executeContextualInstruction(
   if (loop) return loop;
   const moffs = executeContextualMoffs(memory, state, context, fetched);
   if (moffs) return moffs;
+  if (context.opcode === 0x0f) {
+    const extension = fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode;
+    if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
+      executeMovExtendModRm(
+        memory,
+        state,
+        extension,
+        context.opcodeOffset + 2,
+        context.addressSize,
+        context.operandSize
+      );
+      return { halted: false, fetched };
+    }
+  }
 
   const byteAluOperation = byteModRmAluOperation(context.opcode);
   if (byteAluOperation) {
@@ -2637,37 +2651,35 @@ function executeMovExtendDwordModRm(
   modRmOffset: number,
   addressSize: 16 | 32
 ): void {
+  executeMovExtendModRm(memory, state, extension, modRmOffset, addressSize, 32);
+}
+
+function executeMovExtendModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  extension: number,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  destinationSize: 16 | 32
+): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   const byteSource = extension === 0xb6 || extension === 0xbe;
   const signedSource = extension === 0xbe || extension === 0xbf;
-  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
-    ? undefined
-    : addressSize === 16
-      ? decodeModRm16Address(
-          modRm,
-          (index) => state.readRegister16(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        )
-      : decodeModRm32Address(
-          modRm,
-          (index) => state.readRegister(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        );
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
   const source = byteSource
     ? modRm.registerDirect
       ? state.readRegister8(modRm.rm)
-      : readSegmentUint8(memory, state, address!.segment, address!.offset)
+      : readSegmentUint8(memory, state, address!.segment, address!.offset, addressSize)
     : modRm.registerDirect
       ? state.readRegister16(modRm.rm)
-      : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
   const result =
     signedSource && source & (byteSource ? 0x80 : 0x8000)
       ? source | (byteSource ? 0xffffff00 : 0xffff0000)
       : source;
-  const sibBytes =
-    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
-  state.writeRegister(modRm.reg, result);
-  state.advanceEip(modRmOffset + 1 + (address?.displacementBytes ?? 0) + sibBytes);
+  if (destinationSize === 32) state.writeRegister(modRm.reg, result);
+  else state.writeRegister16(modRm.reg, result);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 
 function executeBitScanDwordModRm(

@@ -727,6 +727,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P266 routes PUSHF/POPF through context. PCjs-selected flags width
   follows operand size while project-native context keeps SS stack-address width
   independent; protected-mode privilege faults still occur before a POP reads.
+- M2 T2 S3 P267 replaces the dword-only MOVZX/MOVSX helper with a generic
+  project-native destination-width helper and routes `0F B6/B7/BE/BF` through
+  context. PCjs operand/address-size selection controls destination and ModR/M
+  width; byte/word source selection remains opcode-defined.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

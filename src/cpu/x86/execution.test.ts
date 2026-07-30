@@ -298,6 +298,39 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000010b);
   });
 
+  it("selects MOVZX and MOVSX widths through the context", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x0f],
+      [0x00000101, 0xbe],
+      [0x00000102, 0x05],
+      [0x00000103, 0x00],
+      [0x00000104, 0x20],
+      [0x00000105, 0x01],
+      [0x00000106, 0x00],
+      [0x00000107, 0x66],
+      [0x00000108, 0x0f],
+      [0x00000109, 0xb7],
+      [0x0000010a, 0x0d],
+      [0x0000010b, 0x34],
+      [0x0000010c, 0x12],
+      [0x0000010d, 0x00],
+      [0x0000010e, 0x00],
+      [0x00012000, 0x80],
+      [0x00001234, 0xef],
+      [0x00001235, 0xbe]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xffffff80 }, eip: 0x00000107 });
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { ecx: 0x0000beef }, eip: 0x0000010f });
+  });
+
   it("selects LODS data and index width independently through the context", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xad],
@@ -4219,7 +4252,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.writeRegister(3, 0x1234ff80);
     const memory = resetAliasMemory(values);
 
@@ -4275,7 +4308,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(6, 0x12000);
 
