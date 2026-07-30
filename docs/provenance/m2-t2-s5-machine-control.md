@@ -13,3 +13,9 @@ P5 adds a project-native width-aware port dispatcher for the rebuilt CPU.
 Unclaimed ports remain explicit errors, so this code supplies no device value
 and does not reproduce PCjs device behavior. It imports no PCjs, NXVM, or
 legacy CPU runtime code.
+
+## P6 Rebuilt Machine Composition
+
+P6 composes project-native physical memory, the rebuilt port dispatcher, and
+the rebuilt CPU into a deterministic reset/step/run boundary with unified CPU
+and port traces. It does not add any hardware device or reference runtime.
