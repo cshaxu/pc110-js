@@ -213,4 +213,27 @@ describe("RebuiltPcAt386Core", () => {
     expect(memory.isA20Enabled()).toBe(true);
     expect(core.runner.state.readEip()).toBe(0xfff0);
   });
+
+  it("maps the selected 8042 ports, routes raw keyboard bytes to IRQ1, and applies output-port effects", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x200000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x20, 0x11, 8);
+    core.ports.write(0x21, 0x20, 8);
+    core.ports.write(0x21, 0x04, 8);
+    core.ports.write(0x21, 0x01, 8);
+    core.ports.write(0x64, 0x60, 8);
+    core.ports.write(0x60, 0x01, 8);
+
+    expect(core.receiveKeyboardByte(0x1c)).toBe(true);
+    expect(core.pic.pendingVector()).toBe(0x21);
+    expect(core.ports.read(0x60, 8)).toBe(0x1c);
+    core.ports.write(0x64, 0xd1, 8);
+    core.ports.write(0x60, 0x01, 8);
+    expect(memory.isA20Enabled()).toBe(false);
+    core.reset();
+    expect(core.keyboardController.snapshot()).toMatchObject({
+      outputBuffer: undefined,
+      keyboardEnabled: false
+    });
+  });
 });

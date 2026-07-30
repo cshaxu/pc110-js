@@ -8,6 +8,7 @@ import { PcAtDma } from "../devices/pc-at-dma.js";
 import { PcAtRtc } from "../devices/pc-at-rtc.js";
 import { PcAtSystemControl } from "../devices/pc-at-system-control.js";
 import { KeyboardOutputPort } from "../devices/keyboard-output-port.js";
+import { PcAtKeyboardController } from "../devices/pc-at-keyboard-controller.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -41,6 +42,11 @@ export class RebuiltPcAt386Core {
   public readonly dma = new PcAtDma();
   public readonly rtc = new PcAtRtc({}, (irq) => this.pic.raiseIrq(irq));
   public readonly systemPort = new PcAtSystemControl(this.pit);
+  public readonly keyboardController = new PcAtKeyboardController(
+    (irq) => this.pic.raiseIrq(irq),
+    (value) => this.writeKeyboardOutputPort(value),
+    () => this.runner.reset()
+  );
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
   private nmiPending = false;
@@ -58,6 +64,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.dma.portRanges()) this.registerPorts(range);
     for (const range of this.rtc.portRanges()) this.registerPorts(range);
     for (const range of this.systemPort.portRanges()) this.registerPorts(range);
+    for (const range of this.keyboardController.portRanges()) this.registerPorts(range);
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -70,6 +77,7 @@ export class RebuiltPcAt386Core {
     this.dma.reset();
     this.rtc.reset();
     this.systemPort.reset();
+    this.keyboardController.reset();
     this.keyboardOutputPort.reset();
     this.memory.setA20Enabled(true);
     this.nmiPending = false;
@@ -102,6 +110,10 @@ export class RebuiltPcAt386Core {
     const update = this.keyboardOutputPort.write(value);
     this.memory.setA20Enabled(update.a20Enabled);
     if (update.resetRequested) this.runner.reset();
+  }
+
+  public receiveKeyboardByte(value: number): boolean {
+    return this.keyboardController.receiveKeyboardByte(value);
   }
 
   public run(maxInstructions: number): RebuiltMachineRunResult {
