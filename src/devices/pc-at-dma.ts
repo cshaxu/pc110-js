@@ -101,6 +101,14 @@ export class PcAtDma {
     return this.controller(decoded.controller).snapshot(decoded.channel);
   }
 
+  public maskBits(controller: 0 | 1): number {
+    let masks = 0;
+    for (let channel = 0; channel < 4; channel += 1) {
+      if (this.controller(controller).snapshot(channel).masked) masks |= 1 << channel;
+    }
+    return masks;
+  }
+
   public grantFromController(index: 0 | 1): DmaGrant | undefined {
     return this.controller(index).grant();
   }

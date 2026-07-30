@@ -9,6 +9,8 @@ export interface NativeCoreCheckpointSnapshot {
   readonly slaveInService: string;
   readonly timer0Output: string;
   readonly timer2Output: string;
+  readonly dma0Masks: string;
+  readonly dma1Masks: string;
 }
 
 export class NativeCoreCheckpoint {
@@ -30,7 +32,9 @@ export class NativeCoreCheckpoint {
       slaveRequest: hex8(pic.slave.request),
       slaveInService: hex8(pic.slave.inService),
       timer0Output: bit(this.core.pit.snapshot(0).output),
-      timer2Output: bit(this.core.pit.counter2Output())
+      timer2Output: bit(this.core.pit.counter2Output()),
+      dma0Masks: hex8(this.core.dma.maskBits(0)),
+      dma1Masks: hex8(this.core.dma.maskBits(1))
     };
   }
 }

@@ -30,3 +30,9 @@ memory movement, FDC, firmware, media, and host scheduling.
 P4 adds local channel-4 cascade arbitration and a generic data adapter driven
 solely by explicit grants. It does not introduce a device implementation or a
 storage, firmware, media, or host-time dependency.
+
+## P5 Browser Checkpoint
+
+P5 presents only local DMA reset-mask snapshots beside the existing CPU, PIC,
+and PIT status. It does not issue DMA requests, transfer memory, or load
+firmware, media, storage, or host-time behavior.

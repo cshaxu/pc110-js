@@ -41,7 +41,8 @@ function render(snapshot: MachineSnapshot): void {
     `CPU reset ${native.codeAddress}`,
     `PIC M IRR ${native.masterRequest} ISR ${native.masterInService}`,
     `PIC S IRR ${native.slaveRequest} ISR ${native.slaveInService}`,
-    `PIT 0 OUT ${native.timer0Output} 2 OUT ${native.timer2Output}`
+    `PIT 0 OUT ${native.timer0Output} 2 OUT ${native.timer2Output}`,
+    `DMA0 MASK ${native.dma0Masks} DMA1 MASK ${native.dma1Masks}`
   ].join(" | ");
   controls.run.disabled = snapshot.runState === "running";
   controls.pause.disabled = snapshot.runState !== "running";
