@@ -1089,6 +1089,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   TypeScript with explicit CPL/IOPL checks and vector-13 error-code delivery.
 - M2 T2 S3 P368 adapts NXVM F1 UndefinedOpcode coverage through the existing
   project-native vector-6 event path without reference runtime imports.
+- M2 T2 S3 P369 adapts NXVM LOCK prefix behavior through a project-native
+  memory-bus atomic boundary and vector-6 validation without runtime imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

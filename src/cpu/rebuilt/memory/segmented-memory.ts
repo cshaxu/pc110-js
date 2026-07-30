@@ -4,6 +4,7 @@ import type { RebuiltCpuState } from "../state/cpu-state.js";
 export interface RebuiltMemoryBus {
   readUint8(address: number): number;
   writeUint8(address: number, value: number): void;
+  runAtomically?<T>(operation: () => T): T;
 }
 
 export class SegmentAccessError extends Error {}
@@ -20,6 +21,10 @@ export class SegmentedMemory {
 
   public readPhysical8(address: number): number {
     return this.bus.readUint8(address >>> 0) & 0xff;
+  }
+
+  public runAtomically<T>(operation: () => T): T {
+    return this.bus.runAtomically?.(operation) ?? operation();
   }
 
   public read16(segment: SegmentName, offset: number, addressSize: 16 | 32): number {

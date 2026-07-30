@@ -1,4 +1,6 @@
 import type { RebuiltExecutionContext } from "./execution.js";
+import { decodeModRm } from "./addressing/modrm.js";
+import { deliverFault } from "./events/interrupt-delivery.js";
 import { executeAccumulatorExchange } from "./instructions/accumulator-exchange.js";
 import { executeAccumulatorTest } from "./instructions/accumulator-test.js";
 import { executeAsciiAdjust } from "./instructions/ascii-adjust.js";
@@ -33,6 +35,42 @@ import { executeUndefinedOpcode } from "./instructions/undefined.js";
 import { executeXlat } from "./instructions/xlat.js";
 
 export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): void {
+  if (context.instruction.prefixes.lock) return dispatchLocked(context);
+  return dispatchUnlocked(context);
+}
+
+function dispatchLocked(context: RebuiltExecutionContext): void {
+  const modRm = decodeModRm(
+    context.reader,
+    context.instruction.opcodeOffset + 1,
+    context.instruction.prefixes.addressSize,
+    context.state.registers
+  );
+  if (!lockable(context.instruction.opcode, modRm.reg, modRm.registerDirect)) {
+    deliverFault(context.memory, context.state, 6, context.state.readEip());
+    return;
+  }
+  context.memory.runAtomically(() => dispatchUnlocked(context));
+}
+
+function lockable(opcode: number, extension: number, registerDirect: boolean): boolean {
+  if (registerDirect) return false;
+  if (
+    [0x00, 0x01, 0x08, 0x09, 0x10, 0x11, 0x18, 0x19, 0x20, 0x21, 0x28, 0x29, 0x30, 0x31].includes(
+      opcode
+    )
+  )
+    return true;
+  if ([0x80, 0x81, 0x83].includes(opcode)) return extension !== 7;
+  if ([0x86, 0x87].includes(opcode)) return true;
+  if ([0xc0, 0xc1, 0xd0, 0xd1, 0xd2, 0xd3].includes(opcode)) return extension !== 6;
+  if ([0xf6, 0xf7].includes(opcode)) return extension === 2 || extension === 3;
+  if (opcode === 0xfe) return extension === 0 || extension === 1;
+  if (opcode === 0xff) return extension === 0 || extension === 1;
+  return false;
+}
+
+function dispatchUnlocked(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.opcode;
   if (opcode === 0x0f) return dispatchExtended(context);
   if (opcode <= 0x3f) return executeFirstIntervalArithmetic(context);

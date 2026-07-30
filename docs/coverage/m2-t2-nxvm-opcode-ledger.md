@@ -332,3 +332,11 @@ interrupt wakeup remain active architectural dependencies.
 NXVM routes F1 to UndefinedOpcode. P368 adds F1 to the rebuilt vector-6 path
 and verifies its real-mode fault EIP frame. LOCK remains an active memory-bus
 atomicity dependency.
+
+## P369 `F0` LOCK Prefix Checklist
+
+P369 validates LOCK only for implemented memory-destination RMW encodings and
+executes the complete instruction through the rebuilt memory bus atomic
+boundary. Register-only, read-only, and unsupported forms deliver #UD. A bus
+without an explicit atomic callback remains synchronous; device buses may
+provide the callback to preserve the same boundary under reentry.
