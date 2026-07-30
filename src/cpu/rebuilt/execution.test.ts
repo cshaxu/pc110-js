@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dispatchRebuiltInstruction } from "./dispatch.js";
 import { RebuiltCpuExecutor } from "./execution.js";
+import { RebuiltTripleFaultError } from "./events/interrupt-delivery.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 
 describe("RebuiltCpuExecutor", () => {
@@ -209,5 +210,94 @@ describe("RebuiltCpuExecutor", () => {
 
     expect(state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xf0 } });
     expect([0xf0, 0xf4, 0xf8].map((address) => bytes.get(address))).toEqual([0x10, 0, 8]);
+  });
+
+  it("escalates contributory delivery failures to a protected double fault", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Map<number, number>();
+    const write = (address: number, values: readonly number[]) =>
+      values.forEach((value, index) => bytes.set(address + index, value));
+    state.writeCr0(1);
+    state.writeSegment("cs", { selector: 8, base: 0, limit: 0xffff, default32: false, dpl: 0 });
+    state.writeSegment("ss", {
+      selector: 0x10,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x1f });
+    state.writeIdtr({ base: 0x300, limit: 0x7f });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    write(0, [0x82]);
+    write(0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(0x340, [0x40, 0, 8, 0, 0, 0x8e, 0, 0]);
+    new RebuiltCpuExecutor(state, {
+      readUint8: (address) => bytes.get(address) ?? 0,
+      writeUint8: (address, value) => bytes.set(address, value)
+    }).step(dispatchRebuiltInstruction);
+
+    expect(state.snapshot()).toMatchObject({ eip: 0x40, registers: { esp: 0xf0 } });
+    expect([0xf0, 0xf4, 0xf8, 0xfc].map((address) => bytes.get(address))).toEqual([0, 0, 8, 2]);
+  });
+
+  it("delivers the secondary general-protection fault after a benign fault", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Map<number, number>();
+    const write = (address: number, values: readonly number[]) =>
+      values.forEach((value, index) => bytes.set(address + index, value));
+    state.writeCr0(1);
+    state.writeSegment("cs", { selector: 8, base: 0, limit: 0xffff, default32: false, dpl: 0 });
+    state.writeSegment("ss", {
+      selector: 0x10,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x1f });
+    state.writeIdtr({ base: 0x300, limit: 0x7f });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    write(0, [0x82]);
+    write(0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(0x368, [0x60, 0, 8, 0, 0, 0x8e, 0, 0]);
+    new RebuiltCpuExecutor(state, {
+      readUint8: (address) => bytes.get(address) ?? 0,
+      writeUint8: (address, value) => bytes.set(address, value)
+    }).step(dispatchRebuiltInstruction);
+
+    expect(state.snapshot()).toMatchObject({ eip: 0x60, registers: { esp: 0xf0 } });
+    expect(bytes.get(0xf0)).toBe(0x32);
+  });
+
+  it("reports a triple fault when double-fault delivery fails", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Map<number, number>();
+    state.writeCr0(1);
+    state.writeSegment("cs", { selector: 8, base: 0, limit: 0xffff, default32: false, dpl: 0 });
+    state.writeSegment("ss", {
+      selector: 0x10,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x1f });
+    state.writeIdtr({ base: 0x300, limit: 0x7f });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    bytes.set(0, 0x82);
+    bytes.set(0x208, 0xff);
+    bytes.set(0x209, 0xff);
+    bytes.set(0x20d, 0x9a);
+    bytes.set(0x20e, 0xcf);
+    const executor = new RebuiltCpuExecutor(state, {
+      readUint8: (address) => bytes.get(address) ?? 0,
+      writeUint8: (address, value) => bytes.set(address, value)
+    });
+
+    expect(() => executor.step(dispatchRebuiltInstruction)).toThrow(RebuiltTripleFaultError);
   });
 });

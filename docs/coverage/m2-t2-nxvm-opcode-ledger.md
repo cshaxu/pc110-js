@@ -653,3 +653,12 @@ real-mode vector frame for `/6`.
 P410 provides a project-native rebuilt runner boundary for IF-gated external
 interrupt delivery. A successful delivery uses the existing hardware-interrupt
 frame path and resumes a halted CPU; no PIC or device behavior is introduced.
+
+## P411 Fault-Delivery Escalation Checklist
+
+P411 models protected exception-delivery failure as a second architected fault.
+Contributory and page-fault combinations escalate to `#DF`; a benign first
+fault instead attempts the second fault. A failed `#DF` delivery is exposed as
+the rebuilt triple-fault terminal condition. Focused evidence covers all three
+outcomes through actual rebuilt `#UD` execution. Hardware reset after triple
+fault, task gates, and unresolved outer-privilege delivery remain active work.

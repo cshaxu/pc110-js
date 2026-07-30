@@ -1,19 +1,35 @@
 import type { OperandSize } from "../decode/prefix.js";
 import { pushStack } from "../memory/stack.js";
-import type { SegmentedMemory } from "../memory/segmented-memory.js";
-import { readGdtDescriptor } from "../protection/descriptor.js";
-import { readInterruptGate } from "../protection/interrupt-gate.js";
+import { SegmentAccessError, type SegmentedMemory } from "../memory/segmented-memory.js";
+import { DescriptorLookupError, readGdtDescriptor } from "../protection/descriptor.js";
+import { InterruptGateLookupError, readInterruptGate } from "../protection/interrupt-gate.js";
 import {
   loadCodeSegment,
   loadDataSegment,
   loadStackSegment
 } from "../protection/segment-loader.js";
 import type { RebuiltCpuState } from "../state/cpu-state.js";
+import { PageFaultError } from "../../../memory/address-translation.js";
+import { SegmentLoadError } from "../protection/segment-loader.js";
 
 const EFLAGS_INTERRUPT = 0x00000200;
 const EFLAGS_TRAP = 0x00000100;
 
-export class InterruptDeliveryError extends Error {}
+export class InterruptDeliveryError extends Error {
+  public constructor(
+    message: string,
+    readonly vector: 10 | 11 | 12 | 13,
+    readonly errorCode: number
+  ) {
+    super(message);
+  }
+}
+
+export class RebuiltTripleFaultError extends Error {
+  public constructor() {
+    super("Double-fault delivery failed");
+  }
+}
 
 export interface InterruptRequest {
   readonly vector: number;
@@ -29,28 +45,58 @@ export function deliverInterrupt(
   request: InterruptRequest
 ): void {
   if (!(state.readCr0() & 1)) return deliverRealModeInterrupt(memory, state, request);
-  const gate = readInterruptGate(
-    { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
-    state.readIdtr(),
-    request.vector
-  );
+  let gate;
+  try {
+    gate = readInterruptGate(
+      { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      state.readIdtr(),
+      request.vector
+    );
+  } catch (error) {
+    if (error instanceof InterruptGateLookupError)
+      throw new InterruptDeliveryError(error.message, 13, idtErrorCode(request.vector));
+    throw error;
+  }
   const currentPrivilege = privilege(state);
   if (!gate.present)
-    throw new InterruptDeliveryError("Protected-mode interrupt gate is not present");
+    throw new InterruptDeliveryError(
+      "Protected-mode interrupt gate is not present",
+      11,
+      idtErrorCode(request.vector)
+    );
   if (request.software && currentPrivilege > gate.dpl)
-    throw new InterruptDeliveryError("Software interrupt gate privilege violation");
-  const descriptor = readGdtDescriptor(
-    { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
-    state.readGdtr(),
-    gate.selector
-  );
-  if (!descriptor.system || !(descriptor.type & 8) || !descriptor.present)
-    throw new InterruptDeliveryError("Interrupt gate target is not a present code segment");
+    throw new InterruptDeliveryError(
+      "Software interrupt gate privilege violation",
+      13,
+      idtErrorCode(request.vector)
+    );
+  let descriptor;
+  try {
+    descriptor = readGdtDescriptor(
+      { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      state.readGdtr(),
+      gate.selector
+    );
+  } catch (error) {
+    if (error instanceof DescriptorLookupError)
+      throw new InterruptDeliveryError("Interrupt gate target exceeds the GDT", 13, gate.selector);
+    throw error;
+  }
+  if (!descriptor.system || !(descriptor.type & 8))
+    throw new InterruptDeliveryError(
+      "Interrupt gate target is not a code segment",
+      13,
+      gate.selector
+    );
+  if (!descriptor.present)
+    throw new InterruptDeliveryError("Interrupt gate target is not present", 11, gate.selector);
   const conforming = Boolean(descriptor.type & 4);
   const targetPrivilege = conforming ? currentPrivilege : descriptor.dpl;
   if (targetPrivilege > currentPrivilege)
     throw new InterruptDeliveryError(
-      "Interrupt gate cannot transfer to a less-privileged code segment"
+      "Interrupt gate cannot transfer to a less-privileged code segment",
+      13,
+      gate.selector
     );
   const virtual8086 = state.isVirtual8086();
   const outerFrame =
@@ -100,9 +146,17 @@ function switchToPrivilegeStack(
 } {
   const tr = state.readTr();
   if ((tr.selector & 0xfff8) === 0 || tr.type !== 9 || tr.limit < 9)
-    throw new InterruptDeliveryError("Interrupt privilege change requires a valid 32-bit TSS");
+    throw new InterruptDeliveryError(
+      "Interrupt privilege change requires a valid 32-bit TSS",
+      10,
+      tr.selector
+    );
   if (targetPrivilege !== 0)
-    throw new InterruptDeliveryError("Only the 32-bit TSS ring-zero stack is rebuilt");
+    throw new InterruptDeliveryError(
+      "Only the 32-bit TSS ring-zero stack is rebuilt",
+      10,
+      tr.selector
+    );
   const esp = readPhysical32(memory, tr.base + 4);
   const ss = memory.readPhysical8(tr.base + 8) | (memory.readPhysical8(tr.base + 9) << 8);
   const old = {
@@ -151,13 +205,75 @@ export function deliverFault(
   faultEip: number,
   errorCode?: number
 ): void {
-  deliverInterrupt(memory, state, {
-    vector,
-    returnEip: faultEip,
-    operandSize: 16,
-    software: false,
-    errorCode
-  });
+  try {
+    deliverInterrupt(memory, state, {
+      vector,
+      returnEip: faultEip,
+      operandSize: 16,
+      software: false,
+      errorCode
+    });
+  } catch (error) {
+    const deliveryFault = faultFromDeliveryError(error);
+    if (!deliveryFault) throw error;
+    if (vector === 8) throw new RebuiltTripleFaultError();
+    if (requiresDoubleFault(vector, deliveryFault.vector))
+      return deliverDoubleFault(memory, state, faultEip);
+    deliverFault(memory, state, deliveryFault.vector, faultEip, deliveryFault.errorCode);
+  }
+}
+
+function deliverDoubleFault(
+  memory: SegmentedMemory,
+  state: RebuiltCpuState,
+  faultEip: number
+): void {
+  try {
+    deliverInterrupt(memory, state, {
+      vector: 8,
+      returnEip: faultEip,
+      operandSize: 16,
+      software: false,
+      errorCode: 0
+    });
+  } catch {
+    throw new RebuiltTripleFaultError();
+  }
+}
+
+function faultFromDeliveryError(
+  error: unknown
+): { readonly vector: number; readonly errorCode: number } | undefined {
+  if (error instanceof InterruptDeliveryError)
+    return { vector: error.vector, errorCode: error.errorCode };
+  if (error instanceof InterruptGateLookupError) return { vector: 13, errorCode: 0 };
+  if (error instanceof DescriptorLookupError) return { vector: 13, errorCode: 0 };
+  if (error instanceof SegmentLoadError)
+    return { vector: error.vector, errorCode: error.errorCode };
+  if (error instanceof SegmentAccessError)
+    return { vector: error.segment === "ss" ? 12 : 13, errorCode: 0 };
+  if (error instanceof PageFaultError)
+    return {
+      vector: 14,
+      errorCode:
+        (error.present ? 1 : 0) | (error.access.write ? 2 : 0) | (error.access.user ? 4 : 0)
+    };
+  return undefined;
+}
+
+function requiresDoubleFault(firstVector: number, secondVector: number): boolean {
+  const firstContributory = [10, 11, 12, 13].includes(firstVector);
+  const secondContributory = [10, 11, 12, 13].includes(secondVector);
+  const firstPageFault = firstVector === 14;
+  const secondPageFault = secondVector === 14;
+  return (
+    (firstContributory && (secondContributory || secondPageFault)) ||
+    (firstPageFault && (secondContributory || secondPageFault))
+  );
+}
+
+function idtErrorCode(vector: number): number {
+  return ((vector & 0xff) << 3) | 2;
 }
 
 function deliverRealModeInterrupt(

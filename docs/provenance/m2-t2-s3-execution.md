@@ -1197,6 +1197,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native fault path without a runtime reference import.
 - M2 T2 S3 P410 adds a project-native IF-gated external-interrupt runner
   boundary using the rebuilt event path without PIC or device behavior.
+- M2 T2 S3 P411 adapts NXVM's exception-state separation into project-native
+  protected fault-delivery escalation without a reference runtime, device, or
+  guest-service dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
