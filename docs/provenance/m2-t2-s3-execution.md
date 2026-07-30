@@ -1165,6 +1165,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   CPU state, segmented memory, stack, decode, and segment-loader modules.
   It retains 80386 paging with user access and introduces no reference runtime
   import, device behavior, or guest-service path.
+- M2 T2 S3 P399 records full opcode-form execution evidence for the existing
+  project-native XOR and CMP handlers against NXVM's `30-3D` family. The
+  rebuilt runtime remains independent of NXVM, PCjs, and legacy CPU code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
