@@ -205,12 +205,14 @@ P346 follows NXVM LOOP, LOOPE, LOOPNE, and JCXZ behavior. Focused tests cover
 conditions, counter decrement, JCXZ non-mutation, rel8 control transfer, and
 `67` CX/ECX selection. No I/O, privilege, or exception behavior applies.
 
-## P347 `E8-E9-EB` Near Control Checklist
+## P347/P357 `E8-EA-EB` Direct Control Checklist
 
-P347 follows NXVM near relative CALL/JMP behavior. Focused tests cover near and
-short relative displacements, 16/32-bit operand selection, CALL fallthrough
-push, independent SS D/B stack addressing, and EIP targets. Far control and
-I/O forms remain active work.
+P347 follows NXVM near relative CALL/JMP behavior. P357 completes the direct
+real-mode `EA` far-JMP form. Focused tests cover near and short relative
+displacements, 16/32-bit operand selection, CALL fallthrough push, independent
+SS D/B stack addressing, direct far targets, CS cache update, and fault-EIP
+preservation. Protected-mode far selector validation and fault delivery remain
+explicit dependencies; I/O forms remain active work.
 
 ## P348 `C2-C3-C8-C9` Stack-Frame Control Checklist
 

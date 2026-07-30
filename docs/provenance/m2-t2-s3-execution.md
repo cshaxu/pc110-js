@@ -1064,6 +1064,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   families without importing legacy CPU, NXVM, or PCjs runtime code.
 - M2 T2 S3 P356 composes rebuilt state, executor, dispatcher, and project
   PhysicalMemory into an independent runner with no legacy runtime import.
+- M2 T2 S3 P357 adapts NXVM's direct far-JMP control flow into project-native
+  TypeScript. Real-mode CS cache loading and operand-selected offsets are
+  implemented without importing NXVM, PCjs, or legacy CPU runtime code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

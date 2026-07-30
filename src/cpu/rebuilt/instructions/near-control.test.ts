@@ -34,4 +34,37 @@ describe("rebuilt near CALL and JMP", () => {
     expect(result.state.registers.read32(4)).toBe(0xfc);
     expect(result.memory.get(0xfc)).toBe(6);
   });
+
+  it("loads the real-mode far immediate target from EA", () => {
+    const result = execute([0xea, 0x05, 0xf9, 0x00, 0xf0]);
+    expect(result.state.snapshot()).toMatchObject({
+      eip: 0xf905,
+      segments: { cs: { selector: 0xf000, base: 0x000f0000, limit: 0xffff, default32: false } }
+    });
+  });
+
+  it("uses the operand-size-selected offset width for a far immediate JMP", () => {
+    const result = execute([0x66, 0xea, 0x78, 0x56, 0x34, 0x12, 0x00, 0xf0]);
+    expect(result.state.snapshot()).toMatchObject({
+      eip: 0x12345678,
+      segments: { cs: { selector: 0xf000, base: 0x000f0000, default32: false } }
+    });
+  });
+
+  it("retains the fault EIP when protected-mode far JMP validation is unavailable", () => {
+    const state = new RebuiltCpuState();
+    state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+    state.writeCr0(0x1);
+    state.writeEip(0);
+    const memory = new Map<number, number>(
+      [0xea, 0x00, 0x00, 0x08, 0x00].map((value, index) => [index, value])
+    );
+    expect(() =>
+      new RebuiltCpuExecutor(state, {
+        readUint8: (address) => memory.get(address) ?? 0,
+        writeUint8: (address, value) => memory.set(address, value)
+      }).step(executeNearControl)
+    ).toThrow("Rebuilt protected-mode far JMP selector validation is not implemented");
+    expect(state.readEip()).toBe(0);
+  });
 });
