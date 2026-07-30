@@ -26,6 +26,15 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.ports.read(0x2f8, 8)).toBe(0x5a);
   });
 
+  it("composes selected LPT1 at 0x378 with the native IRQ7 path", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x37a, 0x10, 8);
+    core.lpt1.setStatus(0x8f);
+    expect(core.pic.snapshot().master.request).toBe(0x80);
+    expect(core.ports.read(0x379, 8)).toBe(0x8f);
+  });
+
   it("selects floating unpopulated I/O only when the machine profile requests it", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     const core = new RebuiltPcAt386Core(memory, undefined, { unpopulatedIo: "floating" });

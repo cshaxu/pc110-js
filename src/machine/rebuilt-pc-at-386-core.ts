@@ -18,6 +18,7 @@ import { CgaCompatibility } from "../devices/cga-compatibility.js";
 import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
 import { VgaSequencer } from "../devices/vga-sequencer.js";
 import { Uart16550 } from "../devices/uart16550.js";
+import { ParallelPort } from "../devices/parallel-port.js";
 import {
   CycleScheduler,
   deskPro386CycleProfile,
@@ -77,6 +78,9 @@ export class RebuiltPcAt386Core {
     basePort: 0x2f8,
     onInterrupt: (active) => active && this.pic.raiseIrq(3)
   });
+  public readonly lpt1 = new ParallelPort({
+    onInterrupt: (active) => active && this.pic.raiseIrq(7)
+  });
   public readonly mdaCompatibility = new MdaCompatibility();
   public readonly attributeController = new VgaAttributeController();
   public readonly sequencer = new VgaSequencer();
@@ -114,6 +118,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.fdc.portRanges()) this.registerPorts(range);
     for (const range of this.com1.portRanges()) this.registerPorts(range);
     for (const range of this.com2.portRanges()) this.registerPorts(range);
+    for (const range of this.lpt1.portRanges()) this.registerPorts(range);
     for (const range of this.mdaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.attributeController.portRanges()) this.registerPorts(range);
@@ -139,6 +144,7 @@ export class RebuiltPcAt386Core {
     this.fdc.reset();
     this.com1.reset();
     this.com2.reset();
+    this.lpt1.reset();
     this.mdaCompatibility.reset();
     this.cgaCompatibility.reset();
     this.attributeController.reset();
