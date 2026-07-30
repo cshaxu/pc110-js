@@ -12,8 +12,8 @@
 
 ## Next Eligible Work
 
-- M2 T2 S4: active. Close the final project-native physical-memory contract
-  after S3's NXVM CPU coverage audit. The frozen legacy/reference CPU remains
+- M2 T2 S5: active. Close project-native I/O port dispatch, reset, deterministic
+  stepping, and trace contracts. The frozen legacy/reference CPU remains
   differential evidence only. Do not begin T3 until every T2 completion gate
   passes and the owner authorizes T3.
 
@@ -65,5 +65,8 @@ NXVM-TODO boundaries. The rebuilt selected-ROM trace reaches `F000:F907` and
 stops only at the documented unavailable I/O-bus boundary; the M1 PCjs browser
 reference reaches `A:\>`. The next eligible work is S4 final memory closure,
 followed by S5 and S6.
+
+P8 closed S4 after confirming the selected M1 physical map, A20 boundary,
+immutable ROM aliases, rebuilt-runner memory-bus use, and selected-ROM trace.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.
