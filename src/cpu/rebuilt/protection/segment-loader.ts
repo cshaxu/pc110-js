@@ -1,7 +1,7 @@
 import type { SegmentedMemory } from "../memory/segmented-memory.js";
 import type { RebuiltCpuState } from "../state/cpu-state.js";
 import type { SegmentName } from "../state/segments.js";
-import { DescriptorLookupError, readDescriptor } from "./descriptor.js";
+import { DescriptorLookupError, markDescriptorAccessed, readDescriptor } from "./descriptor.js";
 
 export class SegmentLoadError extends Error {
   public constructor(
@@ -48,6 +48,7 @@ export function loadCodeSegment(
   if (!descriptor.present) throw fault(11, selector, "Selected code segment is not present");
   if (conforming ? descriptor.dpl > cpl : descriptor.dpl !== cpl || (selector & 3) > cpl)
     throw fault(13, selector, "Selected code segment violates privilege rules");
+  markAccessed(memory, state, selector);
   state.writeSegment("cs", {
     selector: (selector & 0xfffc) | cpl,
     base: descriptor.base,
@@ -113,6 +114,7 @@ function load(
     throw fault(stack ? 12 : 11, selector, "Selected segment is not present");
   if (stack ? rpl !== cpl || descriptor.dpl !== cpl : Math.max(cpl, rpl) > descriptor.dpl)
     throw fault(13, selector, "Selected segment violates privilege rules");
+  markAccessed(memory, state, selector);
   state.writeSegment(name, {
     selector,
     base: descriptor.base,
@@ -131,6 +133,23 @@ function lookup(memory: SegmentedMemory, state: RebuiltCpuState, selector: numbe
   try {
     return readDescriptor(
       { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      state,
+      selector
+    );
+  } catch (error) {
+    if (error instanceof DescriptorLookupError)
+      throw fault(13, selector, "Selector is outside the descriptor table");
+    throw error;
+  }
+}
+
+function markAccessed(memory: SegmentedMemory, state: RebuiltCpuState, selector: number): void {
+  try {
+    markDescriptorAccessed(
+      {
+        readUint8: (address) => memory.readPhysical8(address),
+        writeUint8: (address, value) => memory.writePhysical8(address, value)
+      },
       state,
       selector
     );

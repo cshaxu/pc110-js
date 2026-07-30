@@ -36,11 +36,18 @@ export function readDescriptor(
   state: RebuiltCpuState,
   selector: number
 ): SegmentDescriptor {
-  if (!(selector & 0x0004)) return readTableDescriptor(memory, state.readGdtr(), selector);
-  const ldtr = state.readLdtr();
-  if ((ldtr.selector & 0xfff8) === 0)
-    throw new DescriptorLookupError(selector, "LDT selector is present without an active LDTR");
-  return readTableDescriptor(memory, ldtr, selector);
+  return readTableDescriptor(memory, tableForSelector(state, selector), selector);
+}
+
+export function markDescriptorAccessed(
+  memory: RebuiltMemoryBus,
+  state: RebuiltCpuState,
+  selector: number
+): void {
+  const address = descriptorAddress(tableForSelector(state, selector), selector);
+  const accessAddress = address + 5;
+  const access = memory.readUint8(accessAddress);
+  if (!(access & 1)) memory.writeUint8(accessAddress, access | 1);
 }
 
 function readTableDescriptor(
@@ -48,10 +55,7 @@ function readTableDescriptor(
   table: DescriptorTable,
   selector: number
 ): SegmentDescriptor {
-  const offset = selector & 0xfff8;
-  if (offset === 0 || offset + 7 > table.limit)
-    throw new DescriptorLookupError(selector, "Selector is outside the descriptor-table limit");
-  const address = (table.base + offset) >>> 0;
+  const address = descriptorAddress(table, selector);
   const low = read32(memory, address);
   const high = read32(memory, address + 4);
   const limit20 = (low & 0xffff) | (((high >>> 16) & 0x0f) << 16);
@@ -66,6 +70,21 @@ function readTableDescriptor(
     default32: Boolean(high & 0x00400000),
     granularity
   };
+}
+
+function tableForSelector(state: RebuiltCpuState, selector: number): DescriptorTable {
+  if (!(selector & 0x0004)) return state.readGdtr();
+  const ldtr = state.readLdtr();
+  if ((ldtr.selector & 0xfff8) === 0)
+    throw new DescriptorLookupError(selector, "LDT selector is present without an active LDTR");
+  return ldtr;
+}
+
+function descriptorAddress(table: DescriptorTable, selector: number): number {
+  const offset = selector & 0xfff8;
+  if (offset === 0 || offset + 7 > table.limit)
+    throw new DescriptorLookupError(selector, "Selector is outside the descriptor-table limit");
+  return (table.base + offset) >>> 0;
 }
 
 function read32(memory: RebuiltMemoryBus, address: number): number {

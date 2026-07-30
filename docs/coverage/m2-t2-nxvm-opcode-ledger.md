@@ -965,3 +965,13 @@ helper `_kpa_test_iomap` (1170), protected interrupt delivery
 project's independently tested I/O bitmap, interrupt delivery, WAIT `#NM`, and
 `#UD` behavior remains executable; the comments preserve NXVM's TODO status as
 an explicit review boundary rather than silently claiming NXVM implementation.
+
+## P443 Protected Descriptor Accessed-Bit Checklist
+
+P443 follows NXVM `_ksa_load_sreg` at `vcpuins.c` 601-763: a successful
+protected code, data, or stack segment load sets the descriptor Accessed bit
+and writes it back to its GDT or active LDT entry. The project-native shared
+loader validates type, presence, and privilege before writing the bit, so a
+rejected load leaves the descriptor unchanged. Focused tests cover GDT code,
+data, and stack loads plus active-LDT data loading. Task and call-gate paths
+remain NXVM TODO-aligned exclusions.

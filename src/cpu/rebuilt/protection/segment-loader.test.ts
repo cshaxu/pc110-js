@@ -61,6 +61,38 @@ describe("rebuilt segment loader hidden CPL", () => {
       limit: 0x0fff,
       valid: true
     });
+    expect(result.bytes.get(0x20d)).toBe(0x93);
+  });
+
+  it("marks successful code, data, and stack GDT descriptors accessed", () => {
+    const result = machine();
+    [0xff, 0x0f, 0, 0, 0, 0x9a, 0x40, 0].forEach((value, index) =>
+      result.bytes.set(0x108 + index, value)
+    );
+    [0xff, 0x0f, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+      result.bytes.set(0x110 + index, value)
+    );
+    [0xff, 0x0f, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+      result.bytes.set(0x118 + index, value)
+    );
+    result.state.writeGdtr({ base: 0x100, limit: 0x1f });
+
+    loadCodeSegment(result.memory, result.state, 8);
+    loadDataSegment(result.memory, result.state, "ds", 0x10);
+    loadStackSegment(result.memory, result.state, 0x18);
+
+    expect([0x10d, 0x115, 0x11d].map((address) => result.bytes.get(address))).toEqual([
+      0x9b, 0x93, 0x93
+    ]);
+  });
+
+  it("does not mark a descriptor accessed before a failed validation", () => {
+    const result = machine();
+    writeDescriptor(result.bytes, 2);
+    result.bytes.set(0x10d, 0x12);
+
+    expect(() => loadDataSegment(result.memory, result.state, "ds", 8)).toThrow(SegmentLoadError);
+    expect(result.bytes.get(0x10d)).toBe(0x12);
   });
 
   it("classifies selector type, presence, and stack errors", () => {

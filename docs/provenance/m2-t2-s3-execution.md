@@ -1299,6 +1299,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P442 completes the source-level marker alignment for NXVM's I/O,
   interrupt, WAIT, and post-80386 TODO handlers while retaining the existing
   project-native tested behavior and no reference runtime dependency.
+- M2 T2 S3 P443 adapts NXVM protected segment-load Accessed-bit writeback into
+  the project-native GDT/LDT descriptor path after successful validation only.
+  It imports no reference runtime and adds no device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
