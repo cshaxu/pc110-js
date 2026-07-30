@@ -1227,6 +1227,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   TypeScript tests and an ARPL virtual-8086 correction. It follows NXVM's
   `_IsProtected` predicate, routing v86 ARPL to rebuilt `#UD`; no C code,
   reference runtime, BIOS, device, or guest-service behavior is imported.
+- M2 T2 S3 P420 records complete project-native execution evidence for NXVM's
+  `80-8F` handlers. It adds only segment-register encoding coverage over the
+  rebuilt CPU, without importing reference code or adding BIOS, device, or
+  guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

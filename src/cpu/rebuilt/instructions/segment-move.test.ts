@@ -59,6 +59,46 @@ describe("rebuilt segment MOV", () => {
     expect(nullSegment.state.readSegment("ds").valid).toBe(false);
   });
 
+  it("covers every legal segment-register encoding for MOV stores and loads", () => {
+    for (const [index, segment] of [
+      [0, "es"],
+      [1, "cs"],
+      [2, "ss"],
+      [3, "ds"],
+      [4, "fs"],
+      [5, "gs"]
+    ] as const) {
+      const selector = 0x1000 + index;
+      const stored = execute([0x8c, 0xc0 | (index << 3)], (state) =>
+        state.writeSegment(segment, {
+          selector,
+          base: segment === "cs" ? 0 : selector << 4,
+          limit: 0xffff,
+          default32: false
+        })
+      );
+      expect(stored.state.registers.read16(0)).toBe(selector);
+    }
+
+    for (const [index, segment] of [
+      [0, "es"],
+      [2, "ss"],
+      [3, "ds"],
+      [4, "fs"],
+      [5, "gs"]
+    ] as const) {
+      const selector = 0x2000 + index;
+      const loaded = execute([0x8e, 0xc0 | (index << 3)], (state) =>
+        state.registers.write16(0, selector)
+      );
+      expect(loaded.state.readSegment(segment)).toMatchObject({
+        selector,
+        base: selector << 4,
+        valid: true
+      });
+    }
+  });
+
   it("delivers #UD for MOV CS and undefined segment encodings", () => {
     for (const modRm of [0xc8, 0xf0]) {
       const result = execute([0x8e, modRm], (state, memory) => {
