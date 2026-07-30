@@ -1006,6 +1006,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P336 translates NXVM LEA into project-native TypeScript. It consumes
   only rebuilt ModR/M effective-address data, never reads the addressed memory,
   and has no runtime dependency on NXVM, PCjs, or the legacy CPU.
+- M2 T2 S3 P337 translates NXVM accumulator XCHG behavior into native TypeScript.
+  It snapshots AX/EAX before swapping, treats `90` as a no-op, preserves EFLAGS,
+  and has no external runtime dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
