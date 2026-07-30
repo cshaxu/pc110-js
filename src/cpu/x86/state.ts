@@ -574,16 +574,18 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
-  public writeShiftLeftFlags8(value: number): void {
+  public writeShiftLeftFlags8(value: number, count = 1): void {
     const source = value & 0xff;
-    const result = (source << 1) & 0xff;
-    const carry = Boolean(source & 0x80);
+    const normalizedCount = count & 0x1f;
+    if (!normalizedCount) return;
+    const carry = normalizedCount > 8 ? 0 : source << (normalizedCount - 1);
+    const result = normalizedCount > 8 ? 0 : (carry << 1) & 0xff;
     let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
-    if (carry) flags |= EFLAGS_CARRY;
+    if (carry & 0x80) flags |= EFLAGS_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
-    if (Boolean(result & 0x80) !== carry) flags |= EFLAGS_OVERFLOW;
+    if (normalizedCount === 1 && (result ^ carry) & 0x80) flags |= EFLAGS_OVERFLOW;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
@@ -632,21 +634,26 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
-  public writeArithmeticShiftRightFlags8(value: number): void {
+  public writeArithmeticShiftRightFlags8(value: number, count = 1): void {
     const source = value & 0xff;
-    const result = ((source >> 1) | (source & 0x80)) & 0xff;
+    const normalizedCount = count & 0x1f;
+    if (!normalizedCount) return;
+    const result = (((source << 24) >> 24) >> normalizedCount) & 0xff;
     let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
-    if (source & 0x01) flags |= EFLAGS_CARRY;
+    if (normalizedCount <= 8 && source & (1 << (normalizedCount - 1))) flags |= EFLAGS_CARRY;
     if (result === 0) flags |= EFLAGS_ZERO;
     if (result & 0x80) flags |= EFLAGS_SIGN;
     if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
-  public writeRotateFlags8(result: number, carry: boolean): void {
-    let flags = this.eflags & ~(EFLAGS_CARRY | EFLAGS_OVERFLOW);
+  public writeRotateFlags8(result: number, carry: boolean, count = 1): void {
+    let flags = this.eflags & ~EFLAGS_CARRY;
     if (carry) flags |= EFLAGS_CARRY;
-    if (Boolean(result & 0x80) !== carry) flags |= EFLAGS_OVERFLOW;
+    if (count === 1) {
+      flags &= ~EFLAGS_OVERFLOW;
+      if (Boolean(result & 0x80) !== carry) flags |= EFLAGS_OVERFLOW;
+    }
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
@@ -657,6 +664,25 @@ export class Cpu386State {
     if (count === 1) {
       flags &= ~EFLAGS_OVERFLOW;
       if (Boolean(value & 0x80) !== Boolean(value & 0x40)) flags |= EFLAGS_OVERFLOW;
+    }
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeRotateThroughCarryFlags8(
+    result: number,
+    carry: boolean,
+    count: number,
+    right: boolean
+  ): void {
+    const value = result & 0xff;
+    let flags = this.eflags & ~EFLAGS_CARRY;
+    if (carry) flags |= EFLAGS_CARRY;
+    if (count === 1) {
+      flags &= ~EFLAGS_OVERFLOW;
+      const overflow = right
+        ? Boolean(value & 0x80) !== Boolean(value & 0x40)
+        : Boolean(value & 0x80) !== carry;
+      if (overflow) flags |= EFLAGS_OVERFLOW;
     }
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }

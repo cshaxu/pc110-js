@@ -850,6 +850,71 @@ function executeContextualRotateThroughCarry(
   state.advanceEip(instructionBytes);
 }
 
+function executeContextualByteGroupTwo(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const instructionBytes = modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + 1;
+  const count = fetchCodeByte(memory, state, instructionBytes - 1).opcode;
+  if (modRm.reg === 0x06) throw new UnsupportedOpcodeError("Undefined Group 2 form");
+  const source = modRm.registerDirect
+    ? state.readRegister8(modRm.rm)
+    : readSegmentUint8(memory, state, address!.segment, address!.offset, context.addressSize);
+  const logicalCount = count & 0x1f;
+  let result = source;
+  let carry = state.carryFlag();
+  if (modRm.reg === 0x00 || modRm.reg === 0x01) {
+    const rotation = logicalCount % 8;
+    if (rotation) {
+      result =
+        modRm.reg === 0x00
+          ? ((source << rotation) | (source >>> (8 - rotation))) & 0xff
+          : ((source >>> rotation) | (source << (8 - rotation))) & 0xff;
+      carry = modRm.reg === 0x00 ? Boolean(result & 1) : Boolean(result & 0x80);
+    }
+    if (modRm.reg === 0x00) state.writeRotateFlags8(result, carry, rotation);
+    else state.writeRotateRightFlags8(result, rotation);
+  } else if (modRm.reg === 0x02 || modRm.reg === 0x03) {
+    const rotation = logicalCount % 9;
+    for (let index = 0; index < rotation; index += 1) {
+      if (modRm.reg === 0x02) {
+        const nextCarry = Boolean(result & 0x80);
+        result = ((result << 1) | (carry ? 1 : 0)) & 0xff;
+        carry = nextCarry;
+      } else {
+        const nextCarry = Boolean(result & 1);
+        result = ((result >>> 1) | (carry ? 0x80 : 0)) & 0xff;
+        carry = nextCarry;
+      }
+    }
+    state.writeRotateThroughCarryFlags8(result, carry, rotation, modRm.reg === 0x03);
+  } else if (modRm.reg === 0x04) {
+    result = logicalCount > 8 ? 0 : (source << logicalCount) & 0xff;
+    state.writeShiftLeftFlags8(source, logicalCount);
+  } else if (modRm.reg === 0x05) {
+    result = logicalCount > 8 ? 0 : source >>> logicalCount;
+    state.writeShiftRightFlags8(source, logicalCount);
+  } else {
+    result = (((source << 24) >> 24) >> logicalCount) & 0xff;
+    state.writeArithmeticShiftRightFlags8(source, logicalCount);
+  }
+  if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+  else
+    writeSegmentUint8(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  state.advanceEip(instructionBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1549,6 +1614,13 @@ function executeContextualInstruction(
       context.operandSize
     );
     return { halted: false, fetched };
+  }
+  if (context.opcode === 0xc0) {
+    const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    if (modRm.reg !== 0x06) {
+      executeContextualByteGroupTwo(memory, state, context);
+      return { halted: false, fetched };
+    }
   }
   if (
     (context.opcode === 0xc0 ||

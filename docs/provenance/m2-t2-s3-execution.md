@@ -866,6 +866,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P300 adds a project-native byte rotate-right flag writer and routes
   the existing D0 RCR path through it. The helper follows NXVM's one-bit RCR
   overflow rule and preserves OF when the count does not define it.
+- M2 T2 S3 P302 migrates defined C0 byte Group 2 forms into a project-native
+  contextual helper. It keeps /6 on the existing invalid-opcode path, selects
+  ModR/M address width from the execution context, and records undefined OF by
+  preserving it when a multi-bit operation does not define it.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

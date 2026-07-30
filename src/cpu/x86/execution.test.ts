@@ -8217,4 +8217,53 @@ describe("80386 instruction fetch", () => {
     ]);
     expect(state.snapshot()).toMatchObject({ eip: 15, eflags: 0x00000002 });
   });
+
+  it("executes contextual C0 byte Group 2 forms through 67 memory addressing", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0xc0],
+      [0x00000001, 0xc0],
+      [0x00000002, 0x01],
+      [0x00000003, 0xc0],
+      [0x00000004, 0xd8],
+      [0x00000005, 0x01],
+      [0x00000006, 0xc0],
+      [0x00000007, 0xe0],
+      [0x00000008, 0x02],
+      [0x00000009, 0xc0],
+      [0x0000000a, 0xf8],
+      [0x0000000b, 0x02],
+      [0x0000000c, 0x67],
+      [0x0000000d, 0xc0],
+      [0x0000000e, 0x7e],
+      [0x0000000f, 0x00],
+      [0x00000010, 0x01],
+      [0x00002000, 0x81]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister8(0, 0x81);
+    state.writeEflags(0x00000003);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 3 }, eflags: 0x00000803, eip: 3 });
+    state.writeRegister8(0, 1);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      registers: { eax: 0x80 },
+      eflags: 0x00000803,
+      eip: 6
+    });
+    state.writeRegister8(0, 0x41);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 4 }, eip: 9 });
+    state.writeRegister8(0, 0x80);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0xe0 }, eip: 12 });
+    state.writeRegister16(5, 0x2000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(values.get(0x00002000)).toBe(0xc0);
+    expect(state.snapshot().eip).toBe(17);
+  });
 });
