@@ -4,8 +4,9 @@
 
 - Affected PCjs-derived subsystem: rebuilt protected interrupt and return path.
 - Source provenance record: `docs/provenance/m2-t2-s3-execution.md`.
-- Changed behavior: invalid protected IRET no longer leaks a host error; it
-  delivers rebuilt `#GP` with the selector error code.
+- Changed behavior: invalid protected IRET to a more-privileged target no
+  longer leaks a host error; it delivers rebuilt `#GP` with the selector error
+  code.
 - Active milestone need: preserve CPU fault and restart behavior at the
   project-native execution boundary.
 

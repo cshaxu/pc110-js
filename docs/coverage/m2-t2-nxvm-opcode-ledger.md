@@ -918,4 +918,4 @@ delivery. The original stack pointer is restored before fault delivery so the
 new TSS-selected fault frame records the faulting instruction state. Focused
 evidence executes CPL3 IRET to a ring-zero selector through a ring-zero TSS
 stack and verifies the `#GP` handler, error code, and frame. The invalid v86
-non-dword IRET path likewise routes to rebuilt `#GP(0)`.
+return path remains covered by the separately recorded dword-frame evidence.

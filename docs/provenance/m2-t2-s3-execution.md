@@ -1283,8 +1283,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   and P424. It introduces no runtime behavior or reference dependency.
 - M2 T2 S3 P437 adapts the NXVM protected IRET fault boundary into the
   project-native event path. It restores the speculative popped frame before
-  delivering `#GP`, imports no reference runtime, and adds no device or
-  guest-service behavior.
+  delivering `#GP(selector)`, imports no reference runtime, and adds no device
+  or guest-service behavior.
+- M2 T2 S3 P438 removes an unreachable virtual-8086 operand-size guard and
+  narrows the P437 evidence claim to its verified protected IRET path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

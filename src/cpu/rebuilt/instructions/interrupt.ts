@@ -81,8 +81,6 @@ function restoreVirtual8086(
   selector: number,
   flags: number
 ): void {
-  if (context.instruction.prefixes.operandSize !== 32)
-    return deliverInvalidVirtual8086Iret(context);
   const stackPointer = popStack(context.memory, context.state, 32);
   const stackSelector = popStack(context.memory, context.state, 32) & 0xffff;
   const es = popStack(context.memory, context.state, 32) & 0xffff;
@@ -98,11 +96,6 @@ function restoreVirtual8086(
   loadDataSegment(context.memory, context.state, "gs", gs);
   context.state.registers.write32(4, stackPointer);
   context.state.writeEip(target & 0xffff);
-}
-
-function deliverInvalidVirtual8086Iret(context: RebuiltExecutionContext): void {
-  restorePoppedFrame(context, context.instruction.prefixes.operandSize);
-  deliverFault(context.memory, context.state, 13, context.state.readEip(), 0);
 }
 
 function restorePoppedFrame(context: RebuiltExecutionContext, operandSize: 16 | 32): void {
