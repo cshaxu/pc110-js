@@ -183,6 +183,7 @@ function main(): void {
   const eventTailLengthValue = eventTailLength();
   const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
   const watches = watchedAddresses();
+  const needsTrace = tailLength > 0 || eventTailLengthValue > 0 || transfers || watches.size > 0;
   const watchHits = new Map<string, WatchHit>(
     [...watches].map((address) => [address, { count: 0, lastEcx: 0, lastNextAddress: "none" }])
   );
@@ -201,32 +202,29 @@ function main(): void {
   const trace: RebuiltMachineTraceEvent[] = [];
   const transferTrace: RebuiltMachineTraceEvent[] = [];
   const traceCapacity = Math.max(1, tailLength, eventTailLengthValue);
-  const core = new RebuiltPcAt386Core(
-    memory,
-    (event) => {
-      retainTraceEvent(trace, event, traceCapacity);
-      if (
-        transfers &&
-        event.kind === "instruction" &&
-        event.event.before.segments.cs.selector !== event.event.after.segments.cs.selector
-      )
-        transferTrace.push(event);
-      if (event.kind === "instruction") {
-        const address = `${event.event.before.segments.cs.selector.toString(16)}:${event.event.before.eip.toString(16)}`;
-        const prior = watchHits.get(address);
-        if (prior)
-          watchHits.set(address, {
-            count: prior.count + 1,
-            lastEcx: event.event.before.registers.ecx,
-            lastNextAddress: `${event.event.after.segments.cs.selector.toString(16)}:${event.event.after.eip.toString(16)}`
-          });
-      }
-    },
-    {
-      deskProSecondaryPit: true,
-      unpopulatedIo: "floating"
+  const recordTrace = (event: RebuiltMachineTraceEvent): void => {
+    retainTraceEvent(trace, event, traceCapacity);
+    if (
+      transfers &&
+      event.kind === "instruction" &&
+      event.event.before.segments.cs.selector !== event.event.after.segments.cs.selector
+    )
+      transferTrace.push(event);
+    if (event.kind === "instruction") {
+      const address = `${event.event.before.segments.cs.selector.toString(16)}:${event.event.before.eip.toString(16)}`;
+      const prior = watchHits.get(address);
+      if (prior)
+        watchHits.set(address, {
+          count: prior.count + 1,
+          lastEcx: event.event.before.registers.ecx,
+          lastNextAddress: `${event.event.after.segments.cs.selector.toString(16)}:${event.event.after.eip.toString(16)}`
+        });
     }
-  );
+  };
+  const core = new RebuiltPcAt386Core(memory, needsTrace ? recordTrace : undefined, {
+    deskProSecondaryPit: true,
+    unpopulatedIo: "floating"
+  });
   attachLocalFloppy(core);
   try {
     const result = core.run(budget);
