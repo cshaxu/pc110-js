@@ -28,7 +28,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 80, 81, 83 Group One | 7507-7840 | Immediate arithmetic and compare groups | `instructions/group-one.ts` | Partial | Every extension; sign extension; register/memory; widths | Required | Implemented: P332; broader differential evidence remains active |
 | 84-8F ModR/M, segment, and stack forms | 7853-8130 | TEST, XCHG, MOV, segment moves, LEA, POP r/m | `instructions/test.ts`, `instructions/exchange.ts`, `instructions/move.ts`, `instructions/lea.ts`, `instructions/register-stack.ts` | Partial | ModR/M/SIB; segment validation; 66/67 | Required | In progress: P333-P336 implement 84-8D |
 | 90-9F exchange, flags, far call, and flag transfer | 8143-8626 | NOP, XCHG AX, CBW/CWD, far call, PUSHF/POPF, SAHF/LAHF | `instructions/accumulator-exchange.ts`, `instructions/sign-extension.ts`, `instructions/flag-transfer.ts`, `instructions/control.ts`, `instructions/register-stack.ts` | Partial | Flag privilege; operand width; far control transfer | Required | In progress: P337-P339 implement 90-99 and 9E-9F |
-| A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/moffs-move.ts`, `instructions/accumulator-test.ts`, `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | In progress: P341-P342 implement A0-A3 and A8-A9 |
+| A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/moffs-move.ts`, `instructions/accumulator-test.ts`, `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | In progress: P341-P342 and P377 implement A0-AF execution; protected segment faults remain active |
 | B0-BF immediate register moves | 9325-9589 | Byte and operand-sized register immediates | `instructions/immediate-move.ts` | Partial | All registers; instruction length; 66 | Required | Implemented: P340; broader differential evidence remains active |
 | C0-CF groups, returns, interrupts, frame | 9613-10338 | Shifts/rotates, RET, LES/LDS, MOV immediate groups, ENTER/LEAVE, RETF, INT, IRET | `instructions/immediate-modrm-move.ts`, `instructions/stack-frame-control.ts`, `instructions/shift-rotate.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/interrupt.ts` | Partial | Every group extension; count/flags; privilege; fault EIP | Required | In progress: P351 implements C0/C1 |
 | D0-DF shifts, adjust, XLAT, loops, port I/O | 10250-10941 | Shift/rotate count variants, AAM/AAD, XLAT, LOOP, JCXZ, IN/OUT | `instructions/shift-rotate.ts`, `instructions/ascii-adjust.ts`, `instructions/xlat.ts`, `instructions/loop.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/io.ts` | Partial | Count zero; CL; 66/67; I/O permissions | Required | In progress: P344-P346 and P351 |
@@ -377,3 +377,15 @@ P376 implements project-native INS/OUTS through the port bus. Tests cover
 ES:DI input, DS:SI output, DF, and one-element REP execution with EIP retained
 while the counter remains nonzero. Protected I/O privilege checks remain an
 active protection dependency.
+
+## P377 `A4-A7-AA-AF` Generic String Checklist
+
+P377 follows NXVM MOVSB/MOVSW, CMPSB/CMPSW, STOSB/STOSW, LODSB/LODSW, and
+SCASB/SCASW handlers. It implements all generic string opcodes in a
+project-native module: byte and operand-sized transfers, source segment
+overrides, fixed ES destinations, DF index direction, address-size-selected
+SI/DI/CX state, and one-element REP execution. CMPS and SCAS apply REP/REPNE
+ZF termination after each element; MOVS, STOS, and LODS remain count-driven.
+Focused tests cover segment override, 66/67, REP and REPNE continuation,
+defined comparison flags, and DF. Protected segment-limit/page faults and
+virtual-8086 behavior remain active protection-system dependencies.

@@ -1103,6 +1103,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   behavior without reference runtime imports.
 - M2 T2 S3 P376 adapts NXVM INS/OUTS iteration through project-native memory,
   register, and port-bus modules without reference runtime imports.
+- M2 T2 S3 P377 adapts NXVM generic string handler structure into a
+  project-native MOVS/CMPS/STOS/LODS/SCAS module. It retains fixed ES
+  destination semantics, applies source overrides only to source reads, and
+  uses rebuilt arithmetic flags without runtime reference imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

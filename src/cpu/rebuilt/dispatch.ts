@@ -34,6 +34,7 @@ import { executeSignExtension } from "./instructions/sign-extension.js";
 import { executeStringIo } from "./instructions/string-io.js";
 import { executeShortConditionalJump } from "./instructions/control.js";
 import { executeStackFrameControl } from "./instructions/stack-frame-control.js";
+import { executeString } from "./instructions/string.js";
 import { executeTestModRm } from "./instructions/test.js";
 import { executeUndefinedOpcode } from "./instructions/undefined.js";
 import { executeWait } from "./instructions/wait.js";
@@ -98,6 +99,8 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode === 0x9b) return executeWait(context);
   if (opcode === 0x9e || opcode === 0x9f) return executeFlagTransfer(context);
   if (opcode >= 0xa0 && opcode <= 0xa3) return executeMoffsMove(context);
+  if ([0xa4, 0xa5, 0xa6, 0xa7, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf].includes(opcode))
+    return executeString(context);
   if (opcode === 0xa8 || opcode === 0xa9) return executeAccumulatorTest(context);
   if (opcode >= 0xb0 && opcode <= 0xbf) return executeImmediateMove(context);
   if ([0xc2, 0xc3, 0xc8, 0xc9, 0xca, 0xcb].includes(opcode))
