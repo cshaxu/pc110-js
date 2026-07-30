@@ -718,6 +718,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P263 routes byte Group 1 immediate `80` through context. Its opcode
   extension selects the same project-native arithmetic and flag operations, and
   `67` selects the non-default ModR/M address size without changing byte width.
+- M2 T2 S3 P264 routes ModR/M XCHG through context. PCjs operand/address-size
+  selection determines the word or dword `87` form and its effective address;
+  byte `86` remains byte-width while sharing address selection.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

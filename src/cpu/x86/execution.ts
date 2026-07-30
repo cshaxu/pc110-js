@@ -1034,6 +1034,17 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   }
 
+  if (context.opcode === 0x86 || context.opcode === 0x87) {
+    executeXchgModRm(
+      memory,
+      state,
+      context.opcode === 0x86 ? 8 : context.operandSize,
+      context.opcodeOffset + 1,
+      context.addressSize
+    );
+    return { halted: false, fetched };
+  }
+
   const aluOperation = modRmAluOperation(context.opcode);
   if (aluOperation) {
     const modRmOffset = context.opcodeOffset + 1;
@@ -1908,38 +1919,55 @@ function executeCompareRegFromModRm(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
-function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 8 | 16): void {
-  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
+function executeXchgModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  width: 8 | 16 | 32,
+  modRmOffset = 1,
+  addressSize: 16 | 32 = 16
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.registerDirect) {
     if (width === 8) {
       const register = state.readRegister8(modRm.reg);
       state.writeRegister8(modRm.reg, state.readRegister8(modRm.rm));
       state.writeRegister8(modRm.rm, register);
-    } else {
+    } else if (width === 16) {
       const register = state.readRegister16(modRm.reg);
       state.writeRegister16(modRm.reg, state.readRegister16(modRm.rm));
       state.writeRegister16(modRm.rm, register);
+    } else {
+      const register = state.readRegister(modRm.reg);
+      state.writeRegister(modRm.reg, state.readRegister(modRm.rm));
+      state.writeRegister(modRm.rm, register);
     }
-    state.advanceEip(2);
+    state.advanceEip(modRmOffset + 1);
     return;
   }
-  const address = decodeMemoryAddress(memory, state, modRm);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize)!;
   if (width === 8) {
     const register = state.readRegister8(modRm.reg);
     state.writeRegister8(
       modRm.reg,
-      readSegmentUint8(memory, state, address.segment, address.offset)
+      readSegmentUint8(memory, state, address.segment, address.offset, addressSize)
     );
-    writeSegmentUint8(memory, state, address.segment, address.offset, register);
-  } else {
+    writeSegmentUint8(memory, state, address.segment, address.offset, register, addressSize);
+  } else if (width === 16) {
     const register = state.readRegister16(modRm.reg);
     state.writeRegister16(
       modRm.reg,
-      readSegmentUint16(memory, state, address.segment, address.offset)
+      readSegmentUint16(memory, state, address.segment, address.offset, addressSize)
     );
-    writeSegmentUint16(memory, state, address.segment, address.offset, register);
+    writeSegmentUint16(memory, state, address.segment, address.offset, register, addressSize);
+  } else {
+    const register = state.readRegister(modRm.reg);
+    state.writeRegister(
+      modRm.reg,
+      readSegmentUint32(memory, state, address.segment, address.offset, addressSize)
+    );
+    writeSegmentUint32(memory, state, address.segment, address.offset, register, addressSize);
   }
-  state.advanceEip(2 + address.displacementBytes);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 
 function executeByteAluModRm(
