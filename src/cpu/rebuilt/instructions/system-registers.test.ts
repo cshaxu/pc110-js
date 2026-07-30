@@ -25,6 +25,12 @@ describe("rebuilt 0F control and debug transfers", () => {
       0x12345000
     );
   });
+  it("accepts the 80386 control-register MOD-field compatibility encoding", () => {
+    expect(run([0x0f, 0x20, 0x00], (s) => s.writeCr0(0x12345678)).registers.read32(0)).toBe(
+      0x12345678
+    );
+    expect(run([0x0f, 0x22, 0x00], (s) => s.registers.write32(0, 0x00000001)).readCr0()).toBe(1);
+  });
   it("moves defined debug registers in both directions", () => {
     expect(run([0x0f, 0x21, 0xf0], (s) => s.writeDebug(6, 0xabcdef01)).registers.read32(0)).toBe(
       0xabcdef01

@@ -18,6 +18,11 @@ import { CgaCompatibility } from "../devices/cga-compatibility.js";
 import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
 import { VgaSequencer } from "../devices/vga-sequencer.js";
 import {
+  CycleScheduler,
+  deskPro386CycleProfile,
+  type CycleSchedulerProfile
+} from "./cycle-scheduler.js";
+import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
   type RebuiltPortTraceEvent
@@ -30,6 +35,7 @@ export interface RebuiltMachineRunResult {
 
 export interface RebuiltPcAt386Options {
   readonly deskProSecondaryPit?: boolean;
+  readonly cycleSchedulerProfile?: CycleSchedulerProfile;
 }
 
 export type RebuiltMachineTraceEvent =
@@ -73,6 +79,7 @@ export class RebuiltPcAt386Core {
   public readonly deskProSecondaryPit: DeskPro386SecondaryPit | undefined;
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
+  public readonly scheduler: CycleScheduler;
   private nmiPending = false;
 
   public constructor(
@@ -80,6 +87,7 @@ export class RebuiltPcAt386Core {
     private readonly trace?: RebuiltMachineTrace,
     options: RebuiltPcAt386Options = {}
   ) {
+    this.scheduler = new CycleScheduler(options.cycleSchedulerProfile ?? deskPro386CycleProfile);
     this.ports = new RebuiltMachinePortBus((event) => this.trace?.({ kind: "port", event }));
     this.runner = new RebuiltCpuRunner(memory, this.ports, (event) =>
       this.trace?.({ kind: "instruction", event })
@@ -121,6 +129,7 @@ export class RebuiltPcAt386Core {
     this.sequencer.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
+    this.scheduler.reset();
     this.memory.setA20Enabled(true);
     this.nmiPending = false;
     this.runner.reset();
@@ -131,8 +140,7 @@ export class RebuiltPcAt386Core {
     if (this.servicePendingNmi()) return;
     if (this.servicePendingInterrupt()) return;
     if (this.runner.state.isHalted()) return;
-    this.runner.step();
-    this.advanceVideo(1);
+    this.advanceExecutedInstruction(this.runner.step().cycles);
   }
 
   public advancePit(ticks: number): void {
@@ -210,8 +218,7 @@ export class RebuiltPcAt386Core {
       while (executed < maxInstructions) {
         if (this.servicePendingInterrupt()) continue;
         if (this.runner.state.snapshot().halted) break;
-        this.runner.step();
-        this.advanceVideo(1);
+        this.advanceExecutedInstruction(this.runner.step().cycles);
         executed += 1;
       }
     } catch (error) {
@@ -243,6 +250,12 @@ export class RebuiltPcAt386Core {
       throw new Error("PC/AT PIC acknowledgement changed after CPU interrupt admission");
     this.trace?.({ kind: "interrupt", vector });
     return true;
+  }
+
+  private advanceExecutedInstruction(cycles: number): void {
+    const scheduled = this.scheduler.advance(cycles);
+    if (scheduled.pitTicks > 0) this.advancePit(scheduled.pitTicks);
+    this.advanceVideo(1);
   }
 
   private servicePendingNmi(): boolean {

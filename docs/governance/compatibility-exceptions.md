@@ -40,3 +40,21 @@ or the proposed entry would broaden an existing scope.
 - Scope and test treatment: real-mode `AND AX, imm16` under this exact
   initialized-AF fixture only. Retain the minimized conflict fixture as
   expected divergence evidence; it is not a passing lockstep case.
+
+## EXC-003: 80386 MOV Control Register MOD Field
+
+- Fixture: `0F 20 00` and `0F 22 00` at CPL 0, with `CR0` or `EAX` initialized
+  to a distinct 32-bit value.
+- Rebuilt result: both forms use ModR/M `reg` as the control-register index and
+  `r/m` as the general-register index while ignoring MOD, transferring the
+  expected value without a vector-six fault.
+- PCjs result: identical. Its 80386 handler documents that early 80386 silicon
+  ignores MOD for these two forms and identifies the Compaq DeskPro 386 ROM as
+  a real user of MOD `00`.
+- Authority evidence: pinned PCjs `x86op0f.js` `opMOVrc`/`opMOVcr` comments
+  and handlers; selected DeskPro ROM bytes at `F000:879C`; NXVM is stricter
+  here and therefore is not decisive for this documented 80386 compatibility
+  behavior.
+- Scope and test treatment: only `0F 20` and `0F 22`, CPL 0, with the MOD field
+  ignored. Debug and test-register forms retain their existing register-direct
+  requirement.

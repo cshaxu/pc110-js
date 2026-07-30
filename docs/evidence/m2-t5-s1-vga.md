@@ -62,3 +62,14 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
   `F000:BBB4`, whose ROM bytes are `EB FE` after the PIT counter-zero POST
   branch. The unresolved dependency is a cycle-accounted machine scheduler;
   no instruction-count clock or firmware workaround is retained.
+
+## P6 Cycle-Accounted Trace Recovery Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `x86op0f.js` documents DeskPro's early-80386
+  control-register MOD behavior; PCjs chipset timing derives PIT ticks from
+  CPU cycles. The selected ROM contains `0F 20 00` and `0F 22 00`.
+- Tests: cycle-class estimates, exact fractional PIT carry, reset and invalid
+  input, native runner compatibility, and `0F20/0F22` MOD-field fixtures.
+- Trace: 70,000 native instructions cross `F000:87A5 -> 0018:87AA` and return
+  via `0018:87D7 -> F000:87DC`; the previous `0000:0000` #UD diversion is gone.

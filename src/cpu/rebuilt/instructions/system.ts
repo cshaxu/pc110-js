@@ -108,7 +108,8 @@ function executeControlTransfer(context: RebuiltExecutionContext): void {
   if (currentPrivilege(context) !== 0)
     return deliverFault(context.memory, context.state, 13, context.state.readEip(), 0);
   const modRm = decode(context);
-  if (!modRm.registerDirect)
+  const ignoresModField = opcode === 0x20 || opcode === 0x22;
+  if (!modRm.registerDirect && !ignoresModField)
     return deliverFault(context.memory, context.state, 6, context.state.readEip());
   const toGeneral = opcode === 0x20 || opcode === 0x21 || opcode === 0x24;
   const value =

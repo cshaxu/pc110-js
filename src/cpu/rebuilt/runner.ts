@@ -4,6 +4,11 @@ import { RebuiltCpuExecutor } from "./execution.js";
 import type { RebuiltPortBus } from "./io/port-bus.js";
 import { RebuiltCpuState } from "./state/cpu-state.js";
 import type { RebuiltMemoryBus } from "./memory/segmented-memory.js";
+import { estimate386Cycles } from "./timing/cycle-estimator.js";
+
+export interface RebuiltCpuStepResult {
+  readonly cycles: number;
+}
 
 export class RebuiltCpuRunner {
   public readonly state = new RebuiltCpuState();
@@ -17,8 +22,10 @@ export class RebuiltCpuRunner {
     this.state.reset();
   }
 
-  public step(): void {
-    this.executor.step(dispatchRebuiltInstruction);
+  public step(): RebuiltCpuStepResult {
+    const before = this.state.snapshot();
+    const instruction = this.executor.step(dispatchRebuiltInstruction);
+    return { cycles: estimate386Cycles(instruction, before, this.state.snapshot()) };
   }
 
   public serviceExternalInterrupt(vector: number): boolean {

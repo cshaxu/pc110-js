@@ -41,3 +41,12 @@ PCjs maps the sequencer index/data ports at `0x3C4`/`0x3C5` and five register
 classes. The project-native sequencer retains those values for later VGA
 memory-plane consumers. The project-owned trace options add only observation
 controls; they do not alter CPU, firmware, or device behavior.
+
+## P6 Cycle-Accounted Trace Recovery
+
+PCjs documents the selected DeskPro ROM's early-80386 `MOV CR` MOD-field
+encoding and derives PIT movement from accumulated CPU cycles. Original
+TypeScript now uses a project-owned step-cycle result and exact integer-ratio
+PIT scheduling, with a narrowly scoped control-register compatibility rule.
+No PCjs source, runtime, firmware service, timer callback, or browser code is
+imported.

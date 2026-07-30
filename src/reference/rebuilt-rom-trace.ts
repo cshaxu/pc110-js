@@ -15,6 +15,7 @@ const projectRoot = resolve(moduleDirectory, "../..");
 const pcjsRoot = resolve(projectRoot, "..", "pcjs");
 const DEFAULT_INSTRUCTION_BUDGET = 1_000;
 const DEFAULT_TRACE_TAIL = 0;
+const DEFAULT_EVENT_TAIL = 0;
 
 function instructionBudget(): number {
   const raw = process.env.PC110JS_ROM_TRACE_INSTRUCTIONS;
@@ -31,6 +32,15 @@ function traceTailLength(): number {
   const value = Number.parseInt(raw, 10);
   if (!Number.isSafeInteger(value) || value < 0)
     throw new Error("PC110JS_ROM_TRACE_TAIL must be a non-negative safe integer");
+  return value;
+}
+
+function eventTailLength(): number {
+  const raw = process.env.PC110JS_ROM_TRACE_EVENT_TAIL;
+  if (raw === undefined) return DEFAULT_EVENT_TAIL;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw new Error("PC110JS_ROM_TRACE_EVENT_TAIL must be a non-negative safe integer");
   return value;
 }
 
@@ -77,9 +87,36 @@ function writeDiagnosticTail(trace: readonly RebuiltMachineTraceEvent[], length:
   }
 }
 
+function writeEventTail(trace: readonly RebuiltMachineTraceEvent[], length: number): void {
+  if (length === 0) return;
+  for (const event of trace.filter((item) => item.kind !== "instruction").slice(-length)) {
+    if (event.kind === "interrupt")
+      process.stdout.write(`  interrupt ${event.vector.toString(16)}\n`);
+    else if (event.kind === "port")
+      process.stdout.write(`  port ${event.event.direction} ${event.event.port.toString(16)}\n`);
+  }
+}
+
+function writeSegmentTransfers(trace: readonly RebuiltMachineTraceEvent[]): void {
+  for (const entry of trace) {
+    if (entry.kind !== "instruction") continue;
+    const { before, after, opcode } = entry.event;
+    if (before.segments.cs.selector === after.segments.cs.selector) continue;
+    const from = `${before.segments.cs.selector.toString(16).padStart(4, "0")}:${before.eip
+      .toString(16)
+      .padStart(4, "0")}`;
+    const to = `${after.segments.cs.selector.toString(16).padStart(4, "0")}:${after.eip
+      .toString(16)
+      .padStart(4, "0")}`;
+    process.stdout.write(`  transfer ${from} -> ${to} opcode ${opcode?.toString(16) ?? "??"}\n`);
+  }
+}
+
 function main(): void {
   const budget = instructionBudget();
   const tailLength = traceTailLength();
+  const eventTailLengthValue = eventTailLength();
+  const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
   const memory = new PhysicalMemory({
     ramBytes: 0xa0000,
     a20Enabled: true,
@@ -101,6 +138,8 @@ function main(): void {
       `Rebuilt selected-ROM trace completed ${result.executed} instructions at ${formatAddress(core)}\n`
     );
     writeDiagnosticTail(trace, tailLength);
+    writeEventTail(trace, eventTailLengthValue);
+    if (transfers) writeSegmentTransfers(trace);
   } catch (error) {
     const stop = trace.at(-1);
     const detail = stop?.kind === "stop" && stop.error ? stop.error : String(error);
@@ -109,6 +148,8 @@ function main(): void {
       `Rebuilt selected-ROM trace stopped after ${executed} instructions at ${formatAddress(core)}: ${detail}\n`
     );
     writeDiagnosticTail(trace, tailLength);
+    writeEventTail(trace, eventTailLengthValue);
+    if (transfers) writeSegmentTransfers(trace);
   }
 }
 
