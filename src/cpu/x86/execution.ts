@@ -1029,6 +1029,11 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   }
 
+  if (context.opcode === 0x80) {
+    executeByteGroupOneImmediate(memory, state, context.opcodeOffset + 1, context.addressSize);
+    return { halted: false, fetched };
+  }
+
   const aluOperation = modRmAluOperation(context.opcode);
   if (aluOperation) {
     const modRmOffset = context.opcodeOffset + 1;
@@ -2278,6 +2283,29 @@ function executeWordGroupOneImmediate(
     else writeSegmentUint16(memory, state, address!.segment, address!.offset, result, addressSize);
   }
   state.advanceEip(immediateOffset + immediateBytes);
+}
+
+function executeByteGroupOneImmediate(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const addressBytes = decodedAddressBytes(address, addressSize);
+  const destination = modRm.registerDirect
+    ? state.readRegister8(modRm.rm)
+    : readSegmentUint8(memory, state, address!.segment, address!.offset, addressSize);
+  const immediateOffset = modRmOffset + 1 + addressBytes;
+  const immediate = fetchCodeByte(memory, state, immediateOffset).opcode;
+  const operation = dwordGroupOneOperation(modRm.reg);
+  const result = writeByteAluResult(state, operation, destination, immediate);
+  if (operation !== "cmp") {
+    if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+    else writeSegmentUint8(memory, state, address!.segment, address!.offset, result, addressSize);
+  }
+  state.advanceEip(immediateOffset + 1);
 }
 
 function executeDwordF7(
