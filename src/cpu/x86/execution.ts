@@ -863,6 +863,29 @@ function executeContextualNearCallReturn(
   return { halted: false, fetched };
 }
 
+function executeContextualNearConditionalJump(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0x0f) return undefined;
+  const extension = fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode;
+  if (extension < 0x80 || extension > 0x8f) return undefined;
+  const displacementOffset = context.opcodeOffset + 2;
+  const displacement =
+    context.operandSize === 32
+      ? fetchCodeUint32(memory, state, displacementOffset) | 0
+      : signedWord(fetchCodeUint16(memory, state, displacementOffset));
+  const nextInstruction =
+    fetched.instructionPointer + context.opcodeOffset + 2 + context.operandSize / 8;
+  if (shortJumpCondition(state, extension & 0x0f)) {
+    if (context.operandSize === 32) state.writeEip(nextInstruction + displacement);
+    else state.writeEip16(nextInstruction + displacement);
+  } else state.advanceEip(context.opcodeOffset + 2 + context.operandSize / 8);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -889,6 +912,8 @@ function executeContextualInstruction(
   if (nearJump) return nearJump;
   const nearCallReturn = executeContextualNearCallReturn(memory, state, context, fetched);
   if (nearCallReturn) return nearCallReturn;
+  const nearConditionalJump = executeContextualNearConditionalJump(memory, state, context, fetched);
+  if (nearConditionalJump) return nearConditionalJump;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;

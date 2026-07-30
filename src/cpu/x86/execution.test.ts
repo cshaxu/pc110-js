@@ -3687,7 +3687,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const takenState = new Cpu386State();
     takenState.writeCr0(0x00000001);
-    takenState.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    takenState.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     takenState.writeEflags(0x00000042);
 
     stepInstruction(resetAliasMemory(values), takenState);
@@ -3695,7 +3695,7 @@ describe("80386 instruction fetch", () => {
 
     const notTakenState = new Cpu386State();
     notTakenState.writeCr0(0x00000001);
-    notTakenState.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    notTakenState.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     notTakenState.writeEflags(0x00000002);
     stepInstruction(resetAliasMemory(values), notTakenState);
     expect(notTakenState.snapshot().eip).toBe(0x00000007);
