@@ -230,6 +230,10 @@ describe("RebuiltPcAt386Core", () => {
     core.ports.write(0x64, 0xd1, 8);
     core.ports.write(0x60, 0x01, 8);
     expect(memory.isA20Enabled()).toBe(false);
+    core.ports.write(0x64, 0xaa, 8);
+    expect(core.ports.read(0x60, 8)).toBe(0x55);
+    expect(memory.isA20Enabled()).toBe(true);
+    expect(core.keyboardController.snapshot().keyboardEnabled).toBe(false);
     core.reset();
     expect(core.keyboardController.snapshot()).toMatchObject({
       outputBuffer: undefined,
