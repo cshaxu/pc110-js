@@ -4,10 +4,15 @@ import { RebuiltCpuExecutor } from "../execution.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
 import { EFLAGS_CARRY, EFLAGS_ZERO } from "./arithmetic.js";
 
-function createMachine(bytes: readonly number[]) {
+function createMachine(bytes: readonly number[], code32 = false) {
   const state = new RebuiltCpuState();
   for (const segment of ["cs", "ds", "es", "ss", "fs", "gs"] as const) {
-    state.writeSegment(segment, { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+    state.writeSegment(segment, {
+      selector: 0,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: segment === "cs" ? code32 : false
+    });
   }
   state.writeEip(0);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
@@ -150,5 +155,49 @@ describe("rebuilt 0F A0-AF extended instructions", () => {
       expect(machine.state.readEip()).toBe(0x1234);
       expect(machine.state.readSegment("cs").selector).toBe(0x2000);
     }
+  });
+
+  it("uses unprefixed default-32 operands across the executable extended families", () => {
+    const bit = createMachine([0x0f, 0xab, 0xc8], true);
+    bit.state.registers.write32(0, 0);
+    bit.state.registers.write32(1, 31);
+    bit.step();
+    expect(bit.state.registers.read32(0)).toBe(0x8000_0000);
+
+    const shift = createMachine([0x0f, 0xa4, 0xc8, 0x01], true);
+    shift.state.registers.write32(0, 0x8000_0000);
+    shift.state.registers.write32(1, 0x8000_0000);
+    shift.step();
+    expect(shift.state.registers.read32(0)).toBe(1);
+
+    const imul = createMachine([0x0f, 0xaf, 0xc1], true);
+    imul.state.registers.write32(0, 0xffff_fffe);
+    imul.state.registers.write32(1, 3);
+    imul.step();
+    expect(imul.state.registers.read32(0)).toBe(0xffff_fffa);
+
+    const scan = createMachine([0x0f, 0xbd, 0xc1], true);
+    scan.state.registers.write32(1, 0x8000_0000);
+    scan.step();
+    expect(scan.state.registers.read32(0)).toBe(31);
+
+    const extend = createMachine([0x0f, 0xbe, 0xc1], true);
+    extend.state.registers.write8(1, 0x80);
+    extend.step();
+    expect(extend.state.registers.read32(0)).toBe(0xffff_ff80);
+  });
+
+  it("uses default-32 ModR/M addressing and retains NXVM's fixed r32 word-extension form", () => {
+    const bit = createMachine([0x0f, 0xba, 0x2d, 0x00, 0x10, 0x00, 0x00, 0x1f], true);
+    bit.memory.set(0x1003, 0x80);
+    bit.step();
+    expect(bit.state.flags.has(EFLAGS_CARRY)).toBe(true);
+    expect(bit.state.readEip()).toBe(8);
+
+    const extend = createMachine([0x66, 0x0f, 0xb7, 0xc1], true);
+    extend.state.registers.write32(0, 0xdead_0000);
+    extend.state.registers.write16(1, 0x1234);
+    extend.step();
+    expect(extend.state.registers.read32(0)).toBe(0x1234);
   });
 });

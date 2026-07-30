@@ -1261,6 +1261,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `0F 80-9F` conditional handlers. It adds default-32 SETcc addressing and
   operand-size-reversed near-Jcc coverage without importing reference code or
   adding device or guest-service behavior.
+- M2 T2 S3 P430 records complete project-native evidence for executable NXVM
+  `0F A0-BF` extended handlers. It retains NXVM's fixed-r32 word-extension
+  behavior and adds default-32 operand and addressing evidence without a
+  reference runtime, device, or guest-service dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
