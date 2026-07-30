@@ -903,6 +903,55 @@ function executeContextualLea(
   return { halted: false, fetched };
 }
 
+function executeContextualImmediateMov(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0xc6 && context.opcode !== 0xc7) return undefined;
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0)
+    throw new UnsupportedOpcodeError(`Unsupported ${context.opcode.toString(16)} opcode form`);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const addressBytes = decodedAddressBytes(address, context.addressSize);
+  const width = context.opcode === 0xc6 ? 1 : context.operandSize === 32 ? 4 : 2;
+  const immediateOffset = modRmOffset + 1 + addressBytes;
+  const value =
+    width === 1
+      ? fetchCodeByte(memory, state, immediateOffset).opcode
+      : width === 2
+        ? fetchCodeUint16(memory, state, immediateOffset)
+        : fetchCodeUint32(memory, state, immediateOffset);
+  if (modRm.registerDirect) {
+    if (width === 1) state.writeRegister8(modRm.rm, value);
+    else if (width === 2) state.writeRegister16(modRm.rm, value);
+    else state.writeRegister(modRm.rm, value);
+  } else if (width === 1)
+    writeSegmentUint8(memory, state, address!.segment, address!.offset, value, context.addressSize);
+  else if (width === 2)
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      value,
+      context.addressSize
+    );
+  else
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      value,
+      context.addressSize
+    );
+  state.advanceEip(context.opcodeOffset + 2 + addressBytes + width);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -933,6 +982,8 @@ function executeContextualInstruction(
   if (nearConditionalJump) return nearConditionalJump;
   const lea = executeContextualLea(memory, state, context, fetched);
   if (lea) return lea;
+  const immediateMov = executeContextualImmediateMov(memory, state, context, fetched);
+  if (immediateMov) return immediateMov;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;

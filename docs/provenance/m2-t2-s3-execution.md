@@ -691,6 +691,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   displacement length and IP/EIP target through the shared context.
 - M2 T2 S3 P255 migrates LEA so CS defaults and prefixes select both ModR/M
   effective-address decoding and destination register width through context.
+- M2 T2 S3 P256 migrates C6/C7 so context selects ModR/M address width and C7
+  word or dword data width through project-native TypeScript.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
