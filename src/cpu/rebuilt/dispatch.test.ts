@@ -26,4 +26,25 @@ describe("rebuilt opcode dispatcher", () => {
     expect(state.flags.has(1)).toBe(true);
     expect(state.readEip()).toBe(5);
   });
+
+  it("routes immediate far CALL through the shared far-control executor", () => {
+    const state = new RebuiltCpuState();
+    state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    state.writeEip(0);
+    state.registers.write16(4, 0x100);
+    const bytes = new Map<number, number>(
+      [0x9a, 0x34, 0x12, 0x00, 0x20].map((value, index) => [index, value])
+    );
+    const executor = new RebuiltCpuExecutor(state, {
+      readUint8: (address) => bytes.get(address) ?? 0,
+      writeUint8: (address, value) => bytes.set(address, value)
+    });
+    executor.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      segments: { cs: { selector: 0x2000 } },
+      registers: { esp: 0xfc }
+    });
+  });
 });

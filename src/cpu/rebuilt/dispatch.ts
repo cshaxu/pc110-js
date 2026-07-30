@@ -58,7 +58,7 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if ([0xe0, 0xe1, 0xe2, 0xe3].includes(opcode)) return executeLoop(context);
   if ([0xe4, 0xe5, 0xe6, 0xe7, 0xec, 0xed, 0xee, 0xef].includes(opcode))
     return executePortIo(context);
-  if ([0xe8, 0xe9, 0xea, 0xeb].includes(opcode)) return executeNearControl(context);
+  if ([0x9a, 0xe8, 0xe9, 0xea, 0xeb].includes(opcode)) return executeNearControl(context);
   if ([0xf5, 0xf8, 0xf9, 0xfc, 0xfd].includes(opcode)) return executeFlagControl(context);
   if (opcode === 0xf6 || opcode === 0xf7) return executeGroupThree(context);
   if (opcode === 0xfe || opcode === 0xff) return executeGroupFourFive(context);

@@ -291,3 +291,11 @@ descriptor loader. Tests cover real-mode selectors, protected data segments,
 null data selectors, 16/32-bit far-pointer offsets, and GDT descriptor cache
 attributes. Code-segment loading, LDT, far returns, and vector delivery remain
 separate protection-system dependencies.
+
+## P361 `9A-EA-FF/3-FF/5-CA-CB` Direct Far Control Checklist
+
+P361 implements direct and memory far CALL/JMP plus same-privilege RETF through
+the rebuilt code-segment loader. Focused tests cover real mode, protected GDT
+code descriptors, 16/32-bit offsets, return-frame ordering, cleanup, dispatcher
+routing, and memory-only Group Five pointers. Call gates, task transfers, and
+outer-privilege returns remain explicit interrupt/protection dependencies.

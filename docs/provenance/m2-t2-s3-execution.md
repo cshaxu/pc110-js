@@ -1076,6 +1076,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P360 adapts NXVM selector and descriptor concepts into native
   rebuilt CPU state and segment forms without a runtime import from any
   reference implementation.
+- M2 T2 S3 P361 adapts direct far-control structure into native TypeScript
+  through the rebuilt stack and code-segment loader, without reference runtime
+  dependencies or synthetic privilege behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

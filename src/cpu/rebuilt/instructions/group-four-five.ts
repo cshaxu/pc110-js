@@ -1,6 +1,7 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { pushStack } from "../memory/stack.js";
+import { loadCodeSegment } from "../protection/segment-loader.js";
 import type { SegmentName } from "../state/segments.js";
 import { add, subtract, EFLAGS_CARRY, type ArithmeticWidth } from "./arithmetic.js";
 
@@ -23,8 +24,7 @@ export function executeGroupFourFive(context: RebuiltExecutionContext): void {
   }
   if (opcode === 0xfe || modRm.reg === 7)
     throw new Error("FE/FF extension requires rebuilt #UD delivery");
-  if (modRm.reg === 3 || modRm.reg === 5)
-    throw new Error("FF far control requires rebuilt selector loading and protection faults");
+  if (modRm.reg === 3 || modRm.reg === 5) return executeFarControl(context, modRm);
   const operand = readRm(context, modRm, width);
   const operandSize = context.instruction.prefixes.operandSize;
   const fallthrough = context.state.readEip() + context.instruction.length + modRm.bytes;
@@ -36,6 +36,30 @@ export function executeGroupFourFive(context: RebuiltExecutionContext): void {
     pushStack(context.memory, context.state, operandSize, operand);
     context.state.advanceEip(context.instruction.length + modRm.bytes);
   } else throw new Error("Unsupported rebuilt Group Five extension");
+}
+
+function executeFarControl(context: RebuiltExecutionContext, modRm: DecodedModRm): void {
+  if (modRm.registerDirect) throw new Error("FF far control requires a memory pointer");
+  const width = context.instruction.prefixes.operandSize;
+  const memory = modRm.memory!;
+  const segment: SegmentName = context.instruction.prefixes.segmentOverride ?? memory.segment;
+  const offset =
+    width === 16
+      ? context.memory.read16(segment, memory.offset, context.instruction.prefixes.addressSize)
+      : context.memory.read32(segment, memory.offset, context.instruction.prefixes.addressSize);
+  const selector = context.memory.read16(
+    segment,
+    memory.offset + width / 8,
+    context.instruction.prefixes.addressSize
+  );
+  const returnEip = context.state.readEip() + context.instruction.length + modRm.bytes;
+  const returnCs = context.state.readSegment("cs").selector;
+  loadCodeSegment(context.memory, context.state, selector);
+  if (modRm.reg === 3) {
+    pushStack(context.memory, context.state, width, returnCs);
+    pushStack(context.memory, context.state, width, returnEip);
+  }
+  context.state.writeEip(width === 16 ? offset & 0xffff : offset);
 }
 
 function incrementDecrement(

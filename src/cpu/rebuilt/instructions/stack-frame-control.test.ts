@@ -60,6 +60,38 @@ describe("rebuilt near return and stack-frame control", () => {
     expect(result.state.registers.read32(4)).toBe(0x104);
   });
 
+  it("returns through a real-mode far frame and applies RETF cleanup", () => {
+    const result = execute([0xca, 0x04, 0x00], {
+      setup: (state, memory) => {
+        state.registers.write16(4, 0x100);
+        [0x34, 0x12, 0x00, 0x20].forEach((value, index) => memory.set(0x100 + index, value));
+      }
+    });
+    expect(result.state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      segments: { cs: { selector: 0x2000 } },
+      registers: { esp: 0x108 }
+    });
+  });
+
+  it("loads a protected-mode code descriptor on same-privilege RETF", () => {
+    const result = execute([0xcb], {
+      setup: (state, memory) => {
+        state.writeCr0(1);
+        state.writeGdtr({ base: 0x20, limit: 0x0f });
+        [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0].forEach((value, index) =>
+          memory.set(0x28 + index, value)
+        );
+        state.registers.write16(4, 0x100);
+        [0x34, 0x12, 0x08, 0x00].forEach((value, index) => memory.set(0x100 + index, value));
+      }
+    });
+    expect(result.state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      segments: { cs: { selector: 8, default32: true } }
+    });
+  });
+
   it("creates and tears down an ENTER/LEAVE frame with a nesting level", () => {
     const entered = execute([0xc8, 0x04, 0x00, 0x02], {
       setup: (state, memory) => {

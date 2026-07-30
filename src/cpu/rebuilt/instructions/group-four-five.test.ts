@@ -83,4 +83,33 @@ describe("rebuilt FE/FF Group Four/Five", () => {
     expect(result.memory.get(0xfc)).toBe(0xdd);
     expect(result.memory.get(0xff)).toBe(0xaa);
   });
+
+  it("executes FF far CALL and JMP through memory pointers", () => {
+    const call = execute([0xff, 0x1e, 0x20, 0x00], {
+      setup: (state, memory) => {
+        memory.set(0x20, 0x34);
+        memory.set(0x21, 0x12);
+        memory.set(0x22, 0x00);
+        memory.set(0x23, 0x20);
+        state.registers.write16(4, 0x100);
+      }
+    });
+    expect(call.state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      segments: { cs: { selector: 0x2000 } },
+      registers: { esp: 0xfc }
+    });
+    const jump = execute([0xff, 0x2e, 0x20, 0x00], {
+      setup: (_, memory) => {
+        memory.set(0x20, 0x78);
+        memory.set(0x21, 0x56);
+        memory.set(0x22, 0x00);
+        memory.set(0x23, 0x30);
+      }
+    });
+    expect(jump.state.snapshot()).toMatchObject({
+      eip: 0x5678,
+      segments: { cs: { selector: 0x3000 } }
+    });
+  });
 });

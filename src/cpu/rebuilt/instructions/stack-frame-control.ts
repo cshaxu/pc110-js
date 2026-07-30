@@ -1,6 +1,7 @@
 import type { OperandSize } from "../decode/prefix.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { popStack, pushStack } from "../memory/stack.js";
+import { loadCodeSegment } from "../protection/segment-loader.js";
 
 const ENTER_LEVEL_MASK = 0x1f;
 
@@ -13,6 +14,10 @@ export function executeStackFrameControl(context: RebuiltExecutionContext): void
     case 0xc8:
       executeEnter(context);
       return;
+    case 0xca:
+    case 0xcb:
+      executeFarReturn(context);
+      return;
     case 0xc9:
       executeLeave(context);
       return;
@@ -21,6 +26,19 @@ export function executeStackFrameControl(context: RebuiltExecutionContext): void
         `Opcode 0x${context.instruction.opcode.toString(16)} is outside rebuilt stack-frame control coverage`
       );
   }
+}
+
+function executeFarReturn(context: RebuiltExecutionContext): void {
+  const operandSize = context.instruction.prefixes.operandSize;
+  const target = popStack(context.memory, context.state, operandSize);
+  const selector = popStack(context.memory, context.state, operandSize) & 0xffff;
+  const cleanup =
+    context.instruction.opcode === 0xca
+      ? readUint16(context, context.instruction.opcodeOffset + 1)
+      : 0;
+  loadCodeSegment(context.memory, context.state, selector);
+  adjustStackPointer(context, cleanup);
+  context.state.writeEip(operandSize === 16 ? target & 0xffff : target);
 }
 
 function executeNearReturn(context: RebuiltExecutionContext): void {

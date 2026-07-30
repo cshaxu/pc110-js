@@ -1,12 +1,13 @@
 import type { RebuiltExecutionContext } from "../execution.js";
 import { pushStack } from "../memory/stack.js";
+import { loadCodeSegment } from "../protection/segment-loader.js";
 
 export function executeNearControl(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.opcode;
-  if (opcode !== 0xe8 && opcode !== 0xe9 && opcode !== 0xea && opcode !== 0xeb)
+  if (opcode !== 0x9a && opcode !== 0xe8 && opcode !== 0xe9 && opcode !== 0xea && opcode !== 0xeb)
     throw new Error(`Opcode 0x${opcode.toString(16)} is outside rebuilt near-control coverage`);
   const operandSize = context.instruction.prefixes.operandSize;
-  if (opcode === 0xea) return executeFarJump(context, operandSize);
+  if (opcode === 0x9a || opcode === 0xea) return executeFarControl(context, operandSize);
   const bytes = opcode === 0xeb ? 1 : operandSize / 8;
   const displacement = signedImmediate(context, context.instruction.opcodeOffset + 1, bytes);
   const fallthrough = context.state.readEip() + context.instruction.length + bytes;
@@ -17,10 +18,7 @@ export function executeNearControl(context: RebuiltExecutionContext): void {
   );
 }
 
-function executeFarJump(context: RebuiltExecutionContext, operandSize: 16 | 32): void {
-  if (context.state.readCr0() & 0x00000001) {
-    throw new Error("Rebuilt protected-mode far JMP selector validation is not implemented");
-  }
+function executeFarControl(context: RebuiltExecutionContext, operandSize: 16 | 32): void {
   const offsetBytes = operandSize / 8;
   const offset = unsignedImmediate(context, context.instruction.opcodeOffset + 1, offsetBytes);
   const selector = unsignedImmediate(
@@ -28,12 +26,13 @@ function executeFarJump(context: RebuiltExecutionContext, operandSize: 16 | 32):
     context.instruction.opcodeOffset + 1 + offsetBytes,
     2
   );
-  context.state.writeSegment("cs", {
-    selector,
-    base: (selector << 4) >>> 0,
-    limit: 0xffff,
-    default32: false
-  });
+  const returnEip = context.state.readEip() + context.instruction.length + offsetBytes + 2;
+  const returnCs = context.state.readSegment("cs").selector;
+  loadCodeSegment(context.memory, context.state, selector);
+  if (context.instruction.opcode === 0x9a) {
+    pushStack(context.memory, context.state, operandSize, returnCs);
+    pushStack(context.memory, context.state, operandSize, returnEip);
+  }
   context.state.writeEip(operandSize === 16 ? offset & 0xffff : offset);
 }
 
