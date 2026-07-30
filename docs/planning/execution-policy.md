@@ -129,9 +129,10 @@ The project maintains two distinct PCjs uses:
 
 - The M1 reference machine runs the pinned PCjs CPU and devices as a read-only
   comparison baseline.
-- The M2 T2 S6 PCjs-assisted integration harness runs the project-native
-  rebuilt CPU as the sole executing CPU while temporarily adapting selected
-  read-only PCjs devices.
+- The final M2 T2 S6 PCjs-assisted integration harness runs only after the S3
+  CPU, S4 memory, and S5 I/O/reset/stepping gates close. It runs the
+  project-native rebuilt CPU as the sole executing CPU while temporarily
+  adapting selected read-only PCjs devices.
 
 The harness is a test-only dependency. It must not import the legacy CPU or
 NXVM at runtime, must disable the PCjs CPU, and must not be presented as the

@@ -53,10 +53,12 @@ Every completed family updates the ledger, tracking, provenance, and a PCjs
 comparison report, runs the full gate, and commits as `M2 T2 S3 Pxxx:`.
 
 Coverage closure of S3 is not CPU integration acceptance. After the last NXVM
-family and architectural dependency close, M2 T2 S6 must prove that this
-rebuilt CPU is the sole executing CPU in the PCjs-assisted integration harness.
-The harness uses temporary PCjs devices only for verification and must reach the
-M1 browser workload without a legacy CPU, NXVM, or PCjs CPU runtime path.
+family and architectural dependency close, finish the remaining M2 T2 S4
+memory and S5 I/O/reset/stepping gates. Only then does final M2 T2 S6 prove
+that this rebuilt CPU is the sole executing CPU in the PCjs-assisted integration
+harness. The harness uses temporary PCjs devices only for verification and must
+reach the M1 browser workload without a legacy CPU, NXVM, or PCjs CPU runtime
+path.
 
 Shared decode or addressing infrastructure is added only within an active
 opcode-interval delivery. Do not create standalone parser, type, adapter,

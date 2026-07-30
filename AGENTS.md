@@ -82,8 +82,9 @@ Do not treat this file as a substitute for those canonical documents.
   breadth-first default. ROM traces identify dependencies and validate progress;
   they do not select CPU implementation scope.
 - Preserve every established runnable or boot baseline.
-- Before native device migration begins, the rebuilt CPU must pass the M2 T2 S6
-  PCjs-assisted integration gate. Each later native-device replacement must
+- Before native device migration begins, M2 T2 S3, S4, and S5 must close and
+  the rebuilt CPU must pass the final M2 T2 S6 PCjs-assisted integration gate.
+  Each later native-device replacement must
   preserve the harness whole-machine workload while the corresponding PCjs
   proxy remains selectable until the native device is independently verified.
 - Record deferred work only as `TODO(High)`, `TODO(Medium)`, or `TODO(Low)` as

@@ -2,8 +2,9 @@
 
 ## Authorized Scope
 
-Continue M2 T2 S3 from the current NXVM opcode ledger in numeric family order.
-Complete project-native TypeScript 80386 CPU coverage, then complete M2 T2 S6
+Continue M2 T2 from the current NXVM opcode ledger in numeric family order.
+Complete project-native TypeScript 80386 CPU coverage in S3, then close the
+remaining S4 memory and S5 I/O/reset/stepping gates before completing final S6
 to prove the rebuilt CPU in the PCjs-assisted integration harness. Do not begin
 native M2 T3 hardware, storage, video, PC110, firmware, DOS, guest-service, or
 filesystem work.
@@ -19,7 +20,7 @@ filesystem work.
 - Preserve the frozen legacy CPU only as test and differential evidence. The
   rebuilt CPU must not import it, NXVM, or PCjs at product runtime.
 - Keep bridge design limited to documented contracts while S3 coverage is
-  incomplete. Start the PCjs-assisted harness only after S3 coverage closure.
+  incomplete. Start the PCjs-assisted harness only after S3, S4, and S5 close.
 
 ## Required Evidence
 
@@ -33,8 +34,9 @@ filesystem work.
 
 ## Completion And Stop
 
-The goal completes only when all NXVM CPU coverage and required architectural
-dependencies are closed, S6 passes, all records are committed and pushed, and
-the owner is asked for M2 T3 authorization. If the available execution window
-ends earlier, stop only at a verified part boundary, update the ledger and
-tracking, push the result, and resume from the next incomplete family.
+The goal completes only when all NXVM CPU coverage and required S3
+architectural dependencies close, S4 and S5 close, S6 passes, all records are
+committed and pushed, and the owner is asked for M2 T3 authorization. If the
+available execution window ends earlier, stop only at a verified part boundary,
+update the ledger and tracking, push the result, and resume from the next
+eligible incomplete unit.

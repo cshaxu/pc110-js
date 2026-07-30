@@ -159,10 +159,11 @@ Goal: implement a clean, complete, standalone TypeScript version of the selected
 - S3: Implement all supported opcode families, exceptions, interrupts, and privilege behavior with focused conformance coverage.
 - S4: Implement physical memory, RAM, ROM, shadowing where selected, A20, and memory access contracts.
 - S5: Implement I/O port dispatch, machine reset, deterministic stepping, and trace hooks.
-- S6: Establish the PCjs-assisted CPU integration gate: run the project-native
-  rebuilt CPU as the sole executing CPU against temporary read-only PCjs device
-  adapters, boot the M1 browser workload, and record CPU/memory comparison
-  evidence without creating a product runtime dependency.
+- S6: After S3, S4, and S5 close, establish the final PCjs-assisted CPU
+  integration gate: run the project-native rebuilt CPU as the sole executing
+  CPU against temporary read-only PCjs device adapters, boot the M1 browser
+  workload, and record CPU/memory/I-O comparison evidence without creating a
+  product runtime dependency.
 
 #### Authorized Dependency Correction (2026-07-29)
 
