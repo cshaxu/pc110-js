@@ -31,6 +31,7 @@ import { executeSetCondition } from "./instructions/set-condition.js";
 import { executeLoadFarPointer, executeSegmentMove } from "./instructions/segment-move.js";
 import { executeShiftRotate } from "./instructions/shift-rotate.js";
 import { executeSignExtension } from "./instructions/sign-extension.js";
+import { executeStringIo } from "./instructions/string-io.js";
 import { executeShortConditionalJump } from "./instructions/control.js";
 import { executeStackFrameControl } from "./instructions/stack-frame-control.js";
 import { executeTestModRm } from "./instructions/test.js";
@@ -81,6 +82,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode >= 0x40 && opcode <= 0x5f) return executeRegisterStackInterval(context);
   if ([0x60, 0x61, 0x62, 0x68, 0x69, 0x6a, 0x6b].includes(opcode))
     return executeFrameImmediateSlice(context);
+  if (opcode >= 0x6c && opcode <= 0x6f) return executeStringIo(context);
   if (opcode === 0x63) return executeArpl(context);
   if (opcode >= 0x70 && opcode <= 0x7f) return executeShortConditionalJump(context);
   if ([0x80, 0x81, 0x83].includes(opcode)) return executeGroupOne(context);

@@ -370,3 +370,10 @@ Tests cover in-range, #BR, and register-only #UD behavior.
 P375 implements protected-mode ARPL's fixed 16-bit selector RPL adjustment.
 Tests cover register/memory operands, 67 addressing, ZF results, and real-mode
 #UD.
+
+## P376 `6C-6F` String I/O Checklist
+
+P376 implements project-native INS/OUTS through the port bus. Tests cover
+ES:DI input, DS:SI output, DF, and one-element REP execution with EIP retained
+while the counter remains nonzero. Protected I/O privilege checks remain an
+active protection dependency.

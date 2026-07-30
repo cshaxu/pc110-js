@@ -1101,6 +1101,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   modules without reference runtime imports.
 - M2 T2 S3 P375 adapts NXVM ARPL through rebuilt ModR/M, selector, and flags
   behavior without reference runtime imports.
+- M2 T2 S3 P376 adapts NXVM INS/OUTS iteration through project-native memory,
+  register, and port-bus modules without reference runtime imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
