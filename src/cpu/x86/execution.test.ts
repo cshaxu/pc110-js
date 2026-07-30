@@ -4237,7 +4237,7 @@ describe("80386 instruction fetch", () => {
       [0x0007, 0x66],
       [0x0008, 0x67],
       [0x0009, 0xf7],
-      [0x000a, 0x06],
+      [0x000a, 0x03],
       [0x000b, 0x00],
       [0x000c, 0x00],
       [0x000d, 0x00],
@@ -4249,10 +4249,10 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(0, 0x80000000);
-    state.writeRegister(6, 0x12000);
+    state.writeRegister(3, 0x12000);
     const memory = resetAliasMemory(values);
 
     stepInstruction(memory, state);
@@ -7909,7 +7909,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.writeRegister(0, 0x40000000);
     state.writeRegister(3, 0xfffffffe);
 
@@ -7945,7 +7945,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     const memory = resetAliasMemory(values);
 
     state.writeRegister(3, 0x00000000);
@@ -7995,6 +7995,41 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("selects F7 data width from the contextual CS default", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0xf7],
+      [0x00000001, 0xd3],
+      [0x00000002, 0x66],
+      [0x00000003, 0xf7],
+      [0x00000004, 0xd3],
+      [0x00000005, 0x67],
+      [0x00000006, 0x66],
+      [0x00000007, 0xf7],
+      [0x00000008, 0x16],
+      [0x00000009, 0x00],
+      [0x0000000a, 0x20],
+      [0x00002000, 0x78],
+      [0x00002001, 0x56]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.writeRegister(3, 0x12345678);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0xedcba987 }, eip: 2 });
+
+    state.writeRegister(3, 0x12345678);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { ebx: 0x1234a987 }, eip: 5 });
+
+    stepInstruction(memory, state);
+    expect(values.get(0x00002000)).toBe(0x87);
+    expect(values.get(0x00002001)).toBe(0xa9);
+    expect(state.snapshot().eip).toBe(11);
+  });
+
   it("uses 32-bit addressing for dword F7 memory operands", () => {
     const values = new Map<number, number>([
       [0x00000000, 0x66],
@@ -8008,7 +8043,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.writeRegister(0, 6);
     state.writeRegister(2, 0);
     state.writeRegister(3, 0x2000);
@@ -8047,7 +8082,7 @@ describe("80386 instruction fetch", () => {
     state.writeCr0(0x00000001);
     state.writeGdtr(0x1000, 0x000f);
     state.writeIdtr(0x2000, 0x0007);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(4, 0x3000);
     state.writeRegister(3, 0);

@@ -877,6 +877,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   no-ops after decoding their complete length. It also preserves OF for
   multi-bit byte SHL/SHR/SAR operations, where Intel defines OF only for count
   one. This follows the project's established policy for undefined flags.
+- M2 T2 S3 P305 routes F7 Group 3 through project-native contextual word and
+  dword helpers. CS D/B plus 66 selects the operand width, and 67 independently
+  selects ModR/M addressing. Existing tests that used 66 as a dword selector in
+  a default-32 code segment were corrected to use a default-16 code segment;
+  a malformed 32-bit-address immediate TEST fixture was also corrected.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
