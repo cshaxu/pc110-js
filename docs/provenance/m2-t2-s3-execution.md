@@ -885,6 +885,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P306 routes FE byte INC/DEC through a project-native contextual
   helper. It preserves the existing byte flags and register rules while using
   the execution context for ModR/M address width.
+- M2 T2 S3 P307 routes F6 byte Group 3 through a project-native contextual
+  helper. It retains byte data semantics, existing implicit-register behavior,
+  divide faults, and flag writers while selecting ModR/M addressing from the
+  instruction context.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

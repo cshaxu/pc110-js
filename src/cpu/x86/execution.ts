@@ -1816,6 +1816,16 @@ function executeContextualInstruction(
   if (moffs) return moffs;
   if (executeContextualByteIncrementDecrement(memory, state, context))
     return { halted: false, fetched };
+  if (context.opcode === 0xf6) {
+    executeByteF6(
+      memory,
+      state,
+      context.opcodeOffset + 1,
+      context.addressSize,
+      fetched.instructionPointer
+    );
+    return { halted: false, fetched };
+  }
   if (context.opcode === 0xf7) {
     if (context.operandSize === 32)
       executeDwordF7(
@@ -3653,6 +3663,88 @@ function executeWordF7(
     }
     default:
       throw new UnsupportedOpcodeError("Unsupported word F7 opcode form");
+  }
+}
+
+function executeByteF6(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  faultInstructionPointer: number
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const instructionBytes = modRmOffset + 1 + decodedAddressBytes(address, addressSize);
+  const operand = modRm.registerDirect
+    ? state.readRegister8(modRm.rm)
+    : readSegmentUint8(memory, state, address!.segment, address!.offset, addressSize);
+  const writeOperand = (value: number): void => {
+    if (modRm.registerDirect) state.writeRegister8(modRm.rm, value);
+    else writeSegmentUint8(memory, state, address!.segment, address!.offset, value, addressSize);
+  };
+
+  switch (modRm.reg) {
+    case 0x00:
+    case 0x01:
+      state.writeLogicFlags8(operand & fetchCodeByte(memory, state, instructionBytes).opcode);
+      state.advanceEip(instructionBytes + 1);
+      return;
+    case 0x02:
+      writeOperand(~operand);
+      state.advanceEip(instructionBytes);
+      return;
+    case 0x03:
+      writeOperand(-operand);
+      state.writeCompareFlags8(0, operand);
+      state.advanceEip(instructionBytes);
+      return;
+    case 0x04: {
+      const product = state.readRegister8(0) * operand;
+      state.writeRegister16(0, product);
+      state.writeMultiplyFlags16(product >>> 8);
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    case 0x05: {
+      const product =
+        BigInt.asIntN(8, BigInt(state.readRegister8(0))) * BigInt.asIntN(8, BigInt(operand));
+      state.writeRegister16(0, Number(BigInt.asUintN(16, product)));
+      state.writeSignedMultiplyFlags16(product < -0x80n || product > 0x7fn);
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    case 0x06: {
+      const dividend = state.readRegister16(0);
+      const quotient = operand === 0 ? 0x100 : Math.floor(dividend / operand);
+      if (quotient > 0xff) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      state.writeRegister8(0, quotient);
+      state.writeRegister8(4, dividend % operand);
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    case 0x07: {
+      const divisor = BigInt.asIntN(8, BigInt(operand));
+      const dividend = BigInt.asIntN(16, BigInt(state.readRegister16(0)));
+      if (divisor === 0n) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      const quotient = dividend / divisor;
+      if (quotient < -0x80n || quotient > 0x7fn) {
+        deliverCpuFault(memory, state, 0, faultInstructionPointer);
+        return;
+      }
+      state.writeRegister8(0, Number(BigInt.asUintN(8, quotient)));
+      state.writeRegister8(4, Number(BigInt.asUintN(8, dividend % divisor)));
+      state.advanceEip(instructionBytes);
+      return;
+    }
+    default:
+      throw new UnsupportedOpcodeError("Unsupported byte F6 opcode form");
   }
 }
 
