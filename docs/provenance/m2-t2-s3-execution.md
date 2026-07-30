@@ -1062,6 +1062,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   rebuilt ModR/M and segmented-memory access, with no external runtime import.
 - M2 T2 S3 P355 adds a project-owned dispatcher that joins rebuilt instruction
   families without importing legacy CPU, NXVM, or PCjs runtime code.
+- M2 T2 S3 P356 composes rebuilt state, executor, dispatcher, and project
+  PhysicalMemory into an independent runner with no legacy runtime import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

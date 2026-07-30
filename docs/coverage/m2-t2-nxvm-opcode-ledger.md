@@ -46,6 +46,12 @@ P355 adds a project-owned dispatcher for completed rebuilt instruction families.
 It supports sequence-level execution and does not switch the machine runtime,
 which remains a later integration gate.
 
+## P356 Rebuilt Reset-ROM Runner
+
+P356 composes PhysicalMemory, the rebuilt executor, and dispatcher into an
+independent runner. It proves high-ROM reset-alias execution without legacy CPU
+runtime use; broad ROM trace compatibility remains an active completion gate.
+
 ## P327 `00-3F` Checklist And Deferred Dependencies
 
 P327 is an in-progress execution slice. It executes the base ALU encodings
