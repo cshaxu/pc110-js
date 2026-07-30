@@ -1021,6 +1021,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P341 translates NXVM accumulator moffs MOV behavior into native
   TypeScript. It uses only rebuilt segmented memory and register state, with no
   runtime import from NXVM, PCjs, or the legacy CPU.
+- M2 T2 S3 P342 translates NXVM accumulator immediate TEST behavior into native
+  TypeScript. It uses shared rebuilt logical flags without writing the
+  accumulator or importing external runtime code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
