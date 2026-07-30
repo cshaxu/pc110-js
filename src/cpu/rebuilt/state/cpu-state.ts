@@ -18,12 +18,21 @@ export interface RebuiltCpuSnapshot {
   readonly cr3: number;
   readonly gdtr: DescriptorTable;
   readonly idtr: DescriptorTable;
+  readonly ldtr: SystemSelector;
+  readonly tr: SystemSelector;
   readonly segments: Readonly<Record<SegmentName, SegmentCache>>;
 }
 
 export interface DescriptorTable {
   readonly base: number;
   readonly limit: number;
+}
+
+export interface SystemSelector {
+  readonly selector: number;
+  readonly base: number;
+  readonly limit: number;
+  readonly default32: boolean;
 }
 
 export class RebuiltCpuState {
@@ -36,6 +45,8 @@ export class RebuiltCpuState {
   private cr3 = 0;
   private gdtr: DescriptorTable = { base: 0, limit: 0 };
   private idtr: DescriptorTable = { base: 0, limit: 0x3ff };
+  private ldtr: SystemSelector = { selector: 0, base: 0, limit: 0, default32: false };
+  private tr: SystemSelector = { selector: 0, base: 0, limit: 0, default32: false };
   private segments: Record<SegmentName, SegmentCache> = this.resetSegments();
 
   public constructor() {
@@ -52,6 +63,8 @@ export class RebuiltCpuState {
     this.cr3 = 0;
     this.gdtr = { base: 0, limit: 0 };
     this.idtr = { base: 0, limit: 0x3ff };
+    this.ldtr = { selector: 0, base: 0, limit: 0, default32: false };
+    this.tr = { selector: 0, base: 0, limit: 0, default32: false };
     this.segments = this.resetSegments();
   }
 
@@ -66,6 +79,8 @@ export class RebuiltCpuState {
       cr3: this.cr3,
       gdtr: { ...this.gdtr },
       idtr: { ...this.idtr },
+      ldtr: { ...this.ldtr },
+      tr: { ...this.tr },
       segments: {
         cs: cloneSegment(this.segments.cs),
         ds: cloneSegment(this.segments.ds),
@@ -134,6 +149,19 @@ export class RebuiltCpuState {
     this.idtr = validateDescriptorTable(table);
   }
 
+  public readLdtr(): SystemSelector {
+    return { ...this.ldtr };
+  }
+  public writeLdtr(value: SystemSelector): void {
+    this.ldtr = validateSystemSelector(value);
+  }
+  public readTr(): SystemSelector {
+    return { ...this.tr };
+  }
+  public writeTr(value: SystemSelector): void {
+    this.tr = validateSystemSelector(value);
+  }
+
   private resetSegments(): Record<SegmentName, SegmentCache> {
     return {
       cs: cloneSegment(RESET_CODE_SEGMENT),
@@ -152,4 +180,19 @@ function validateDescriptorTable(table: DescriptorTable): DescriptorTable {
   if (!Number.isSafeInteger(table.limit) || table.limit < 0 || table.limit > 0xffff)
     throw new RangeError("Descriptor table limit must be a 16-bit unsigned value");
   return { base: table.base >>> 0, limit: table.limit };
+}
+
+function validateSystemSelector(value: SystemSelector): SystemSelector {
+  if (
+    !Number.isSafeInteger(value.selector) ||
+    !Number.isSafeInteger(value.base) ||
+    !Number.isSafeInteger(value.limit)
+  )
+    throw new RangeError("System selector values must be integers");
+  return {
+    selector: value.selector & 0xffff,
+    base: value.base >>> 0,
+    limit: value.limit >>> 0,
+    default32: value.default32
+  };
 }
