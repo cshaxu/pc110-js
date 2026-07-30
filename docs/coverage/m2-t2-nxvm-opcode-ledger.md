@@ -22,8 +22,8 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 38-3D CMP                                             | 5878-5948                                    | Compare forms without destination write                                          | `instructions/arithmetic.ts`, `instructions/first-interval.ts`                                                                                                                                  | Partial                     | Full subtraction flags; memory not written                    | Required        | Implemented: P327, P399                                                                                                 |
 | 40-4F INC and DEC                                     | 6012-6447                                    | Register inc/dec with preserved CF                                               | `instructions/register-stack.ts`                                                                                                                                                                | Partial                     | 16/default-32; CF preservation; overflow                      | Required        | Implemented: P329; broader differential evidence remains active                                                         |
 | 50-5F PUSH and POP                                    | 6476-6866                                    | General-register stack forms                                                     | `instructions/register-stack.ts`                                                                                                                                                                | Partial                     | Operand data versus SS stack address width                    | Required        | Implemented: P329; broader differential evidence remains active                                                         |
-| 60-61 PUSHA and POPA                                  | 6892-6933                                    | Full register-frame stack forms                                                  | `instructions/frame-immediate.ts`                                                                                                                                                               | Partial                     | Original SP/ESP; 16/default-32; faults                        | Required        | Implemented: P330; fault delivery remains active                                                                        |
-| 62-6F frame, bounds, immediate arithmetic, string I/O | 6972-7265                                    | BOUND, ARPL, FS/GS, PUSH/IMUL immediates, INS/OUTS                               | `instructions/frame-immediate.ts`, `instructions/string-io.ts`                                                                                                                                  | Partial                     | Bounds faults; privilege; 66/67; REP and I/O boundary         | Required        | In progress: P330 implements 68-6B only                                                                                 |
+| 60-61 PUSHA and POPA                                  | 6892-6933                                    | Full register-frame stack forms                                                  | `instructions/frame-immediate.ts`                                                                                                                                                               | Partial                     | Original SP/ESP; 16/default-32; faults                        | Required        | Implemented: P330, P419                                                                                                  |
+| 62-6F frame, bounds, immediate arithmetic, string I/O | 6972-7265                                    | BOUND, ARPL, FS/GS, PUSH/IMUL immediates, INS/OUTS                               | `instructions/frame-immediate.ts`, `instructions/string-io.ts`                                                                                                                                  | Partial                     | Bounds faults; privilege; 66/67; REP and I/O boundary         | Required        | Implemented: P330, P373, P375, P376, P378, P418, P419                                                                   |
 | 70-7F short Jcc                                       | 7309-7494                                    | All short conditional transfers                                                  | `instructions/control.ts`                                                                                                                                                                       | Partial                     | Taken/not-taken; flags; 16/default-32 EIP                     | Required        | Implemented: P331; broader differential evidence remains active                                                         |
 | 80, 81, 83 Group One                                  | 7507-7840                                    | Immediate arithmetic and compare groups                                          | `instructions/group-one.ts`                                                                                                                                                                     | Partial                     | Every extension; sign extension; register/memory; widths      | Required        | Implemented: P332; broader differential evidence remains active                                                         |
 | 84-8F ModR/M, segment, and stack forms                | 7853-8130                                    | TEST, XCHG, MOV, segment moves, LEA, POP r/m                                     | `instructions/test.ts`, `instructions/exchange.ts`, `instructions/move.ts`, `instructions/lea.ts`, `instructions/register-stack.ts`                                                             | Partial                     | ModR/M/SIB; segment validation; 66/67                         | Required        | In progress: P333-P336 implement 84-8D                                                                                  |
@@ -85,9 +85,9 @@ P330 follows NXVM handlers `PUSHA`, `POPA`, `PUSH_I32`,
 SS stack addressing, signed immediate extension, IMUL CF/OF truncation, and
 `67` plus segment-overridden memory sources for IMUL.
 
-P373, P375, P376, P378, and P418 close the originally recorded `62-6F`
-exception, selector, prefix, string-I/O, and protected-I/O dependencies.
-The interval remains open pending its complete family-close review and evidence.
+P373, P375, P376, P378, P418, and P419 close the originally recorded `62-6F`
+exception, selector, prefix, string-I/O, protected-I/O, and v86 selector
+dependencies. P419 supplies the complete family-close review and evidence.
 
 ## P331 `70-7F` Checklist
 
@@ -722,3 +722,17 @@ index, or accumulator side effect. Focused tests cover direct protected access,
 multi-port bitmap denial, missing/16-bit TSS rejection, v86 IOPL-three direct
 access, v86 bitmap admission, truncation, and dispatcher-integrated scalar and
 string I/O faults.
+
+## P419 `60-6F` Family Closure Checklist
+
+P419 closes the complete NXVM `60-6F` interval. It verifies PUSHA/POPA in
+default-16 and default-32 code with independent `66` operand selection; BOUND
+with signed word/dword limits and independent `66`/`67`; fixed-width ARPL in
+protected default-16/default-32 code, plus its real-mode and v86 `#UD` paths;
+FS/GS prefix execution; immediate PUSH/IMUL forms; and all INSB/INSW/INSD and
+OUTSB/OUTSW/OUTSD forms. The string-I/O evidence covers REP state, direction,
+fixed ES destinations, FS/GS sources, 16/32-bit data widths, and independent
+`66`/`67` index and count selection. P419 corrects ARPL to follow NXVM's
+`_IsProtected` definition, excluding virtual-8086 execution and delivering
+`#UD` through the existing TSS frame. No device response or reference runtime
+is added.

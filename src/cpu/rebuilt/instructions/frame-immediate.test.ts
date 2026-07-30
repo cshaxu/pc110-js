@@ -66,6 +66,24 @@ describe("rebuilt 60-6B frame and immediate forms", () => {
     });
     expect(invalid.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
   });
+
+  it("selects BOUND operand and address sizes independently", () => {
+    const dword = execute([0x62, 0x05, 0x00, 0x10, 0x00, 0x00], {
+      code32: true,
+      setup: (state) => state.registers.write32(0, 3),
+      setupMemory: (memory) =>
+        [2, 0, 0, 0, 4, 0, 0, 0].forEach((value, index) => memory.set(0x1000 + index, value))
+    });
+    expect(dword.state.readEip()).toBe(6);
+
+    const wordAddress16 = execute([0x66, 0x67, 0x62, 0x06, 0x20, 0], {
+      code32: true,
+      setup: (state) => state.registers.write16(0, 3),
+      setupMemory: (memory) =>
+        [2, 0, 4, 0].forEach((value, index) => memory.set(0x20 + index, value))
+    });
+    expect(wordAddress16.state.readEip()).toBe(6);
+  });
   it("pushes every 16-bit register plus the original SP in PUSHA order", () => {
     const result = execute([0x60], {
       setup: (state) => {
@@ -78,6 +96,13 @@ describe("rebuilt 60-6B frame and immediate forms", () => {
     expect(
       [0xf0, 0xf2, 0xf4, 0xf6, 0xf8, 0xfa, 0xfc, 0xfe].map((address) => result.memory.get(address))
     ).toEqual([0x07, 0x06, 0x05, 0x00, 0x03, 0x02, 0x01, 0x00]);
+
+    const prefixed = execute([0x66, 0x60], {
+      code32: true,
+      stack32: true,
+      setup: (state) => state.registers.write32(4, 0x100)
+    });
+    expect(prefixed.state.snapshot()).toMatchObject({ eip: 2, registers: { esp: 0xf0 } });
   });
 
   it("pops all registers while discarding the POPA stack-pointer slot", () => {

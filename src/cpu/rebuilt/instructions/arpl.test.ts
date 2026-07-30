@@ -6,10 +6,11 @@ import { executeArpl } from "./arpl.js";
 function execute(
   bytes: readonly number[],
   protectedMode: boolean,
-  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  code32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: code32 });
   state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
   state.writeEip(0);
   state.writeCr0(protectedMode ? 1 : 0);
@@ -52,5 +53,38 @@ describe("rebuilt ARPL", () => {
       [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value));
     });
     expect(real.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+  });
+  it("remains a fixed-width selector operation in default-32 code with 66", () => {
+    const result = execute(
+      [0x66, 0x63, 0xc8],
+      true,
+      (state) => {
+        state.registers.write16(0, 0x1000);
+        state.registers.write16(1, 3);
+      },
+      true
+    );
+    expect(result.state.snapshot()).toMatchObject({ eip: 3, registers: { eax: 0x1003 } });
+  });
+  it("delivers #UD through the virtual-8086 TSS frame", () => {
+    const result = execute([0x63, 0xc8], true, (state, memory) => {
+      state.flags.write(0x0002_0002);
+      state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false, dpl: 3 });
+      state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false, dpl: 3 });
+      state.writeGdtr({ base: 0x200, limit: 0x1f });
+      state.writeIdtr({ base: 0x300, limit: 0x7f });
+      state.writeTr({ selector: 0x18, base: 0x400, limit: 0x67, default32: true, type: 9 });
+      state.registers.write32(4, 0x100);
+      [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0].forEach((value, index) =>
+        memory.set(0x208 + index, value)
+      );
+      [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0].forEach((value, index) =>
+        memory.set(0x210 + index, value)
+      );
+      [0x80, 0, 8, 0, 0, 0x8e, 0, 0].forEach((value, index) => memory.set(0x330 + index, value));
+      [0, 2, 0, 0, 0x10, 0].forEach((value, index) => memory.set(0x404 + index, value));
+    });
+    expect(result.state.snapshot()).toMatchObject({ eip: 0x80, registers: { esp: 0x1dc } });
+    expect(result.state.flags.read() & 0x00020000).toBe(0);
   });
 });

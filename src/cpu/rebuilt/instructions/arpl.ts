@@ -6,7 +6,7 @@ import type { SegmentName } from "../state/segments.js";
 const EFLAGS_ZERO = 0x00000040;
 
 export function executeArpl(context: RebuiltExecutionContext): void {
-  if (!(context.state.readCr0() & 1))
+  if (!(context.state.readCr0() & 1) || context.state.isVirtual8086())
     return deliverFault(context.memory, context.state, 6, context.state.readEip());
   const offset = context.instruction.opcodeOffset + 1;
   const modRm = decodeModRm(

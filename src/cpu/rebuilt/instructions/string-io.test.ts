@@ -6,10 +6,11 @@ import { executeStringIo } from "./string-io.js";
 
 function execute(
   bytes: readonly number[],
-  setup: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  code32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: code32 });
   state.writeSegment("ds", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
   state.writeSegment("es", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
   state.writeEip(0);
@@ -29,6 +30,15 @@ function execute(
 }
 
 describe("rebuilt INS and OUTS", () => {
+  it("writes byte-wide INS data and advances DI by one", () => {
+    const result = execute([0x6c], (state) => {
+      state.registers.write16(2, 0x1234);
+      state.registers.write16(7, 0x20);
+    });
+    expect(result.memory.get(0x20)).toBe(0xdd);
+    expect(result.state.snapshot()).toMatchObject({ eip: 1, registers: { edi: 0x21 } });
+  });
+
   it("writes INS data to ES:DI and applies DF", () => {
     const result = execute([0x6d], (state) => {
       state.registers.write16(2, 0x1234);
@@ -47,6 +57,58 @@ describe("rebuilt INS and OUTS", () => {
     });
     expect(result.writes).toEqual([[0x80, 0x5a, 8]]);
     expect(result.state.snapshot()).toMatchObject({ eip: 0, registers: { ecx: 1, esi: 0x21 } });
+  });
+
+  it("selects FS/GS sources and independent 66/67 string I/O widths", () => {
+    const fs = execute([0x64, 0x6e], (state, memory) => {
+      state.registers.write16(2, 0x80);
+      state.registers.write16(6, 0x20);
+      state.writeSegment("fs", { selector: 0, base: 0x1000, limit: 0xffff_ffff, default32: false });
+      memory.set(0x1020, 0x5a);
+    });
+    expect(fs.writes).toEqual([[0x80, 0x5a, 8]]);
+    expect(fs.state.readEip()).toBe(2);
+
+    const gs = execute(
+      [0x65, 0x66, 0x6f],
+      (state, memory) => {
+        state.registers.write16(2, 0x81);
+        state.registers.write32(6, 0x20);
+        state.writeSegment("gs", {
+          selector: 0,
+          base: 0x2000,
+          limit: 0xffff_ffff,
+          default32: true
+        });
+        memory.set(0x2020, 0x34);
+        memory.set(0x2021, 0x12);
+      },
+      true
+    );
+    expect(gs.writes).toEqual([[0x81, 0x1234, 16]]);
+    expect(gs.state.snapshot()).toMatchObject({ eip: 3, registers: { esi: 0x22 } });
+  });
+
+  it("uses default-32 INSD data with 67-selected DI and CX REP state", () => {
+    const result = execute(
+      [0xf3, 0x67, 0x6d],
+      (state) => {
+        state.registers.write16(2, 0x82);
+        state.registers.write32(7, 0xabcd_0020);
+        state.registers.write32(1, 0x1234_0002);
+      },
+      true
+    );
+    expect([
+      result.memory.get(0x20),
+      result.memory.get(0x21),
+      result.memory.get(0x22),
+      result.memory.get(0x23)
+    ]).toEqual([0xdd, 0xcc, 0xbb, 0xaa]);
+    expect(result.state.snapshot()).toMatchObject({
+      eip: 0,
+      registers: { edi: 0xabcd_0024, ecx: 0x1234_0001 }
+    });
   });
 
   it("applies protected I/O admission before INS or OUTS performs a port access", () => {
