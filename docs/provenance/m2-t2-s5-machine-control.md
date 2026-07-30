@@ -19,3 +19,9 @@ legacy CPU runtime code.
 P6 composes project-native physical memory, the rebuilt port dispatcher, and
 the rebuilt CPU into a deterministic reset/step/run boundary with unified CPU
 and port traces. It does not add any hardware device or reference runtime.
+
+## P7 Rebuilt Trace Stop Boundary
+
+P7 routes the selected-ROM trace through the rebuilt machine core and records
+halt, budget, or error stops with completed instruction count and CPU state.
+An unmapped port remains a diagnostic boundary rather than an emulated device.

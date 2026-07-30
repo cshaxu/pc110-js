@@ -16,7 +16,14 @@ export interface RebuiltMachineRunResult {
 export type RebuiltMachineTraceEvent =
   | { readonly kind: "instruction"; readonly event: RebuiltTraceEvent }
   | { readonly kind: "port"; readonly event: RebuiltPortTraceEvent }
-  | { readonly kind: "reset"; readonly state: RebuiltCpuSnapshot };
+  | { readonly kind: "reset"; readonly state: RebuiltCpuSnapshot }
+  | {
+      readonly kind: "stop";
+      readonly reason: "halted" | "budget" | "error";
+      readonly executed: number;
+      readonly state: RebuiltCpuSnapshot;
+      readonly error?: string;
+    };
 
 export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 
@@ -51,10 +58,29 @@ export class RebuiltPcAt386Core {
     if (!Number.isInteger(maxInstructions) || maxInstructions < 0)
       throw new RangeError("Instruction budget must be a non-negative integer");
     let executed = 0;
-    while (executed < maxInstructions && !this.runner.state.snapshot().halted) {
-      this.step();
-      executed += 1;
+    try {
+      while (executed < maxInstructions && !this.runner.state.snapshot().halted) {
+        this.step();
+        executed += 1;
+      }
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      this.trace?.({
+        kind: "stop",
+        reason: "error",
+        executed,
+        state: this.runner.state.snapshot(),
+        error: detail
+      });
+      throw error;
     }
-    return { executed, halted: this.runner.state.snapshot().halted };
+    const halted = this.runner.state.snapshot().halted;
+    this.trace?.({
+      kind: "stop",
+      reason: halted ? "halted" : "budget",
+      executed,
+      state: this.runner.state.snapshot()
+    });
+    return { executed, halted };
   }
 }

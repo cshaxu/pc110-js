@@ -3,7 +3,10 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory } from "../memory/physical-memory.js";
-import { RebuiltCpuRunner } from "../cpu/rebuilt/runner.js";
+import {
+  RebuiltPcAt386Core,
+  type RebuiltMachineTraceEvent
+} from "../machine/rebuilt-pc-at-386-core.js";
 
 const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 const SOURCE_ROM = "machines/pcx86/compaq/deskpro386/rom/1988-01-28/1988-01-28.json5";
@@ -34,9 +37,9 @@ function loadRom(): Uint8Array {
   return Uint8Array.from(values);
 }
 
-function formatAddress(runner: RebuiltCpuRunner): string {
-  const cs = runner.state.readSegment("cs").selector.toString(16).padStart(4, "0");
-  const eip = runner.state.readEip().toString(16).padStart(4, "0");
+function formatAddress(core: RebuiltPcAt386Core): string {
+  const cs = core.runner.state.readSegment("cs").selector.toString(16).padStart(4, "0");
+  const eip = core.runner.state.readEip().toString(16).padStart(4, "0");
   return `${cs}:${eip}`;
 }
 
@@ -47,23 +50,21 @@ function main(): void {
     0xffff8000,
     [0xf8000, 0xf0000, 0xffff0000]
   );
-  const runner = new RebuiltCpuRunner(memory);
-  let executed = 0;
+  const trace: RebuiltMachineTraceEvent[] = [];
+  const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event));
   try {
-    while (executed < 1_000) {
-      runner.step();
-      executed += 1;
-    }
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
+    const result = core.run(1_000);
     process.stdout.write(
-      `Rebuilt selected-ROM trace stopped after ${executed} instructions at ${formatAddress(runner)}: ${detail}\n`
+      `Rebuilt selected-ROM trace completed ${result.executed} instructions at ${formatAddress(core)}\n`
     );
-    return;
+  } catch (error) {
+    const stop = trace.at(-1);
+    const detail = stop?.kind === "stop" && stop.error ? stop.error : String(error);
+    const executed = stop?.kind === "stop" ? stop.executed : 0;
+    process.stdout.write(
+      `Rebuilt selected-ROM trace stopped after ${executed} instructions at ${formatAddress(core)}: ${detail}\n`
+    );
   }
-  process.stdout.write(
-    `Rebuilt selected-ROM trace completed ${executed} instructions at ${formatAddress(runner)}\n`
-  );
 }
 
 main();
