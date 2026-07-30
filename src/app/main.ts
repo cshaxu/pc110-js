@@ -48,6 +48,9 @@ const controls = { state, run, pause, reset, nativeStatus, screen, context };
 const loader = new LocalAssetLoader();
 let mediaMounted = false;
 let animationFrame: number | undefined;
+let lastNativeRenderAt = 0;
+const NATIVE_INSTRUCTION_SLICE = 25_000;
+const NATIVE_RENDER_INTERVAL_MS = 100;
 
 function color(component: readonly [number, number, number]): string {
   return `rgb(${component[0] * 4}, ${component[1] * 4}, ${component[2] * 4})`;
@@ -119,17 +122,20 @@ mount.addEventListener("click", async () => {
   }
 });
 
-function scheduleNativeRun(): void {
+function scheduleNativeRun(timestamp = 0): void {
   if (machine.snapshot().runState !== "running") return;
   try {
-    checkpoint.core.run(5_000);
+    checkpoint.core.run(NATIVE_INSTRUCTION_SLICE);
   } catch (error) {
     machine.pause();
     animationFrame = undefined;
     controls.nativeStatus.textContent = error instanceof Error ? error.message : String(error);
     return;
   }
-  render(machine.snapshot());
+  if (timestamp - lastNativeRenderAt >= NATIVE_RENDER_INTERVAL_MS) {
+    lastNativeRenderAt = timestamp;
+    render(machine.snapshot());
+  }
   animationFrame = requestAnimationFrame(scheduleNativeRun);
 }
 machine.subscribe(render);
