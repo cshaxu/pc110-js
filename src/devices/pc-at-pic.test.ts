@@ -35,6 +35,15 @@ describe("project-native PC/AT PIC cascade", () => {
     });
   });
 
+  it("reports a pending vector without acknowledging the IRQ", () => {
+    const pic = new PcAtPic();
+    initialize(pic);
+    pic.raiseIrq(10);
+    expect(pic.pendingVector()).toBe(0x2a);
+    expect(pic.snapshot()).toMatchObject({ master: { request: 0x04 }, slave: { request: 0x04 } });
+    expect(pic.acknowledge()).toBe(0x2a);
+  });
+
   it("requires both slave and master EOIs before another slave IRQ can proceed", () => {
     const pic = new PcAtPic();
     initialize(pic);

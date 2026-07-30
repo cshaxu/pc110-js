@@ -2,6 +2,7 @@ import type { RebuiltTraceEvent } from "../cpu/rebuilt/debug/trace.js";
 import { RebuiltCpuRunner } from "../cpu/rebuilt/runner.js";
 import type { RebuiltCpuSnapshot } from "../cpu/rebuilt/state/cpu-state.js";
 import type { PhysicalMemory } from "../memory/physical-memory.js";
+import { PcAtPic } from "../devices/pc-at-pic.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -16,6 +17,7 @@ export interface RebuiltMachineRunResult {
 export type RebuiltMachineTraceEvent =
   | { readonly kind: "instruction"; readonly event: RebuiltTraceEvent }
   | { readonly kind: "port"; readonly event: RebuiltPortTraceEvent }
+  | { readonly kind: "interrupt"; readonly vector: number }
   | { readonly kind: "reset"; readonly state: RebuiltCpuSnapshot }
   | {
       readonly kind: "stop";
@@ -28,6 +30,7 @@ export type RebuiltMachineTraceEvent =
 export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 
 export class RebuiltPcAt386Core {
+  public readonly pic = new PcAtPic();
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
 
@@ -39,6 +42,7 @@ export class RebuiltPcAt386Core {
     this.runner = new RebuiltCpuRunner(memory, this.ports, (event) =>
       this.trace?.({ kind: "instruction", event })
     );
+    for (const range of this.pic.portRanges()) this.registerPorts(range);
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -46,11 +50,14 @@ export class RebuiltPcAt386Core {
   }
 
   public reset(): void {
+    this.pic.reset();
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
   }
 
   public step(): void {
+    if (this.servicePendingInterrupt()) return;
+    if (this.runner.state.isHalted()) return;
     this.runner.step();
   }
 
@@ -59,8 +66,10 @@ export class RebuiltPcAt386Core {
       throw new RangeError("Instruction budget must be a non-negative integer");
     let executed = 0;
     try {
-      while (executed < maxInstructions && !this.runner.state.snapshot().halted) {
-        this.step();
+      while (executed < maxInstructions) {
+        if (this.servicePendingInterrupt()) continue;
+        if (this.runner.state.snapshot().halted) break;
+        this.runner.step();
         executed += 1;
       }
     } catch (error) {
@@ -82,5 +91,15 @@ export class RebuiltPcAt386Core {
       state: this.runner.state.snapshot()
     });
     return { executed, halted };
+  }
+
+  private servicePendingInterrupt(): boolean {
+    const vector = this.pic.pendingVector();
+    if (vector === undefined || !this.runner.serviceExternalInterrupt(vector)) return false;
+    const acknowledged = this.pic.acknowledge();
+    if (acknowledged !== vector)
+      throw new Error("PC/AT PIC acknowledgement changed after CPU interrupt admission");
+    this.trace?.({ kind: "interrupt", vector });
+    return true;
   }
 }

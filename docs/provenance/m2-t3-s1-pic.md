@@ -25,3 +25,10 @@ P3 composes the project-native controllers with the PC/AT slave-on-master-IRQ2
 wiring and exports four structural port ranges for the rebuilt port bus. The
 device remains CPU-independent; no PCjs device, CPU, firmware, or synthetic
 guest behavior is used.
+
+## P4 Machine Admission
+
+P4 registers the local PIC ranges in the rebuilt machine core and sends a
+non-destructive pending vector through the existing project-native CPU external
+interrupt boundary before acknowledging the PIC. It preserves CPU IF and
+instruction-inhibition rules without a PCjs runtime dependency.

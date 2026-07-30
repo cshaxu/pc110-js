@@ -86,6 +86,16 @@ export class PcAtPic {
     return this.slave.acknowledge() ?? masterVector;
   }
 
+  public pendingVector(): number | undefined {
+    this.synchronizeCascade();
+    const masterLine = this.master.pendingLine();
+    if (masterLine === undefined) return undefined;
+    const masterVector = this.master.snapshot().vectorBase | masterLine;
+    if (masterLine !== 2) return masterVector;
+    const slaveLine = this.slave.pendingLine();
+    return slaveLine === undefined ? masterVector : this.slave.snapshot().vectorBase | slaveLine;
+  }
+
   public snapshot(): PcAtPicSnapshot {
     return { master: this.master.snapshot(), slave: this.slave.snapshot() };
   }
