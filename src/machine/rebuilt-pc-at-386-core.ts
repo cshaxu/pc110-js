@@ -9,6 +9,7 @@ import { PcAtRtc } from "../devices/pc-at-rtc.js";
 import { PcAtSystemControl } from "../devices/pc-at-system-control.js";
 import { KeyboardOutputPort } from "../devices/keyboard-output-port.js";
 import { PcAtKeyboardController } from "../devices/pc-at-keyboard-controller.js";
+import { PcAtFpuControl } from "../devices/pc-at-fpu-control.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -47,6 +48,7 @@ export class RebuiltPcAt386Core {
     (value) => this.writeKeyboardOutputPort(value),
     () => this.runner.reset()
   );
+  public readonly fpuControl = new PcAtFpuControl();
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
   private nmiPending = false;
@@ -65,6 +67,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.rtc.portRanges()) this.registerPorts(range);
     for (const range of this.systemPort.portRanges()) this.registerPorts(range);
     for (const range of this.keyboardController.portRanges()) this.registerPorts(range);
+    for (const range of this.fpuControl.portRanges()) this.registerPorts(range);
   }
 
   public registerPorts(range: RebuiltPortRange): void {
@@ -78,6 +81,7 @@ export class RebuiltPcAt386Core {
     this.rtc.reset();
     this.systemPort.reset();
     this.keyboardController.reset();
+    this.fpuControl.reset();
     this.keyboardOutputPort.reset();
     this.memory.setA20Enabled(true);
     this.nmiPending = false;

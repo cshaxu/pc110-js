@@ -8,14 +8,14 @@ describe("RebuiltPcAt386Core", () => {
   it("composes rebuilt CPU stepping, port dispatch, and trace hooks", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0xe6);
-    memory.writeUint8(1, 0x84);
+    memory.writeUint8(1, 0xee);
     memory.writeUint8(2, 0xf4);
     const trace: RebuiltMachineTraceEvent[] = [];
     const writes: Array<[number, number, number]> = [];
     const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event));
     core.registerPorts({
-      start: 0x84,
-      end: 0x84,
+      start: 0xee,
+      end: 0xee,
       write: (port, value, width) => writes.push([port, value, width])
     });
     core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
@@ -23,7 +23,7 @@ describe("RebuiltPcAt386Core", () => {
     core.runner.state.registers.write8(0, 0x5a);
 
     expect(core.run(5)).toEqual({ executed: 2, halted: true });
-    expect(writes).toEqual([[0x84, 0x5a, 8]]);
+    expect(writes).toEqual([[0xee, 0x5a, 8]]);
     expect(trace.map((event) => event.kind)).toEqual([
       "port",
       "instruction",
@@ -50,15 +50,15 @@ describe("RebuiltPcAt386Core", () => {
   it("records unmapped ports as a deterministic stop boundary", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0xe6);
-    memory.writeUint8(1, 0x84);
+    memory.writeUint8(1, 0xee);
     const trace: RebuiltMachineTraceEvent[] = [];
     const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event));
     core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
     core.runner.state.writeEip(0);
 
-    expect(() => core.run(1)).toThrow("Unmapped I/O write port: 0x84");
+    expect(() => core.run(1)).toThrow("Unmapped I/O write port: 0xee");
     expect(trace).toMatchObject([
-      { kind: "stop", reason: "error", executed: 0, error: "Unmapped I/O write port: 0x84" }
+      { kind: "stop", reason: "error", executed: 0, error: "Unmapped I/O write port: 0xee" }
     ]);
   });
 
@@ -239,5 +239,15 @@ describe("RebuiltPcAt386Core", () => {
       outputBuffer: undefined,
       keyboardEnabled: false
     });
+  });
+
+  it("registers the native FPU control lines without an x87 execution engine", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0xf0, 0, 8);
+    core.ports.write(0xf1, 0, 8);
+    expect(core.fpuControl.snapshot()).toEqual({ clearCount: 1, resetCount: 1 });
+    core.reset();
+    expect(core.fpuControl.snapshot()).toEqual({ clearCount: 0, resetCount: 0 });
   });
 });

@@ -32,5 +32,17 @@ It is separate from normal DMA channel pages and has no transfer-side effect,
 PCjs import, firmware modification, or POST-specific shortcut.
 
 The post-P2 trace reaches `F000:F94F` after 34 instructions and stops on the
-next unclaimed physical read at `0xE0000`. This moves the S7 investigation to
-selected option-ROM mapping rather than a DMA or POST-checkpoint workaround.
+next unclaimed physical read at `0xE0000`.
+
+## P3 Floating Bus
+
+PCjs represents empty physical blocks as `0xFF` reads with ignored writes.
+The project exposes this only as an explicit selected-machine memory option;
+the strict default remains unchanged. The post-P3 trace reaches `F000:F9B6`
+after 63 instructions and stops at I/O write `0xF1`.
+
+## P4 FPU Control
+
+PCjs assigns `0xF0` to FPU clear-busy and `0xF1` to FPU reset on the 5170
+port table, with zero as the only expected output. The native control adapter
+models those signals independently from any x87 implementation.
