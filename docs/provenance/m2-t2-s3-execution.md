@@ -1279,6 +1279,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   opcode ledger. It introduces no runtime behavior or reference dependency and
   preserves explicit task, gate, descriptor, privilege, paging, and integration
   closure boundaries.
+- M2 T2 S3 P436 corrects stale top-table evidence text for P329, P331, P332,
+  and P424. It introduces no runtime behavior or reference dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
