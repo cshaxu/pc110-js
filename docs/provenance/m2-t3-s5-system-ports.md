@@ -50,3 +50,9 @@ project-native memory and CPU-reset contracts. It does not map an I/O port,
 simulate a command queue, keyboard data, status bits, firmware, PCjs, storage,
 media, or guest services. Full device reset stays machine-owned rather than
 being inferred from the CPU reset pulse.
+
+## P6 Browser Checkpoint
+
+P6 presents only local system-port/PIT2/A20 reset state beside existing native
+checkpoint data. It does not create sound, a keyboard-controller protocol,
+firmware, media, storage, display, or DOS behavior.

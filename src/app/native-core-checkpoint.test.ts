@@ -18,7 +18,11 @@ describe("NativeCoreCheckpoint", () => {
       rtcStatusB: "02",
       rtcStatusC: "00",
       rtcStatusD: "80",
-      rtcNmiDisabled: "0"
+      rtcNmiDisabled: "0",
+      systemPortControl: "00",
+      systemTimer2Gate: "0",
+      systemSpeakerOutput: "0",
+      a20Enabled: "1"
     });
 
     checkpoint.core.pic.master.raise(1);

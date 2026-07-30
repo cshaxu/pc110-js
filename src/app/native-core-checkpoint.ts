@@ -16,6 +16,10 @@ export interface NativeCoreCheckpointSnapshot {
   readonly rtcStatusC: string;
   readonly rtcStatusD: string;
   readonly rtcNmiDisabled: string;
+  readonly systemPortControl: string;
+  readonly systemTimer2Gate: string;
+  readonly systemSpeakerOutput: string;
+  readonly a20Enabled: string;
 }
 
 export class NativeCoreCheckpoint {
@@ -44,7 +48,11 @@ export class NativeCoreCheckpoint {
       rtcStatusB: hex8(this.core.rtc.snapshot().statusB),
       rtcStatusC: hex8(this.core.rtc.snapshot().statusC),
       rtcStatusD: hex8(this.core.rtc.snapshot().statusD),
-      rtcNmiDisabled: bit(this.core.rtc.nmiDisabled())
+      rtcNmiDisabled: bit(this.core.rtc.nmiDisabled()),
+      systemPortControl: hex8(this.core.systemPort.snapshot().control),
+      systemTimer2Gate: bit(this.core.systemPort.snapshot().timer2Gate),
+      systemSpeakerOutput: bit(this.core.systemPort.speakerOutput()),
+      a20Enabled: bit(this.core.keyboardOutputPort.snapshot().a20Enabled)
     };
   }
 }
