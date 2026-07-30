@@ -602,3 +602,10 @@ P403 applies NXVM's virtual-8086 CPL-three interpretation to the existing HLT,
 CLI, and STI privilege boundary. Focused tests cover IOPL-three CLI/STI state
 changes and low-IOPL #GP(0) delivery through the rebuilt v86 TSS frame. I/O
 permission maps and external interrupt admission remain active dependencies.
+
+## P404 Virtual-8086 Software-Interrupt Checklist
+
+P404 applies NXVM's virtual-8086 IOPL admission to INT3, INT imm8, and
+overflow-triggered INTO. IOPL below three delivers #GP(0) before IDT lookup;
+focused tests cover all three entry forms through the rebuilt v86 TSS frame.
+External interrupt admission and virtual interrupt extensions remain active.

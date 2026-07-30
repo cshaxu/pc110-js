@@ -189,6 +189,44 @@ describe("rebuilt INT and IRET", () => {
     ).toEqual([0x1000, 0x2000, 0x3000, 0x4000, 0x5000, 0x6000]);
   });
 
+  it("delivers #GP(0) for virtual-8086 software interrupts below IOPL three", () => {
+    for (const bytes of [[0xcc], [0xcd, 0x30], [0xce]]) {
+      const state = new RebuiltCpuState();
+      state.writeCr0(1);
+      state.flags.write(0x0002_0802);
+      state.writeSegment("cs", {
+        selector: 0x1000,
+        base: 0x10000,
+        limit: 0xffff,
+        default32: false,
+        dpl: 3
+      });
+      state.writeSegment("ss", {
+        selector: 0x2000,
+        base: 0x20000,
+        limit: 0xffff,
+        default32: false,
+        dpl: 3
+      });
+      state.writeGdtr({ base: 0x200, limit: 0x1f });
+      state.writeIdtr({ base: 0x300, limit: 0x7f });
+      state.writeTr({ selector: 0x18, base: 0x400, limit: 0x67, default32: true, type: 9 });
+      state.writeEip(0);
+      state.registers.write32(4, 0x100);
+      const memory = new Map<number, number>();
+      write(memory, 0x10000, bytes);
+      write(memory, 0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+      write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0]);
+      write(memory, 0x368, [0x80, 0, 8, 0, 0, 0x8e, 0, 0]);
+      write(memory, 0x404, [0, 2, 0, 0, 0x10, 0]);
+
+      executor(state, memory).step(dispatchRebuiltInstruction);
+
+      expect(state.snapshot()).toMatchObject({ eip: 0x80, registers: { esp: 0x1d8 } });
+      expect(state.flags.read() & 0x00020000).toBe(0);
+    }
+  });
+
   it("does not invoke INTO when overflow is clear", () => {
     const state = realModeState();
     const memory = new Map<number, number>([[0, 0xce]]);

@@ -1,5 +1,5 @@
 import type { RebuiltExecutionContext } from "../execution.js";
-import { deliverInterrupt } from "../events/interrupt-delivery.js";
+import { deliverFault, deliverInterrupt } from "../events/interrupt-delivery.js";
 import { popStack } from "../memory/stack.js";
 import {
   loadCodeSegment,
@@ -25,6 +25,10 @@ export function executeInterrupt(context: RebuiltExecutionContext): void {
 }
 
 function interrupt(context: RebuiltExecutionContext, vector: number, bytes: number): void {
+  if (context.state.isVirtual8086() && ((context.state.flags.read() >>> 12) & 3) < 3) {
+    deliverFault(context.memory, context.state, 13, context.state.readEip(), 0);
+    return;
+  }
   const fallthrough = context.state.readEip() + context.instruction.length + bytes - 1;
   deliverInterrupt(context.memory, context.state, {
     vector,
