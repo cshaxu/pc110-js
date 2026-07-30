@@ -1200,6 +1200,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P411 adapts NXVM's exception-state separation into project-native
   protected fault-delivery escalation without a reference runtime, device, or
   guest-service dependency.
+- M2 T2 S3 P412 adapts NXVM's undefined `84-8F` encoding behavior into
+  project-native instruction handlers without a reference runtime or host
+  exception path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

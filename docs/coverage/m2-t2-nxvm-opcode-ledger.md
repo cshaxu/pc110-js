@@ -662,3 +662,11 @@ fault instead attempts the second fault. A failed `#DF` delivery is exposed as
 the rebuilt triple-fault terminal condition. Focused evidence covers all three
 outcomes through actual rebuilt `#UD` execution. Hardware reset after triple
 fault, task gates, and unresolved outer-privilege delivery remain active work.
+
+## P412 `84-8F` Undefined-Encoding Checklist
+
+P412 completes the rebuilt `#UD` routing for `LEA` register-only forms,
+`MOV CS,r/m16`, undefined segment-register encodings, and register-form
+`LES/LDS`. Focused real-mode evidence verifies the vector-six target and fault
+frame. POP-SS interrupt inhibition and protected segment-transfer completion
+remain active dependencies.

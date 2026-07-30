@@ -1,5 +1,6 @@
 import { decodeModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 
 export function executeLea(context: RebuiltExecutionContext): void {
   if (context.instruction.opcode !== 0x8d)
@@ -13,7 +14,8 @@ export function executeLea(context: RebuiltExecutionContext): void {
     context.instruction.prefixes.addressSize,
     context.state.registers
   );
-  if (modRm.registerDirect) throw new Error("LEA requires a memory addressing form");
+  if (modRm.registerDirect)
+    return deliverFault(context.memory, context.state, 6, context.state.readEip());
   const value = modRm.memory!.offset;
   if (context.instruction.prefixes.operandSize === 16)
     context.state.registers.write16(modRm.reg, value);

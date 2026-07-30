@@ -58,6 +58,19 @@ describe("rebuilt segment MOV", () => {
     });
     expect(nullSegment.state.readSegment("ds").valid).toBe(false);
   });
+
+  it("delivers #UD for MOV CS and undefined segment encodings", () => {
+    for (const modRm of [0xc8, 0xf0]) {
+      const result = execute([0x8e, modRm], (state, memory) => {
+        state.registers.write16(4, 0x100);
+        memory.set([0x34, 0x12, 0, 0x20], 0x18);
+      });
+      expect([0x18, 0x19, 0x1a, 0x1b].map((address) => result.memory[address])).toEqual([
+        0x34, 0x12, 0, 0x20
+      ]);
+      expect(result.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+    }
+  });
 });
 
 describe("rebuilt LES and LDS", () => {
@@ -105,5 +118,23 @@ describe("rebuilt LES and LDS", () => {
       registers: { eax: 0x12345678 },
       segments: { ds: { selector: 0x3000, base: 0x30000 } }
     });
+  });
+
+  it("delivers #UD when LES or LDS uses a register ModR/M form", () => {
+    for (const opcode of [0xc4, 0xc5]) {
+      const state = new RebuiltCpuState();
+      const memory = new Uint8Array(0x1000);
+      memory.set([opcode, 0xc0]);
+      memory.set([0x34, 0x12, 0, 0x20], 0x18);
+      state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+      state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+      state.writeEip(0);
+      state.registers.write16(4, 0x100);
+      new RebuiltCpuExecutor(state, {
+        readUint8: (address) => memory[address]!,
+        writeUint8: () => undefined
+      }).step(executeLoadFarPointer);
+      expect(state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+    }
   });
 });

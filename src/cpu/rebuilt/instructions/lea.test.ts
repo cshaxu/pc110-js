@@ -3,14 +3,18 @@ import { RebuiltCpuExecutor } from "../execution.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
 import { executeLea } from "./lea.js";
 
-function execute(bytes: readonly number[], setup?: (state: RebuiltCpuState) => void) {
+function execute(
+  bytes: readonly number[],
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+) {
   const state = new RebuiltCpuState();
+  const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
   state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
   state.writeEip(0);
-  setup?.(state);
+  setup?.(state, memory);
   new RebuiltCpuExecutor(state, {
-    readUint8: (address) => bytes[address] ?? 0,
-    writeUint8: () => undefined
+    readUint8: (address) => memory.get(address) ?? 0,
+    writeUint8: (address, value) => memory.set(address, value)
   }).step(executeLea);
   return state;
 }
@@ -30,7 +34,11 @@ describe("rebuilt LEA", () => {
     expect(state.readEip()).toBe(9);
   });
 
-  it("rejects a register-only ModR/M encoding", () => {
-    expect(() => execute([0x8d, 0xc0])).toThrow("LEA requires a memory addressing form");
+  it("delivers #UD for a register-only ModR/M encoding", () => {
+    const state = execute([0x8d, 0xc0], (cpu, memory) => {
+      cpu.registers.write16(4, 0x100);
+      [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value));
+    });
+    expect(state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
   });
 });

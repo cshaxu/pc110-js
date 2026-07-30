@@ -1,5 +1,6 @@
 import { decodeModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import { loadDataSegment, loadStackSegment } from "../protection/segment-loader.js";
 import type { SegmentName } from "../state/segments.js";
 
@@ -15,10 +16,11 @@ export function executeSegmentMove(context: RebuiltExecutionContext): void {
   );
   if (opcode === 0x8c) {
     const segment = segmentFromReg(modRm.reg);
+    if (!segment) return undefinedOpcode(context);
     writeRm16(context, modRm, context.state.readSegment(segment).selector);
   } else if (opcode === 0x8e) {
     const segment = segmentFromReg(modRm.reg);
-    if (segment === "cs") throw new Error("MOV cannot load CS");
+    if (!segment || segment === "cs") return undefinedOpcode(context);
     const selector = readRm16(context, modRm);
     if (segment === "ss") loadStackSegment(context.memory, context.state, selector);
     else loadDataSegment(context.memory, context.state, segment, selector);
@@ -36,7 +38,7 @@ export function executeLoadFarPointer(context: RebuiltExecutionContext): void {
     context.instruction.prefixes.addressSize,
     context.state.registers
   );
-  if (modRm.registerDirect) throw new Error("LES/LDS requires a memory far pointer");
+  if (modRm.registerDirect) return undefinedOpcode(context);
   const memory = modRm.memory!;
   const segment = context.instruction.prefixes.segmentOverride ?? memory.segment;
   const width = context.instruction.prefixes.operandSize;
@@ -55,10 +57,12 @@ export function executeLoadFarPointer(context: RebuiltExecutionContext): void {
   context.state.advanceEip(context.instruction.length + modRm.bytes);
 }
 
-function segmentFromReg(register: number): SegmentName {
-  const segment = SEGMENTS[register];
-  if (!segment) throw new Error("Segment-register encoding is undefined on 80386");
-  return segment;
+function segmentFromReg(register: number): SegmentName | undefined {
+  return SEGMENTS[register];
+}
+
+function undefinedOpcode(context: RebuiltExecutionContext): void {
+  deliverFault(context.memory, context.state, 6, context.state.readEip());
 }
 
 function readRm16(context: RebuiltExecutionContext, modRm: ReturnType<typeof decodeModRm>): number {
