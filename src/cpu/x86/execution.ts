@@ -97,13 +97,15 @@ function readSegmentUint16(
   memory: InstructionMemory,
   state: Cpu386State,
   segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
-  offset: number
+  offset: number,
+  addressSize: 16 | 32 = 16
 ): number {
   const snapshot = state.snapshot();
   const mode = addressMode(snapshot.cr0, snapshot.eflags);
   const selected = { ...snapshot[segment], present: true };
   const lowAddress = translateSegmentOffset(mode, selected, offset);
-  const highAddress = translateSegmentOffset(mode, selected, (offset + 1) & 0xffff);
+  const nextOffset = addressSize === 16 ? (offset + 1) & 0xffff : (offset + 1) >>> 0;
+  const highAddress = translateSegmentOffset(mode, selected, nextOffset);
   return (memory.readUint8(lowAddress) & 0xff) | ((memory.readUint8(highAddress) & 0xff) << 8);
 }
 
@@ -148,14 +150,68 @@ function writeSegmentUint16(
   state: Cpu386State,
   segment: "cs" | "ds" | "es" | "ss" | "fs" | "gs",
   offset: number,
-  value: number
+  value: number,
+  addressSize: 16 | 32 = 16
 ): void {
   if (!memory.writeUint8) throw new UnsupportedOpcodeError("Memory does not support writes");
   const snapshot = state.snapshot();
   const mode = addressMode(snapshot.cr0, snapshot.eflags);
   const selected = { ...snapshot[segment], present: true };
   memory.writeUint8(translateSegmentOffset(mode, selected, offset), value & 0xff);
-  memory.writeUint8(translateSegmentOffset(mode, selected, (offset + 1) & 0xffff), value >>> 8);
+  const nextOffset = addressSize === 16 ? (offset + 1) & 0xffff : (offset + 1) >>> 0;
+  memory.writeUint8(translateSegmentOffset(mode, selected, nextOffset), value >>> 8);
+}
+
+function decodeModRmAddress(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRm: ReturnType<typeof decodeModRm>,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): DecodedMemoryAddress | undefined {
+  if (modRm.registerDirect) return undefined;
+  return addressSize === 16
+    ? decodeModRm16Address(
+        modRm,
+        (index) => state.readRegister16(index),
+        (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+      )
+    : decodeModRm32Address(
+        modRm,
+        (index) => state.readRegister(index),
+        (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
+      );
+}
+
+function decodedAddressBytes(
+  address: DecodedMemoryAddress | undefined,
+  addressSize: 16 | 32
+): number {
+  if (address === undefined) return 0;
+  return address.displacementBytes + (addressSize === 32 ? (address.sibBytes ?? 0) : 0);
+}
+
+function executeMov16ModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  opcode: number,
+  modRmOffset: number,
+  addressSize: 16 | 32
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const addressBytes = decodedAddressBytes(address, addressSize);
+  if (opcode === 0x89) {
+    const source = state.readRegister16(modRm.reg);
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, source);
+    else writeSegmentUint16(memory, state, address!.segment, address!.offset, source, addressSize);
+  } else {
+    const source = modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
+    state.writeRegister16(modRm.reg, source);
+  }
+  state.advanceEip(modRmOffset + 1 + addressBytes);
 }
 
 function writeSegmentUint32(
@@ -470,6 +526,14 @@ function executeContextualInstruction(
       state.writeRegister(register, fetchCodeUint32(memory, state, context.opcodeOffset + 1));
     else state.writeRegister16(register, fetchCodeUint16(memory, state, context.opcodeOffset + 1));
     state.advanceEip(context.opcodeOffset + (context.operandSize === 32 ? 5 : 3));
+    return { halted: false, fetched };
+  }
+
+  if (context.opcode === 0x89 || context.opcode === 0x8b) {
+    const modRmOffset = context.opcodeOffset + 1;
+    if (context.operandSize === 32)
+      executeMov32ModRm(memory, state, context.opcode, modRmOffset, context.addressSize);
+    else executeMov16ModRm(memory, state, context.opcode, modRmOffset, context.addressSize);
     return { halted: false, fetched };
   }
 

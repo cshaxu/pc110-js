@@ -656,6 +656,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P240 migrates only immediate-register MOV and register push/pop.
   The selected operand size now controls data width while the SS hidden-cache
   default controls stack addressing. PCjs remains the behavior authority.
+- M2 T2 S3 P241 applies the same context to `89` and `8B`: data width follows
+  the selected operand size and ModR/M decoding follows the selected address
+  size. It is original TypeScript with no copied PCjs or NXVM source.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
