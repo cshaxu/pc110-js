@@ -12,3 +12,9 @@
 The DMA subsystem owns controller and page-register state, explicit transfer
 grants, and generic memory/device interfaces. FDC-specific data flow and all
 protected media remain outside T3 S3.
+
+## P2 Controller State Core
+
+P2 implements local 8237-style controller state and explicit transfer grants
+from the selected component protocol. It has no PCjs import, port bus, memory
+bus, FDC, firmware, media, or host-timing dependency.
