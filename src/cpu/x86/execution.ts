@@ -1178,6 +1178,17 @@ function executeContextualInstruction(
       );
       return { halted: false, fetched };
     }
+    if (extension === 0x01) {
+      executeSystemTableInstruction(
+        memory,
+        state,
+        fetched.instructionPointer,
+        context.opcodeOffset + 2,
+        context.addressSize,
+        context.operandSize
+      );
+      return { halted: false, fetched };
+    }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
       executeMovExtendModRm(
         memory,
@@ -3004,28 +3015,100 @@ function executeSetcc(
 function executeStoreDescriptorTable(
   memory: InstructionMemory,
   state: Cpu386State,
-  modRmOffset: number
+  modRmOffset: number,
+  addressSize: 16 | 32 = 16
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.registerDirect || (modRm.reg !== 0x00 && modRm.reg !== 0x01))
     throw new UnsupportedOpcodeError("Unsupported descriptor-table store form");
-  const address = decodeModRm16Address(
-    modRm,
-    (index) => state.readRegister16(index),
-    (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-  );
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize)!;
   const descriptorTable = modRm.reg === 0x00 ? state.snapshot().gdtr : state.snapshot().idtr;
-  writeSegmentUint16(memory, state, address.segment, address.offset, descriptorTable.limit);
+  writeSegmentUint16(
+    memory,
+    state,
+    address.segment,
+    address.offset,
+    descriptorTable.limit,
+    addressSize
+  );
   for (let index = 0; index < 4; index += 1) {
     writeSegmentUint8(
       memory,
       state,
       address.segment,
-      (address.offset + 2 + index) & 0xffff,
+      addressSize === 16
+        ? (address.offset + 2 + index) & 0xffff
+        : (address.offset + 2 + index) >>> 0,
       descriptorTable.base >>> (index * 8)
     );
   }
-  state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
+}
+
+function executeSystemTableInstruction(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  faultInstructionPointer: number,
+  modRmOffset = 2,
+  addressSize: 16 | 32 = 16,
+  operandSize: 16 | 32 = 16
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const snapshot = state.snapshot();
+  if (
+    (modRm.reg === 0x02 || modRm.reg === 0x03 || modRm.reg === 0x06) &&
+    addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+    (snapshot.cs.selector & 0x03) !== 0
+  ) {
+    deliverCpuFault(memory, state, 13, faultInstructionPointer, 0);
+    return;
+  }
+  if (!modRm.registerDirect && (modRm.reg === 0x00 || modRm.reg === 0x01)) {
+    executeStoreDescriptorTable(memory, state, modRmOffset, addressSize);
+    return;
+  }
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const instructionBytes = modRmOffset + 1 + decodedAddressBytes(address, addressSize);
+  if (modRm.reg === 0x04) {
+    const machineStatusWord = snapshot.cr0 & 0xffff;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, machineStatusWord);
+    else
+      writeSegmentUint16(
+        memory,
+        state,
+        address!.segment,
+        address!.offset,
+        machineStatusWord,
+        addressSize
+      );
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  if (modRm.reg === 0x06) {
+    const source = modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
+    state.loadMachineStatusWord(source);
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  if (!modRm.registerDirect && (modRm.reg === 0x02 || modRm.reg === 0x03)) {
+    const limit = readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
+    const baseBytes = operandSize === 32 ? 4 : 3;
+    let base = 0;
+    for (let index = 0; index < baseBytes; index += 1) {
+      const offset =
+        addressSize === 16
+          ? (address!.offset + 2 + index) & 0xffff
+          : (address!.offset + 2 + index) >>> 0;
+      base |= readSegmentUint8(memory, state, address!.segment, offset) << (index * 8);
+    }
+    if (modRm.reg === 0x02) state.writeGdtr(base, limit);
+    else state.writeIdtr(base, limit);
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  throw new UnsupportedOpcodeError("Unsupported 0F 01 opcode form");
 }
 
 function executeSystemSelectorInstruction(

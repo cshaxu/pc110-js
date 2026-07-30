@@ -787,6 +787,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   width, while SLDT, STR, LLDT, and LTR selector data remains architecturally
   16-bit. The shared helper accepts the context's ModR/M offset and address
   size without changing the existing privilege or descriptor behavior.
+- M2 T2 S3 P282 routes the implemented `0F 01` forms through the project-native
+  execution context. PCjs prefix behavior selects LGDT/LIDT base width from
+  operand size and ModR/M effective-address width from address size. SGDT/SIDT
+  preserve their existing six-byte store behavior, and SMSW/LMSW retain fixed
+  16-bit data semantics.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
