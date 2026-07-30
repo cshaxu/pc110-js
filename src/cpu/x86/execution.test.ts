@@ -3535,7 +3535,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(4, 0x3000);
     const memory = resetAliasMemory(values);
@@ -3569,7 +3569,7 @@ describe("80386 instruction fetch", () => {
     ]);
     const state = new Cpu386State();
     state.writeCr0(0x00000001);
-    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, false);
     state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
     state.writeRegister(4, 0x3000);
     const memory = resetAliasMemory(values);

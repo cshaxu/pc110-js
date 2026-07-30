@@ -685,6 +685,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   register frames and SS defaults independently select stack addressing.
 - M2 T2 S3 P252 migrates near relative JMP so CS defaults and 66 select the
   displacement length and target EIP width through the shared context.
+- M2 T2 S3 P253 migrates near CALL and RET so CS defaults select relative and
+  return widths while SS defaults independently select stack addressing.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

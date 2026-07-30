@@ -832,6 +832,37 @@ function executeContextualNearJump(
   return { halted: false, fetched };
 }
 
+function executeContextualNearCallReturn(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0xe8 && context.opcode !== 0xc2 && context.opcode !== 0xc3)
+    return undefined;
+  if (context.opcode === 0xe8) {
+    const displacement =
+      context.operandSize === 32
+        ? fetchCodeUint32(memory, state, context.opcodeOffset + 1) | 0
+        : signedWord(fetchCodeUint16(memory, state, context.opcodeOffset + 1));
+    const returnAddress =
+      fetched.instructionPointer + context.opcodeOffset + 1 + context.operandSize / 8;
+    pushContextOperand(memory, state, context, returnAddress);
+    if (context.operandSize === 32) state.writeEip(returnAddress + displacement);
+    else state.writeEip16(returnAddress + displacement);
+    return { halted: false, fetched };
+  }
+  const instructionPointer = popContextOperand(memory, state, context);
+  if (context.opcode === 0xc2) {
+    const adjustment = fetchCodeUint16(memory, state, context.opcodeOffset + 1);
+    if (context.stackAddressSize === 32) state.writeRegister(4, state.readRegister(4) + adjustment);
+    else state.writeRegister16(4, state.readRegister16(4) + adjustment);
+  }
+  if (context.operandSize === 32) state.writeEip(instructionPointer);
+  else state.writeEip16(instructionPointer);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -856,6 +887,8 @@ function executeContextualInstruction(
   if (pushAllPopAll) return pushAllPopAll;
   const nearJump = executeContextualNearJump(memory, state, context, fetched);
   if (nearJump) return nearJump;
+  const nearCallReturn = executeContextualNearCallReturn(memory, state, context, fetched);
+  if (nearCallReturn) return nearCallReturn;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
