@@ -946,6 +946,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   receives CS D/B defaults, consumes prefixes as instruction-local state, and
   rejects a sixteenth instruction byte. It does not copy NXVM code or make a
   CPU exception-delivery claim.
+- M2 T2 S3 P323 adds project-native 16-bit and 32-bit ModR/M effective-address
+  decoding. It follows NXVM's address-size split and default DS/SS selection,
+  while keeping register reads and instruction bytes injected through local
+  TypeScript interfaces. It does not import legacy CPU code or perform memory
+  access, segment translation, or opcode execution.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

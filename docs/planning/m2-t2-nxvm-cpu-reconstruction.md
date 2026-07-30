@@ -51,6 +51,10 @@ opcode ledger records the reason before implementation.
 Every completed family updates the ledger, tracking, provenance, and a PCjs
 comparison report, runs the full gate, and commits as `M2 T2 S3 Pxxx:`.
 
+Shared decode or addressing infrastructure may be committed before a family
+only when its ledger status remains in progress and its record states that no
+opcode-family execution claim is being made.
+
 ## Exclusions
 
 Do not translate NXVM C source, macros, global state, BIOS, POST, device,
