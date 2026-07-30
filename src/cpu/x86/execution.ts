@@ -1217,14 +1217,15 @@ function executeContextualRepeatLoad(
   let count = context.addressSize === 32 ? state.readRegister(1) : state.readRegister16(1);
   let source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
   const delta = state.directionFlag() ? -width : width;
+  const segment = context.segmentOverride ?? "ds";
 
   while (count > 0) {
     const value =
       width === 1
-        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        ? readSegmentUint8(memory, state, segment, source, context.addressSize)
         : width === 2
-          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
-          : readSegmentUint32(memory, state, "ds", source, context.addressSize);
+          ? readSegmentUint16(memory, state, segment, source, context.addressSize)
+          : readSegmentUint32(memory, state, segment, source, context.addressSize);
     if (width === 1) state.writeRegister8(0, value);
     else if (width === 2) state.writeRegister16(0, value);
     else state.writeRegister(0, value);
@@ -1747,7 +1748,11 @@ function executeContextualInstruction(
   fetched: FetchedOpcode
 ): ExecutionResult | undefined {
   if (context.lock) return undefined;
-  if (context.segmentOverride) return executeContextualMoffs(memory, state, context, fetched);
+  if (context.segmentOverride) {
+    const moffs = executeContextualMoffs(memory, state, context, fetched);
+    if (moffs) return moffs;
+    return executeContextualRepeatLoad(memory, state, context, fetched);
+  }
   const repeatedComparison = executeContextualRepeatComparison(memory, state, context, fetched);
   if (repeatedComparison) return repeatedComparison;
   const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);
