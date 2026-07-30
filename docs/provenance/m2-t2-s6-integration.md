@@ -77,3 +77,8 @@ adds no PCjs source, opcode-specific oracle, or product runtime dependency.
 
 P19 uses the shared dispatcher for register ModR/M and LEA forms. It adds no
 PCjs source, custom oracle behavior, or product dependency.
+
+## P20 Accumulator Program
+
+P20 uses the shared dispatcher for accumulator and flag-transfer forms. It adds
+no PCjs source, instruction-specific oracle, or product runtime dependency.
