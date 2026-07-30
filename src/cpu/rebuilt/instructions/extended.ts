@@ -21,7 +21,7 @@ export function executeExtended(context: RebuiltExecutionContext): void {
     opcode === undefined ||
     ![
       0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae,
-      0xaf, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7
+      0xaf, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf
     ].includes(opcode)
   )
     throw new Error("Opcode is outside rebuilt 0F A0-AF coverage");
@@ -32,10 +32,13 @@ export function executeExtended(context: RebuiltExecutionContext): void {
   if (opcode === 0xa1 || opcode === 0xa9)
     return executePopSegment(context, opcode === 0xa1 ? "fs" : "gs");
   if ([0xa3, 0xab, 0xb3, 0xbb].includes(opcode)) return executeRegisterBit(context, opcode);
+  if (opcode === 0xba) return executeImmediateBit(context);
   if ([0xa4, 0xa5, 0xac, 0xad].includes(opcode)) return executeDoubleShift(context, opcode);
   if (opcode === 0xaf) return executeTwoOperandImul(context);
   if ([0xb2, 0xb4, 0xb5].includes(opcode)) return executeLoadFar(context, opcode);
   if (opcode === 0xb6 || opcode === 0xb7) return executeMovzx(context, opcode === 0xb6 ? 8 : 16);
+  if (opcode === 0xbc || opcode === 0xbd) return executeBitScan(context, opcode === 0xbc);
+  if (opcode === 0xbe || opcode === 0xbf) return executeMovsx(context, opcode === 0xbe ? 8 : 16);
   throw new Error(`Unsupported rebuilt 0F opcode 0x${opcode.toString(16)}`);
 }
 
@@ -77,6 +80,29 @@ function executeRegisterBit(context: RebuiltExecutionContext, opcode: number): v
     operand.write(next);
   }
   context.state.advanceEip(context.instruction.length + modRm.bytes);
+}
+
+function executeImmediateBit(context: RebuiltExecutionContext): void {
+  const width = context.instruction.prefixes.operandSize;
+  const modRm = decode(context);
+  const operation = modRm.reg;
+  if (operation < 4) return deliverFault(context.memory, context.state, 6, context.state.readEip());
+  const immediateOffset = context.instruction.opcodeOffset + 2 + modRm.bytes;
+  const bitIndex = context.reader.readCodeByte(immediateOffset);
+  const operand = bitOperand(context, modRm, width, bitIndex, false);
+  const bit = normalizedBit(bitIndex, width);
+  const wasSet = Boolean(operand.value & (1 << bit));
+  replaceCarry(context, wasSet);
+  if (operation !== 4) {
+    const next =
+      operation === 5
+        ? operand.value | (1 << bit)
+        : operation === 6
+          ? operand.value & ~(1 << bit)
+          : operand.value ^ (1 << bit);
+    operand.write(next);
+  }
+  context.state.advanceEip(context.instruction.length + modRm.bytes + 1);
 }
 
 function executeDoubleShift(context: RebuiltExecutionContext, opcode: number): void {
@@ -144,7 +170,35 @@ function executeLoadFar(context: RebuiltExecutionContext, opcode: number): void 
 function executeMovzx(context: RebuiltExecutionContext, sourceWidth: 8 | 16): void {
   const modRm = decode(context);
   const value = sourceWidth === 8 ? readRm8(context, modRm) : readRm(context, modRm, 16);
-  writeRegister(context, modRm.reg, context.instruction.prefixes.operandSize, value);
+  writeRegister(
+    context,
+    modRm.reg,
+    sourceWidth === 16 ? 32 : context.instruction.prefixes.operandSize,
+    value
+  );
+  context.state.advanceEip(context.instruction.length + modRm.bytes);
+}
+
+function executeBitScan(context: RebuiltExecutionContext, forward: boolean): void {
+  const width = context.instruction.prefixes.operandSize;
+  const modRm = decode(context);
+  const source = readRm(context, modRm, width);
+  const flags = context.state.flags.read() & ~EFLAGS_ZERO;
+  if (source === 0) context.state.flags.write(flags | EFLAGS_ZERO);
+  else {
+    context.state.flags.write(flags);
+    const index = forward ? leastSetBit(source, width) : mostSetBit(source, width);
+    writeRegister(context, modRm.reg, width, index);
+  }
+  context.state.advanceEip(context.instruction.length + modRm.bytes);
+}
+
+function executeMovsx(context: RebuiltExecutionContext, sourceWidth: 8 | 16): void {
+  const modRm = decode(context);
+  const source = sourceWidth === 8 ? readRm8(context, modRm) : readRm(context, modRm, 16);
+  const destinationWidth = sourceWidth === 16 ? 32 : context.instruction.prefixes.operandSize;
+  const value = Number(signed(source, sourceWidth) & ((1n << BigInt(destinationWidth)) - 1n));
+  writeRegister(context, modRm.reg, destinationWidth, value);
   context.state.advanceEip(context.instruction.length + modRm.bytes);
 }
 
@@ -161,7 +215,8 @@ function bitOperand(
   context: RebuiltExecutionContext,
   modRm: DecodedModRm,
   width: 16 | 32,
-  index: number
+  index: number,
+  signedIndex = true
 ) {
   if (modRm.registerDirect)
     return {
@@ -169,7 +224,7 @@ function bitOperand(
       write: (value: number) => writeRegister(context, modRm.rm, width, value)
     };
   const memory = modRm.memory!;
-  const element = Math.floor(signedNumber(index, width) / width);
+  const element = Math.floor((signedIndex ? signedNumber(index, width) : index) / width);
   const offset = memory.offset + element * (width / 8);
   const segment = context.instruction.prefixes.segmentOverride ?? memory.segment;
   return {
@@ -180,6 +235,21 @@ function bitOperand(
 
 function normalizedBit(index: number, width: 16 | 32): number {
   return (index & (width - 1)) >>> 0;
+}
+
+function leastSetBit(value: number, width: 16 | 32): number {
+  const normalized = width === 16 ? value & 0xffff : value >>> 0;
+  let index = 0;
+  while (((normalized >>> index) & 1) === 0) index += 1;
+  return index;
+}
+
+function mostSetBit(value: number, width: 16 | 32): number {
+  const normalized = width === 16 ? value & 0xffff : value >>> 0;
+  for (let index = width - 1; index >= 0; index -= 1) {
+    if ((normalized & (1 << index)) !== 0) return index;
+  }
+  throw new Error("Bit scan requires a nonzero source");
 }
 
 function doubleShift(

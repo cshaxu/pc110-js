@@ -36,7 +36,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 0F decode and system groups | 5141, 11629-12637 | Escape decoding, descriptor/table, CR/DR/TR, LAR/LSL, CLTS | `decode/decoder.ts`, `instructions/system.ts` | Partial | CPL; descriptor faults; 16/default-32; 66/67 | Required | In progress: P353 adds escape decode |
 | 0F 80-8F near Jcc and SETcc | 12649-12898 | Near conditional transfers and byte condition stores | `instructions/near-conditional-control.ts`, `instructions/set-condition.ts`, `instructions/control.ts` | Partial | Taken/not-taken; ModR/M; fault EIP | Required | In progress: P353-P354 implement 80-9F |
 | 0F A0-AF extended bit, shift, segment forms | 12906-13203 | FS/GS stack forms, BT/BTS/BTR/BTC, SHLD/SHRD, IMUL, LSS/LFS/LGS, MOVZX | `instructions/extended.ts` | Partial | Bit addressing; flags; segment faults; 66/67 | Required | In progress: P378 implements NXVM-covered A0-AF forms and dependent B2-B7 forms; protected fault routing remains active |
-| 0F B0-BF extended scans and sign extension | 13203-13251 | BTC, BSF/BSR, MOVSX and immediate bit group | `instructions/extended.ts` | Partial | Zero input; flags; ModR/M; widths | Required | Planned |
+| 0F B0-BF extended scans and sign extension | 13203-13251 | BTC, BSF/BSR, MOVSX and immediate bit group | `instructions/extended.ts` | Partial | Zero input; flags; ModR/M; widths | Required | In progress: P379 implements NXVM-covered BA-BF forms; non-NXVM B0-B1 remain excluded |
 | Explicit NXVM undefined extensions | 12546-12552, 12637-12649, 12924-12977 | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD` | `instructions/system.ts` | Complete reference evidence | Prefixes and fault EIP | Required | Planned |
 | Segmentation, paging, exceptions, and trace | 51-1145, 2033-3096, 13315-13917 | Logical/linear access, descriptors, stack, faults, interrupts, trace | `protection/`, `events/`, `debug/` | Partial | PF/GP/SS/NP; privilege; ROM trace; differential state dumps | Required | Planned |
 
@@ -401,3 +401,12 @@ counts beyond the operand width are architecturally undefined and leave the
 rebuilt state unchanged rather than creating host-language shift behavior.
 Protected selector fault routing, paging faults, and the remaining B0-BF
 handlers remain active dependencies.
+
+## P379 `0F BA-BF` Extended Checklist
+
+P379 follows NXVM immediate bit-group, BTC, BSF, BSR, and MOVSX handlers. It
+implements BA `/4-7`, BB, BC, BD, BE, and BF through the existing project-native
+extended module. Tests cover immediate and register bit changes, carry, zero
+source scans, 16/32-bit destination behavior, and sign extension. BA `/0-3`
+deliver vector six; NXVM has no B0-B1 handler, so those later-processor forms
+remain outside its covered 80386 set.

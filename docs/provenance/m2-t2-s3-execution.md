@@ -1111,6 +1111,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native module for FS/GS stack forms, bit operations, double shifts,
   IMUL, far data pointers, and MOVZX. It uses only rebuilt state, memory,
   stack, and segment-loading contracts.
+- M2 T2 S3 P379 adapts NXVM immediate bit groups, bit scans, and MOVSX into
+  the same project-native extended module. It keeps zero-source scan
+  destinations unchanged and has no external runtime dependency.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

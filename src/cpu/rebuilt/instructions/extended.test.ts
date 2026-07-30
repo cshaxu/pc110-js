@@ -97,6 +97,47 @@ describe("rebuilt 0F A0-AF extended instructions", () => {
     expect(movzx.state.registers.read32(0)).toBe(0xab);
   });
 
+  it("executes immediate bit operations and BTC with 16-bit memory bit addressing", () => {
+    const bts = createMachine([0x0f, 0xba, 0xe8, 0x03]);
+    bts.state.registers.write16(0, 0);
+    bts.step();
+    expect(bts.state.registers.read16(0)).toBe(8);
+    expect(bts.state.flags.has(EFLAGS_CARRY)).toBe(false);
+
+    const btc = createMachine([0x0f, 0xbb, 0xc8]);
+    btc.state.registers.write16(0, 1);
+    btc.state.registers.write16(1, 0);
+    btc.step();
+    expect(btc.state.registers.read16(0)).toBe(0);
+    expect(btc.state.flags.has(EFLAGS_CARRY)).toBe(true);
+  });
+
+  it("executes BSF, BSR, and MOVSX width forms while preserving zero-source destinations", () => {
+    const bsf = createMachine([0x0f, 0xbc, 0xc1]);
+    bsf.state.registers.write16(0, 0x7777);
+    bsf.state.registers.write16(1, 0x28);
+    bsf.step();
+    expect(bsf.state.registers.read16(0)).toBe(3);
+    expect(bsf.state.flags.has(EFLAGS_ZERO)).toBe(false);
+
+    const bsr = createMachine([0x0f, 0xbd, 0xc1]);
+    bsr.state.registers.write16(0, 0x7777);
+    bsr.state.registers.write16(1, 0);
+    bsr.step();
+    expect(bsr.state.registers.read16(0)).toBe(0x7777);
+    expect(bsr.state.flags.has(EFLAGS_ZERO)).toBe(true);
+
+    const byte = createMachine([0x66, 0x0f, 0xbe, 0xc1]);
+    byte.state.registers.write8(1, 0x80);
+    byte.step();
+    expect(byte.state.registers.read32(0)).toBe(0xffff_ff80);
+
+    const word = createMachine([0x0f, 0xbf, 0xc1]);
+    word.state.registers.write16(1, 0x8000);
+    word.step();
+    expect(word.state.registers.read32(0)).toBe(0xffff_8000);
+  });
+
   it("delivers undefined 0F A-family faults at the instruction EIP", () => {
     for (const opcode of [0xa2, 0xa6, 0xa7, 0xaa, 0xae]) {
       const machine = createMachine([0x0f, opcode]);
