@@ -9,7 +9,9 @@ describe("NativeCoreCheckpoint", () => {
       masterRequest: "00",
       masterInService: "00",
       slaveRequest: "00",
-      slaveInService: "00"
+      slaveInService: "00",
+      timer0Output: "0",
+      timer2Output: "0"
     });
 
     checkpoint.core.pic.master.raise(1);

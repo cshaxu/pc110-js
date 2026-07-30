@@ -40,7 +40,8 @@ function render(snapshot: MachineSnapshot): void {
   controls.nativeStatus.textContent = [
     `CPU reset ${native.codeAddress}`,
     `PIC M IRR ${native.masterRequest} ISR ${native.masterInService}`,
-    `PIC S IRR ${native.slaveRequest} ISR ${native.slaveInService}`
+    `PIC S IRR ${native.slaveRequest} ISR ${native.slaveInService}`,
+    `PIT 0 OUT ${native.timer0Output} 2 OUT ${native.timer2Output}`
   ].join(" | ");
   controls.run.disabled = snapshot.runState === "running";
   controls.pause.disabled = snapshot.runState !== "running";

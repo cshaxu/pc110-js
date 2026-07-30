@@ -12,10 +12,9 @@
 
 ## Next Eligible Work
 
-- M2 T3 S2: active. Implement the project-native 8253/8254-compatible PIT and
-  speaker timing. Preserve the verified T2 CPU oracle baseline and the native
-  PIC browser checkpoint; do not add PCjs devices or synthetic firmware
-  responses.
+- M2 T3 S3: active. Implement the project-native 8237-compatible DMA
+  controllers and page registers. Preserve the verified T2 CPU oracle baseline,
+  native PIC/PIT browser checkpoint, and no-PCjs-runtime boundary.
 
 ## Delivery Nodes
 

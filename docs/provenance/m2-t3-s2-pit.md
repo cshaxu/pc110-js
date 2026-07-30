@@ -25,3 +25,9 @@ P3 exports project-native 8-bit PIT port ranges and composes them with the
 rebuilt machine's local PIC. Counter-0 output is the sole IRQ source; counter-2
 remains a signal only. No PCjs device, scheduler, firmware, or browser audio is
 used.
+
+## P4 Browser Checkpoint
+
+P4 presents only local PIT reset outputs beside the existing CPU and PIC
+snapshot. It does not schedule PIT ticks, attach host audio, or load protected
+firmware or media.

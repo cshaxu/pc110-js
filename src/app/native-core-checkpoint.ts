@@ -7,6 +7,8 @@ export interface NativeCoreCheckpointSnapshot {
   readonly masterInService: string;
   readonly slaveRequest: string;
   readonly slaveInService: string;
+  readonly timer0Output: string;
+  readonly timer2Output: string;
 }
 
 export class NativeCoreCheckpoint {
@@ -26,7 +28,9 @@ export class NativeCoreCheckpoint {
       masterRequest: hex8(pic.master.request),
       masterInService: hex8(pic.master.inService),
       slaveRequest: hex8(pic.slave.request),
-      slaveInService: hex8(pic.slave.inService)
+      slaveInService: hex8(pic.slave.inService),
+      timer0Output: bit(this.core.pit.snapshot(0).output),
+      timer2Output: bit(this.core.pit.counter2Output())
     };
   }
 }
@@ -37,4 +41,8 @@ function hex8(value: number): string {
 
 function hex16(value: number): string {
   return (value & 0xffff).toString(16).padStart(4, "0").toUpperCase();
+}
+
+function bit(value: boolean): string {
+  return value ? "1" : "0";
 }
