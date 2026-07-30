@@ -2,9 +2,14 @@ import type { DecodedInstruction } from "../decode/decoder.js";
 import type { RebuiltCpuSnapshot } from "../state/cpu-state.js";
 
 /**
- * Conservative 80386 core-cycle estimates for machine-time scheduling.
- * TODO(High): Replace the remaining fallback values with complete Intel 80386
- * timing coverage, including memory addressing, cache, and bus penalties.
+ * Approximate 80386-compatible core-cycle charges for machine-time scheduling.
+ *
+ * The explicit classes retain conservative I/O charging and use 80286-compatible
+ * control/stack timings where 80386-specific timing is not yet modelled. They
+ * are deliberately not a physical bus, cache, or wait-state simulation.
+ * TODO(High): Replace the remaining fallback and compatibility timings with
+ * complete Intel 80386 timing coverage, including memory addressing, cache,
+ * and bus penalties.
  */
 export function estimate386Cycles(
   instruction: DecodedInstruction | undefined,
@@ -15,13 +20,25 @@ export function estimate386Cycles(
   const opcode = instruction.opcode;
   if (isStringOpcode(opcode)) return 5;
   if (isIoOpcode(opcode)) return 12;
+  if (isPushOpcode(opcode)) return withPrefixes(3, instruction);
+  if (isPopOpcode(opcode)) return withPrefixes(5, instruction);
+  if (opcode === 0x60) return withPrefixes(17, instruction);
+  if (opcode === 0x61) return withPrefixes(19, instruction);
+  if (opcode === 0x90 || (opcode >= 0x91 && opcode <= 0x97) || opcode === 0x86 || opcode === 0x87)
+    return withPrefixes(3, instruction);
   if (isConditionalBranch(instruction))
     return after.eip === before.eip + instruction.length ? 3 : 7;
-  if (opcode === 0xe8 || opcode === 0xe9 || opcode === 0xea || opcode === 0x9a) return 7;
-  if (opcode === 0xc2 || opcode === 0xc3 || opcode === 0xca || opcode === 0xcb || opcode === 0xcf)
-    return 8;
+  if (opcode === 0xe8 || opcode === 0xe9 || opcode === 0xea || opcode === 0xeb || opcode === 0x9a)
+    return withPrefixes(7, instruction);
+  if (opcode === 0xc2 || opcode === 0xc3) return withPrefixes(11, instruction);
+  if (opcode === 0xca || opcode === 0xcb) return withPrefixes(15, instruction);
+  if (opcode === 0xcf) return withPrefixes(17, instruction);
   if (opcode === 0xf4) return 2;
   return 2 + instruction.prefixes.bytes;
+}
+
+function withPrefixes(cycles: number, instruction: DecodedInstruction): number {
+  return cycles + instruction.prefixes.bytes;
 }
 
 function isStringOpcode(opcode: number): boolean {
@@ -30,6 +47,29 @@ function isStringOpcode(opcode: number): boolean {
 
 function isIoOpcode(opcode: number): boolean {
   return (opcode >= 0xe4 && opcode <= 0xe7) || (opcode >= 0xec && opcode <= 0xef);
+}
+
+function isPushOpcode(opcode: number): boolean {
+  return (
+    (opcode >= 0x50 && opcode <= 0x57) ||
+    opcode === 0x06 ||
+    opcode === 0x0e ||
+    opcode === 0x16 ||
+    opcode === 0x1e ||
+    opcode === 0x68 ||
+    opcode === 0x6a ||
+    opcode === 0x9c
+  );
+}
+
+function isPopOpcode(opcode: number): boolean {
+  return (
+    (opcode >= 0x58 && opcode <= 0x5f) ||
+    opcode === 0x07 ||
+    opcode === 0x17 ||
+    opcode === 0x1f ||
+    opcode === 0x9d
+  );
 }
 
 function isConditionalBranch(instruction: DecodedInstruction): boolean {

@@ -42,7 +42,25 @@ describe("80386 cycle estimator", () => {
         snapshot(0),
         snapshot(3)
       )
-    ).toBe(4);
+    ).toBe(5);
     expect(estimate386Cycles(undefined, snapshot(0), snapshot(0))).toBe(3);
+  });
+
+  it("charges stack, return, exchange, and short jump paths explicitly", () => {
+    expect(
+      estimate386Cycles({ opcode: 0x53, prefixes: { bytes: 0 } } as never, snapshot(0), snapshot(0))
+    ).toBe(3);
+    expect(
+      estimate386Cycles({ opcode: 0x5b, prefixes: { bytes: 0 } } as never, snapshot(0), snapshot(0))
+    ).toBe(5);
+    expect(
+      estimate386Cycles({ opcode: 0x86, prefixes: { bytes: 0 } } as never, snapshot(0), snapshot(0))
+    ).toBe(3);
+    expect(
+      estimate386Cycles({ opcode: 0xeb, prefixes: { bytes: 0 } } as never, snapshot(0), snapshot(0))
+    ).toBe(7);
+    expect(
+      estimate386Cycles({ opcode: 0xcf, prefixes: { bytes: 0 } } as never, snapshot(0), snapshot(0))
+    ).toBe(17);
   });
 });
