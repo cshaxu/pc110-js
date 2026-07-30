@@ -100,3 +100,10 @@ P24 uses the project-native dispatcher and two independent real-mode RAM
 images for C0/C1 immediate shifts and C6/C7 immediate MOV forms. PCjs remains
 a verification-only oracle; no PCjs source, runtime dependency, or
 instruction-specific oracle logic enters the product.
+
+## P25 Near Return Program
+
+P25 uses the project-native dispatcher and independent real-mode RAM images
+for C2/C3 near returns through a prepared stack frame. PCjs remains a
+verification-only oracle; no PCjs source, runtime dependency, or
+instruction-specific oracle logic enters the product.

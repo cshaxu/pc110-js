@@ -207,6 +207,12 @@ A generic real-mode program matches PCjs for C0/C1 immediate Group Two shifts
 and C6/C7 immediate MOV forms. Returns, far pointers, and interrupts remain
 separate S6 work.
 
+## S6 P25 Differential Evidence
+
+A generic real-mode program matches PCjs for C2/C3 near returns with and
+without immediate cleanup. Far returns, frame construction, and interrupts
+remain separate S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
