@@ -16,6 +16,16 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.ports.read(0x3f8, 8)).toBe(0x5a);
   });
 
+  it("composes COM2 with its native IRQ3 path", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x2f9, 0x01, 8);
+    core.com2.receiveByte(0x5a);
+    expect(core.pic.snapshot().master.request).toBe(0x08);
+    expect(core.ports.read(0x2fa, 8)).toBe(0x04);
+    expect(core.ports.read(0x2f8, 8)).toBe(0x5a);
+  });
+
   it("composes rebuilt CPU stepping, port dispatch, and trace hooks", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0xe6);

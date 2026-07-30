@@ -72,6 +72,10 @@ export class RebuiltPcAt386Core {
     (active) => this.dma.setHardwareRequest(2, active)
   );
   public readonly com1 = new Uart16550({ onInterrupt: (active) => active && this.pic.raiseIrq(4) });
+  public readonly com2 = new Uart16550({
+    basePort: 0x2f8,
+    onInterrupt: (active) => active && this.pic.raiseIrq(3)
+  });
   public readonly mdaCompatibility = new MdaCompatibility();
   public readonly attributeController = new VgaAttributeController();
   public readonly sequencer = new VgaSequencer();
@@ -103,6 +107,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.fpuControl.portRanges()) this.registerPorts(range);
     for (const range of this.fdc.portRanges()) this.registerPorts(range);
     for (const range of this.com1.portRanges()) this.registerPorts(range);
+    for (const range of this.com2.portRanges()) this.registerPorts(range);
     for (const range of this.mdaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.attributeController.portRanges()) this.registerPorts(range);
@@ -127,6 +132,7 @@ export class RebuiltPcAt386Core {
     this.fpuControl.reset();
     this.fdc.reset();
     this.com1.reset();
+    this.com2.reset();
     this.mdaCompatibility.reset();
     this.cgaCompatibility.reset();
     this.attributeController.reset();
