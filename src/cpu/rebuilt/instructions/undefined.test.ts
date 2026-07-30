@@ -3,8 +3,8 @@ import { dispatchRebuiltInstruction } from "../dispatch.js";
 import { RebuiltCpuExecutor } from "../execution.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
 
-describe("rebuilt undefined D0-DF opcodes", () => {
-  it.each([0xd6, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf])(
+describe("rebuilt undefined opcodes", () => {
+  it.each([0xd6, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf, 0xf1])(
     "delivers #UD for 0x%02x with the faulting real-mode EIP",
     (opcode) => {
       const state = new RebuiltCpuState();

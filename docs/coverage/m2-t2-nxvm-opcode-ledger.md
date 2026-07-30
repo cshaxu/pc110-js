@@ -326,3 +326,9 @@ HLT advances EIP before halting and rejects nonzero protected-mode CPL. CLI and
 STI use CPL versus IOPL authorization; #GP(0) uses an operand-size-correct
 protected interrupt frame. Virtual-8086 interrupt-flag behavior and external
 interrupt wakeup remain active architectural dependencies.
+
+## P368 `F1` Undefined Opcode Checklist
+
+NXVM routes F1 to UndefinedOpcode. P368 adds F1 to the rebuilt vector-6 path
+and verifies its real-mode fault EIP frame. LOCK remains an active memory-bus
+atomicity dependency.
