@@ -6904,4 +6904,37 @@ describe("80386 instruction fetch", () => {
       eip: 0x0000fff4
     });
   });
+
+  it("uses ECX, ESI, and EDI for default-32 REP MOVSD", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xf3],
+      [0x00000101, 0xa5],
+      [0x00012000, 0x11],
+      [0x00012001, 0x22],
+      [0x00012002, 0x33],
+      [0x00012003, 0x44],
+      [0x00012004, 0x55],
+      [0x00012005, 0x66],
+      [0x00012006, 0x77],
+      [0x00012007, 0x88]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.loadProtectedModeSegment("es", 0x0018, 0, 0xffffffff, true);
+    state.writeRegister(1, 2);
+    state.writeRegister(6, 0x00012000);
+    state.writeRegister(7, 0x00013000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(Array.from({ length: 8 }, (_, offset) => values.get(0x00013000 + offset))).toEqual([
+      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88
+    ]);
+    expect(state.snapshot()).toMatchObject({
+      registers: { ecx: 0, esi: 0x00012008, edi: 0x00013008 },
+      eip: 0x00000102
+    });
+  });
 });

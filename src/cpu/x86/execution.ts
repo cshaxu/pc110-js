@@ -584,6 +584,68 @@ function executeContextualRepeatComparison(
   return { halted: false, fetched };
 }
 
+function executeContextualRepeatTransfer(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (
+    context.repeatPrefix !== "rep" ||
+    (context.opcode !== 0xa4 &&
+      context.opcode !== 0xa5 &&
+      context.opcode !== 0xaa &&
+      context.opcode !== 0xab)
+  )
+    return undefined;
+
+  const copy = context.opcode === 0xa4 || context.opcode === 0xa5;
+  const width =
+    context.opcode === 0xa4 || context.opcode === 0xaa ? 1 : context.operandSize === 32 ? 4 : 2;
+  let count = context.addressSize === 32 ? state.readRegister(1) : state.readRegister16(1);
+  let source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
+  let destination = context.addressSize === 32 ? state.readRegister(7) : state.readRegister16(7);
+  const delta = state.directionFlag() ? -width : width;
+
+  while (count > 0) {
+    const value = copy
+      ? width === 1
+        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        : width === 2
+          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
+          : readSegmentUint32(memory, state, "ds", source, context.addressSize)
+      : width === 1
+        ? state.readRegister8(0)
+        : width === 2
+          ? state.readRegister16(0)
+          : state.readRegister(0);
+    if (width === 1)
+      writeSegmentUint8(memory, state, "es", destination, value, context.addressSize);
+    else if (width === 2)
+      writeSegmentUint16(memory, state, "es", destination, value, context.addressSize);
+    else writeSegmentUint32(memory, state, "es", destination, value, context.addressSize);
+    if (copy)
+      source = context.addressSize === 32 ? (source + delta) >>> 0 : (source + delta) & 0xffff;
+    destination =
+      context.addressSize === 32 ? (destination + delta) >>> 0 : (destination + delta) & 0xffff;
+    count -= 1;
+  }
+
+  if (copy) {
+    if (context.addressSize === 32) state.writeRegister(6, source);
+    else state.writeRegister16(6, source);
+  }
+  if (context.addressSize === 32) {
+    state.writeRegister(7, destination);
+    state.writeRegister(1, count);
+  } else {
+    state.writeRegister16(7, destination);
+    state.writeRegister16(1, count);
+  }
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -593,6 +655,8 @@ function executeContextualInstruction(
   if (context.segmentOverride || context.lock) return undefined;
   const repeatedComparison = executeContextualRepeatComparison(memory, state, context, fetched);
   if (repeatedComparison) return repeatedComparison;
+  const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);
+  if (repeatedTransfer) return repeatedTransfer;
   if (context.repeatPrefix) return undefined;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {

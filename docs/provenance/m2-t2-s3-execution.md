@@ -671,6 +671,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P245 migrates repeat comparison termination. Context now selects
   CX or ECX, data width, and source or destination indexes while F3 and F2
   select zero or nonzero continuation without copying PCjs or NXVM source.
+- M2 T2 S3 P246 migrates F3 repeat transfer. Context now selects CX or ECX,
+  transfer width, and source or destination indexes for MOVS and STOS.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
