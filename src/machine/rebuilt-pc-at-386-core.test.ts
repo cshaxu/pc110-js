@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory } from "../memory/physical-memory.js";
 import { RTC_TICKS_PER_SECOND, RtcCmosRegister } from "../devices/rtc-cmos.js";
+import { FloppyDrive } from "../devices/floppy-drive.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
@@ -262,5 +263,43 @@ describe("RebuiltPcAt386Core", () => {
     deskPro.ports.write(0x48, 0, 8);
     deskPro.advancePit(3);
     expect(deskPro.deskProSecondaryPit?.snapshot(0)).toMatchObject({ output: true });
+  });
+
+  it("moves a real raw floppy sector through native FDC DMA2 and requests IRQ6", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x4000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    const drive = new FloppyDrive({
+      cylinders: 1,
+      heads: 1,
+      sectorsPerTrack: 1,
+      bytesPerSector: 128
+    });
+    drive.attach(Uint8Array.from({ length: 128 }, (_, index) => index ^ 0xa5));
+    core.fdc.controller.attachDrive(0, drive);
+    core.ports.write(0x0c, 0, 8);
+    core.ports.write(0x04, 0, 8);
+    core.ports.write(0x04, 0x02, 8);
+    core.ports.write(0x05, 0x7f, 8);
+    core.ports.write(0x05, 0, 8);
+    core.ports.write(0x81, 0, 8);
+    core.ports.write(0x0a, 0x02, 8);
+    core.ports.write(0x0b, 0x46, 8);
+    core.ports.write(0xdc, 0, 8);
+    core.ports.write(0x3f2, 0x0c, 8);
+    for (let count = 0; count < 4; count += 1) {
+      core.ports.write(0x3f5, 0x08, 8);
+      core.ports.read(0x3f5, 8);
+      core.ports.read(0x3f5, 8);
+    }
+    for (const byte of [0x06, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00])
+      core.ports.write(0x3f5, byte, 8);
+
+    expect(core.dma.snapshot(2).requested).toBe(true);
+    expect(core.advanceFdcDma(128)).toBe(128);
+    expect(Array.from({ length: 4 }, (_, index) => memory.readUint8(0x200 + index))).toEqual([
+      0xa5, 0xa4, 0xa7, 0xa6
+    ]);
+    expect(core.fdc.controller.snapshot()).toMatchObject({ phase: "result", dmaBytesPending: 0 });
+    expect(core.pic.master.snapshot().request & 0x40).toBe(0x40);
   });
 });

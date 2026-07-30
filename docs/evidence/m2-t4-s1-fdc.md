@@ -41,3 +41,17 @@ claim a boot-sector read.
   eject, write protection, writable sectors, and defensive copies.
 - Boundary: no protected bytes, image loading, FDC attachment, DMA, IRQ, BIOS,
   DOS, or filesystem behavior is present.
+
+## P4 Read-Execution Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs FDC ports, DMA2/IRQ6 ownership, register
+  phases, and selected raw-sector behavior.
+- Tests: READ ID CHRN results, READ DATA execution bytes, result transition,
+  terminal-count completion, byte-wide ports, DOR reset IRQ6, and a native
+  DMA2 raw-sector transfer into physical memory.
+- Boundary: no protected local image is auto-attached; write/format commands,
+  host timing, BIOS service, DOS, and filesystem behavior remain absent.
+- Trace: the selected ROM advances to 221 instructions at `F000:BB30` and
+  stops on display-domain I/O write `0x3B8`; no display response is added by
+  this storage part.

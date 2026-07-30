@@ -11,6 +11,8 @@ import { KeyboardOutputPort } from "../devices/keyboard-output-port.js";
 import { PcAtKeyboardController } from "../devices/pc-at-keyboard-controller.js";
 import { PcAtFpuControl } from "../devices/pc-at-fpu-control.js";
 import { DeskPro386SecondaryPit } from "../devices/deskpro386-secondary-pit.js";
+import { PcAtFdc } from "../devices/pc-at-fdc.js";
+import { performDmaTransfer } from "../devices/dma-transfer.js";
 import {
   RebuiltMachinePortBus,
   type RebuiltPortRange,
@@ -54,6 +56,10 @@ export class RebuiltPcAt386Core {
     () => this.runner.reset()
   );
   public readonly fpuControl = new PcAtFpuControl();
+  public readonly fdc = new PcAtFdc(
+    (irq) => this.pic.raiseIrq(irq),
+    (active) => this.dma.setHardwareRequest(2, active)
+  );
   public readonly deskProSecondaryPit: DeskPro386SecondaryPit | undefined;
   public readonly ports: RebuiltMachinePortBus;
   public readonly runner: RebuiltCpuRunner;
@@ -75,6 +81,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.systemPort.portRanges()) this.registerPorts(range);
     for (const range of this.keyboardController.portRanges()) this.registerPorts(range);
     for (const range of this.fpuControl.portRanges()) this.registerPorts(range);
+    for (const range of this.fdc.portRanges()) this.registerPorts(range);
     if (options.deskProSecondaryPit) {
       this.deskProSecondaryPit = new DeskPro386SecondaryPit();
       for (const range of this.deskProSecondaryPit.portRanges()) this.registerPorts(range);
@@ -93,6 +100,7 @@ export class RebuiltPcAt386Core {
     this.systemPort.reset();
     this.keyboardController.reset();
     this.fpuControl.reset();
+    this.fdc.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.memory.setA20Enabled(true);
@@ -115,6 +123,38 @@ export class RebuiltPcAt386Core {
 
   public advanceRtc(ticks: number): void {
     this.rtc.advance(ticks);
+  }
+
+  public advanceFdcDma(maxTransfers: number): number {
+    if (!Number.isInteger(maxTransfers) || maxTransfers < 0)
+      throw new RangeError("FDC DMA transfer budget must be a non-negative integer");
+    let transfers = 0;
+    while (transfers < maxTransfers) {
+      const grant = this.dma.grant();
+      if (!grant) break;
+      if (grant.channel !== 2 || grant.transferType !== "write" || grant.unitBytes !== 1)
+        throw new Error("FDC DMA requires an 8-bit DMA2 device-to-memory grant");
+      const byte = this.fdc.controller.readDmaByte();
+      if (byte === undefined) {
+        this.dma.setHardwareRequest(2, false);
+        break;
+      }
+      performDmaTransfer(
+        grant,
+        {
+          read8: (address) => this.memory.readUint8(address),
+          write8: (address, value) => this.memory.writeUint8(address, value)
+        },
+        { read8: () => byte, write8: () => undefined }
+      );
+      transfers += 1;
+      if (grant.terminalCount || this.fdc.controller.snapshot().dmaBytesPending === 0) {
+        this.fdc.completeDma(grant.terminalCount);
+        this.dma.setHardwareRequest(2, false);
+        break;
+      }
+    }
+    return transfers;
   }
 
   public requestNmi(): boolean {

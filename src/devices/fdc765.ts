@@ -32,7 +32,9 @@ const COMMAND_LENGTH = new Map<number, number>([
   [COMMAND_READ_DATA, 9]
 ]);
 
-export type FdcPhase = "command" | "result";
+import { FloppyDrive } from "./floppy-drive.js";
+
+export type FdcPhase = "command" | "execution" | "result";
 
 export interface FdcDriveState {
   readonly ready: boolean;
@@ -49,6 +51,7 @@ export interface Fdc765Snapshot {
   readonly interruptPending: boolean;
   readonly nonDma: boolean;
   readonly selectedDrive: number;
+  readonly dmaBytesPending: number;
   readonly drives: readonly FdcDriveState[];
 }
 
@@ -89,7 +92,10 @@ export class Fdc765 {
   private nonDma = false;
   private selectedDrive = 0;
   private readonly drives = Array.from({ length: 4 }, () => ({ ready: false, cylinder: 0 }));
+  private readonly media = Array.from({ length: 4 }, () => undefined as FloppyDrive | undefined);
   private readonly interruptResults: InterruptResult[] = [];
+  private dmaBytes: number[] = [];
+  private dmaResult: number[] | undefined;
 
   public reset(): void {
     this.dor = 0;
@@ -128,6 +134,7 @@ export class Fdc765 {
 
   public readMainStatus(): number {
     let status = STATUS_RQM;
+    if (this.phase === "execution") status |= STATUS_BUSY;
     if (this.phase === "result") status |= STATUS_BUSY | STATUS_READ_DATA;
     if (this.nonDma) status |= STATUS_NON_DMA;
     return status;
@@ -161,6 +168,31 @@ export class Fdc765 {
     this.drive(drive).ready = ready;
   }
 
+  public attachDrive(index: number, drive: FloppyDrive | undefined): void {
+    this.drive(index);
+    this.media[index] = drive;
+  }
+
+  public readDmaByte(): number | undefined {
+    if (this.phase !== "execution") return undefined;
+    return this.dmaBytes.shift();
+  }
+
+  public completeDma(terminalCount: boolean): Fdc765Result {
+    if (this.phase !== "execution") return result(false);
+    const complete = terminalCount || this.dmaBytes.length === 0;
+    if (!complete) return result(true);
+    this.beginResult(this.dmaResult ?? [STATUS0_INVALID]);
+    this.dmaBytes = [];
+    this.dmaResult = undefined;
+    return result(true, {
+      irqRequested: this.raiseInterrupt({
+        status0: this.resultBytes[0] ?? STATUS0_INVALID,
+        cylinder: 0
+      })
+    });
+  }
+
   public snapshot(): Fdc765Snapshot {
     return {
       dor: this.dor,
@@ -172,7 +204,8 @@ export class Fdc765 {
       interruptPending: this.interruptPending,
       nonDma: this.nonDma,
       selectedDrive: this.selectedDrive,
-      drives: this.drives.map((drive) => ({ ...drive }))
+      dmaBytesPending: this.dmaBytes.length,
+      drives: this.drives.map((drive, index) => ({ ...drive, ready: this.driveReady(index) }))
     };
   }
 
@@ -190,7 +223,7 @@ export class Fdc765 {
         const drive = this.drive(unit);
         let status3 = unit | (head ? STATUS3_HEAD : 0);
         if (drive.cylinder === 0) status3 |= STATUS3_TRACK0;
-        if (drive.ready) status3 |= STATUS3_READY;
+        if (this.driveReady(unit)) status3 |= STATUS3_READY;
         this.beginResult([status3]);
         return result(true);
       }
@@ -226,11 +259,9 @@ export class Fdc765 {
         return result(true, { irqRequested });
       }
       case COMMAND_READ_ID:
+        return this.readId(bytes);
       case COMMAND_READ_DATA:
-        this.beginResult([STATUS0_INVALID]);
-        return result(true, {
-          irqRequested: this.raiseInterrupt({ status0: STATUS0_INVALID, cylinder: 0 })
-        });
+        return this.readDataCommand(bytes);
       default:
         return result(false);
     }
@@ -254,6 +285,8 @@ export class Fdc765 {
     this.interruptPending = false;
     this.nonDma = false;
     this.interruptResults.length = 0;
+    this.dmaBytes = [];
+    this.dmaResult = undefined;
     for (const drive of this.drives) drive.cylinder = 0;
   }
 
@@ -261,6 +294,72 @@ export class Fdc765 {
     if (!Number.isInteger(index) || index < 0 || index > 3)
       throw new RangeError(`FDC drive is outside 0-3: ${index}`);
     return this.drives[index]!;
+  }
+
+  private driveReady(index: number): boolean {
+    return this.media[index]?.snapshot().ready ?? this.drive(index).ready;
+  }
+
+  private readId(bytes: readonly number[]): Fdc765Result {
+    const unit = bytes[1]! & 0x03;
+    const head = (bytes[1]! >>> 2) & 1;
+    this.selectedDrive = unit;
+    const drive = this.drive(unit);
+    const media = this.media[unit];
+    if (!media || !this.driveReady(unit)) return this.invalidExecution(unit);
+    try {
+      media.readSector(drive.cylinder, head, 1);
+      const sizeCode = this.sizeCode(media.geometry.bytesPerSector);
+      this.beginResult([unit, 0, 0, drive.cylinder, head, 1, sizeCode]);
+      return result(true, {
+        irqRequested: this.raiseInterrupt({ status0: unit, cylinder: drive.cylinder })
+      });
+    } catch {
+      return this.invalidExecution(unit);
+    }
+  }
+
+  private readDataCommand(bytes: readonly number[]): Fdc765Result {
+    const unit = bytes[1]! & 0x03;
+    const head = (bytes[1]! >>> 2) & 1;
+    const cylinder = bytes[2]!;
+    const sector = bytes[4]!;
+    const sizeCode = bytes[5]!;
+    this.selectedDrive = unit;
+    const media = this.media[unit];
+    if (
+      !media ||
+      !this.driveReady(unit) ||
+      sizeCode !== this.sizeCode(media.geometry.bytesPerSector)
+    )
+      return this.invalidExecution(unit);
+    try {
+      this.dmaBytes = [...media.readSector(cylinder, head, sector)];
+      this.dmaResult = [unit, 0, 0, cylinder, head, sector, sizeCode];
+      this.phase = "execution";
+      return result(true);
+    } catch {
+      return this.invalidExecution(unit);
+    }
+  }
+
+  private invalidExecution(unit: number): Fdc765Result {
+    this.beginResult([STATUS0_INVALID | unit, 0, 0, 0, 0, 0, 0]);
+    return result(true, {
+      irqRequested: this.raiseInterrupt({ status0: STATUS0_INVALID | unit, cylinder: 0 })
+    });
+  }
+
+  private sizeCode(bytesPerSector: number): number {
+    let code = 0;
+    let size = 128;
+    while (size < bytesPerSector && code < 7) {
+      size <<= 1;
+      code += 1;
+    }
+    if (size !== bytesPerSector)
+      throw new RangeError(`Unsupported FDC sector size: ${bytesPerSector}`);
+    return code;
   }
 
   private byte(value: number): number {

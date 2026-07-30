@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FDC_DOR_ENABLE, FDC_DOR_INTERRUPT_ENABLE, Fdc765 } from "./fdc765.js";
+import { FloppyDrive } from "./floppy-drive.js";
 
 function enable(controller: Fdc765, interrupts = true): void {
   controller.writeDor(FDC_DOR_ENABLE | (interrupts ? FDC_DOR_INTERRUPT_ENABLE : 0));
@@ -82,5 +83,42 @@ describe("project-native 765/8272 controller state", () => {
     });
     expect(controller.readMainStatus()).toBe(0x80);
     expect(controller.readInput()).toBe(0x80);
+  });
+
+  it("returns a real CHRN for READ ID and streams raw READ DATA bytes through execution", () => {
+    const controller = new Fdc765();
+    const drive = new FloppyDrive({
+      cylinders: 1,
+      heads: 1,
+      sectorsPerTrack: 1,
+      bytesPerSector: 128
+    });
+    drive.attach(Uint8Array.from({ length: 128 }, (_, index) => index));
+    controller.attachDrive(0, drive);
+    enable(controller);
+
+    controller.writeData(0x0a);
+    expect(controller.writeData(0x00)).toMatchObject({ irqRequested: true });
+    expect([controller.readData(), controller.readData(), controller.readData()]).toEqual([
+      0, 0, 0
+    ]);
+    expect([
+      controller.readData(),
+      controller.readData(),
+      controller.readData(),
+      controller.readData()
+    ]).toEqual([0, 0, 1, 0]);
+
+    for (const byte of [0x06, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00])
+      controller.writeData(byte);
+    expect(controller.snapshot()).toMatchObject({ phase: "execution", dmaBytesPending: 128 });
+    expect(controller.readMainStatus()).toBe(0x90);
+    expect([controller.readDmaByte(), controller.readDmaByte(), controller.readDmaByte()]).toEqual([
+      0, 1, 2
+    ]);
+    while (controller.snapshot().dmaBytesPending > 0) controller.readDmaByte();
+    expect(controller.completeDma(true)).toMatchObject({ accepted: true, irqRequested: true });
+    expect(controller.snapshot().phase).toBe("result");
+    expect(Array.from({ length: 7 }, () => controller.readData())).toEqual([0, 0, 0, 0, 0, 1, 0]);
   });
 });

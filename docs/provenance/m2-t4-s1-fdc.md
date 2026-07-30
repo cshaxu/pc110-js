@@ -30,3 +30,10 @@ adopt PCjs media, timing, panel, browser, or machine-service code.
 The M1 selected-machine contract establishes two 1.44MB drives and the known
 local image size of 1,474,560 bytes. The native drive models geometry and raw
 CHS sectors only; it does not read, embed, or redistribute the protected image.
+
+## P4 Read Execution And Machine Wiring
+
+PCjs assigns the FDC to byte-wide AT ports, DMA channel 2, and IRQ6. The
+native machine adapter uses the existing generic DMA grant contract and
+physical-memory access contract. It does not use PCjs disk, browser, timer,
+firmware, or guest-service code.
