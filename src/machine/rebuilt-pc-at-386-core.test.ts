@@ -302,4 +302,16 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.fdc.controller.snapshot()).toMatchObject({ phase: "result", dmaBytesPending: 0 });
     expect(core.pic.master.snapshot().request & 0x40).toBe(0x40);
   });
+
+  it("registers retained MDA compatibility state for selected VGA firmware probes", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x3b8, 0x29, 8);
+    core.ports.write(0x3b4, 0x0e, 8);
+    core.ports.write(0x3b5, 0x11, 8);
+    expect(core.ports.read(0x3b8, 8)).toBe(0x29);
+    expect(core.ports.read(0x3b5, 8)).toBe(0x11);
+    core.reset();
+    expect(core.mdaCompatibility.snapshot()).toMatchObject({ mode: 0, crtcIndex: 0 });
+  });
 });

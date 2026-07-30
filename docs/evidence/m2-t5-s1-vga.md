@@ -18,3 +18,13 @@ hardware path includes compatible MDA/CGA probes and native VGA registers.
 
 P1 records the display implementation boundary only. It adds no video port,
 memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
+
+## P2 MDA Compatibility Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `video.js` MDA register definitions and full
+  MDA input/output port tables.
+- Tests: mirrored CRTC index/data, retained mode, deterministic status, width,
+  write ownership, reset, and machine composition.
+- Trace: native MDA state advances the selected ROM to 224 instructions at
+  `F000:BB36`, stopping on CGA compatibility mode port `0x3D8`.

@@ -14,3 +14,9 @@
 PCjs identifies `0x3B8` as the MDA mode register and maps MDA/CGA compatibility
 alongside EGA/VGA register domains. The selected VGA profile therefore needs
 retained compatibility probe state before the complete VGA path can advance.
+
+## P2 MDA Compatibility
+
+PCjs maps CRTC index/data aliases at `0x3B0`-`0x3B7`, MDA mode at `0x3B8`, and
+status at `0x3BA`. The native state model retains those values and exposes a
+deterministic status signal without adopting PCjs rendering or timing code.
