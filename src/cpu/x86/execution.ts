@@ -1414,6 +1414,27 @@ function executeContextualInstruction(
       );
       return { halted: false, fetched };
     }
+    if (extension === 0xba) {
+      const modRmOffset = context.opcodeOffset + 2;
+      const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+      if (modRm.reg < 0x04) throw new UnsupportedOpcodeError("Unsupported 0F BA opcode form");
+      const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+      const immediate = fetchCodeByte(
+        memory,
+        state,
+        modRmOffset + 1 + decodedAddressBytes(address, context.addressSize)
+      ).opcode;
+      executeContextualBitTest(
+        memory,
+        state,
+        context,
+        ([0xa3, 0xab, 0xb3, 0xbb] as const)[modRm.reg - 0x04],
+        immediate,
+        false,
+        1
+      );
+      return { halted: false, fetched };
+    }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
       executeMovExtendModRm(
         memory,

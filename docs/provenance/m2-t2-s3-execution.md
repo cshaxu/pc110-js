@@ -821,6 +821,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native contextual helper. PCjs prefix behavior selects operand and
   address widths, including signed register bit-index expansion across memory
   operands; the existing carry-flag and mutation semantics remain shared.
+- M2 T2 S3 P290 routes `0F BA` immediate-bit forms through the same contextual
+  helper. PCjs prefix behavior keeps the bit immediate byte-width while placing
+  it after the context-selected ModR/M address encoding.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
