@@ -1234,6 +1234,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P421 adapts NXVM's hidden CS-DPL `_GetCPL` model into rebuilt POPF
   privilege handling. The correction has no reference runtime, BIOS, device,
   or guest-service dependency.
+- M2 T2 S3 P422 records complete project-native evidence for executable NXVM
+  `90-9F` handlers, including conforming-code far control. NXVM-marked gate and
+  cross-privilege TODO paths remain excluded from this handler closure.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

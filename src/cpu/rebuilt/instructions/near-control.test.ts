@@ -71,6 +71,32 @@ describe("rebuilt near CALL and JMP", () => {
     });
   });
 
+  it("accepts a lower-DPL conforming code target without changing CPL", () => {
+    const state = new RebuiltCpuState();
+    state.writeSegment("cs", {
+      selector: 0x1b,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: false,
+      dpl: 3
+    });
+    state.writeCr0(1);
+    state.writeEip(0);
+    state.writeGdtr({ base: 0x20, limit: 0x1f });
+    const memory = new Map<number, number>(
+      [0xea, 0x34, 0x12, 0x13, 0x00].map((value, index) => [index, value])
+    );
+    [0xff, 0xff, 0, 0, 0, 0x9e, 0xcf, 0].forEach((value, index) => memory.set(0x30 + index, value));
+    new RebuiltCpuExecutor(state, {
+      readUint8: (address) => memory.get(address) ?? 0,
+      writeUint8: (address, value) => memory.set(address, value)
+    }).step(executeNearControl);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      segments: { cs: { selector: 0x13, dpl: 0, default32: true } }
+    });
+  });
+
   it("pushes CS then return EIP for a real-mode far CALL", () => {
     const result = execute([0x9a, 0x34, 0x12, 0x00, 0x20], (state) => {
       state.registers.write16(4, 0x100);
