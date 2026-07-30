@@ -683,6 +683,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   dword data and SS defaults independently select stack addressing.
 - M2 T2 S3 P251 migrates PUSHA and POPA so CS defaults select word or dword
   register frames and SS defaults independently select stack addressing.
+- M2 T2 S3 P252 migrates near relative JMP so CS defaults and 66 select the
+  displacement length and target EIP width through the shared context.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

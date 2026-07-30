@@ -814,6 +814,24 @@ function executeContextualPushAllPopAll(
   return { halted: false, fetched };
 }
 
+function executeContextualNearJump(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0xe9) return undefined;
+  const displacement =
+    context.operandSize === 32
+      ? fetchCodeUint32(memory, state, context.opcodeOffset + 1) | 0
+      : signedWord(fetchCodeUint16(memory, state, context.opcodeOffset + 1));
+  const nextInstruction =
+    fetched.instructionPointer + context.opcodeOffset + 1 + context.operandSize / 8;
+  if (context.operandSize === 32) state.writeEip(nextInstruction + displacement);
+  else state.writeEip16(nextInstruction + displacement);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -836,6 +854,8 @@ function executeContextualInstruction(
   if (immediatePush) return immediatePush;
   const pushAllPopAll = executeContextualPushAllPopAll(memory, state, context, fetched);
   if (pushAllPopAll) return pushAllPopAll;
+  const nearJump = executeContextualNearJump(memory, state, context, fetched);
+  if (nearJump) return nearJump;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
