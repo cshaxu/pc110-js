@@ -140,6 +140,15 @@ project-native I/O boundary; the recorded M1 PCjs browser run reaches `A:\>`.
 This classifies the difference as S5 device/I/O work, not an S3 CPU opcode
 gap. S4, S5, and S6 remain required T2 gates.
 
+## S6 P12 Logical-Flag Conflict
+
+An attempted generic real-mode `00-3F` accumulator program stops at `AND AX,
+imm16`: NXVM and rebuilt behavior preserve AF, while the pinned PCjs oracle
+clears it. The minimized fixture and authority evidence are recorded in the S6
+verification conflict record. This is not an approved compatibility exception,
+does not count as differential coverage, and blocks further S6 expansion until
+owner direction.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
