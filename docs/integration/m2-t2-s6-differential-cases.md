@@ -26,6 +26,7 @@ It does not yet record writes whose value is unchanged.
 | `50-5F` program | all PUSH and POP register forms | automatic stack-memory and register lockstep |
 | `60-61` program | PUSHA and POPA | automatic frame-memory and register lockstep |
 | `68-6B` program | PUSH immediate and immediate IMUL forms | automatic stack, register, and flag lockstep |
+| `6C-6E` program | INSB and OUTSB | automatic port, memory, and index lockstep |
 | `B0-BF` program | every byte and word immediate-register form | automatic register-width and EIP lockstep |
 
 ## Active Expansion Order

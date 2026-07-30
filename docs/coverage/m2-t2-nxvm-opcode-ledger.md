@@ -163,6 +163,11 @@ The normalized changed-byte memory delta passes generic real-mode programs for
 `PUSHA`/`POPA` and immediate `PUSH` plus immediate `IMUL` forms. BOUND, ARPL,
 FS/GS, and string-I/O forms remain separate `60-6F` S6 matrices.
 
+## S6 P16 Differential Evidence
+
+A declared-port real-mode `INSB`/`OUTSB` program matches PCjs register state,
+changed RAM bytes, and I/O journals at both instruction boundaries.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

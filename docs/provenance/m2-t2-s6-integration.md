@@ -57,3 +57,8 @@ opcode-specific oracle implementation, or runtime dependency.
 The rebuilt memory journal now records only writes that alter the RAM image,
 matching the PCjs before/after snapshot delta. This is observation
 normalization, not a CPU memory-write behavior change.
+
+## P16 String I/O Program
+
+P16 uses the existing declared-port adapter and independent RAM images. It adds
+no device emulation, PCjs source, or product runtime dependency.

@@ -147,6 +147,14 @@ describe("PCjs differential CPU harness", () => {
       instructionCount: 5
     },
     {
+      name: "6C-6E byte string I/O pair",
+      bytes: [0x6c, 0x6e],
+      registers: { edx: 0x80, esi: 0x201, edi: 0x200 },
+      memory: [{ address: 0x201, value: 0x5a }],
+      io: { ports: [{ port: 0x80, inputValue: 0x5a, width: 8 as const }] },
+      instructionCount: 2
+    },
+    {
       name: "B0-BF immediate register interval",
       bytes: [
         0xb0, 0x10, 0xb1, 0x11, 0xb2, 0x12, 0xb3, 0x13, 0xb4, 0x14, 0xb5, 0x15, 0xb6, 0x16, 0xb7,
