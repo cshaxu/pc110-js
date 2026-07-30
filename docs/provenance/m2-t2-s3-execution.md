@@ -1271,6 +1271,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P432 adapts NXVM `_e_jcc` operand-size target selection into rebuilt
   relative control. It keeps CS code-address fallthrough separate and imports
   no reference runtime, device, or guest-service behavior.
+- M2 T2 S3 P433 adapts NXVM multi-page logical-access preflight into project-native
+  segmented memory without a reference runtime, device, or guest-service path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

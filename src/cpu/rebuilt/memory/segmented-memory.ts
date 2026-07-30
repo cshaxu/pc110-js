@@ -49,17 +49,17 @@ export class SegmentedMemory {
   }
 
   public read16(segment: SegmentName, offset: number, addressSize: 16 | 32): number {
-    return (
-      this.read8(segment, offset, addressSize) | (this.read8(segment, offset + 1, addressSize) << 8)
-    );
+    const addresses = this.translateRange(segment, offset, addressSize, 2, false, false);
+    return this.bus.readUint8(addresses[0]!) | (this.bus.readUint8(addresses[1]!) << 8);
   }
 
   public read32(segment: SegmentName, offset: number, addressSize: 16 | 32): number {
+    const addresses = this.translateRange(segment, offset, addressSize, 4, false, false);
     return (
-      (this.read8(segment, offset, addressSize) |
-        (this.read8(segment, offset + 1, addressSize) << 8) |
-        (this.read8(segment, offset + 2, addressSize) << 16) |
-        (this.read8(segment, offset + 3, addressSize) << 24)) >>>
+      (this.bus.readUint8(addresses[0]!) |
+        (this.bus.readUint8(addresses[1]!) << 8) |
+        (this.bus.readUint8(addresses[2]!) << 16) |
+        (this.bus.readUint8(addresses[3]!) << 24)) >>>
       0
     );
   }
@@ -69,15 +69,16 @@ export class SegmentedMemory {
   }
 
   public write16(segment: SegmentName, offset: number, value: number, addressSize: 16 | 32): void {
-    this.write8(segment, offset, value, addressSize);
-    this.write8(segment, offset + 1, value >>> 8, addressSize);
+    const addresses = this.translateRange(segment, offset, addressSize, 2, true, false);
+    this.bus.writeUint8(addresses[0]!, value & 0xff);
+    this.bus.writeUint8(addresses[1]!, (value >>> 8) & 0xff);
   }
 
   public write32(segment: SegmentName, offset: number, value: number, addressSize: 16 | 32): void {
-    this.write8(segment, offset, value, addressSize);
-    this.write8(segment, offset + 1, value >>> 8, addressSize);
-    this.write8(segment, offset + 2, value >>> 16, addressSize);
-    this.write8(segment, offset + 3, value >>> 24, addressSize);
+    const addresses = this.translateRange(segment, offset, addressSize, 4, true, false);
+    addresses.forEach((address, index) =>
+      this.bus.writeUint8(address, (value >>> (index * 8)) & 0xff)
+    );
   }
 
   private translate(
@@ -110,6 +111,19 @@ export class SegmentedMemory {
       if (error instanceof PageFaultError) this.state.writeCr2(error.linearAddress);
       throw error;
     }
+  }
+
+  private translateRange(
+    segment: SegmentName,
+    offset: number,
+    addressSize: 16 | 32,
+    width: 2 | 4,
+    write: boolean,
+    instructionFetch: boolean
+  ): readonly number[] {
+    return Array.from({ length: width }, (_, index) =>
+      this.translate(segment, offset + index, addressSize, write, instructionFetch)
+    );
   }
 
   private validateProtectedAccess(

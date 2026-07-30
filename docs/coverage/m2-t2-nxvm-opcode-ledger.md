@@ -38,7 +38,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 0F A0-AF extended bit, shift, segment forms           | 12906-13203                                  | FS/GS stack forms, BT/BTS/BTR/BTC, SHLD/SHRD, IMUL, LSS/LFS/LGS, MOVZX           | `instructions/extended.ts`                                                                                                                                                                      | Partial                     | Bit addressing; flags; segment faults; 66/67                  | Required        | Implemented NXVM handler coverage: P378, P430; shared protected access faults remain separately ledgered                |
 | 0F B0-BF extended scans and sign extension            | 13203-13251                                  | BTC, BSF/BSR, MOVSX and immediate bit group                                      | `instructions/extended.ts`                                                                                                                                                                      | Partial                     | Zero input; flags; ModR/M; widths                             | Required        | Implemented NXVM handler coverage: P379, P408, P430; B0-B1 retain required `#UD` behavior                              |
 | Explicit NXVM undefined extensions                    | 12546-12552, 12637-12649, 12924-12977        | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD`                                 | `instructions/system.ts`                                                                                                                                                                        | Complete reference evidence | Prefixes and fault EIP                                        | Required        | Implemented: P385, P393                                                                                                 |
-| Segmentation, paging, exceptions, and trace           | 51-1145, 2033-3096, 13315-13917              | Logical/linear access, descriptors, stack, faults, interrupts, trace             | `protection/`, `events/`, `debug/`                                                                                                                                                              | Partial                     | PF/GP/SS/NP; privilege; ROM trace; differential state dumps   | Required        | In progress: P392 rebuilt page walks                                                                                    |
+| Segmentation, paging, exceptions, and trace           | 51-1145, 2033-3096, 13315-13917              | Logical/linear access, descriptors, stack, faults, interrupts, trace             | `protection/`, `events/`, `debug/`                                                                                                                                                              | Partial                     | PF/GP/SS/NP; privilege; ROM trace; differential state dumps   | Required        | In progress: P392, P433 rebuilt page walks                                                                              |
 
 ## P355 Rebuilt Dispatcher Boundary
 
@@ -874,3 +874,11 @@ control forms retain CS code-address behavior. Focused high-EIP regressions
 cover default-32 code with `66`, preventing CS D/B from being conflated with
 the target operand size. Far control, task/call gates, and privilege-transfer
 paths remain separately ledgered.
+
+## P433 Cross-Page Memory Preflight Checklist
+
+P433 follows NXVM's logical access preflight by translating every byte of a
+16- or 32-bit range before physical reads or writes. Cross-page reads and
+writes therefore use both resolved pages, while a later translation fault
+leaves earlier destination bytes unchanged and records CR2 for the faulting
+linear address. Segment/page edge semantics remain active architecture work.

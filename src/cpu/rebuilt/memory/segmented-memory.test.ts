@@ -61,6 +61,40 @@ describe("SegmentedMemory", () => {
     expect(bytes[0x2000] & 0x60).toBe(0x60);
   });
 
+  it("preflights all pages for multi-byte reads and writes", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Uint8Array(0x6000);
+    state.writeCr0(0x80000001);
+    state.writeCr3(0x1000);
+    state.writeSegment("ds", { selector: 8, base: 0, limit: 0xffffffff, default32: true, dpl: 0 });
+    write32(bytes, 0x1000, 0x2003);
+    write32(bytes, 0x2000, 0x3003);
+    write32(bytes, 0x2004, 0x4003);
+    bytes.set([0x78, 0x56], 0x3ffe);
+    bytes.set([0x34, 0x12], 0x4000);
+    const segmented = new SegmentedMemory(memory(bytes), state);
+
+    expect(segmented.read32("ds", 0xffe, 32)).toBe(0x12345678);
+    segmented.write32("ds", 0xffe, 0xa5a55a5a, 32);
+    expect(Array.from(bytes.slice(0x3ffe, 0x4002))).toEqual([0x5a, 0x5a, 0xa5, 0xa5]);
+  });
+
+  it("does not partially write when a later cross-page translation faults", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Uint8Array(0x5000);
+    state.writeCr0(0x80000001);
+    state.writeCr3(0x1000);
+    state.writeSegment("ds", { selector: 8, base: 0, limit: 0xffffffff, default32: true, dpl: 0 });
+    write32(bytes, 0x1000, 0x2003);
+    write32(bytes, 0x2000, 0x3003);
+    bytes.set([0xaa, 0xbb], 0x3ffe);
+    const segmented = new SegmentedMemory(memory(bytes), state);
+
+    expect(() => segmented.write32("ds", 0xffe, 0x12345678, 32)).toThrow(PageFaultError);
+    expect(Array.from(bytes.slice(0x3ffe, 0x4000))).toEqual([0xaa, 0xbb]);
+    expect(state.readCr2()).toBe(0x1000);
+  });
+
   it("records CR2 when a rebuilt memory access hits a page fault", () => {
     const state = new RebuiltCpuState();
     state.writeCr0(0x80000001);
