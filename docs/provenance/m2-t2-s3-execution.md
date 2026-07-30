@@ -824,6 +824,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P290 routes `0F BA` immediate-bit forms through the same contextual
   helper. PCjs prefix behavior keeps the bit immediate byte-width while placing
   it after the context-selected ModR/M address encoding.
+- M2 T2 S3 P291 adds project-native 32-bit SHL/SHR flag writers and routes
+  Group 2 `/4` and `/5` `C1/D1/D3` forms through the execution context. PCjs
+  remains the behavioral authority for normalized counts, operand widths, and
+  ModR/M address widths; unported rotate and arithmetic-right forms remain on
+  their existing path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

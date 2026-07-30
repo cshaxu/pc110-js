@@ -596,6 +596,68 @@ function executeContextualDoubleShift(
   state.advanceEip(instructionBytes);
 }
 
+function executeContextualLogicalShift(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  count: number,
+  immediateBytes = 0
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x04 && modRm.reg !== 0x05)
+    throw new UnsupportedOpcodeError("Unsupported contextual shift opcode form");
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const normalizedCount = count & 0x1f;
+  const instructionBytes =
+    modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + immediateBytes;
+  if (!normalizedCount) {
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  const width = context.operandSize;
+  const source = modRm.registerDirect
+    ? width === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : width === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  const result =
+    modRm.reg === 0x04
+      ? width === 32
+        ? (source << normalizedCount) >>> 0
+        : (source << normalizedCount) & 0xffff
+      : source >>> normalizedCount;
+  if (modRm.registerDirect) {
+    if (width === 32) state.writeRegister(modRm.rm, result);
+    else state.writeRegister16(modRm.rm, result);
+  } else if (width === 32)
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  else
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  if (modRm.reg === 0x04) {
+    if (width === 32) state.writeShiftLeftFlags32(source, normalizedCount);
+    else state.writeShiftLeftFlags16(source, normalizedCount);
+  } else if (width === 32) state.writeShiftRightFlags32(source, normalizedCount);
+  else state.writeShiftRightFlags16(source, normalizedCount);
+  state.advanceEip(instructionBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1295,6 +1357,44 @@ function executeContextualInstruction(
       context.operandSize
     );
     return { halted: false, fetched };
+  }
+  if (context.opcode === 0xd1) {
+    const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    if (modRm.reg === 0x04 || modRm.reg === 0x05) {
+      executeContextualLogicalShift(memory, state, context, 1);
+      return { halted: false, fetched };
+    }
+  }
+  if (context.opcode === 0xd3) {
+    const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    if (modRm.reg === 0x04 || modRm.reg === 0x05) {
+      executeContextualLogicalShift(memory, state, context, state.readRegister8(1));
+      return { halted: false, fetched };
+    }
+  }
+  if (context.opcode === 0xc1) {
+    const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+    if (modRm.reg === 0x04 || modRm.reg === 0x05) {
+      const address = decodeModRmAddress(
+        memory,
+        state,
+        modRm,
+        context.opcodeOffset + 1,
+        context.addressSize
+      );
+      executeContextualLogicalShift(
+        memory,
+        state,
+        context,
+        fetchCodeByte(
+          memory,
+          state,
+          context.opcodeOffset + 2 + decodedAddressBytes(address, context.addressSize)
+        ).opcode,
+        1
+      );
+      return { halted: false, fetched };
+    }
   }
   const loop = executeContextualLoop(memory, state, context, fetched);
   if (loop) return loop;
