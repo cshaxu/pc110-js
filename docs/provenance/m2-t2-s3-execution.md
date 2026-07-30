@@ -797,6 +797,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   behavioral authority: their data width is fixed at 32 bits, operand and
   address prefixes do not change it, and existing CPL-zero fault delivery
   occurs before state transfer.
+- M2 T2 S3 P284 routes `0F 06` CLTS through the project-native execution
+  context. PCjs remains the behavior authority: operand and address prefixes
+  do not change CLTS semantics, while their bytes remain part of the fault
+  instruction length and successful EIP advance.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

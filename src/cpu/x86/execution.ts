@@ -1168,6 +1168,19 @@ function executeContextualInstruction(
   if (moffs) return moffs;
   if (context.opcode === 0x0f) {
     const extension = fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode;
+    if (extension === 0x06) {
+      const snapshot = state.snapshot();
+      if (
+        addressMode(snapshot.cr0, snapshot.eflags) === "protected" &&
+        (snapshot.cs.selector & 0x03) !== 0
+      ) {
+        deliverCpuFault(memory, state, 13, fetched.instructionPointer, 0);
+      } else {
+        state.clearTaskSwitchedFlag();
+        state.advanceEip(context.opcodeOffset + 2);
+      }
+      return { halted: false, fetched };
+    }
     if (extension === 0x00) {
       executeSystemSelectorInstruction(
         memory,
