@@ -609,3 +609,11 @@ P404 applies NXVM's virtual-8086 IOPL admission to INT3, INT imm8, and
 overflow-triggered INTO. IOPL below three delivers #GP(0) before IDT lookup;
 focused tests cover all three entry forms through the rebuilt v86 TSS frame.
 External interrupt admission and virtual interrupt extensions remain active.
+
+## P405 Decimal-Adjust State Checklist
+
+P405 aligns DAA/DAS high-digit adjustment with NXVM's post-low-adjust AL and
+current carry state. A focused DAS case verifies that `AL=9A, AF=1` stops at
+`94` rather than applying a stale-input high-digit adjustment. The wider
+`00-3F` interval remains incomplete until its recorded closure dependencies
+are satisfied.

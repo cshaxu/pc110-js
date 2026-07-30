@@ -159,6 +159,16 @@ describe("rebuilt 00-3D arithmetic forms", () => {
     expect(aas.state.registers.read8(4)).toBe(1);
   });
 
+  it("uses the adjusted AL and current carry for DAS high-digit adjustment", () => {
+    const das = execute([0x2f], (state) => {
+      state.registers.write8(0, 0x9a);
+      state.flags.set(0x10);
+    });
+    expect(das.state.registers.read8(0)).toBe(0x94);
+    expect(das.state.flags.has(EFLAGS_CARRY)).toBe(false);
+    expect(das.state.flags.has(0x10)).toBe(true);
+  });
+
   it("pushes a real-mode segment selector through the SS stack boundary", () => {
     const pushed = execute([0x06], (state) => {
       state.writeSegment("es", {

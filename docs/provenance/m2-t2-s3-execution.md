@@ -1183,6 +1183,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P404 adapts NXVM's virtual-8086 software-interrupt IOPL admission
   into the project-native interrupt module without a reference runtime,
   guest-service path, or device behavior.
+- M2 T2 S3 P405 aligns project-native DAA/DAS high-digit adjustment with
+  NXVM's post-low-adjust state and current-carry flow without a reference
+  runtime import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

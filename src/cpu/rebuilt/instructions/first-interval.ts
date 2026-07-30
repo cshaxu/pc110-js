@@ -118,7 +118,7 @@ function executeAdjust(context: RebuiltExecutionContext): boolean {
       auxiliaryCarry = true;
       carry = oldCarry || (addAdjust ? oldAl > 0xf9 : oldAl < 0x06);
     }
-    if (oldAl > 0x99 || oldCarry) {
+    if ((addAdjust ? (al & 0xf0) > 0x90 : al > 0x9f) || carry) {
       al = (al + (addAdjust ? 0x60 : -0x60)) & 0xff;
       carry = true;
     } else carry = false;
