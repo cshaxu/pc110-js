@@ -927,3 +927,11 @@ a host `InterruptDeliveryError` into rebuilt `#GP` delivery. Focused evidence
 executes CPL3 `INT imm8` through a ring-zero TSS stack, verifies the IDT error
 code `0x0182`, and reaches the rebuilt ring-zero fault handler without a
 reference runtime or synthetic device behavior.
+
+## P440 Protected RETF Fault-Delivery Checklist
+
+P440 restores RETF's speculative IP/CS stack pops when protected code-segment
+loading fails, then lets the existing executor deliver the resulting fault.
+Focused CPL3 evidence returns through a null selector, reaches the ring-zero
+`#GP(0)` handler through the TSS stack, and preserves the original return-frame
+stack pointer for fault-frame construction.

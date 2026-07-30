@@ -36,9 +36,21 @@ function executeFarReturn(context: RebuiltExecutionContext): void {
     context.instruction.opcode === 0xca
       ? readUint16(context, context.instruction.opcodeOffset + 1)
       : 0;
-  loadCodeSegment(context.memory, context.state, selector);
+  try {
+    loadCodeSegment(context.memory, context.state, selector);
+  } catch (error) {
+    restoreFarReturnFrame(context, operandSize);
+    throw error;
+  }
   adjustStackPointer(context, cleanup);
   context.state.writeEip(operandSize === 16 ? target & 0xffff : target);
+}
+
+function restoreFarReturnFrame(context: RebuiltExecutionContext, operandSize: OperandSize): void {
+  const bytes = (operandSize / 8) * 2;
+  if (context.state.stackDefault32())
+    context.state.registers.write32(4, context.state.registers.read32(4) + bytes);
+  else context.state.registers.write16(4, context.state.registers.read16(4) + bytes);
 }
 
 function executeNearReturn(context: RebuiltExecutionContext): void {

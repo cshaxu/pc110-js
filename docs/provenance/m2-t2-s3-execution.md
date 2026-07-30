@@ -1290,6 +1290,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P439 adapts project-native interrupt-delivery errors into the
   executor's established rebuilt fault path, without importing a reference
   runtime or adding device or guest-service behavior.
+- M2 T2 S3 P440 restores project-native RETF stack state before a selector-load
+  fault reaches the existing rebuilt executor delivery path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
