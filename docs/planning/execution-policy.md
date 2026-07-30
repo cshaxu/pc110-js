@@ -147,6 +147,23 @@ focused and whole-machine workload, and preserve the standalone browser DOS
 completion path. No native device may claim integration completion from
 isolated tests alone.
 
+## Trace Diagnostic And Replay Policy
+
+Follow [Trace Diagnostic And Replay Policy](../governance/trace-diagnostic-policy.md)
+for performance-sensitive CPU tracing, ROM diagnostics, and differential
+investigation.
+
+- Fast execution is the default product and browser-workload mode; it does not
+  retain per-instruction full-state snapshots.
+- Selective trace may suppress complete snapshots only for a coverage-ledger
+  verified opcode family in its verified execution context. It remains an
+  observation policy and must not change emulation semantics.
+- A diagnostic mismatch or unexpected machine boundary requires deterministic
+  full-debug replay of the bounded interval. It may not be hidden by adding an
+  exclusion.
+- Do not use host wall time, timer forcing, synthetic interrupts, or delay-loop
+  skipping as ordinary performance optimization.
+
 ## Escalation Conditions
 
 Stop and request owner direction when:
