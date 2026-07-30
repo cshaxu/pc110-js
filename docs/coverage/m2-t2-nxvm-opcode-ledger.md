@@ -174,6 +174,12 @@ A single real-mode program passes all `70-7F` short conditional encodings with
 zero rel8 displacements. It compares each predicate's EIP update while retaining
 a linear stream and unchanged EFLAGS.
 
+## S6 P18 Differential Evidence
+
+A generic real-mode Group One program matches PCjs for ADD, ADC, SBB, SUB, and
+CMP immediate register forms across `80-83`. Logical forms remain separately
+governed by EXC-002.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

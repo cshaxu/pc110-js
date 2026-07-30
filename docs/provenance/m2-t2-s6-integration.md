@@ -67,3 +67,8 @@ no device emulation, PCjs source, or product runtime dependency.
 
 P17 provides a generic byte stream to the existing dispatcher. It adds no
 PCjs source or branch-specific oracle behavior.
+
+## P18 Group One Program
+
+P18 uses the shared dispatcher and a real-mode immediate register program. It
+adds no PCjs source, opcode-specific oracle, or product runtime dependency.
