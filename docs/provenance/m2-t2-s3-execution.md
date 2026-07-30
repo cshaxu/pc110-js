@@ -801,6 +801,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   context. PCjs remains the behavior authority: operand and address prefixes
   do not change CLTS semantics, while their bytes remain part of the fault
   instruction length and successful EIP advance.
+- M2 T2 S3 P285 routes FS/GS stack transfers through the project-native
+  execution context. PCjs prefix behavior selects pushed and popped data width,
+  while the existing context stack boundary keeps SS D/B selected address width
+  independent. Segment loads retain the existing real/protected-mode loader.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

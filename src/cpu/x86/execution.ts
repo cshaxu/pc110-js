@@ -1224,6 +1224,20 @@ function executeContextualInstruction(
       state.advanceEip(context.opcodeOffset + 3);
       return { halted: false, fetched };
     }
+    if (extension === 0xa0 || extension === 0xa8 || extension === 0xa1 || extension === 0xa9) {
+      const segment = extension === 0xa0 || extension === 0xa1 ? "fs" : "gs";
+      if (extension === 0xa0 || extension === 0xa8) {
+        pushContextOperand(memory, state, context, state.snapshot()[segment].selector);
+      } else {
+        const selector = popContextOperand(memory, state, context) & 0xffff;
+        const snapshot = state.snapshot();
+        if (addressMode(snapshot.cr0, snapshot.eflags) === "real")
+          state.loadRealModeSegment(segment, selector);
+        else loadProtectedModeSegment(memory, state, segment, selector);
+      }
+      state.advanceEip(context.opcodeOffset + 2);
+      return { halted: false, fetched };
+    }
     if (extension === 0xb6 || extension === 0xb7 || extension === 0xbe || extension === 0xbf) {
       executeMovExtendModRm(
         memory,

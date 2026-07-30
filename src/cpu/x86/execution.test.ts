@@ -4885,6 +4885,44 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ cr0: 0x80000001, eip: 0x0103 });
   });
 
+  it("uses independent operand and stack sizes for contextual FS and GS transfers", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x0f],
+      [0x0101, 0xa0],
+      [0x0102, 0x66],
+      [0x0103, 0x0f],
+      [0x0104, 0xa9],
+      [0x3010, 0xff],
+      [0x3011, 0xff],
+      [0x3015, 0x92],
+      [0x3016, 0xcf]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x3000, 0x001f);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ss", 0x0018, 0, 0xffffffff, true);
+    state.loadProtectedModeSegment("fs", 0x0010, 0, 0xffffffff, true);
+    state.loadProtectedModeSegment("gs", 0, 0, 0, false);
+    state.writeRegister(4, 0x00002000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect([
+      values.get(0x1ffc),
+      values.get(0x1ffd),
+      values.get(0x1ffe),
+      values.get(0x1fff)
+    ]).toEqual([0x10, 0x00, 0x00, 0x00]);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x1ffc }, eip: 0x0102 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({
+      gs: { selector: 0x0010 },
+      registers: { esp: 0x1ffe },
+      eip: 0x0105
+    });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
