@@ -1,4 +1,8 @@
-import { decodeInstruction, type DecodedInstruction } from "./decode/decoder.js";
+import {
+  decodeInstruction,
+  InstructionLengthError,
+  type DecodedInstruction
+} from "./decode/decoder.js";
 import type { InstructionReader } from "./decode/instruction-reader.js";
 import type { RebuiltTraceHook } from "./debug/trace.js";
 import { PageFaultError } from "../../memory/address-translation.js";
@@ -50,7 +54,10 @@ export class RebuiltCpuExecutor {
     const codeDefault32 = this.state.codeDefault32();
     const codeAddressSize = codeDefault32 ? 32 : 16;
     const reader = {
-      readCodeByte: (offset: number) => this.memory.readCode8(before.eip + offset, codeAddressSize)
+      readCodeByte: (offset: number) => {
+        if (offset < 0 || offset >= 15) throw new InstructionLengthError(before.eip);
+        return this.memory.readCode8(before.eip + offset, codeAddressSize);
+      }
     };
     let instruction: DecodedInstruction;
     try {
@@ -91,6 +98,10 @@ export class RebuiltCpuExecutor {
   }
 
   private deliverAccessFault(error: unknown, faultEip: number): boolean {
+    if (error instanceof InstructionLengthError) {
+      deliverFault(this.memory, this.state, 13, error.faultEip, 0);
+      return true;
+    }
     if (error instanceof RebuiltDivideError) {
       deliverFault(this.memory, this.state, 0, error.faultEip);
       return true;

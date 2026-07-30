@@ -1265,6 +1265,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `0F A0-BF` extended handlers. It retains NXVM's fixed-r32 word-extension
   behavior and adds default-32 operand and addressing evidence without a
   reference runtime, device, or guest-service dependency.
+- M2 T2 S3 P431 closes the project-native NXVM prefix/decode boundary. It
+  constrains every instruction-code read to the architectural 15-byte window
+  and delivers `#GP(0)` at the saved instruction EIP without reference imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

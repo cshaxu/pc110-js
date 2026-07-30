@@ -79,6 +79,35 @@ describe("RebuiltCpuExecutor", () => {
     expect(state.readEip()).toBe(1);
   });
 
+  it("delivers #GP(0) at the instruction start when a decoded opcode exceeds fifteen bytes", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Map<number, number>();
+    state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    state.writeEip(0);
+    state.registers.write16(4, 0x100);
+    Array.from({ length: 14 }, () => 0x66).forEach((value, index) => bytes.set(index, value));
+    bytes.set(14, 0x0f);
+    bytes.set(15, 0x80);
+    bytes.set(0x34, 0x34);
+    bytes.set(0x35, 0x12);
+    bytes.set(0x36, 0x00);
+    bytes.set(0x37, 0x20);
+
+    expect(
+      new RebuiltCpuExecutor(state, {
+        readUint8: (address) => bytes.get(address) ?? 0,
+        writeUint8: (address, value) => bytes.set(address, value)
+      }).step(dispatchRebuiltInstruction)
+    ).toBeUndefined();
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x1234,
+      segments: { cs: { selector: 0x2000 } },
+      registers: { esp: 0xfa }
+    });
+    expect(bytes.get(0xfa)).toBe(0);
+  });
+
   it("delivers a protected page fault with the faulting EIP and error code", () => {
     const state = new RebuiltCpuState();
     const bytes = new Map<number, number>();
