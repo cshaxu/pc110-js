@@ -1248,6 +1248,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `C0-CF` handlers by extending default-32 focused tests and joining existing
   rebuilt group, frame, event, selector, and fault paths. It imports no NXVM,
   PCjs, or legacy runtime code and adds no device or guest-service behavior.
+- M2 T2 S3 P426 records complete project-native evidence for executable NXVM
+  `D0-DF` handlers. It adds default-32 XLAT coverage and joins existing rebuilt
+  shift, adjust, and undefined-opcode paths without reference runtime imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

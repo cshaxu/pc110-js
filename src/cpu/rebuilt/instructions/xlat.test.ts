@@ -5,10 +5,11 @@ import { executeXlat } from "./xlat.js";
 
 function execute(
   bytes: readonly number[],
-  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void
+  setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
+  codeDefault32 = false
 ) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeEip(0);
   const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
   setup?.(state, memory);
@@ -37,5 +38,19 @@ describe("rebuilt XLAT", () => {
     });
     expect(state.registers.read8(0)).toBe(0x5a);
     expect(state.readEip()).toBe(3);
+  });
+
+  it("uses default-32 EBX addressing without an override", () => {
+    const state = execute(
+      [0xd7],
+      (cpu, memory) => {
+        cpu.registers.write32(3, 0x0001_0000);
+        cpu.registers.write8(0, 2);
+        memory.set(0x0001_0002, 0xa5);
+      },
+      true
+    );
+    expect(state.registers.read8(0)).toBe(0xa5);
+    expect(state.readEip()).toBe(1);
   });
 });
