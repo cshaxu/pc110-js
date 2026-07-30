@@ -1149,6 +1149,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P392 adapts NXVM's protected CR0/CR3 two-level page walk into the
   rebuilt segmented-memory boundary using existing project-native translation
   contracts. The rebuilt runtime does not import NXVM, PCjs, or legacy CPU code.
+- M2 T2 S3 P393 adapts NXVM's remaining undefined extended-opcode table ranges
+  into the project-native rebuilt vector-six path with no reference runtime
+  import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -21,7 +21,7 @@ function execute(opcode: number) {
 }
 
 describe("rebuilt NXVM undefined 0F extensions", () => {
-  it("delivers vector 6 with the faulting EIP for every explicit NXVM extension", () => {
+  it("delivers vector 6 with the faulting EIP for every NXVM undefined extension", () => {
     const opcodes = [
       0x04,
       0x05,
@@ -31,14 +31,15 @@ describe("rebuilt NXVM undefined 0F extensions", () => {
       ...range(0x0a, 0x1f),
       0x25,
       ...range(0x27, 0x2f),
-      ...range(0x30, 0x3f),
+      ...range(0x30, 0x7f),
       0xa2,
       0xa6,
       0xa7,
       0xaa,
       0xae,
       0xb0,
-      0xb1
+      0xb1,
+      ...range(0xc0, 0xff)
     ];
     for (const opcode of opcodes) expect(execute(opcode).readEip()).toBe(0x40);
   });

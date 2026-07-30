@@ -37,7 +37,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 0F 80-8F near Jcc and SETcc                           | 12649-12898                                  | Near conditional transfers and byte condition stores                             | `instructions/near-conditional-control.ts`, `instructions/set-condition.ts`, `instructions/control.ts`                                                                                          | Partial                     | Taken/not-taken; ModR/M; fault EIP                            | Required        | In progress: P353-P354 implement 80-9F                                                                                  |
 | 0F A0-AF extended bit, shift, segment forms           | 12906-13203                                  | FS/GS stack forms, BT/BTS/BTR/BTC, SHLD/SHRD, IMUL, LSS/LFS/LGS, MOVZX           | `instructions/extended.ts`                                                                                                                                                                      | Partial                     | Bit addressing; flags; segment faults; 66/67                  | Required        | In progress: P378 implements NXVM-covered A0-AF forms and dependent B2-B7 forms; protected fault routing remains active |
 | 0F B0-BF extended scans and sign extension            | 13203-13251                                  | BTC, BSF/BSR, MOVSX and immediate bit group                                      | `instructions/extended.ts`                                                                                                                                                                      | Partial                     | Zero input; flags; ModR/M; widths                             | Required        | In progress: P379 implements NXVM-covered BA-BF forms; non-NXVM B0-B1 remain excluded                                   |
-| Explicit NXVM undefined extensions                    | 12546-12552, 12637-12649, 12924-12977        | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD`                                 | `instructions/system.ts`                                                                                                                                                                        | Complete reference evidence | Prefixes and fault EIP                                        | Required        | Planned                                                                                                                 |
+| Explicit NXVM undefined extensions                    | 12546-12552, 12637-12649, 12924-12977        | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD`                                 | `instructions/system.ts`                                                                                                                                                                        | Complete reference evidence | Prefixes and fault EIP                                        | Required        | Implemented: P385, P393                                                                                                 |
 | Segmentation, paging, exceptions, and trace           | 51-1145, 2033-3096, 13315-13917              | Logical/linear access, descriptors, stack, faults, interrupts, trace             | `protection/`, `events/`, `debug/`                                                                                                                                                              | Partial                     | PF/GP/SS/NP; privilege; ROM trace; differential state dumps   | Required        | In progress: P392 rebuilt page walks                                                                                    |
 
 ## P355 Rebuilt Dispatcher Boundary
@@ -450,11 +450,11 @@ registers are an NXVM-required compatibility extension, not a PC110 behavior.
 
 ## P385 Explicit NXVM Undefined-Extension Checklist
 
-P385 routes only NXVM's explicit undefined extended encodings (`0F 04-05`,
-`07-1F`, `25`, `27-2F`, `30-3F`, `A2`, `A6-A7`, `AA`, `AE`, and `B0-B1`) to
-the rebuilt vector-six delivery path. It does not convert other unimplemented
-opcode families into undefined behavior. Tests enumerate every listed encoding
-through its faulting-EIP interrupt path.
+P385 routes the NXVM-known undefined extended encodings to the rebuilt
+vector-six delivery path. P393 completes the remaining NXVM intervals
+`0F 40-7F` and `0F C0-FF`. It does not convert unrelated unimplemented opcode
+families into undefined behavior. Tests enumerate every listed encoding through
+its faulting-EIP interrupt path.
 
 ## P386 `0F 00 /2,/3` Privilege Checklist
 
@@ -510,3 +510,10 @@ the rebuilt CS cache or virtual-8086 flag, and records CR2 on a page fault.
 Focused tests cover paged fetch, data read/write, entry updates, and fault CR2.
 Architected vector-14 delivery, page-boundary atomicity, TLB behavior, and
 complete segment access-type validation remain active dependencies.
+
+## P393 Remaining `0F` Undefined Intervals Checklist
+
+P393 completes NXVM's remaining undefined extended intervals, `0F 40-7F` and
+`0F C0-FF`, through the rebuilt vector-six delivery path. A focused exhaustive
+test enumerates every NXVM undefined extended opcode and verifies the faulting
+EIP return target. No unsupported host-error path remains for those encodings.

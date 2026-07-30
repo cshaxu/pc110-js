@@ -155,6 +155,7 @@ function nxvmUndefinedExtendedOpcode(opcode: number): boolean {
     ) ||
     (opcode >= 0x0a && opcode <= 0x1f) ||
     (opcode >= 0x27 && opcode <= 0x2f) ||
-    (opcode >= 0x30 && opcode <= 0x3f)
+    (opcode >= 0x30 && opcode <= 0x7f) ||
+    opcode >= 0xc0
   );
 }
