@@ -3,6 +3,7 @@ import { MachineRuntime, type MachineSnapshot } from "../machine/machine-runtime
 import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
 import { LocalAssetLoader } from "./local-asset-loader.js";
 import { selectedDeskProRom, selectedDosFloppy } from "./selected-media-profile.js";
+import { KeyboardByteQueue, set1ScancodeBytes } from "./keyboard-scancode-set1.js";
 import "./styles.css";
 
 const root = document.querySelector<HTMLElement>("#app");
@@ -46,6 +47,7 @@ const context = screen.getContext("2d");
 if (!context) throw new Error("Canvas 2D context is unavailable");
 const controls = { state, run, pause, reset, nativeStatus, screen, context };
 const loader = new LocalAssetLoader();
+const keyboardQueue = new KeyboardByteQueue();
 let mediaMounted = false;
 let animationFrame: number | undefined;
 let lastNativeRenderAt = 0;
@@ -102,9 +104,12 @@ controls.pause.addEventListener("click", () => {
   animationFrame = undefined;
 });
 controls.reset.addEventListener("click", () => {
+  keyboardQueue.clear();
   checkpoint.reset();
   machine.reset();
 });
+window.addEventListener("keydown", (event) => enqueueKeyboardEvent(event, true));
+window.addEventListener("keyup", (event) => enqueueKeyboardEvent(event, false));
 mount.addEventListener("click", async () => {
   if (!rom.files?.[0] || !floppy.files?.[0]) return;
   try {
@@ -115,6 +120,7 @@ mount.addEventListener("click", async () => {
     checkpoint.mapSystemRom(romBytes);
     checkpoint.attachFloppy(floppyBytes);
     checkpoint.reset();
+    keyboardQueue.clear();
     mediaMounted = true;
     render(machine.snapshot());
   } catch (error) {
@@ -126,6 +132,7 @@ function scheduleNativeRun(timestamp = 0): void {
   if (machine.snapshot().runState !== "running") return;
   try {
     checkpoint.core.run(NATIVE_INSTRUCTION_SLICE);
+    keyboardQueue.drain((byte) => checkpoint.core.receiveKeyboardByte(byte));
   } catch (error) {
     machine.pause();
     animationFrame = undefined;
@@ -137,5 +144,13 @@ function scheduleNativeRun(timestamp = 0): void {
     render(machine.snapshot());
   }
   animationFrame = requestAnimationFrame(scheduleNativeRun);
+}
+
+function enqueueKeyboardEvent(event: KeyboardEvent, pressed: boolean): void {
+  if (machine.snapshot().runState !== "running" || (pressed && event.repeat)) return;
+  const bytes = set1ScancodeBytes(event.code, pressed);
+  if (!bytes) return;
+  event.preventDefault();
+  keyboardQueue.enqueue(bytes);
 }
 machine.subscribe(render);
