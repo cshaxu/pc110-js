@@ -714,6 +714,29 @@ function executeContextualAccumulatorAlu(
   return { halted: false, fetched };
 }
 
+function executeContextualIncrementDecrement(
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode < 0x40 || context.opcode > 0x4f) return undefined;
+  const decrement = context.opcode >= 0x48;
+  const register = context.opcode & 0x07;
+  if (context.operandSize === 32) {
+    const value = state.readRegister(register);
+    state.writeRegister(register, decrement ? value - 1 : value + 1);
+    if (decrement) state.writeDecrementFlags32(value);
+    else state.writeIncrementFlags32(value);
+  } else {
+    const value = state.readRegister16(register);
+    state.writeRegister16(register, decrement ? value - 1 : value + 1);
+    if (decrement) state.writeDecrementFlags16(value);
+    else state.writeIncrementFlags16(value);
+  }
+  state.advanceEip(context.opcodeOffset + 1);
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -728,6 +751,8 @@ function executeContextualInstruction(
   if (context.repeatPrefix) return undefined;
   const accumulatorAlu = executeContextualAccumulatorAlu(memory, state, context, fetched);
   if (accumulatorAlu) return accumulatorAlu;
+  const incrementDecrement = executeContextualIncrementDecrement(state, context, fetched);
+  if (incrementDecrement) return incrementDecrement;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
