@@ -1098,14 +1098,15 @@ function executeContextualRepeatComparison(
   let source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
   let destination = context.addressSize === 32 ? state.readRegister(7) : state.readRegister16(7);
   const delta = state.directionFlag() ? -width : width;
+  const sourceSegment = context.segmentOverride ?? "ds";
 
   while (count > 0) {
     const left = compare
       ? width === 1
-        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        ? readSegmentUint8(memory, state, sourceSegment, source, context.addressSize)
         : width === 2
-          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
-          : readSegmentUint32(memory, state, "ds", source, context.addressSize)
+          ? readSegmentUint16(memory, state, sourceSegment, source, context.addressSize)
+          : readSegmentUint32(memory, state, sourceSegment, source, context.addressSize)
       : width === 1
         ? state.readRegister8(0)
         : width === 2
@@ -1779,6 +1780,8 @@ function executeContextualInstruction(
   if (context.segmentOverride) {
     const moffs = executeContextualMoffs(memory, state, context, fetched);
     if (moffs) return moffs;
+    const repeatedComparison = executeContextualRepeatComparison(memory, state, context, fetched);
+    if (repeatedComparison) return repeatedComparison;
     const load = executeContextualLoad(memory, state, context, fetched);
     if (load) return load;
     const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);

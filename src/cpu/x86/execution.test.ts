@@ -512,6 +512,34 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("repeats CMPS through a contextual source-segment override", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x64],
+      [0x00000101, 0xf3],
+      [0x00000102, 0xa6],
+      [0x00012000, 0x11],
+      [0x00012001, 0x22],
+      [0x00003000, 0x11],
+      [0x00003001, 0x33]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x100, true);
+    state.loadProtectedModeSegment("fs", 0x0030, 0x00010000, 0xffffffff, true);
+    state.loadProtectedModeSegment("es", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(1, 2);
+    state.writeRegister(6, 0x2000);
+    state.writeRegister(7, 0x3000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { ecx: 0, esi: 0x2002, edi: 0x3002 },
+      eip: 0x103
+    });
+    expect(state.zeroFlag()).toBe(false);
+  });
+
   it("selects MOVS and STOS data and index width independently through the context", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xa5],
