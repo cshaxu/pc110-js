@@ -24,7 +24,8 @@ export function executeFlagStack(context: RebuiltExecutionContext): void {
   } else if (context.instruction.opcode === 0x9d) {
     const incoming = popStack(context.memory, context.state, width);
     const protectedMode = Boolean(context.state.readCr0() & 1);
-    const cpl = context.state.readSegment("cs").selector & 3;
+    const code = context.state.readSegment("cs");
+    const cpl = code.dpl ?? code.selector & 3;
     const mask = !protectedMode
       ? 0
       : cpl === 0

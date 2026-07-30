@@ -749,3 +749,13 @@ including CS/FS/GS and all legal `MOV Sreg,r/m16` destinations, while P414
 retains the MOV SS interrupt-inhibition boundary. `82`, invalid segment
 encodings, register-only LEA, and invalid POP r/m extensions retain rebuilt
 `#UD` behavior. No reference runtime or device behavior is added.
+
+## P421 `9C-9D` Hidden-CPL Privilege Checklist
+
+P421 corrects rebuilt POPF privilege derivation to use the CS hidden-cache DPL,
+matching NXVM's `_GetCPL` and the project's P388 segment-loader boundary,
+rather than the visible CS selector RPL. A focused protected POPF regression
+deliberately separates selector RPL from cached DPL and verifies that nonzero
+CPL preserves IOPL. The larger `90-9F` interval remains open: NXVM itself marks
+call-gate, task-gate, and cross-privilege far-control paths as TODO, and those
+architecture paths require a separately complete project-native delivery.

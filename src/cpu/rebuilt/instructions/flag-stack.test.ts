@@ -41,6 +41,24 @@ describe("rebuilt PUSHF and POPF", () => {
     expect(result.state.flags.read() & 0x3000).toBe(0x3000);
   });
 
+  it("derives protected POPF privilege from the CS hidden cache rather than selector RPL", () => {
+    const result = execute([0x9d], (state, memory) => {
+      state.writeCr0(1);
+      state.writeSegment("cs", {
+        selector: 0x08,
+        base: 0,
+        limit: 0xffff_ffff,
+        default32: false,
+        dpl: 3
+      });
+      state.registers.write16(4, 0x100);
+      state.flags.write(0x1002);
+      memory.set(0x100, 0x02);
+      memory.set(0x101, 0x30);
+    });
+    expect(result.state.flags.read() & 0x3000).toBe(0x1000);
+  });
+
   it("allows virtual-8086 PUSHF and POPF only with IOPL three", () => {
     const pushed = execute([0x9c], (state) => {
       state.writeCr0(1);
