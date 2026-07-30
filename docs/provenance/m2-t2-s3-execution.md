@@ -1120,6 +1120,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P381 adapts NXVM system-selector handling into project-native
   LDTR/TR state, GDT descriptor lookup, memory, and flags contracts without a
   runtime reference import.
+- M2 T2 S3 P382 adapts NXVM CR/DR transfers into project-native CPU state and
+  system-instruction decode without a runtime reference import.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

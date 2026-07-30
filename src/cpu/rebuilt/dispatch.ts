@@ -132,6 +132,7 @@ function dispatchExtended(context: RebuiltExecutionContext): void {
     return executeNearConditionalJump(context);
   if (opcode !== undefined && opcode >= 0x90 && opcode <= 0x9f) return executeSetCondition(context);
   if (opcode === 0x00 || opcode === 0x01) return executeSystemGroup(context);
+  if (opcode !== undefined && opcode >= 0x20 && opcode <= 0x23) return executeSystemGroup(context);
   if (
     opcode !== undefined &&
     [

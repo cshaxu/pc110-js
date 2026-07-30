@@ -7,6 +7,12 @@ import type { SegmentName } from "../state/segments.js";
 
 export function executeSystemGroup(context: RebuiltExecutionContext): void {
   if (context.instruction.secondaryOpcode === 0x00) return executeSelectorGroup(context);
+  if (
+    context.instruction.secondaryOpcode !== undefined &&
+    context.instruction.secondaryOpcode >= 0x20 &&
+    context.instruction.secondaryOpcode <= 0x23
+  )
+    return executeControlTransfer(context);
   if (context.instruction.secondaryOpcode !== 0x01)
     throw new Error("Rebuilt system group requires 0F 00 or 0F 01");
   const modRm = decode(context);
@@ -14,6 +20,44 @@ export function executeSystemGroup(context: RebuiltExecutionContext): void {
   if (modRm.reg === 4) return executeSmsw(context, modRm);
   if (modRm.reg === 6) return executeLmsw(context, modRm);
   return deliverFault(context.memory, context.state, 6, context.state.readEip());
+}
+
+function executeControlTransfer(context: RebuiltExecutionContext): void {
+  const opcode = context.instruction.secondaryOpcode!;
+  const modRm = decode(context);
+  if (!modRm.registerDirect)
+    return deliverFault(context.memory, context.state, 6, context.state.readEip());
+  const toGeneral = opcode === 0x20 || opcode === 0x21;
+  const value =
+    opcode === 0x20 || opcode === 0x22
+      ? readControl(context, modRm.reg)
+      : readDebug(context, modRm.reg);
+  if (value === undefined)
+    return deliverFault(context.memory, context.state, 6, context.state.readEip());
+  if (toGeneral) context.state.registers.write32(modRm.rm, value);
+  else if (opcode === 0x22)
+    writeControl(context, modRm.reg, context.state.registers.read32(modRm.rm));
+  else context.state.writeDebug(modRm.reg, context.state.registers.read32(modRm.rm));
+  context.state.advanceEip(context.instruction.length + modRm.bytes);
+}
+
+function readControl(context: RebuiltExecutionContext, index: number): number | undefined {
+  return index === 0
+    ? context.state.readCr0()
+    : index === 2
+      ? context.state.readCr2()
+      : index === 3
+        ? context.state.readCr3()
+        : undefined;
+}
+function writeControl(context: RebuiltExecutionContext, index: number, value: number): void {
+  if (index === 0) context.state.writeCr0(value);
+  else if (index === 2) context.state.writeCr2(value);
+  else if (index === 3) context.state.writeCr3(value);
+  else throw new Error("Undefined control register");
+}
+function readDebug(context: RebuiltExecutionContext, index: number): number | undefined {
+  return [0, 1, 2, 3, 6, 7].includes(index) ? context.state.readDebug(index) : undefined;
 }
 
 function executeSelectorGroup(context: RebuiltExecutionContext): void {
