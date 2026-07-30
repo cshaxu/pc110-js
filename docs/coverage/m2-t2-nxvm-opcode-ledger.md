@@ -299,3 +299,14 @@ the rebuilt code-segment loader. Focused tests cover real mode, protected GDT
 code descriptors, 16/32-bit offsets, return-frame ordering, cleanup, dispatcher
 routing, and memory-only Group Five pointers. Call gates, task transfers, and
 outer-privilege returns remain explicit interrupt/protection dependencies.
+
+## P362 `CC-CD-CE-CF` Interrupt Control Checklist
+
+P362 implements INT3, INT imm8, conditional INTO, and same-privilege IRET. The
+rebuilt event path reads real-mode IVT entries and protected-mode 16/32-bit IDT
+interrupt and trap gates, pushes operand-size-selected frames, applies IF/TF
+gate effects, and restores a same-privilege IRET frame. Tests cover real-mode
+and 66 frames, protected 32-bit gates, gate DPL rejection, trap-gate decoding,
+and dispatcher execution. TSS stack switching, outer-privilege IRET, task
+gates, hardware interrupt admission, and architected fault delivery remain
+active protection-system work.

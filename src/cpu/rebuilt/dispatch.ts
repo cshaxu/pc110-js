@@ -12,6 +12,7 @@ import { executeGroupOne } from "./instructions/group-one.js";
 import { executeGroupThree } from "./instructions/group-three.js";
 import { executeImmediateModRmMove } from "./instructions/immediate-modrm-move.js";
 import { executeImmediateMove } from "./instructions/immediate-move.js";
+import { executeInterrupt } from "./instructions/interrupt.js";
 import { executeLea } from "./instructions/lea.js";
 import { executeLoop } from "./instructions/loop.js";
 import { executeMoffsMove } from "./instructions/moffs-move.js";
@@ -49,8 +50,9 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if (opcode >= 0xa0 && opcode <= 0xa3) return executeMoffsMove(context);
   if (opcode === 0xa8 || opcode === 0xa9) return executeAccumulatorTest(context);
   if (opcode >= 0xb0 && opcode <= 0xbf) return executeImmediateMove(context);
-  if (opcode === 0xc2 || opcode === 0xc3 || opcode === 0xc8 || opcode === 0xc9)
+  if ([0xc2, 0xc3, 0xc8, 0xc9, 0xca, 0xcb].includes(opcode))
     return executeStackFrameControl(context);
+  if ([0xcc, 0xcd, 0xce, 0xcf].includes(opcode)) return executeInterrupt(context);
   if (opcode === 0xc6 || opcode === 0xc7) return executeImmediateModRmMove(context);
   if (opcode === 0xc4 || opcode === 0xc5) return executeLoadFarPointer(context);
   if (opcode === 0xd4 || opcode === 0xd5) return executeAsciiAdjust(context);
