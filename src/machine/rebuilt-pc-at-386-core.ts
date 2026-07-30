@@ -19,6 +19,7 @@ import { VgaAttributeController } from "../devices/vga-attribute-controller.js";
 import { VgaSequencer } from "../devices/vga-sequencer.js";
 import { VgaGraphicsController } from "../devices/vga-graphics-controller.js";
 import { VGA_MEMORY_SIZE, VGA_MEMORY_START, VgaMemory } from "../devices/vga-memory.js";
+import { VgaCrtc } from "../devices/vga-crtc.js";
 import { Uart16550 } from "../devices/uart16550.js";
 import { ParallelPort } from "../devices/parallel-port.js";
 import { AtFixedDiskController } from "../devices/at-fixed-disk-controller.js";
@@ -90,8 +91,10 @@ export class RebuiltPcAt386Core {
   public readonly sequencer = new VgaSequencer();
   public readonly graphicsController = new VgaGraphicsController();
   public readonly vgaMemory = new VgaMemory(this.sequencer, this.graphicsController);
-  public readonly cgaCompatibility = new CgaCompatibility(() =>
-    this.attributeController.resetAddressDataFlipFlop()
+  public readonly crtc = new VgaCrtc();
+  public readonly cgaCompatibility = new CgaCompatibility(
+    () => this.attributeController.resetAddressDataFlipFlop(),
+    false
   );
   public readonly deskProSecondaryPit: DeskPro386SecondaryPit | undefined;
   public readonly ports: RebuiltMachinePortBus;
@@ -129,6 +132,7 @@ export class RebuiltPcAt386Core {
     for (const range of this.hdc.portRanges()) this.registerPorts(range);
     for (const range of this.mdaCompatibility.portRanges()) this.registerPorts(range);
     for (const range of this.cgaCompatibility.portRanges()) this.registerPorts(range);
+    for (const range of this.crtc.portRanges()) this.registerPorts(range);
     for (const range of this.attributeController.portRanges()) this.registerPorts(range);
     for (const range of this.sequencer.portRanges()) this.registerPorts(range);
     for (const range of this.graphicsController.portRanges()) this.registerPorts(range);
@@ -161,6 +165,7 @@ export class RebuiltPcAt386Core {
     this.sequencer.reset();
     this.graphicsController.reset();
     this.vgaMemory.reset();
+    this.crtc.reset();
     this.deskProSecondaryPit?.reset();
     this.keyboardOutputPort.reset();
     this.scheduler.reset();

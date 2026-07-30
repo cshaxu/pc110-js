@@ -37,7 +37,10 @@ export class CgaCompatibility {
   private retrace = false;
   private verticalRetrace = false;
 
-  public constructor(private readonly onStatusRead?: () => void) {}
+  public constructor(
+    private readonly onStatusRead?: () => void,
+    private readonly ownsCrtcPorts = true
+  ) {}
 
   public reset(): void {
     this.crtcData.fill(0);
@@ -108,13 +111,16 @@ export class CgaCompatibility {
   }
 
   public portRanges(): readonly CgaCompatibilityPortRange[] {
-    return [
-      {
+    const ranges: CgaCompatibilityPortRange[] = [];
+    if (this.ownsCrtcPorts) {
+      ranges.push({
         start: CGA_CRTC_INDEX_PORT,
         end: CGA_CRTC_DATA_PORT,
         read: (port, width) => this.read(port, width),
         write: (port, value, width) => this.write(port, value, width)
-      },
+      });
+    }
+    ranges.push(
       {
         start: CGA_MODE_PORT,
         end: CGA_COLOR_PORT,
@@ -126,7 +132,8 @@ export class CgaCompatibility {
         end: CGA_STATUS_PORT,
         read: (port, width) => this.read(port, width)
       }
-    ];
+    );
+    return ranges;
   }
 
   private requireByteWidth(width: PortWidth): void {
