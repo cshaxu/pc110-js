@@ -5,7 +5,8 @@
 Each case initializes two independent one-megabyte RAM images and equivalent
 real-mode CPU state. The rebuilt CPU and the PCjs CPU oracle each execute one
 guest instruction. P3 compares general registers, EIP, EFLAGS, and normalized
-CS/DS/ES/SS fields.
+CS/DS/ES/SS fields. P4 compares sorted changed-byte RAM deltas from independent
+before/after images; it does not yet record writes whose value is unchanged.
 
 ## P3 Passing Cases
 
@@ -16,10 +17,11 @@ CS/DS/ES/SS fields.
 | MOV AL, immediate | `B0 5A` | low-byte write with upper-register preservation |
 | ADD AX, immediate | `05 01 00` | arithmetic result and flags |
 | DEC CX | `49` | register decrement and flags |
+| MOV moffs, AL | `A2 00 02` | register/EIP state and changed RAM byte at `0200` |
 
 ## Active Expansion Order
 
-1. Memory-write deltas and ModR/M addressing.
+1. ModR/M addressing and broader memory-delta families.
 2. I/O journals and explicit unavailable-port classification.
 3. Prefix, default-32, and 66/67 matrices.
 4. Exceptions, fault EIP, protected mode, descriptor state, paging, and

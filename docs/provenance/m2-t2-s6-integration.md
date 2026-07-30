@@ -27,3 +27,7 @@ opcode helper modules, CPUx86, Busx86, and Memoryx86 only while an explicit
 test invokes the oracle. It initializes independent one-megabyte RAM images
 and equivalent real-mode state. No PCjs source is copied, modified, bundled, or
 used by product runtime code.
+
+P4 snapshots the isolated PCjs RAM image before the step and diffs it after the
+step. This observes changed memory state even when PCjs writes through an
+internal memory-block path rather than the public Busx86 setter.

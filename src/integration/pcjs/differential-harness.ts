@@ -20,6 +20,12 @@ export interface DifferentialCase {
   readonly bytes: readonly number[];
   readonly registers?: DifferentialRegisterState;
   readonly eflags?: number;
+  readonly memory?: readonly DifferentialMemoryByte[];
+}
+
+export interface DifferentialMemoryByte {
+  readonly address: number;
+  readonly value: number;
 }
 
 export interface DifferentialCpuSnapshot {
@@ -39,10 +45,15 @@ export interface DifferentialSegmentSnapshot {
 export interface DifferentialStepResult {
   readonly rebuilt: DifferentialCpuSnapshot;
   readonly pcjs: DifferentialCpuSnapshot;
+  readonly memoryWrites: {
+    readonly rebuilt: readonly DifferentialMemoryByte[];
+    readonly pcjs: readonly DifferentialMemoryByte[];
+  };
 }
 
 interface PcjsBus {
   addMemory(address: number, size: number, type: number): boolean;
+  getByte(address: number): number;
   setByte(address: number, value: number): void;
 }
 
@@ -109,13 +120,17 @@ export async function runPcjsDifferentialCase(
 
   return {
     rebuilt: snapshotRebuilt(rebuilt.runner),
-    pcjs: snapshotPcjs(pcjs.cpu)
+    pcjs: snapshotPcjs(pcjs.cpu),
+    memoryWrites: {
+      rebuilt: rebuilt.memory.writes(),
+      pcjs: pcjs.memoryWrites()
+    }
   };
 }
 
 export function assertDifferentialMatch(result: DifferentialStepResult): void {
-  const left = JSON.stringify(result.rebuilt);
-  const right = JSON.stringify(result.pcjs);
+  const left = JSON.stringify({ state: result.rebuilt, memoryWrites: result.memoryWrites.rebuilt });
+  const right = JSON.stringify({ state: result.pcjs, memoryWrites: result.memoryWrites.pcjs });
   if (left !== right) {
     throw new Error(`PCjs differential mismatch\nrebuilt=${left}\npcjs=${right}`);
   }
@@ -123,17 +138,21 @@ export function assertDifferentialMatch(result: DifferentialStepResult): void {
 
 function createRebuiltCpu(differentialCase: DifferentialCase): {
   readonly runner: RebuiltCpuRunner;
+  readonly memory: RecordingMemory;
 } {
   const memory = new PhysicalMemory({ ramBytes: ORACLE_RAM_BYTES, a20Enabled: true });
   differentialCase.bytes.forEach((value, index) => memory.writeUint8(index, value));
-  const runner = new RebuiltCpuRunner(memory);
+  differentialCase.memory?.forEach(({ address, value }) => memory.writeUint8(address, value));
+  const recordingMemory = new RecordingMemory(memory);
+  const runner = new RebuiltCpuRunner(recordingMemory);
   initializeRebuiltState(runner, differentialCase);
-  return { runner };
+  return { runner, memory: recordingMemory };
 }
 
-async function createPcjsCpu(
-  differentialCase: DifferentialCase
-): Promise<{ readonly cpu: PcjsCpu }> {
+async function createPcjsCpu(differentialCase: DifferentialCase): Promise<{
+  readonly cpu: PcjsCpu;
+  readonly memoryWrites: () => readonly DifferentialMemoryByte[];
+}> {
   const modules = await loadPcjsModules();
   const cpu = new modules.CPUx86({
     id: "pc110-js.differential.cpu",
@@ -153,8 +172,13 @@ async function createPcjsCpu(
   }
   cpu.reset();
   differentialCase.bytes.forEach((value, index) => bus.setByte(index, value));
+  differentialCase.memory?.forEach(({ address, value }) => bus.setByte(address, value));
   initializePcjsState(cpu, differentialCase);
-  return { cpu };
+  const before = snapshotPcjsMemory(bus);
+  return {
+    cpu,
+    memoryWrites: () => diffPcjsMemory(bus, before)
+  };
 }
 
 async function loadPcjsModules(): Promise<PcjsModules> {
@@ -326,4 +350,56 @@ function validateCase(differentialCase: DifferentialCase): void {
     if (!Number.isInteger(value) || value < 0 || value > 0xff)
       throw new RangeError("Differential instruction bytes must be unsigned bytes");
   });
+  differentialCase.memory?.forEach(({ address, value }) => validateMemoryByte(address, value));
+}
+
+class RecordingMemory {
+  private readonly recordedWrites = new Map<number, number>();
+
+  public constructor(private readonly memory: PhysicalMemory) {}
+
+  public readUint8(address: number): number {
+    return this.memory.readUint8(address);
+  }
+
+  public writeUint8(address: number, value: number): void {
+    const normalizedAddress = address >>> 0;
+    const normalizedValue = value & 0xff;
+    this.recordedWrites.set(normalizedAddress, normalizedValue);
+    this.memory.writeUint8(normalizedAddress, normalizedValue);
+  }
+
+  public writes(): readonly DifferentialMemoryByte[] {
+    return normalizeMemoryWrites(this.recordedWrites);
+  }
+}
+
+function normalizeMemoryWrites(
+  writes: ReadonlyMap<number, number>
+): readonly DifferentialMemoryByte[] {
+  return [...writes.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([address, value]) => ({ address, value }));
+}
+
+function validateMemoryByte(address: number, value: number): void {
+  if (!Number.isInteger(address) || address < 0 || address >= ORACLE_RAM_BYTES)
+    throw new RangeError("Differential memory address must be inside oracle RAM");
+  if (!Number.isInteger(value) || value < 0 || value > 0xff)
+    throw new RangeError("Differential memory value must be an unsigned byte");
+}
+
+function snapshotPcjsMemory(bus: PcjsBus): Uint8Array {
+  const bytes = new Uint8Array(ORACLE_RAM_BYTES);
+  for (let address = 0; address < bytes.length; address += 1) bytes[address] = bus.getByte(address);
+  return bytes;
+}
+
+function diffPcjsMemory(bus: PcjsBus, before: Uint8Array): readonly DifferentialMemoryByte[] {
+  const writes: DifferentialMemoryByte[] = [];
+  for (let address = 0; address < before.length; address += 1) {
+    const value = bus.getByte(address);
+    if (value !== before[address]) writes.push({ address, value });
+  }
+  return writes;
 }
