@@ -1049,6 +1049,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P350 translates NXVM FE/FF local Group Four/Five behavior into
   native TypeScript. It preserves CF for INC/DEC, uses rebuilt ModR/M and
   segmented memory, and does not import NXVM, PCjs, or legacy CPU code.
+- M2 T2 S3 P351 translates NXVM Group Two shift and rotate algorithms into
+  native TypeScript. It uses local count normalization and per-bit carry
+  behavior without runtime imports from NXVM, PCjs, or legacy CPU code.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
