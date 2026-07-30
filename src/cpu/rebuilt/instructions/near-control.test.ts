@@ -6,13 +6,14 @@ import { executeNearControl } from "./near-control.js";
 function execute(
   bytes: readonly number[],
   setup?: (state: RebuiltCpuState, memory: Map<number, number>) => void,
-  codeDefault32 = false
+  codeDefault32 = false,
+  eip = 0
 ) {
   const state = new RebuiltCpuState();
   state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeSegment("ss", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
-  state.writeEip(0);
-  const memory = new Map<number, number>(bytes.map((value, index) => [index, value]));
+  state.writeEip(eip);
+  const memory = new Map<number, number>(bytes.map((value, index) => [eip + index, value]));
   setup?.(state, memory);
   new RebuiltCpuExecutor(state, {
     readUint8: (address) => memory.get(address) ?? 0,
@@ -119,5 +120,10 @@ describe("rebuilt near CALL and JMP", () => {
       eip: 0x1234_5678,
       segments: { cs: { selector: 0x2000, base: 0x20000 } }
     });
+  });
+
+  it("truncates a relative target selected by 66 in default-32 code", () => {
+    const result = execute([0x66, 0xe9, 0, 0], undefined, true, 0x1234_fffc);
+    expect(result.state.readEip()).toBe(0);
   });
 });

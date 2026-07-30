@@ -18,10 +18,14 @@ export function executeNearConditionalJump(context: RebuiltExecutionContext): vo
   const offset = context.instruction.opcodeOffset + 2;
   const displacement = signedImmediate(context, offset, bytes);
   const fallthrough = context.state.readEip() + context.instruction.length + bytes;
-  const destination = condition(context.state.flags.read(), opcode & 0x0f)
-    ? fallthrough + displacement
-    : fallthrough;
-  context.state.writeEip(context.state.codeDefault32() ? destination >>> 0 : destination & 0xffff);
+  if (condition(context.state.flags.read(), opcode & 0x0f)) {
+    const destination = fallthrough + displacement;
+    context.state.writeEip(
+      context.instruction.prefixes.operandSize === 16 ? destination & 0xffff : destination >>> 0
+    );
+    return;
+  }
+  context.state.writeEip(context.state.codeDefault32() ? fallthrough >>> 0 : fallthrough & 0xffff);
 }
 
 function signedImmediate(context: RebuiltExecutionContext, offset: number, bytes: number): number {

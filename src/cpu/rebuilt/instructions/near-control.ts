@@ -13,7 +13,7 @@ export function executeNearControl(context: RebuiltExecutionContext): void {
   const fallthrough = context.state.readEip() + context.instruction.length + bytes;
   if (opcode === 0xe8) pushStack(context.memory, context.state, operandSize, fallthrough);
   const target = fallthrough + displacement;
-  context.state.writeEip(context.state.codeDefault32() ? target >>> 0 : target & 0xffff);
+  context.state.writeEip(operandSize === 16 ? target & 0xffff : target >>> 0);
 }
 
 function executeFarControl(context: RebuiltExecutionContext, operandSize: 16 | 32): void {

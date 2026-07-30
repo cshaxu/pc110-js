@@ -1268,6 +1268,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P431 closes the project-native NXVM prefix/decode boundary. It
   constrains every instruction-code read to the architectural 15-byte window
   and delivers `#GP(0)` at the saved instruction EIP without reference imports.
+- M2 T2 S3 P432 adapts NXVM `_e_jcc` operand-size target selection into rebuilt
+  relative control. It keeps CS code-address fallthrough separate and imports
+  no reference runtime, device, or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

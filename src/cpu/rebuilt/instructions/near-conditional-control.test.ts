@@ -10,13 +10,14 @@ import {
 } from "./arithmetic.js";
 import { executeNearConditionalJump } from "./near-conditional-control.js";
 
-function execute(bytes: readonly number[], flags = 0, code32 = false) {
+function execute(bytes: readonly number[], flags = 0, code32 = false, eip = 0) {
   const state = new RebuiltCpuState();
   state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: code32 });
-  state.writeEip(0);
+  state.writeEip(eip);
   state.flags.write(flags);
+  const memory = new Map<number, number>(bytes.map((value, index) => [eip + index, value]));
   new RebuiltCpuExecutor(state, {
-    readUint8: (address) => bytes[address] ?? 0,
+    readUint8: (address) => memory.get(address) ?? 0,
     writeUint8: () => undefined
   }).step(executeNearConditionalJump);
   return state;
@@ -51,5 +52,9 @@ describe("rebuilt 0F 80-8F near Jcc", () => {
     expect(execute([0x66, 0x0f, 0x85, 0x02, 0x00, 0x00, 0x00], 0).readEip()).toBe(9);
     expect(execute([0x0f, 0x85, 0x02, 0x00, 0x00, 0x00], 0, true).readEip()).toBe(8);
     expect(execute([0x66, 0x0f, 0x85, 0xfc, 0xff], 0, true).readEip()).toBe(1);
+  });
+
+  it("truncates a taken operand-size-overridden target independently from the CS default", () => {
+    expect(execute([0x66, 0x0f, 0x85, 0, 0], 0, true, 0x1234_fffc).readEip()).toBe(1);
   });
 });
