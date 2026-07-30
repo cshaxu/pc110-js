@@ -12,10 +12,11 @@
 
 ## Next Eligible Work
 
-- M2 T2 S6: active. Establish the final PCjs-assisted integration gate with the
-  rebuilt CPU as the sole guest-instruction executor. The frozen legacy/reference
-  CPU remains differential evidence only. Do not begin T3 until every T2
-  completion gate passes and the owner authorizes T3.
+- M2 T2 S6: active. Establish the final PCjs differential validation gate with
+  the rebuilt CPU and a test-only PCjs CPU oracle advancing one instruction at
+  a time from isolated equivalent state. The frozen legacy/reference CPU
+  remains differential evidence only. Do not begin T3 until every T2 completion
+  gate passes and the owner authorizes T3.
 
 ## Delivery Nodes
 
@@ -51,11 +52,10 @@ retains breadth-first ROI delivery, while CPU and other architecture-closure
 work follows its authority and coverage ledger. NXVM is the decisive M2 T2 CPU
 behavior authority; PCjs remains the PC/AT and whole-machine comparison source.
 
-P365 records the required CPU handoff path. S3 closes NXVM CPU coverage first,
-then S4 memory and S5 I/O/reset/stepping close. Final M2 T2 S6 then proves the
-rebuilt CPU as the sole executing CPU in a verification-only PCjs-assisted
-harness before native-device migration may begin. The harness is not a product
-runtime dependency.
+P365 recorded the former CPU handoff path. The owner-authorized P2 S6
+correction supersedes its device-proxy method with a one-instruction PCjs CPU
+differential oracle before native-device migration may begin. The harness is
+not a product runtime dependency.
 
 P366 corrected the S6 ordering record: S6 is the final T2 integration gate and
 does not bypass S4 or S5.
@@ -72,5 +72,11 @@ immutable ROM aliases, rebuilt-runner memory-bus use, and selected-ROM trace.
 P8 closed S5 after project-native width-aware port dispatch, reset, bounded
 stepping, and CPU/port/stop trace evidence classified the first unavailable
 ROM port without a synthetic response. S6 is now eligible.
+
+The owner-authorized S6 correction replaces the unworkable PCjs-device-proxy
+handoff with a test-only, one-instruction PCjs CPU differential harness. S6
+requires a documented exclusion ledger and does not relax the later standalone
+browser DOS workload: that workload must use project-owned CPU, memory, and
+native devices as the M2 whole-machine completion gate.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

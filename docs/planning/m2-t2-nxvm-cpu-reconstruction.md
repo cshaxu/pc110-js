@@ -55,10 +55,10 @@ comparison report, runs the full gate, and commits as `M2 T2 S3 Pxxx:`.
 Coverage closure of S3 is not CPU integration acceptance. After the last NXVM
 family and architectural dependency close, finish the remaining M2 T2 S4
 memory and S5 I/O/reset/stepping gates. Only then does final M2 T2 S6 prove
-that this rebuilt CPU is the sole executing CPU in the PCjs-assisted integration
-harness. The harness uses temporary PCjs devices only for verification and must
-reach the M1 browser workload without a legacy CPU, NXVM, or PCjs CPU runtime
-path.
+this rebuilt CPU through a one-instruction PCjs differential oracle. The
+harness uses no PCjs devices and must remain outside the product runtime. The
+later project-owned browser workload must run without a legacy CPU, NXVM, or
+PCjs runtime path.
 
 Shared decode or addressing infrastructure is added only within an active
 opcode-interval delivery. Do not create standalone parser, type, adapter,
@@ -101,6 +101,6 @@ separately authorized and tested, as with the TSS I/O-map lookup.
 ## Completion Gate
 
 M2 T2 still requires complete NXVM-covered 80386 behavior, paging, faults,
-ROM trace, M1 comparison, coverage evidence, the S6 PCjs-assisted CPU handoff,
+ROM trace, M1 comparison, coverage evidence, the S6 PCjs differential CPU gate,
 and all scheduled tests. The post-T2 architecture review remains mandatory
 before M2 T3.

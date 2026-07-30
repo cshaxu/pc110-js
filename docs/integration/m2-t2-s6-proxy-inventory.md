@@ -1,14 +1,12 @@
-# M2 T2 S6 PCjs Proxy Inventory
+# Retired M2 T2 S6 PCjs Proxy Inventory
 
 ## Boundary
 
-This inventory is verification-only. The rebuilt CPU owns guest state, decode,
-execution, physical memory, port dispatch, reset, and emulation time. No CPU,
-RAM, or system-ROM proxy is permitted. PCjs source remains in the read-only
-`../pcjs` sibling and is referenced only through relative paths at the pinned
-M1 commit `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70`.
+This inventory records the retired temporary-PCjs-device proposal for
+historical provenance. The owner-authorized S6 design uses a one-instruction
+PCjs CPU differential oracle and does not instantiate these devices.
 
-## Temporary Proxies
+## Retired Temporary Proxies
 
 | ID | PCjs source | Bridge boundary | Native replacement owner | Verification workload |
 | --- | --- | --- | --- | --- |
@@ -21,16 +19,14 @@ M1 commit `c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70`.
 | `com2` | `machines/pcx86/modules/v2/serial.js` | port dispatch, IRQ, reset, cycle advance | M2 T5 serial | M1 initialization |
 | `mouse` | `machines/pcx86/modules/v2/mouse.js` | browser input through `com1`, reset | M2 T5 serial pointer | M1 initialization |
 
-## Prohibited Paths
+## Historical Prohibited Paths
 
 - `machines/pcx86/modules/v2/cpux86.js` is not a proxy and must not execute.
 - The frozen `src/cpu/x86/` CPU and `../nxvm` must not execute guest code.
 - The browser XSL and UI resources are presentation resources, not hardware
   proxies and cannot own guest state or ports.
 
-## Contract
+## Retired Contract
 
-`src/integration/pcjs/bridge-contracts.ts` defines the project-owned bridge:
-rebuilt memory and ports remain owners; proxies can raise an interrupt, request
-DMA, observe reset, and advance with project-owned emulated cycles. The browser
-harness must validate this inventory before attaching any proxy.
+`src/integration/pcjs/bridge-contracts.ts` remains historical contract evidence.
+It must not be attached to the S6 harness or any product runtime.

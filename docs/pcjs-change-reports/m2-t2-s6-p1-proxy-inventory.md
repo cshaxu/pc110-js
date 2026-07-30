@@ -1,21 +1,19 @@
-# M2 T2 S6 P1 PCjs Change Report: Proxy Inventory
+# M2 T2 S6 P1 PCjs Change Report: Retired Proxy Inventory
 
 ## Summary
 
-- Affected PCjs-derived subsystem: selected M1 device-proxy boundary.
-- Changed behavior: none; this part records a verification-only inventory and
-  project-owned bridge contract.
+- Affected PCjs-derived subsystem: retired selected M1 device-proxy boundary.
+- Changed behavior: none; this part records historical inventory and a
+  project-owned bridge contract that is not used by the active S6 design.
 
 ## Justification
 
-- S6 must prove the rebuilt CPU executes guest instructions while temporary
-  device proxies are explicitly scoped and replaceable.
-- An inventory prevents PCjs CPU, memory, or ROM code from becoming an
-  accidental runtime fallback.
+- Source inspection found that selected PCjs devices require material PCjs
+  Bus/CPU lifecycle compatibility. The owner replaced the proposal with a
+  test-only one-instruction PCjs CPU differential oracle.
 
 ## Verification
 
-- Focused tests validate complete, unique project-owned proxy descriptors.
-- The inventory maps every selected PCjs device proxy to a native replacement
-  owner and workload.
-- The full project gate remains required before commit.
+- Focused tests validate the historical descriptor contract.
+- No PCjs source was copied or modified.
+- The active S6 harness has separate P2 provenance and verification evidence.

@@ -118,8 +118,8 @@ BIOS, DOS, or filesystem work.
   evidence demonstrate that all behavior required by the selected machine has
   been implemented.
 - S3 coverage closure is followed by completion of the remaining S4 memory and
-  S5 I/O/reset/stepping gates. Final M2 T2 S6 then proves the rebuilt CPU as the
-  sole executing CPU in the PCjs-assisted integration harness before the CPU is
+  S5 I/O/reset/stepping gates. Final M2 T2 S6 then proves the rebuilt CPU
+  instruction by instruction against a test-only PCjs oracle before the CPU is
   accepted as ready for native-device migration.
 
 ## Mandatory T2-To-T3 Transition Gate
