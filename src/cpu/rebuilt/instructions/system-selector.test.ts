@@ -40,4 +40,45 @@ describe("rebuilt 0F 00 selector group", () => {
     verw.step();
     expect(verw.state.flags.has(0x40)).toBe(false);
   });
+
+  it("delivers #GP(0) before nonzero-CPL LLDT and LTR change selector state", () => {
+    for (const [opcode, ldt] of [
+      [0xd0, true],
+      [0xd8, false]
+    ] as const) {
+      const result = machine([0x0f, 0x00, opcode]);
+      result.state.writeSegment("cs", {
+        selector: 0x0b,
+        base: 0,
+        limit: 0xffffffff,
+        default32: true,
+        dpl: 3
+      });
+      result.state.writeSegment("ss", {
+        selector: 0,
+        base: 0,
+        limit: 0xffffffff,
+        default32: true,
+        dpl: 0
+      });
+      result.state.writeGdtr({ base: 0x200, limit: 0x1f });
+      result.state.writeIdtr({ base: 0x300, limit: 0x7f });
+      result.state.registers.write16(0, 8);
+      result.state.registers.write32(4, 0x100);
+      result.state.writeLdtr({ selector: 0x1234, base: 0, limit: 0, default32: false });
+      result.state.writeTr({ selector: 0x5678, base: 0, limit: 0, default32: false });
+      result.memory.set(0x218, 0xff);
+      result.memory.set(0x219, 0xff);
+      result.memory.set(0x21d, 0xfa);
+      result.memory.set(0x21e, 0xcf);
+      [0x80, 0, 0x1b, 0, 0, 0x8e, 0, 0].forEach((value, index) =>
+        result.memory.set(0x368 + index, value)
+      );
+      result.step();
+      expect(result.state.readEip()).toBe(0x80);
+      expect(ldt ? result.state.readLdtr().selector : result.state.readTr().selector).toBe(
+        ldt ? 0x1234 : 0x5678
+      );
+    }
+  });
 });

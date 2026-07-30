@@ -455,3 +455,9 @@ P385 routes only NXVM's explicit undefined extended encodings (`0F 04-05`,
 the rebuilt vector-six delivery path. It does not convert other unimplemented
 opcode families into undefined behavior. Tests enumerate every listed encoding
 through its faulting-EIP interrupt path.
+
+## P386 `0F 00 /2,/3` Privilege Checklist
+
+P386 follows NXVM's LLDT/LTR loader boundary by requiring CPL zero before
+either system selector changes state. Tests deliver protected `#GP(0)` through
+a same-privilege IDT gate and confirm both selector states are preserved.

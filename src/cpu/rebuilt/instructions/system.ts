@@ -163,6 +163,8 @@ function executeSelectorGroup(context: RebuiltExecutionContext): void {
       modRm.reg === 0 ? context.state.readLdtr().selector : context.state.readTr().selector
     );
   } else if (modRm.reg === 2 || modRm.reg === 3) {
+    if (currentPrivilege(context) !== 0)
+      return deliverFault(context.memory, context.state, 13, context.state.readEip(), 0);
     if (!loadSystemSelector(context, modRm, modRm.reg === 2)) return;
   } else if (modRm.reg === 4 || modRm.reg === 5) verifySelector(context, modRm, modRm.reg === 5);
   else return deliverFault(context.memory, context.state, 6, context.state.readEip());

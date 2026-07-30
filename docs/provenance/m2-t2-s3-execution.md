@@ -1132,6 +1132,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P385 adapts NXVM's explicit undefined `0F` extension map into the
   rebuilt dispatcher. It uses the existing project-native vector-six delivery
   path and deliberately leaves other incomplete opcode families visible.
+- M2 T2 S3 P386 aligns LLDT/LTR admission with NXVM's privileged system-selector
+  loaders, using project-native hidden state and protected fault delivery.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
