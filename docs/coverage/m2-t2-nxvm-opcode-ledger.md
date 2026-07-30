@@ -352,3 +352,10 @@ address-size overrides, independent SS stack width, and #UD for `/1-7`.
 P371 implements NXVM WAIT's 80386 CR0.TS boundary. It advances when TS is
 clear and delivers vector 7 at the faulting EIP when TS is set; no FPU behavior
 is synthesized.
+
+## P372 `9C-9D` Flag Stack Checklist
+
+P372 implements NXVM PUSHF/POPF real-mode and non-VM protected-mode behavior.
+Tests cover operand width, PUSHFD VM/RF stripping, and nonzero-CPL IOPL
+preservation. Virtual-8086 flag-stack behavior remains an explicit v86-state
+dependency.

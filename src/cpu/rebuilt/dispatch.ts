@@ -6,6 +6,7 @@ import { executeAccumulatorTest } from "./instructions/accumulator-test.js";
 import { executeAsciiAdjust } from "./instructions/ascii-adjust.js";
 import { executeFlagControl } from "./instructions/flag-control.js";
 import { executeFlagTransfer } from "./instructions/flag-transfer.js";
+import { executeFlagStack } from "./instructions/flag-stack.js";
 import { executeExchangeModRm } from "./instructions/exchange.js";
 import { executeFirstIntervalArithmetic } from "./instructions/first-interval.js";
 import { executeFrameImmediateSlice } from "./instructions/frame-immediate.js";
@@ -89,6 +90,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode === 0x8f) return executePopModRm(context);
   if (opcode >= 0x90 && opcode <= 0x97) return executeAccumulatorExchange(context);
   if (opcode === 0x98 || opcode === 0x99) return executeSignExtension(context);
+  if (opcode === 0x9c || opcode === 0x9d) return executeFlagStack(context);
   if (opcode === 0x9b) return executeWait(context);
   if (opcode === 0x9e || opcode === 0x9f) return executeFlagTransfer(context);
   if (opcode >= 0xa0 && opcode <= 0xa3) return executeMoffsMove(context);

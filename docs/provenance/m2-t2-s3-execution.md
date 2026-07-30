@@ -1095,6 +1095,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   segmented-memory modules without reference runtime imports.
 - M2 T2 S3 P371 adapts NXVM WAIT's CR0.TS check and vector-7 path without
   synthesizing FPU behavior or importing a reference runtime.
+- M2 T2 S3 P372 adapts NXVM PUSHF/POPF masks into project-native flag and stack
+  modules without reference runtime imports.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
