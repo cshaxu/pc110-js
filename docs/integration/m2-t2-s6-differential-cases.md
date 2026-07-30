@@ -3,10 +3,11 @@
 ## Harness Contract
 
 Each case initializes two independent one-megabyte RAM images and equivalent
-real-mode CPU state. The rebuilt CPU and the PCjs CPU oracle each execute one
-guest instruction. P3 compares general registers, EIP, EFLAGS, and normalized
-CS/DS/ES/SS fields. P4 compares sorted changed-byte RAM deltas from independent
-before/after images; it does not yet record writes whose value is unchanged.
+real-mode CPU state. A case is a program byte stream and an instruction budget,
+not an individual opcode fixture. The rebuilt shared dispatcher and the PCjs
+oracle each execute one instruction per loop iteration. The harness records
+pre-state, post-state, and sorted changed-byte RAM deltas for every iteration.
+It does not yet record writes whose value is unchanged.
 
 ## P3 Passing Cases
 
@@ -18,6 +19,7 @@ before/after images; it does not yet record writes whose value is unchanged.
 | ADD AX, immediate | `05 01 00` | arithmetic result and flags |
 | DEC CX | `49` | register decrement and flags |
 | MOV moffs, AL | `A2 00 02` | register/EIP state and changed RAM byte at `0200` |
+| Mixed program | `B0 5A A2 00 02 49 90` | four automatic instruction-by-instruction comparisons |
 
 ## Active Expansion Order
 

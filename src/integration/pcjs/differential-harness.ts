@@ -18,6 +18,7 @@ export interface DifferentialRegisterState {
 export interface DifferentialCase {
   readonly name: string;
   readonly bytes: readonly number[];
+  readonly instructionCount?: number;
   readonly registers?: DifferentialRegisterState;
   readonly eflags?: number;
   readonly memory?: readonly DifferentialMemoryByte[];
@@ -43,12 +44,20 @@ export interface DifferentialSegmentSnapshot {
 }
 
 export interface DifferentialStepResult {
+  readonly before: {
+    readonly rebuilt: DifferentialCpuSnapshot;
+    readonly pcjs: DifferentialCpuSnapshot;
+  };
   readonly rebuilt: DifferentialCpuSnapshot;
   readonly pcjs: DifferentialCpuSnapshot;
   readonly memoryWrites: {
     readonly rebuilt: readonly DifferentialMemoryByte[];
     readonly pcjs: readonly DifferentialMemoryByte[];
   };
+}
+
+export interface DifferentialTraceResult {
+  readonly steps: readonly DifferentialStepResult[];
 }
 
 interface PcjsBus {
@@ -111,21 +120,35 @@ interface PcjsModules {
 export async function runPcjsDifferentialCase(
   differentialCase: DifferentialCase
 ): Promise<DifferentialStepResult> {
+  const trace = await runPcjsDifferentialTrace({ ...differentialCase, instructionCount: 1 });
+  return trace.steps[0]!;
+}
+
+export async function runPcjsDifferentialTrace(
+  differentialCase: DifferentialCase
+): Promise<DifferentialTraceResult> {
   validateCase(differentialCase);
   const rebuilt = createRebuiltCpu(differentialCase);
   const pcjs = await createPcjsCpu(differentialCase);
-
-  rebuilt.runner.step();
-  pcjs.cpu.stepCPU(0);
-
-  return {
-    rebuilt: snapshotRebuilt(rebuilt.runner),
-    pcjs: snapshotPcjs(pcjs.cpu),
-    memoryWrites: {
-      rebuilt: rebuilt.memory.writes(),
-      pcjs: pcjs.memoryWrites()
-    }
-  };
+  const steps: DifferentialStepResult[] = [];
+  const instructionCount = differentialCase.instructionCount ?? 1;
+  for (let instruction = 0; instruction < instructionCount; instruction += 1) {
+    const before = { rebuilt: snapshotRebuilt(rebuilt.runner), pcjs: snapshotPcjs(pcjs.cpu) };
+    rebuilt.memory.clearWrites();
+    const pcjsMemory = snapshotPcjsMemory(pcjs.bus);
+    rebuilt.runner.step();
+    pcjs.cpu.stepCPU(0);
+    steps.push({
+      before,
+      rebuilt: snapshotRebuilt(rebuilt.runner),
+      pcjs: snapshotPcjs(pcjs.cpu),
+      memoryWrites: {
+        rebuilt: rebuilt.memory.writes(),
+        pcjs: diffPcjsMemory(pcjs.bus, pcjsMemory)
+      }
+    });
+  }
+  return { steps };
 }
 
 export function assertDifferentialMatch(result: DifferentialStepResult): void {
@@ -134,6 +157,16 @@ export function assertDifferentialMatch(result: DifferentialStepResult): void {
   if (left !== right) {
     throw new Error(`PCjs differential mismatch\nrebuilt=${left}\npcjs=${right}`);
   }
+}
+
+export function assertDifferentialTraceMatch(trace: DifferentialTraceResult): void {
+  trace.steps.forEach((step, index) => {
+    try {
+      assertDifferentialMatch(step);
+    } catch (error) {
+      throw new Error(`PCjs differential mismatch at instruction ${index}: ${String(error)}`);
+    }
+  });
 }
 
 function createRebuiltCpu(differentialCase: DifferentialCase): {
@@ -151,7 +184,7 @@ function createRebuiltCpu(differentialCase: DifferentialCase): {
 
 async function createPcjsCpu(differentialCase: DifferentialCase): Promise<{
   readonly cpu: PcjsCpu;
-  readonly memoryWrites: () => readonly DifferentialMemoryByte[];
+  readonly bus: PcjsBus;
 }> {
   const modules = await loadPcjsModules();
   const cpu = new modules.CPUx86({
@@ -174,11 +207,7 @@ async function createPcjsCpu(differentialCase: DifferentialCase): Promise<{
   differentialCase.bytes.forEach((value, index) => bus.setByte(index, value));
   differentialCase.memory?.forEach(({ address, value }) => bus.setByte(address, value));
   initializePcjsState(cpu, differentialCase);
-  const before = snapshotPcjsMemory(bus);
-  return {
-    cpu,
-    memoryWrites: () => diffPcjsMemory(bus, before)
-  };
+  return { cpu, bus };
 }
 
 async function loadPcjsModules(): Promise<PcjsModules> {
@@ -344,13 +373,19 @@ function normalizePcjsSegment(segment: PcjsSegment): DifferentialSegmentSnapshot
 
 function validateCase(differentialCase: DifferentialCase): void {
   if (!differentialCase.name) throw new RangeError("Differential case name is required");
-  if (differentialCase.bytes.length === 0 || differentialCase.bytes.length > 15)
-    throw new RangeError("Differential case must contain one to fifteen instruction bytes");
+  if (differentialCase.bytes.length === 0 || differentialCase.bytes.length > ORACLE_RAM_BYTES)
+    throw new RangeError("Differential program must fit inside oracle RAM");
   differentialCase.bytes.forEach((value) => {
     if (!Number.isInteger(value) || value < 0 || value > 0xff)
       throw new RangeError("Differential instruction bytes must be unsigned bytes");
   });
   differentialCase.memory?.forEach(({ address, value }) => validateMemoryByte(address, value));
+  if (
+    differentialCase.instructionCount !== undefined &&
+    (!Number.isInteger(differentialCase.instructionCount) || differentialCase.instructionCount <= 0)
+  ) {
+    throw new RangeError("Differential instruction count must be a positive integer");
+  }
 }
 
 class RecordingMemory {
@@ -371,6 +406,10 @@ class RecordingMemory {
 
   public writes(): readonly DifferentialMemoryByte[] {
     return normalizeMemoryWrites(this.recordedWrites);
+  }
+
+  public clearWrites(): void {
+    this.recordedWrites.clear();
   }
 }
 
