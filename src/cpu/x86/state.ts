@@ -680,6 +680,44 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeRotateThroughCarryFlags16(
+    result: number,
+    carry: boolean,
+    count: number,
+    right: boolean
+  ): void {
+    const value = result & 0xffff;
+    let flags = this.eflags & ~EFLAGS_CARRY;
+    if (carry) flags |= EFLAGS_CARRY;
+    if (count === 1) {
+      flags &= ~EFLAGS_OVERFLOW;
+      const overflow = right
+        ? Boolean(value & 0x8000) !== Boolean(value & 0x4000)
+        : Boolean(value & 0x8000) !== carry;
+      if (overflow) flags |= EFLAGS_OVERFLOW;
+    }
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeRotateThroughCarryFlags32(
+    result: number,
+    carry: boolean,
+    count: number,
+    right: boolean
+  ): void {
+    const value = result >>> 0;
+    let flags = this.eflags & ~EFLAGS_CARRY;
+    if (carry) flags |= EFLAGS_CARRY;
+    if (count === 1) {
+      flags &= ~EFLAGS_OVERFLOW;
+      const overflow = right
+        ? Boolean(value & 0x80000000) !== Boolean(value & 0x40000000)
+        : Boolean(value & 0x80000000) !== carry;
+      if (overflow) flags |= EFLAGS_OVERFLOW;
+    }
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public writeShiftRightFlags16(value: number, count: number): void {
     const source = value & 0xffff;
     const normalizedCount = count & 0x1f;

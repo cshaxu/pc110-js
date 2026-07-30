@@ -855,6 +855,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   explicit `UndefinedOpcode()` TODO handlers. It uses the existing vector-6
   fault delivery path before any extension-specific execution and verifies the
   faulting EIP for unprefixed and `66`-prefixed forms.
+- M2 T2 S3 P298 migrates NXVM Group 2 RCL/RCR behavior through the execution
+  context. The project-native helper normalizes counts by the 16- or 32-bit
+  carry ring, keeps CF through every rotation, updates OF only for a one-bit
+  rotation, and preserves existing ModR/M memory addressing.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

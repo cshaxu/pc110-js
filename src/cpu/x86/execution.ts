@@ -782,6 +782,74 @@ function executeContextualRotateRight(
   state.advanceEip(instructionBytes);
 }
 
+function executeContextualRotateThroughCarry(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  count: number,
+  immediateBytes = 0
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x02 && modRm.reg !== 0x03)
+    throw new UnsupportedOpcodeError("Unsupported contextual rotate opcode form");
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const width = context.operandSize;
+  const normalizedCount = width === 16 ? (count & 0x1f) % 17 : count & 0x1f;
+  const instructionBytes =
+    modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + immediateBytes;
+  if (!normalizedCount) {
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  let result = modRm.registerDirect
+    ? width === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : width === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  let carry = state.carryFlag();
+  const right = modRm.reg === 0x03;
+  const highBit = width === 32 ? 0x80000000 : 0x8000;
+  const mask = width === 32 ? 0xffffffff : 0xffff;
+  for (let rotation = 0; rotation < normalizedCount; rotation += 1) {
+    if (right) {
+      const nextCarry = Boolean(result & 0x01);
+      result = ((result >>> 1) | (carry ? highBit : 0)) & mask;
+      carry = nextCarry;
+    } else {
+      const nextCarry = Boolean(result & highBit);
+      result = ((result << 1) | (carry ? 1 : 0)) & mask;
+      carry = nextCarry;
+    }
+  }
+  if (modRm.registerDirect) {
+    if (width === 32) state.writeRegister(modRm.rm, result);
+    else state.writeRegister16(modRm.rm, result);
+  } else if (width === 32)
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  else
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  if (width === 32) state.writeRotateThroughCarryFlags32(result, carry, normalizedCount, right);
+  else state.writeRotateThroughCarryFlags16(result, carry, normalizedCount, right);
+  state.advanceEip(instructionBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1492,6 +1560,10 @@ function executeContextualInstruction(
       executeContextualRotateRight(memory, state, context, 1);
       return { halted: false, fetched };
     }
+    if (modRm.reg === 0x02 || modRm.reg === 0x03) {
+      executeContextualRotateThroughCarry(memory, state, context, 1);
+      return { halted: false, fetched };
+    }
     if (modRm.reg === 0x04 || modRm.reg === 0x05 || modRm.reg === 0x07) {
       executeContextualLogicalShift(memory, state, context, 1);
       return { halted: false, fetched };
@@ -1505,6 +1577,10 @@ function executeContextualInstruction(
     }
     if (modRm.reg === 0x01) {
       executeContextualRotateRight(memory, state, context, state.readRegister8(1));
+      return { halted: false, fetched };
+    }
+    if (modRm.reg === 0x02 || modRm.reg === 0x03) {
+      executeContextualRotateThroughCarry(memory, state, context, state.readRegister8(1));
       return { halted: false, fetched };
     }
     if (modRm.reg === 0x04 || modRm.reg === 0x05 || modRm.reg === 0x07) {
@@ -1544,6 +1620,27 @@ function executeContextualInstruction(
         context.addressSize
       );
       executeContextualRotateRight(
+        memory,
+        state,
+        context,
+        fetchCodeByte(
+          memory,
+          state,
+          context.opcodeOffset + 2 + decodedAddressBytes(address, context.addressSize)
+        ).opcode,
+        1
+      );
+      return { halted: false, fetched };
+    }
+    if (modRm.reg === 0x02 || modRm.reg === 0x03) {
+      const address = decodeModRmAddress(
+        memory,
+        state,
+        modRm,
+        context.opcodeOffset + 1,
+        context.addressSize
+      );
+      executeContextualRotateThroughCarry(
         memory,
         state,
         context,
