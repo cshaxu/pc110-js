@@ -6,7 +6,11 @@ import {
 import type { InstructionReader } from "./decode/instruction-reader.js";
 import type { RebuiltTraceHook } from "./debug/trace.js";
 import { PageFaultError } from "../../memory/address-translation.js";
-import { deliverFault, deliverInterrupt } from "./events/interrupt-delivery.js";
+import {
+  deliverFault,
+  deliverInterrupt,
+  InterruptDeliveryError
+} from "./events/interrupt-delivery.js";
 import { RebuiltDivideError } from "./instructions/group-three.js";
 import type { RebuiltPortBus } from "./io/port-bus.js";
 import {
@@ -98,6 +102,10 @@ export class RebuiltCpuExecutor {
   }
 
   private deliverAccessFault(error: unknown, faultEip: number): boolean {
+    if (error instanceof InterruptDeliveryError) {
+      deliverFault(this.memory, this.state, error.vector, faultEip, error.errorCode);
+      return true;
+    }
     if (error instanceof InstructionLengthError) {
       deliverFault(this.memory, this.state, 13, error.faultEip, 0);
       return true;

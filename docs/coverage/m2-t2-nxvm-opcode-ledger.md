@@ -919,3 +919,11 @@ new TSS-selected fault frame records the faulting instruction state. Focused
 evidence executes CPL3 IRET to a ring-zero selector through a ring-zero TSS
 stack and verifies the `#GP` handler, error code, and frame. The invalid v86
 return path remains covered by the separately recorded dword-frame evidence.
+
+## P439 Protected Software-Interrupt Fault-Delivery Checklist
+
+P439 converts a protected software interrupt rejected by its IDT gate DPL from
+a host `InterruptDeliveryError` into rebuilt `#GP` delivery. Focused evidence
+executes CPL3 `INT imm8` through a ring-zero TSS stack, verifies the IDT error
+code `0x0182`, and reaches the rebuilt ring-zero fault handler without a
+reference runtime or synthetic device behavior.
