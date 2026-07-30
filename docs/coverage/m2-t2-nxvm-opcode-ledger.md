@@ -26,7 +26,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 62-6F frame, bounds, immediate arithmetic, string I/O | 6972-7265 | BOUND, ARPL, FS/GS, PUSH/IMUL immediates, INS/OUTS | `instructions/frame-immediate.ts`, `instructions/string-io.ts` | Partial | Bounds faults; privilege; 66/67; REP and I/O boundary | Required | In progress: P330 implements 68-6B only |
 | 70-7F short Jcc | 7309-7494 | All short conditional transfers | `instructions/control.ts` | Partial | Taken/not-taken; flags; 16/default-32 EIP | Required | Implemented: P331; broader differential evidence remains active |
 | 80, 81, 83 Group One | 7507-7840 | Immediate arithmetic and compare groups | `instructions/group-one.ts` | Partial | Every extension; sign extension; register/memory; widths | Required | Implemented: P332; broader differential evidence remains active |
-| 84-8F ModR/M, segment, and stack forms | 7853-8130 | TEST, XCHG, MOV, segment moves, LEA, POP r/m | `instructions/test.ts`, `instructions/move.ts`, `instructions/register-stack.ts` | Partial | ModR/M/SIB; segment validation; 66/67 | Required | In progress: P333 implements 84-85 TEST |
+| 84-8F ModR/M, segment, and stack forms | 7853-8130 | TEST, XCHG, MOV, segment moves, LEA, POP r/m | `instructions/test.ts`, `instructions/exchange.ts`, `instructions/move.ts`, `instructions/register-stack.ts` | Partial | ModR/M/SIB; segment validation; 66/67 | Required | In progress: P333-P334 implement 84-87 |
 | 90-9F exchange, flags, far call, and flag transfer | 8143-8626 | NOP, XCHG AX, CBW/CWD, far call, PUSHF/POPF, SAHF/LAHF | `instructions/control.ts`, `instructions/register-stack.ts` | Partial | Flag privilege; operand width; far control transfer | Required | Planned |
 | A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | Planned |
 | B0-BF immediate register moves | 9325-9589 | Byte and operand-sized register immediates | `instructions/move.ts` | Partial | All registers; instruction length; 66 | Required | Planned |
@@ -106,6 +106,13 @@ ModR/M forms. Focused tests cover non-writeback, defined logical flags, byte
 and dword operands, register and memory forms, `66`, `67`, segment override,
 and instruction length. XCHG, MOV, LEA, segment-register, and POP r/m forms
 remain in the active `84-8F` family.
+
+## P334 `86-87` XCHG Checklist
+
+P334 follows NXVM `XCHG_RM8_R8` and `XCHG_RM32_R32` and completes both XCHG
+ModR/M forms. Focused tests cover byte and dword exchange, register and memory
+operands, `66`, `67`, segment override, and EFLAGS preservation. MOV, LEA,
+segment-register, and POP r/m forms remain in the active `84-8F` family.
 
 ## Status Rule
 
