@@ -20,6 +20,7 @@ import { executeMoveModRm } from "./instructions/move.js";
 import { executeNearConditionalJump } from "./instructions/near-conditional-control.js";
 import { executeNearControl } from "./instructions/near-control.js";
 import { executePortIo } from "./instructions/port-io.js";
+import { executeProcessorControl } from "./instructions/processor-control.js";
 import { executeRegisterStackInterval } from "./instructions/register-stack.js";
 import { executeSetCondition } from "./instructions/set-condition.js";
 import { executeLoadFarPointer, executeSegmentMove } from "./instructions/segment-move.js";
@@ -64,6 +65,7 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
     return executePortIo(context);
   if ([0x9a, 0xe8, 0xe9, 0xea, 0xeb].includes(opcode)) return executeNearControl(context);
   if ([0xf5, 0xf8, 0xf9, 0xfc, 0xfd].includes(opcode)) return executeFlagControl(context);
+  if ([0xf4, 0xfa, 0xfb].includes(opcode)) return executeProcessorControl(context);
   if (opcode === 0xf6 || opcode === 0xf7) return executeGroupThree(context);
   if (opcode === 0xfe || opcode === 0xff) return executeGroupFourFive(context);
   if ([0xc0, 0xc1, 0xd0, 0xd1, 0xd2, 0xd3].includes(opcode)) return executeShiftRotate(context);

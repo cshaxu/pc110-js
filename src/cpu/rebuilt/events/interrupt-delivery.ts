@@ -16,6 +16,7 @@ export interface InterruptRequest {
   readonly returnEip: number;
   readonly operandSize: OperandSize;
   readonly software: boolean;
+  readonly errorCode?: number;
 }
 
 export function deliverInterrupt(
@@ -47,7 +48,7 @@ export function deliverInterrupt(
     throw new InterruptDeliveryError(
       "Privilege-changing interrupt delivery requires rebuilt TSS support"
     );
-  pushInterruptFrame(memory, state, gate.operandSize, request.returnEip);
+  pushInterruptFrame(memory, state, gate.operandSize, request.returnEip, request.errorCode);
   if (gate.trap) state.flags.clear(EFLAGS_TRAP);
   else state.flags.clear(EFLAGS_INTERRUPT | EFLAGS_TRAP);
   loadCodeSegment(memory, state, gate.selector);
@@ -58,13 +59,15 @@ export function deliverFault(
   memory: SegmentedMemory,
   state: RebuiltCpuState,
   vector: number,
-  faultEip: number
+  faultEip: number,
+  errorCode?: number
 ): void {
   deliverInterrupt(memory, state, {
     vector,
     returnEip: faultEip,
     operandSize: 16,
-    software: false
+    software: false,
+    errorCode
   });
 }
 
@@ -88,9 +91,11 @@ function pushInterruptFrame(
   memory: SegmentedMemory,
   state: RebuiltCpuState,
   operandSize: OperandSize,
-  returnEip: number
+  returnEip: number,
+  errorCode?: number
 ): void {
   pushStack(memory, state, operandSize, state.flags.read());
   pushStack(memory, state, operandSize, state.readSegment("cs").selector);
   pushStack(memory, state, operandSize, returnEip);
+  if (errorCode !== undefined) pushStack(memory, state, operandSize, errorCode);
 }

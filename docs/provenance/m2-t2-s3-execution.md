@@ -1085,6 +1085,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P363 records NXVM's D6 and D8-DF UndefinedOpcode coverage through
   project-native vector-6 fault delivery, without treating absent FPU behavior
   as an executable instruction or importing a reference runtime.
+- M2 T2 S3 P367 adapts NXVM HLT, CLI, and STI control flow into project-native
+  TypeScript with explicit CPL/IOPL checks and vector-13 error-code delivery.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

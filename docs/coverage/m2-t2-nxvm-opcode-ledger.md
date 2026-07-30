@@ -318,3 +318,11 @@ preserves that coverage by delivering vector 6 through the rebuilt event path,
 with a real-mode fault frame that returns to the faulting EIP. It deliberately
 does not synthesize FPU execution. Protected fault delivery, error-code faults,
 and double-fault escalation remain active event-system work.
+
+## P367 `F4-FA-FB` Processor Control Checklist
+
+P367 implements HLT, CLI, and STI through rebuilt CPU state and event delivery.
+HLT advances EIP before halting and rejects nonzero protected-mode CPL. CLI and
+STI use CPL versus IOPL authorization; #GP(0) uses an operand-size-correct
+protected interrupt frame. Virtual-8086 interrupt-flag behavior and external
+interrupt wakeup remain active architectural dependencies.

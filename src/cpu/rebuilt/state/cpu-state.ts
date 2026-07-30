@@ -90,6 +90,18 @@ export class RebuiltCpuState {
     this.eip = this.segments.cs.default32 ? next : next & 0xffff;
   }
 
+  public halt(): void {
+    this.halted = true;
+  }
+
+  public resume(): void {
+    this.halted = false;
+  }
+
+  public isHalted(): boolean {
+    return this.halted;
+  }
+
   public readSegment(name: SegmentName): SegmentCache {
     return cloneSegment(this.segments[name]);
   }
