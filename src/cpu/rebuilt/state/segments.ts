@@ -5,20 +5,24 @@ export interface SegmentCache {
   readonly base: number;
   readonly limit: number;
   readonly default32: boolean;
+  readonly valid?: boolean;
+  readonly dpl?: number;
 }
 
 export const REAL_MODE_SEGMENT: SegmentCache = {
   selector: 0,
   base: 0,
   limit: 0xffff,
-  default32: false
+  default32: false,
+  valid: true
 };
 
 export const RESET_CODE_SEGMENT: SegmentCache = {
   selector: 0xf000,
   base: 0xffff0000,
   limit: 0xffff,
-  default32: false
+  default32: false,
+  valid: true
 };
 
 export function cloneSegment(segment: SegmentCache): SegmentCache {

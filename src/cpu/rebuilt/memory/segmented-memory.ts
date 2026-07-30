@@ -18,6 +18,10 @@ export class SegmentedMemory {
     return this.bus.readUint8(this.translate(segment, offset, addressSize)) & 0xff;
   }
 
+  public readPhysical8(address: number): number {
+    return this.bus.readUint8(address >>> 0) & 0xff;
+  }
+
   public read16(segment: SegmentName, offset: number, addressSize: 16 | 32): number {
     return (
       this.read8(segment, offset, addressSize) | (this.read8(segment, offset + 1, addressSize) << 8)
@@ -54,7 +58,7 @@ export class SegmentedMemory {
     const segment = this.state.readSegment(segmentName);
     const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
     const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
-    if (protectedMode && normalizedOffset > segment.limit) {
+    if (protectedMode && (segment.valid === false || normalizedOffset > segment.limit)) {
       throw new SegmentAccessError(`Segment ${segmentName} limit exceeded`);
     }
     return (segment.base + normalizedOffset) >>> 0;

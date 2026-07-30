@@ -283,3 +283,11 @@ immediate/DX ports, 16-bit-default and 32-bit-default operand width, `66`,
 dispatcher integration, and fault-EIP preservation when no boundary is
 supplied. Protected-mode IOPL and TSS I/O-permission checks remain explicit
 protection-system dependencies; no device response is synthesized.
+
+## P360 `8C-8E-C4-C5` Segment Forms Checklist
+
+P360 implements MOV segment forms and LES/LDS through a project-native GDT
+descriptor loader. Tests cover real-mode selectors, protected data segments,
+null data selectors, 16/32-bit far-pointer offsets, and GDT descriptor cache
+attributes. Code-segment loading, LDT, far returns, and vector delivery remain
+separate protection-system dependencies.

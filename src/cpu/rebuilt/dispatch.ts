@@ -21,6 +21,7 @@ import { executeNearControl } from "./instructions/near-control.js";
 import { executePortIo } from "./instructions/port-io.js";
 import { executeRegisterStackInterval } from "./instructions/register-stack.js";
 import { executeSetCondition } from "./instructions/set-condition.js";
+import { executeLoadFarPointer, executeSegmentMove } from "./instructions/segment-move.js";
 import { executeShiftRotate } from "./instructions/shift-rotate.js";
 import { executeSignExtension } from "./instructions/sign-extension.js";
 import { executeShortConditionalJump } from "./instructions/control.js";
@@ -40,6 +41,7 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if (opcode === 0x84 || opcode === 0x85) return executeTestModRm(context);
   if (opcode === 0x86 || opcode === 0x87) return executeExchangeModRm(context);
   if (opcode >= 0x88 && opcode <= 0x8b) return executeMoveModRm(context);
+  if (opcode === 0x8c || opcode === 0x8e) return executeSegmentMove(context);
   if (opcode === 0x8d) return executeLea(context);
   if (opcode >= 0x90 && opcode <= 0x97) return executeAccumulatorExchange(context);
   if (opcode === 0x98 || opcode === 0x99) return executeSignExtension(context);
@@ -50,6 +52,7 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if (opcode === 0xc2 || opcode === 0xc3 || opcode === 0xc8 || opcode === 0xc9)
     return executeStackFrameControl(context);
   if (opcode === 0xc6 || opcode === 0xc7) return executeImmediateModRmMove(context);
+  if (opcode === 0xc4 || opcode === 0xc5) return executeLoadFarPointer(context);
   if (opcode === 0xd4 || opcode === 0xd5) return executeAsciiAdjust(context);
   if (opcode === 0xd7) return executeXlat(context);
   if ([0xe0, 0xe1, 0xe2, 0xe3].includes(opcode)) return executeLoop(context);

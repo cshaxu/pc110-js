@@ -16,7 +16,14 @@ export interface RebuiltCpuSnapshot {
   readonly cr0: number;
   readonly cr2: number;
   readonly cr3: number;
+  readonly gdtr: DescriptorTable;
+  readonly idtr: DescriptorTable;
   readonly segments: Readonly<Record<SegmentName, SegmentCache>>;
+}
+
+export interface DescriptorTable {
+  readonly base: number;
+  readonly limit: number;
 }
 
 export class RebuiltCpuState {
@@ -27,6 +34,8 @@ export class RebuiltCpuState {
   private cr0 = 0x7ffffff0;
   private cr2 = 0;
   private cr3 = 0;
+  private gdtr: DescriptorTable = { base: 0, limit: 0 };
+  private idtr: DescriptorTable = { base: 0, limit: 0x3ff };
   private segments: Record<SegmentName, SegmentCache> = this.resetSegments();
 
   public constructor() {
@@ -41,6 +50,8 @@ export class RebuiltCpuState {
     this.cr0 = 0x7ffffff0;
     this.cr2 = 0;
     this.cr3 = 0;
+    this.gdtr = { base: 0, limit: 0 };
+    this.idtr = { base: 0, limit: 0x3ff };
     this.segments = this.resetSegments();
   }
 
@@ -53,6 +64,8 @@ export class RebuiltCpuState {
       cr0: this.cr0,
       cr2: this.cr2,
       cr3: this.cr3,
+      gdtr: { ...this.gdtr },
+      idtr: { ...this.idtr },
       segments: {
         cs: cloneSegment(this.segments.cs),
         ds: cloneSegment(this.segments.ds),
@@ -93,6 +106,22 @@ export class RebuiltCpuState {
     this.cr0 = value >>> 0;
   }
 
+  public readGdtr(): DescriptorTable {
+    return { ...this.gdtr };
+  }
+
+  public writeGdtr(table: DescriptorTable): void {
+    this.gdtr = validateDescriptorTable(table);
+  }
+
+  public readIdtr(): DescriptorTable {
+    return { ...this.idtr };
+  }
+
+  public writeIdtr(table: DescriptorTable): void {
+    this.idtr = validateDescriptorTable(table);
+  }
+
   private resetSegments(): Record<SegmentName, SegmentCache> {
     return {
       cs: cloneSegment(RESET_CODE_SEGMENT),
@@ -103,4 +132,12 @@ export class RebuiltCpuState {
       gs: cloneSegment(REAL_MODE_SEGMENT)
     };
   }
+}
+
+function validateDescriptorTable(table: DescriptorTable): DescriptorTable {
+  if (!Number.isSafeInteger(table.base) || table.base < 0 || table.base > 0xffffffff)
+    throw new RangeError("Descriptor table base must be a 32-bit unsigned address");
+  if (!Number.isSafeInteger(table.limit) || table.limit < 0 || table.limit > 0xffff)
+    throw new RangeError("Descriptor table limit must be a 16-bit unsigned value");
+  return { base: table.base >>> 0, limit: table.limit };
 }
