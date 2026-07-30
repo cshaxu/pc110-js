@@ -32,7 +32,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | B0-BF immediate register moves | 9325-9589 | Byte and operand-sized register immediates | `instructions/immediate-move.ts` | Partial | All registers; instruction length; 66 | Required | Implemented: P340; broader differential evidence remains active |
 | C0-CF groups, returns, interrupts, frame | 9613-10338 | Shifts/rotates, RET, LES/LDS, MOV immediate groups, ENTER/LEAVE, RETF, INT, IRET | `instructions/immediate-modrm-move.ts`, `instructions/stack-frame-control.ts`, `instructions/shift-rotate.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/interrupt.ts` | Partial | Every group extension; count/flags; privilege; fault EIP | Required | In progress: P351 implements C0/C1 |
 | D0-DF shifts, adjust, XLAT, loops, port I/O | 10250-10941 | Shift/rotate count variants, AAM/AAD, XLAT, LOOP, JCXZ, IN/OUT | `instructions/shift-rotate.ts`, `instructions/ascii-adjust.ts`, `instructions/xlat.ts`, `instructions/loop.ts`, `instructions/groups.ts`, `instructions/control.ts`, `instructions/io.ts` | Partial | Count zero; CL; 66/67; I/O permissions | Required | In progress: P344-P346 and P351 |
-| E0-FF control, flags, Groups Three/Four/Five | 10795-11610 | Near/far call and jump, flag control, F6/F7, FE/FF | `instructions/near-control.ts`, `instructions/group-three.ts`, `instructions/group-four-five.ts`, `instructions/control.ts`, `instructions/groups.ts` | Partial | All extensions; divide faults; far privilege; SS width | Required | In progress: P350 implements FE/FF local forms |
+| E0-FF control, flags, Groups Three/Four/Five | 10795-11610 | Near/far call and jump, flag control, F6/F7, FE/FF | `instructions/near-control.ts`, `instructions/group-three.ts`, `instructions/group-four-five.ts`, `instructions/flag-control.ts`, `instructions/control.ts`, `instructions/groups.ts` | Partial | All extensions; divide faults; far privilege; SS width | Required | In progress: P352 implements local flag control |
 | 0F decode and system groups | 5141, 11629-12637 | Escape decoding, descriptor/table, CR/DR/TR, LAR/LSL, CLTS | `decode/decoder.ts`, `instructions/system.ts` | Partial | CPL; descriptor faults; 16/default-32; 66/67 | Required | Planned |
 | 0F 80-8F near Jcc and SETcc | 12649-12898 | Near conditional transfers and byte condition stores | `instructions/control.ts` | Partial | Taken/not-taken; ModR/M; fault EIP | Required | Planned |
 | 0F A0-AF extended bit, shift, segment forms | 12906-13203 | FS/GS stack forms, BT/BTS/BTR/BTC, SHLD/SHRD, IMUL, LSS/LFS/LGS, MOVZX | `instructions/extended.ts` | Partial | Bit addressing; flags; segment faults; 66/67 | Required | Planned |
@@ -230,6 +230,12 @@ P351 follows NXVM's ROL/ROR/RCL/RCR/SHL/SHR/SAR handlers across byte, word,
 and dword operands. Focused tests cover all defined extensions, zero count,
 immediate and CL counts, `66`, `67`, memory, carry rings, and defined OF.
 `/6` remains an explicit rebuilt `#UD` delivery dependency.
+
+## P352 `F5-FD` Local Flag-Control Checklist
+
+P352 follows NXVM CMC, CLC, STC, CLD, and STD behavior. Focused tests cover
+their EIP advance and preservation of unrelated EFLAGS state. HLT, CLI, and
+STI remain explicit privilege and event-delivery dependencies.
 
 ## Status Rule
 
