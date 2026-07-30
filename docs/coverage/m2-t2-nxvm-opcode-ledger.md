@@ -882,3 +882,12 @@ P433 follows NXVM's logical access preflight by translating every byte of a
 writes therefore use both resolved pages, while a later translation fault
 leaves earlier destination bytes unchanged and records CR2 for the faulting
 linear address. Segment/page edge semantics remain active architecture work.
+
+## P434 Rebuilt Selected-ROM Trace Checkpoint
+
+P434 reruns the project-owned selected DeskPro ROM trace after rebuilt opcode
+and paging closure work. The rebuilt CPU executes reset ROM through two
+instructions and stops at `F000:F907` because the project-native I/O bus is
+unavailable. This is the next bounded whole-machine blocker: S5 I/O ownership,
+not an unsupported CPU opcode, synthetic port response, firmware workaround,
+or device implementation.

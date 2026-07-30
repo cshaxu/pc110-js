@@ -1273,6 +1273,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   no reference runtime, device, or guest-service behavior.
 - M2 T2 S3 P433 adapts NXVM multi-page logical-access preflight into project-native
   segmented memory without a reference runtime, device, or guest-service path.
+- M2 T2 S3 P434 records project-native rebuilt-ROM trace evidence only; it
+  introduces no PCjs, NXVM, device, firmware, or guest-service runtime behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
