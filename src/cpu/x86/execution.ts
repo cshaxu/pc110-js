@@ -5878,7 +5878,7 @@ export function stepInstruction(
               : ((source >> 1) | (source & 0x80)) & 0xff;
       state.writeRegister8(modRm.rm, result);
       if (modRm.reg === 0x02) state.writeRotateFlags8(result, Boolean(source & 0x80));
-      else if (modRm.reg === 0x03) state.writeRotateFlags8(result, Boolean(source & 0x01));
+      else if (modRm.reg === 0x03) state.writeRotateRightFlags8(result, 1);
       else if (modRm.reg === 0x04) state.writeShiftLeftFlags8(source);
       else state.writeArithmeticShiftRightFlags8(source);
       state.advanceEip(2);

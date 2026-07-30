@@ -184,6 +184,16 @@ describe("Cpu386State", () => {
     expect(cpu.zeroFlag()).toBe(true);
   });
 
+  it("writes ROR-compatible byte flags only where overflow is defined", () => {
+    const cpu = new Cpu386State();
+    cpu.writeEflags(0x00000002);
+    cpu.writeRotateRightFlags8(0x80, 1);
+    expect(cpu.snapshot().eflags).toBe(0x00000803);
+
+    cpu.writeRotateRightFlags8(0x40, 2);
+    expect(cpu.snapshot().eflags).toBe(0x00000802);
+  });
+
   it("reads 8-bit register halves and sets 16-bit logic flags", () => {
     const cpu = new Cpu386State();
     cpu.writeRegister(3, 0xface1234);
