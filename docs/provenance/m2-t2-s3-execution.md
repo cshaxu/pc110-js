@@ -979,6 +979,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   flag semantics; PUSH and POP use the project-native stack boundary, with
   operand width distinct from SS D/B stack addressing. The module has no
   runtime dependency on NXVM, PCjs, or the legacy CPU.
+- M2 T2 S3 P330 translates NXVM's PUSHA, POPA, immediate PUSH, and immediate
+  IMUL handler algorithms into a rebuilt `60-6B` execution slice. IMUL uses
+  local signed-width arithmetic to set only defined CF/OF truncation results.
+  BOUND, ARPL, FS/GS selector behavior, and string I/O remain explicit
+  dependencies; no legacy, NXVM, or PCjs runtime import is introduced.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
