@@ -24,3 +24,9 @@ bus, FDC, firmware, media, or host-timing dependency.
 P3 composes two local controller instances and the selected page-register ports
 with the rebuilt machine bus. The implementation remains independent of PCjs,
 memory movement, FDC, firmware, media, and host scheduling.
+
+## P4 Cascade And Transfer Boundary
+
+P4 adds local channel-4 cascade arbitration and a generic data adapter driven
+solely by explicit grants. It does not introduce a device implementation or a
+storage, firmware, media, or host-time dependency.

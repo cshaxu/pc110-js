@@ -105,6 +105,19 @@ export class PcAtDma {
     return this.controller(index).grant();
   }
 
+  public grant(): DmaGrant | undefined {
+    const lowGrant = this.dma0.peekGrant();
+    this.dma1.setHardwareRequest(0, lowGrant !== undefined);
+    const highGrant = this.dma1.peekGrant();
+    if (!highGrant) return undefined;
+    if (highGrant.channel === 0) {
+      if (!this.dma1.acknowledgeCascade(0)) return undefined;
+      return this.dma0.grant();
+    }
+    const grant = this.dma1.grant();
+    return grant ? { ...grant, channel: grant.channel + 4 } : undefined;
+  }
+
   public portRanges(): readonly PcAtDmaPortRange[] {
     return [
       {

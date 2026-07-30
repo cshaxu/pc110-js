@@ -54,4 +54,22 @@ describe("project-native PC/AT DMA", () => {
     expect(dma.snapshot(0)).toMatchObject({ requested: false, masked: true });
     expect(dma.snapshot(5)).toMatchObject({ requested: false, masked: true });
   });
+
+  it("arbitrates a DMA0 request through unmasked DMA1 channel 4 cascade", () => {
+    const dma = new PcAtDma();
+    const bus = new RebuiltMachinePortBus();
+    for (const range of dma.portRanges()) bus.register(range);
+    bus.write(0x0c, 0, 8);
+    bus.write(0x00, 0x34, 8);
+    bus.write(0x00, 0x12, 8);
+    bus.write(0x01, 0, 8);
+    bus.write(0x01, 0, 8);
+    bus.write(0x0a, 0x00, 8);
+    bus.write(0x0b, 0x44, 8);
+    bus.write(0xdc, 0, 8);
+    dma.setHardwareRequest(0, true);
+
+    expect(dma.grant()).toMatchObject({ channel: 0, address: 0x1234 });
+    expect(dma.dma1.snapshot(0)).toMatchObject({ currentAddress: 0, currentCount: 0 });
+  });
 });

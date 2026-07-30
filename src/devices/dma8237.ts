@@ -135,6 +135,13 @@ export class Dma8237 {
   }
 
   public grant(): DmaGrant | undefined {
+    const grant = this.peekGrant();
+    if (!grant) return undefined;
+    this.advanceChannel(grant.channel, grant.terminalCount);
+    return grant;
+  }
+
+  public peekGrant(): DmaGrant | undefined {
     if (this.command & 4) return undefined;
     const channelIndex = this.nextRequestedChannel();
     if (channelIndex === undefined) return undefined;
@@ -143,7 +150,6 @@ export class Dma8237 {
       (channel.page << 16) |
       (this.wordAddressed ? channel.currentAddress << 1 : channel.currentAddress);
     const terminalCount = channel.currentCount === 0;
-    this.advanceChannel(channelIndex, terminalCount);
     const transferType = (channel.mode >>> 2) & 3;
     return {
       channel: channelIndex,
@@ -152,6 +158,13 @@ export class Dma8237 {
       unitBytes: this.wordAddressed ? 2 : 1,
       terminalCount
     };
+  }
+
+  public acknowledgeCascade(channel: number): boolean {
+    const grant = this.peekGrant();
+    if (!grant || grant.channel !== channel) return false;
+    if (this.command & 0x10) this.priorityBase = channel;
+    return true;
   }
 
   public snapshot(channel: number): DmaChannelSnapshot {

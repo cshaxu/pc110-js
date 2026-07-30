@@ -76,4 +76,13 @@ describe("project-native 8237 DMA controller", () => {
     dma.masterClear();
     expect(dma.snapshot(1)).toMatchObject({ masked: true, requested: false, terminalCount: false });
   });
+
+  it("peeks and acknowledges a cascade grant without advancing its channel", () => {
+    const dma = new Dma8237();
+    configure(dma, 0, 0x1234, 3, 0xc0);
+    dma.setHardwareRequest(0, true);
+    expect(dma.peekGrant()).toMatchObject({ channel: 0, address: 0x1234 });
+    expect(dma.acknowledgeCascade(0)).toBe(true);
+    expect(dma.snapshot(0)).toMatchObject({ currentAddress: 0x1234, currentCount: 3 });
+  });
 });
