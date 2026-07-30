@@ -57,7 +57,7 @@ function readSelectorDescriptor(context: RebuiltExecutionContext, selector: numb
   try {
     return readDescriptor(
       {
-        readUint8: (address) => context.memory.readPhysical8(address),
+        readUint8: (address) => context.memory.readLinear8(address),
         writeUint8: () => undefined
       },
       context.state,
@@ -189,7 +189,7 @@ function loadSystemSelector(
   try {
     descriptor = readGdtDescriptor(
       {
-        readUint8: (address) => context.memory.readPhysical8(address),
+        readUint8: (address) => context.memory.readLinear8(address),
         writeUint8: () => undefined
       },
       context.state.readGdtr(),
@@ -220,7 +220,7 @@ function loadSystemSelector(
   if (ldt) context.state.writeLdtr(target);
   else {
     const address = (context.state.readGdtr().base + (selector & 0xfff8) + 5) >>> 0;
-    context.memory.writePhysical8(address, context.memory.readPhysical8(address) | 0x02);
+    context.memory.writeLinear8(address, context.memory.readLinear8(address) | 0x02);
     context.state.writeTr(target);
   }
   return true;
@@ -244,7 +244,7 @@ function verifySelector(
   try {
     const descriptor = readDescriptor(
       {
-        readUint8: (address) => context.memory.readPhysical8(address),
+        readUint8: (address) => context.memory.readLinear8(address),
         writeUint8: () => undefined
       },
       context.state,

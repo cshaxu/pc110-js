@@ -36,6 +36,8 @@ describe("RebuiltCpuExecutor", () => {
     state.writeEip(0);
     write32(0x1000, 0x2003);
     write32(0x2000, 0x3003);
+    write32(0x2010, 0x4003);
+    write32(0x2014, 0x5003);
     bytes.set(0x3000, 0x90);
     const executor = new RebuiltCpuExecutor(state, {
       readUint8: (address) => bytes.get(address) ?? 0,
@@ -141,6 +143,8 @@ describe("RebuiltCpuExecutor", () => {
     state.registers.write32(4, 0x1000);
     write32(0x1000, 0x2003);
     write32(0x2000, 0x3003);
+    write32(0x2010, 0x4003);
+    write32(0x2014, 0x5003);
     write(0x3000, [0x90]);
     write(0x4008, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
     write(0x5070, [0x40, 0, 8, 0, 0, 0x8e, 0, 0]);
@@ -187,6 +191,8 @@ describe("RebuiltCpuExecutor", () => {
     state.registers.write32(4, 0x1000);
     write32(0x1000, 0x2003);
     write32(0x2000, 0x3003);
+    write32(0x2010, 0x4003);
+    write32(0x2014, 0x5003);
     write(0x4008, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
     write(0x5070, [0x40, 0, 8, 0, 0, 0x8e, 0, 0]);
     let dispatched = false;

@@ -23,10 +23,10 @@ handlers have already closed in the opcode ledger.
 | Area | Status | Evidence and remaining boundary |
 | --- | --- | --- |
 | 32-bit general registers and EFLAGS | Implemented | Project CPU state and focused state tests. |
-| Segment selectors and hidden caches | Partial architecture closure | P388-P390, P396-P397, and P443 cover cached loads, LDT lookup, access checks, and descriptor Accessed-bit writeback; complete descriptor fault classification remains. Task/call gates are NXVM TODO-aligned exclusions recorded by P441. |
+| Segment selectors and hidden caches | Partial architecture closure | P388-P390, P396-P397, P443, and P447 cover cached loads, LDT lookup, access checks, paged system-table access, and descriptor Accessed-bit writeback; complete descriptor fault classification remains. Task/call gates are NXVM TODO-aligned exclusions recorded by P441. |
 | GDTR, IDTR, LDTR, TR, CR0, CR2, and CR3 | Partial architecture closure | P382-P384, P428, and P445 cover the NXVM executable system forms and LLDT/LTR selector fault classification; complete debug semantics remain. Task-switch state is an NXVM TODO-aligned exclusion recorded by P441. |
-| Real/protected address translation | Partial architecture closure | P392, P394-P397, P433, and P446 cover rebuilt translation, multi-byte protected segment-limit preflight, and access-fault boundaries; remaining architecture cases are ledgered. |
-| 80386 paging and page faults | Partial architecture closure | P392, P394-P395, P411, and P433 cover page walks, fault delivery, escalation, and cross-page atomicity; complete architecture validation remains. |
+| Real/protected address translation | Partial architecture closure | P392, P394-P397, P433, P446, and P447 cover rebuilt translation, supervisor system-table paging, multi-byte protected segment-limit preflight, and access-fault boundaries; remaining architecture cases are ledgered. |
+| 80386 paging and page faults | Partial architecture closure | P392, P394-P395, P411, P433, and P447 cover page walks, supervisor system-table translation, fault delivery, escalation, and cross-page atomicity; complete architecture validation remains. |
 
 ## Decode And Data Paths
 

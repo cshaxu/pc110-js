@@ -157,7 +157,7 @@ function load(
 function lookup(memory: SegmentedMemory, state: RebuiltCpuState, selector: number) {
   try {
     return readDescriptor(
-      { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      { readUint8: (address) => memory.readLinear8(address), writeUint8: () => undefined },
       state,
       selector
     );
@@ -172,8 +172,8 @@ function markAccessed(memory: SegmentedMemory, state: RebuiltCpuState, selector:
   try {
     markDescriptorAccessed(
       {
-        readUint8: (address) => memory.readPhysical8(address),
-        writeUint8: (address, value) => memory.writePhysical8(address, value)
+        readUint8: (address) => memory.readLinear8(address),
+        writeUint8: (address, value) => memory.writeLinear8(address, value)
       },
       state,
       selector

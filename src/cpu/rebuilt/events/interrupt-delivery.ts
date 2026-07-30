@@ -50,7 +50,7 @@ export function deliverInterrupt(
   let gate;
   try {
     gate = readInterruptGate(
-      { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      { readUint8: (address) => memory.readLinear8(address), writeUint8: () => undefined },
       state.readIdtr(),
       request.vector
     );
@@ -75,7 +75,7 @@ export function deliverInterrupt(
   let descriptor;
   try {
     descriptor = readGdtDescriptor(
-      { readUint8: (address) => memory.readPhysical8(address), writeUint8: () => undefined },
+      { readUint8: (address) => memory.readLinear8(address), writeUint8: () => undefined },
       state.readGdtr(),
       gate.selector
     );
@@ -164,12 +164,12 @@ function switchToPrivilegeStack(
       tr.selector
     );
   const esp = tss32
-    ? readPhysical32(memory, tr.base + stackPointerOffset)
-    : memory.readPhysical8(tr.base + stackPointerOffset) |
-      (memory.readPhysical8(tr.base + stackPointerOffset + 1) << 8);
+    ? readLinear32(memory, tr.base + stackPointerOffset)
+    : memory.readLinear8(tr.base + stackPointerOffset) |
+      (memory.readLinear8(tr.base + stackPointerOffset + 1) << 8);
   const ss =
-    memory.readPhysical8(tr.base + stackSelectorOffset) |
-    (memory.readPhysical8(tr.base + stackSelectorOffset + 1) << 8);
+    memory.readLinear8(tr.base + stackSelectorOffset) |
+    (memory.readLinear8(tr.base + stackSelectorOffset + 1) << 8);
   const old = {
     esp:
       virtual8086 || state.stackDefault32() ? state.registers.read32(4) : state.registers.read16(4),
@@ -323,12 +323,12 @@ function privilege(state: RebuiltCpuState): number {
   return code.dpl ?? code.selector & 3;
 }
 
-function readPhysical32(memory: SegmentedMemory, address: number): number {
+function readLinear32(memory: SegmentedMemory, address: number): number {
   return (
-    (memory.readPhysical8(address) |
-      (memory.readPhysical8(address + 1) << 8) |
-      (memory.readPhysical8(address + 2) << 16) |
-      (memory.readPhysical8(address + 3) << 24)) >>>
+    (memory.readLinear8(address) |
+      (memory.readLinear8(address + 1) << 8) |
+      (memory.readLinear8(address + 2) << 16) |
+      (memory.readLinear8(address + 3) << 24)) >>>
     0
   );
 }

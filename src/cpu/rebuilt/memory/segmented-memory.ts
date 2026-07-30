@@ -48,6 +48,14 @@ export class SegmentedMemory {
     this.bus.writeUint8(address >>> 0, value & 0xff);
   }
 
+  public readLinear8(address: number): number {
+    return this.bus.readUint8(this.translateLinear(address, false)) & 0xff;
+  }
+
+  public writeLinear8(address: number, value: number): void {
+    this.bus.writeUint8(this.translateLinear(address, true), value & 0xff);
+  }
+
   public runAtomically<T>(operation: () => T): T {
     return this.bus.runAtomically?.(operation) ?? operation();
   }
@@ -186,6 +194,25 @@ export class SegmentedMemory {
     return { write, user };
   }
 
+  private translateLinear(address: number, write: boolean): number {
+    const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
+    try {
+      return translateLinearAddress(
+        {
+          readUint32: (physical) => this.readPhysical32(physical),
+          writeUint32: (physical, value) => this.writePhysical32(physical, value)
+        },
+        protectedMode ? this.state.readCr0() : this.state.readCr0() & ~CR0_PAGING,
+        this.state.readCr3(),
+        address,
+        { write, user: false }
+      );
+    } catch (error) {
+      if (error instanceof PageFaultError) this.state.writeCr2(error.linearAddress);
+      throw error;
+    }
+  }
+
   private readPhysical32(address: number): number {
     return (
       (this.bus.readUint8(address >>> 0) |
@@ -197,9 +224,9 @@ export class SegmentedMemory {
   }
 
   private writePhysical32(address: number, value: number): void {
-    this.bus.writeUint8(address >>> 0, value);
-    this.bus.writeUint8((address + 1) >>> 0, value >>> 8);
-    this.bus.writeUint8((address + 2) >>> 0, value >>> 16);
-    this.bus.writeUint8((address + 3) >>> 0, value >>> 24);
+    this.bus.writeUint8(address >>> 0, value & 0xff);
+    this.bus.writeUint8((address + 1) >>> 0, (value >>> 8) & 0xff);
+    this.bus.writeUint8((address + 2) >>> 0, (value >>> 16) & 0xff);
+    this.bus.writeUint8((address + 3) >>> 0, (value >>> 24) & 0xff);
   }
 }

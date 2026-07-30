@@ -61,6 +61,21 @@ describe("SegmentedMemory", () => {
     expect(bytes[0x2000] & 0x60).toBe(0x60);
   });
 
+  it("uses supervisor paging access for system linear-memory reads", () => {
+    const state = new RebuiltCpuState();
+    const bytes = new Uint8Array(0x4000);
+    state.writeCr0(0x80000001);
+    state.writeCr3(0x1000);
+    state.writeSegment("cs", { selector: 3, base: 0, limit: 0xffffffff, default32: true, dpl: 3 });
+    write32(bytes, 0x1000, 0x2003);
+    write32(bytes, 0x2000, 0x3003);
+    bytes[0x3000] = 0x5a;
+    const segmented = new SegmentedMemory(memory(bytes), state);
+
+    expect(segmented.readLinear8(0)).toBe(0x5a);
+    expect(() => segmented.read8("cs", 0, 32)).toThrow(PageFaultError);
+  });
+
   it("preflights all pages for multi-byte reads and writes", () => {
     const state = new RebuiltCpuState();
     const bytes = new Uint8Array(0x6000);

@@ -28,15 +28,14 @@ export function assertIoPermission(
   if ((tr.selector & 0xfff8) === 0 || (tr.type !== 9 && tr.type !== 11))
     throw new RebuiltIoPermissionError();
   if (tr.limit < 103) throw new RebuiltIoPermissionError();
-  const bitmapOffset =
-    memory.readPhysical8(tr.base + 102) | (memory.readPhysical8(tr.base + 103) << 8);
+  const bitmapOffset = memory.readLinear8(tr.base + 102) | (memory.readLinear8(tr.base + 103) << 8);
   const bytes = width / 8;
   for (let offset = 0; offset < bytes; offset += 1) {
     const currentPort = port + offset;
     if (currentPort > 0xffff) throw new RebuiltIoPermissionError();
     const bitmapByte = bitmapOffset + (currentPort >>> 3);
     if (bitmapByte > tr.limit) throw new RebuiltIoPermissionError();
-    if (memory.readPhysical8(tr.base + bitmapByte) & (1 << (currentPort & 7)))
+    if (memory.readLinear8(tr.base + bitmapByte) & (1 << (currentPort & 7)))
       throw new RebuiltIoPermissionError();
   }
 }

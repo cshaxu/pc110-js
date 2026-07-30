@@ -64,6 +64,25 @@ describe("rebuilt segment loader hidden CPL", () => {
     expect(result.bytes.get(0x20d)).toBe(0x93);
   });
 
+  it("reads and updates GDT descriptors through supervisor paging", () => {
+    const result = machine();
+    result.state.writeCr0(0x80000001);
+    result.state.writeCr3(0x1000);
+    result.state.writeGdtr({ base: 0x4000, limit: 0x17 });
+    write32(result.bytes, 0x1000, 0x2003);
+    write32(result.bytes, 0x2010, 0x3003);
+    [0xff, 0x0f, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+      result.bytes.set(0x3008 + index, value)
+    );
+
+    loadDataSegment(result.memory, result.state, "ds", 8);
+
+    expect(result.state.readSegment("ds")).toMatchObject({ selector: 8, limit: 0x0fff });
+    expect(result.bytes.get(0x300d)).toBe(0x93);
+    expect(result.bytes.get(0x1000)).toBe(0x23);
+    expect(result.bytes.get(0x2010)).toBe(0x63);
+  });
+
   it("marks successful code, data, and stack GDT descriptors accessed", () => {
     const result = machine();
     [0xff, 0x0f, 0, 0, 0, 0x9a, 0x40, 0].forEach((value, index) =>
@@ -129,3 +148,10 @@ describe("rebuilt segment loader hidden CPL", () => {
     });
   });
 });
+
+function write32(bytes: Map<number, number>, address: number, value: number): void {
+  bytes.set(address, value & 0xff);
+  bytes.set(address + 1, (value >>> 8) & 0xff);
+  bytes.set(address + 2, (value >>> 16) & 0xff);
+  bytes.set(address + 3, (value >>> 24) & 0xff);
+}
