@@ -1,5 +1,6 @@
 import type { RebuiltExecutionContext } from "./execution.js";
 import { decodeModRm } from "./addressing/modrm.js";
+import { extendedOpcodeFamily, primaryOpcodeFamily } from "./decode/opcode-table.js";
 import { deliverFault } from "./events/interrupt-delivery.js";
 import { executeAccumulatorExchange } from "./instructions/accumulator-exchange.js";
 import { executeAccumulatorTest } from "./instructions/accumulator-test.js";
@@ -81,82 +82,101 @@ function lockable(opcode: number, extension: number, registerDirect: boolean): b
 function dispatchUnlocked(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.opcode;
   if (opcode === 0x0f) return dispatchExtended(context);
-  if (opcode <= 0x3f) return executeFirstIntervalArithmetic(context);
-  if (opcode >= 0x40 && opcode <= 0x5f) return executeRegisterStackInterval(context);
-  if ([0x60, 0x61, 0x62, 0x68, 0x69, 0x6a, 0x6b].includes(opcode))
-    return executeFrameImmediateSlice(context);
-  if (opcode >= 0x6c && opcode <= 0x6f) return executeStringIo(context);
-  if (opcode === 0x63) return executeArpl(context);
-  if (opcode >= 0x70 && opcode <= 0x7f) return executeShortConditionalJump(context);
-  if (opcode === 0x82) return executeUndefinedOpcode(context);
-  if ([0x80, 0x81, 0x83].includes(opcode)) return executeGroupOne(context);
-  if (opcode === 0x84 || opcode === 0x85) return executeTestModRm(context);
-  if (opcode === 0x86 || opcode === 0x87) return executeExchangeModRm(context);
-  if (opcode >= 0x88 && opcode <= 0x8b) return executeMoveModRm(context);
-  if (opcode === 0x8c || opcode === 0x8e) return executeSegmentMove(context);
-  if (opcode === 0x8d) return executeLea(context);
-  if (opcode === 0x8f) return executePopModRm(context);
-  if (opcode >= 0x90 && opcode <= 0x97) return executeAccumulatorExchange(context);
-  if (opcode === 0x98 || opcode === 0x99) return executeSignExtension(context);
-  if (opcode === 0x9c || opcode === 0x9d) return executeFlagStack(context);
-  if (opcode === 0x9b) return executeWait(context);
-  if (opcode === 0x9e || opcode === 0x9f) return executeFlagTransfer(context);
-  if (opcode >= 0xa0 && opcode <= 0xa3) return executeMoffsMove(context);
-  if ([0xa4, 0xa5, 0xa6, 0xa7, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf].includes(opcode))
-    return executeString(context);
-  if (opcode === 0xa8 || opcode === 0xa9) return executeAccumulatorTest(context);
-  if (opcode >= 0xb0 && opcode <= 0xbf) return executeImmediateMove(context);
-  if ([0xc2, 0xc3, 0xc8, 0xc9, 0xca, 0xcb].includes(opcode))
-    return executeStackFrameControl(context);
-  if ([0xcc, 0xcd, 0xce, 0xcf].includes(opcode)) return executeInterrupt(context);
-  if (opcode === 0xd6 || opcode === 0xf1 || (opcode >= 0xd8 && opcode <= 0xdf))
-    return executeUndefinedOpcode(context);
-  if (opcode === 0xc6 || opcode === 0xc7) return executeImmediateModRmMove(context);
-  if (opcode === 0xc4 || opcode === 0xc5) return executeLoadFarPointer(context);
-  if (opcode === 0xd4 || opcode === 0xd5) return executeAsciiAdjust(context);
-  if (opcode === 0xd7) return executeXlat(context);
-  if ([0xe0, 0xe1, 0xe2, 0xe3].includes(opcode)) return executeLoop(context);
-  if ([0xe4, 0xe5, 0xe6, 0xe7, 0xec, 0xed, 0xee, 0xef].includes(opcode))
-    return executePortIo(context);
-  if ([0x9a, 0xe8, 0xe9, 0xea, 0xeb].includes(opcode)) return executeNearControl(context);
-  if ([0xf5, 0xf8, 0xf9, 0xfc, 0xfd].includes(opcode)) return executeFlagControl(context);
-  if ([0xf4, 0xfa, 0xfb].includes(opcode)) return executeProcessorControl(context);
-  if (opcode === 0xf6 || opcode === 0xf7) return executeGroupThree(context);
-  if (opcode === 0xfe || opcode === 0xff) return executeGroupFourFive(context);
-  if ([0xc0, 0xc1, 0xd0, 0xd1, 0xd2, 0xd3].includes(opcode)) return executeShiftRotate(context);
-  throw new Error(`Unsupported rebuilt opcode 0x${opcode.toString(16)}`);
+  switch (primaryOpcodeFamily(opcode)) {
+    case "first-interval":
+      return executeFirstIntervalArithmetic(context);
+    case "register-stack":
+      return executeRegisterStackInterval(context);
+    case "frame-immediate":
+      return executeFrameImmediateSlice(context);
+    case "string-io":
+      return executeStringIo(context);
+    case "arpl":
+      return executeArpl(context);
+    case "short-conditional":
+      return executeShortConditionalJump(context);
+    case "group-one":
+      return executeGroupOne(context);
+    case "test-modrm":
+      return executeTestModRm(context);
+    case "exchange-modrm":
+      return executeExchangeModRm(context);
+    case "move-modrm":
+      return executeMoveModRm(context);
+    case "segment-move":
+      return executeSegmentMove(context);
+    case "lea":
+      return executeLea(context);
+    case "pop-modrm":
+      return executePopModRm(context);
+    case "accumulator-exchange":
+      return executeAccumulatorExchange(context);
+    case "sign-extension":
+      return executeSignExtension(context);
+    case "flag-stack":
+      return executeFlagStack(context);
+    case "wait":
+      return executeWait(context);
+    case "flag-transfer":
+      return executeFlagTransfer(context);
+    case "moffs-move":
+      return executeMoffsMove(context);
+    case "string":
+      return executeString(context);
+    case "accumulator-test":
+      return executeAccumulatorTest(context);
+    case "immediate-move":
+      return executeImmediateMove(context);
+    case "stack-frame-control":
+      return executeStackFrameControl(context);
+    case "interrupt":
+      return executeInterrupt(context);
+    case "undefined":
+      return executeUndefinedOpcode(context);
+    case "immediate-modrm-move":
+      return executeImmediateModRmMove(context);
+    case "load-far-pointer":
+      return executeLoadFarPointer(context);
+    case "ascii-adjust":
+      return executeAsciiAdjust(context);
+    case "xlat":
+      return executeXlat(context);
+    case "loop":
+      return executeLoop(context);
+    case "port-io":
+      return executePortIo(context);
+    case "near-control":
+      return executeNearControl(context);
+    case "flag-control":
+      return executeFlagControl(context);
+    case "processor-control":
+      return executeProcessorControl(context);
+    case "group-three":
+      return executeGroupThree(context);
+    case "group-four-five":
+      return executeGroupFourFive(context);
+    case "shift-rotate":
+      return executeShiftRotate(context);
+    case "unsupported":
+      throw new Error(`Unsupported rebuilt opcode 0x${opcode.toString(16)}`);
+  }
 }
 
 function dispatchExtended(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.secondaryOpcode;
-  if (opcode !== undefined && nxvmUndefinedExtendedOpcode(opcode))
-    return executeUndefinedOpcode(context);
-  if (opcode !== undefined && opcode >= 0x80 && opcode <= 0x8f)
-    return executeNearConditionalJump(context);
-  if (opcode !== undefined && opcode >= 0x90 && opcode <= 0x9f) return executeSetCondition(context);
-  if (opcode !== undefined && [0x00, 0x01, 0x02, 0x03, 0x06].includes(opcode))
-    return executeSystemGroup(context);
-  if (opcode !== undefined && opcode >= 0x20 && opcode <= 0x26 && opcode !== 0x25)
-    return executeSystemGroup(context);
-  if (
-    opcode !== undefined &&
-    [
-      0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae,
-      0xaf, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf
-    ].includes(opcode)
-  )
-    return executeExtended(context);
-  throw new Error(`Unsupported rebuilt 0F opcode 0x${opcode?.toString(16) ?? "??"}`);
-}
-
-function nxvmUndefinedExtendedOpcode(opcode: number): boolean {
-  return (
-    [
-      0x04, 0x05, 0x07, 0x08, 0x09, 0x25, 0xa2, 0xa6, 0xa7, 0xaa, 0xae, 0xb0, 0xb1, 0xb8, 0xb9
-    ].includes(opcode) ||
-    (opcode >= 0x0a && opcode <= 0x1f) ||
-    (opcode >= 0x27 && opcode <= 0x2f) ||
-    (opcode >= 0x30 && opcode <= 0x7f) ||
-    opcode >= 0xc0
-  );
+  if (opcode === undefined) throw new Error("Rebuilt 0F opcode is missing");
+  switch (extendedOpcodeFamily(opcode)) {
+    case "undefined":
+      return executeUndefinedOpcode(context);
+    case "near-conditional":
+      return executeNearConditionalJump(context);
+    case "set-condition":
+      return executeSetCondition(context);
+    case "system":
+      return executeSystemGroup(context);
+    case "extended":
+      return executeExtended(context);
+    case "unsupported":
+      throw new Error(`Unsupported rebuilt 0F opcode 0x${opcode.toString(16)}`);
+  }
 }

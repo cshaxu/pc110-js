@@ -12,11 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T2 S6: active. Establish the final PCjs differential validation gate with
-  the rebuilt CPU and a test-only PCjs CPU oracle advancing one instruction at
-  a time from isolated equivalent state. The frozen legacy/reference CPU
-  remains differential evidence only. Do not begin T3 until every T2 completion
-  gate passes and the owner authorizes T3.
+- M2 T3 S1: active. Implement the project-native master and slave
+  8259A-compatible PIC variants. Preserve the verified T2 CPU oracle baseline
+  and use browser-visible workload evidence as the primary ongoing integration
+  driver; do not add PCjs devices or synthetic firmware responses.
 
 ## Delivery Nodes
 
@@ -84,5 +83,12 @@ established its initial baseline and is now a targeted diagnostic mechanism.
 Browser-visible project-owned workload evidence is the primary S6 driver. The
 current browser entry has only MachineRuntime controls, so it is not yet a
 native firmware, storage, display, or DOS workload claim.
+
+P32 completed the mandatory post-T2 architecture review. The rebuilt CPU's
+primary and `0F` dispatch now uses a project-native typed opcode table while
+retaining the existing state, decode, addressing, instruction, protection,
+event, and debug boundaries. T2's full gate, selected-ROM trace, coverage
+ledger, PCjs baseline, and exception register remain the T3 regression
+baseline.
 
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

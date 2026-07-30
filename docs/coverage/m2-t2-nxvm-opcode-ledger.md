@@ -253,6 +253,15 @@ serve as numeric coverage expansion. The current browser entry has only
 MachineRuntime controls and is not evidence of native firmware, storage,
 display, or DOS execution.
 
+## P32 Post-T2 Dispatch Audit
+
+The rebuilt dispatcher now derives primary and `0F` family selection from the
+project-native typed opcode table in `decode/opcode-table.ts`. The table keeps
+NXVM undefined ranges, group-family boundaries, and explicit unsupported
+encodings auditable without allowing device dispatch injection. Existing
+instruction modules, prefix decoding, ModR/M, memory, and event interfaces are
+unchanged; focused and full regressions establish behavior preservation.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

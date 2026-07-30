@@ -150,3 +150,10 @@ and the test-only PCjs oracle remain separate. Existing lockstep cases remain
 baseline evidence; future oracle additions require a browser-workload finding
 or an approved reusable-observation need. The current browser entry has no
 native firmware, storage, display, or DOS workload and makes no such claim.
+
+## P32 Post-T2 Dispatch Audit
+
+P32 is a project-native TypeScript structural refactor. It replaces the rebuilt
+CPU's long primary and `0F` family-selection condition chains with typed local
+metadata while retaining the existing instruction handlers. It introduces no
+PCjs, NXVM, legacy CPU, device, firmware, or browser runtime dependency.
