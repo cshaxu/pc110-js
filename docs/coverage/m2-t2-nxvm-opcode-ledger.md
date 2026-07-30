@@ -38,7 +38,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 0F A0-AF extended bit, shift, segment forms           | 12906-13203                                  | FS/GS stack forms, BT/BTS/BTR/BTC, SHLD/SHRD, IMUL, LSS/LFS/LGS, MOVZX           | `instructions/extended.ts`                                                                                                                                                                      | Partial                     | Bit addressing; flags; segment faults; 66/67                  | Required        | Implemented NXVM handler coverage: P378, P430; shared protected access faults remain separately ledgered                |
 | 0F B0-BF extended scans and sign extension            | 13203-13251                                  | BTC, BSF/BSR, MOVSX and immediate bit group                                      | `instructions/extended.ts`                                                                                                                                                                      | Partial                     | Zero input; flags; ModR/M; widths                             | Required        | Implemented NXVM handler coverage: P379, P408, P430; B0-B1 retain required `#UD` behavior                              |
 | Explicit NXVM undefined extensions                    | 12546-12552, 12637-12649, 12924-12977        | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD`                                 | `instructions/system.ts`                                                                                                                                                                        | Complete reference evidence | Prefixes and fault EIP                                        | Required        | Implemented: P385, P393                                                                                                 |
-| Segmentation, paging, exceptions, and trace           | 51-1145, 2033-3096, 13315-13917              | Logical/linear access, descriptors, stack, faults, interrupts, trace             | `protection/`, `events/`, `debug/`                                                                                                                                                              | Partial                     | PF/GP/SS/NP; privilege; ROM trace; differential state dumps   | Required        | In progress: P392, P433, P445 descriptor and selector faults                                                           |
+| Segmentation, paging, exceptions, and trace           | 51-1145, 2033-3096, 13315-13917              | Logical/linear access, descriptors, stack, faults, interrupts, trace             | `protection/`, `events/`, `debug/`                                                                                                                                                              | Partial                     | PF/GP/SS/NP; privilege; ROM trace; differential state dumps   | Required        | In progress: P392, P433, P445-P446 descriptor, selector, and segment-range faults                                     |
 
 ## P355 Rebuilt Dispatcher Boundary
 
@@ -74,6 +74,15 @@ P445 follows NXVM `_s_load_ldtr`, `_s_load_tr`, and `_ksa_load_sreg` at
 for a valid non-present LDT or available TSS descriptor. Focused protected-mode
 tests verify both forms reach the `#NP` gate, retain the selector error code,
 and leave LDTR/TR state unchanged.
+
+## P446 Protected Segment-Range Preflight Checklist
+
+P446 follows NXVM `_kma_linear_logical` at `vcpuins.c` 141-297, which checks
+the complete requested byte range against the selected protected segment before
+logical access. Rebuilt multi-byte reads and writes now preflight the complete
+operand range before translating individual bytes. Focused tests verify a
+16-bit protected data segment rejects word and dword accesses crossing its
+limit before any memory access.
 
 ## P329 `40-5F` Checklist
 

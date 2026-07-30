@@ -148,6 +148,27 @@ describe("SegmentedMemory", () => {
     expect(() => segmented.read8("ds", 0x7fff, 16)).toThrow(SegmentAccessError);
   });
 
+  it("rejects a protected multi-byte access that crosses a segment limit", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("ds", {
+      selector: 8,
+      base: 0,
+      limit: 0xffff,
+      default32: false,
+      valid: true,
+      dpl: 0,
+      executable: false,
+      readable: true,
+      writable: true,
+      expandDown: false
+    });
+    const segmented = new SegmentedMemory(memory(new Uint8Array(0x20000)), state);
+
+    expect(() => segmented.read16("ds", 0xffff, 16)).toThrow(SegmentAccessError);
+    expect(() => segmented.write32("ds", 0xfffe, 1, 16)).toThrow(SegmentAccessError);
+  });
+
   it("uses virtual-8086 real-style segments and a 16-bit stack address", () => {
     const state = new RebuiltCpuState();
     state.writeCr0(1);

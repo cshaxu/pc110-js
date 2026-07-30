@@ -97,7 +97,14 @@ export class SegmentedMemory {
     const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
     const virtual8086 = this.state.isVirtual8086();
     if (protectedMode && !virtual8086)
-      this.validateProtectedAccess(segmentName, segment, normalizedOffset, write, instructionFetch);
+      this.validateProtectedAccess(
+        segmentName,
+        segment,
+        normalizedOffset,
+        1,
+        write,
+        instructionFetch
+      );
     const base = virtual8086 ? (segment.selector << 4) >>> 0 : segment.base;
     const linear = (base + normalizedOffset) >>> 0;
     try {
@@ -125,8 +132,29 @@ export class SegmentedMemory {
     write: boolean,
     instructionFetch: boolean
   ): readonly number[] {
+    this.validateRange(segment, offset, addressSize, width, write, instructionFetch);
     return Array.from({ length: width }, (_, index) =>
       this.translate(segment, offset + index, addressSize, write, instructionFetch)
+    );
+  }
+
+  private validateRange(
+    segmentName: SegmentName,
+    offset: number,
+    addressSize: 16 | 32,
+    width: 2 | 4,
+    write: boolean,
+    instructionFetch: boolean
+  ): void {
+    if (!(this.state.readCr0() & 0x00000001) || this.state.isVirtual8086()) return;
+    const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
+    this.validateProtectedAccess(
+      segmentName,
+      this.state.readSegment(segmentName),
+      normalizedOffset,
+      width,
+      write,
+      instructionFetch
     );
   }
 
@@ -134,6 +162,7 @@ export class SegmentedMemory {
     segmentName: SegmentName,
     segment: ReturnType<RebuiltCpuState["readSegment"]>,
     offset: number,
+    width: number,
     write: boolean,
     instructionFetch: boolean
   ): void {
@@ -141,7 +170,7 @@ export class SegmentedMemory {
       throw new SegmentAccessError(segmentName, `Segment ${segmentName} is invalid`);
     const lower = segment.expandDown ? (segment.limit + 1) >>> 0 : 0;
     const upper = segment.expandDown ? (segment.default32 ? 0xffffffff : 0xffff) : segment.limit;
-    if (offset < lower || offset > upper)
+    if (offset < lower || offset > upper || width - 1 > upper - offset)
       throw new SegmentAccessError(segmentName, `Segment ${segmentName} limit exceeded`);
     if (instructionFetch) return;
     if (write && segment.writable === false)

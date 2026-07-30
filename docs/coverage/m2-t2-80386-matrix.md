@@ -25,7 +25,7 @@ handlers have already closed in the opcode ledger.
 | 32-bit general registers and EFLAGS | Implemented | Project CPU state and focused state tests. |
 | Segment selectors and hidden caches | Partial architecture closure | P388-P390, P396-P397, and P443 cover cached loads, LDT lookup, access checks, and descriptor Accessed-bit writeback; complete descriptor fault classification remains. Task/call gates are NXVM TODO-aligned exclusions recorded by P441. |
 | GDTR, IDTR, LDTR, TR, CR0, CR2, and CR3 | Partial architecture closure | P382-P384, P428, and P445 cover the NXVM executable system forms and LLDT/LTR selector fault classification; complete debug semantics remain. Task-switch state is an NXVM TODO-aligned exclusion recorded by P441. |
-| Real/protected address translation | Partial architecture closure | P392, P394-P397, and P433 cover rebuilt translation and access-fault boundaries; remaining architecture cases are ledgered. |
+| Real/protected address translation | Partial architecture closure | P392, P394-P397, P433, and P446 cover rebuilt translation, multi-byte protected segment-limit preflight, and access-fault boundaries; remaining architecture cases are ledgered. |
 | 80386 paging and page faults | Partial architecture closure | P392, P394-P395, P411, and P433 cover page walks, fault delivery, escalation, and cross-page atomicity; complete architecture validation remains. |
 
 ## Decode And Data Paths
@@ -47,7 +47,7 @@ handlers have already closed in the opcode ledger.
 | Interrupts, traps, and IRET | Partial architecture closure | P400-P416 and P425 close implemented gate/IRET/IRQ paths; remaining non-NXVM-TODO privilege-delivery paths remain. Task gates are NXVM TODO-aligned exclusions recorded by P441. |
 | Descriptor-table and system instructions | Partial architecture closure | P380-P390, P415-P416, P428, and P445 close executable NXVM handler forms and LLDT/LTR non-present fault classification; full validation remains. Task/call-gate paths are NXVM TODO-aligned exclusions recorded by P441. |
 | Privilege model | Partial architecture closure | P388, P400-P404, P415-P416, and P421-P422 cover verified paths; remaining non-NXVM-TODO validation remains. Task/call-gate behavior is an NXVM TODO-aligned exclusion recorded by P441. |
-| Exceptions and fault restart | Partial architecture closure | P394-P396, P406-P413, P431, and P433 cover rebuilt fault handling, restart EIP, escalation, and memory atomicity; the complete architecture matrix remains. |
+| Exceptions and fault restart | Partial architecture closure | P394-P396, P406-P413, P431, P433, and P446 cover rebuilt fault handling, restart EIP, escalation, memory atomicity, and protected segment-limit preflight; the complete architecture matrix remains. |
 
 ## NXVM Post-80386 TODO Entries
 
