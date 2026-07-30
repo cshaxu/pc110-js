@@ -314,4 +314,18 @@ describe("RebuiltPcAt386Core", () => {
     core.reset();
     expect(core.mdaCompatibility.snapshot()).toMatchObject({ mode: 0, crtcIndex: 0 });
   });
+
+  it("registers retained CGA compatibility state for selected VGA firmware probes", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x3d8, 0x29, 8);
+    core.ports.write(0x3d9, 0x1e, 8);
+    core.ports.write(0x3d4, 0x0f, 8);
+    core.ports.write(0x3d5, 0x7f, 8);
+    expect(core.ports.read(0x3d8, 8)).toBe(0x29);
+    expect(core.ports.read(0x3d9, 8)).toBe(0x1e);
+    expect(core.ports.read(0x3d5, 8)).toBe(0x7f);
+    core.reset();
+    expect(core.cgaCompatibility.snapshot()).toMatchObject({ mode: 0, color: 0, crtcIndex: 0 });
+  });
 });

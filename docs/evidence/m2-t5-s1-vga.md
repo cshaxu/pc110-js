@@ -28,3 +28,13 @@ memory, renderer, BIOS, DOS, font, framebuffer, or browser behavior.
   write ownership, reset, and machine composition.
 - Trace: native MDA state advances the selected ROM to 224 instructions at
   `F000:BB36`, stopping on CGA compatibility mode port `0x3D8`.
+
+## P3 CGA Compatibility Evidence
+
+- Level: Strong.
+- Source: pinned read-only PCjs `video.js` CGA register definitions and input/
+  output port table.
+- Tests: CRTC index/data, mode, color, deterministic status, reset, width,
+  write ownership, and machine composition.
+- Trace: native CGA state advances the selected ROM to 231 instructions at
+  `F000:BB44`, stopping on VGA attribute-controller port `0x3C0`.

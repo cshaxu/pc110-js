@@ -20,3 +20,10 @@ retained compatibility probe state before the complete VGA path can advance.
 PCjs maps CRTC index/data aliases at `0x3B0`-`0x3B7`, MDA mode at `0x3B8`, and
 status at `0x3BA`. The native state model retains those values and exposes a
 deterministic status signal without adopting PCjs rendering or timing code.
+
+## P3 CGA Compatibility
+
+PCjs maps the CGA CRTC index/data registers at `0x3D4`/`0x3D5`, mode at
+`0x3D8`, color select at `0x3D9`, and status at `0x3DA`. The native model
+retains the full compatibility group and deterministic retrace bits without
+adopting PCjs display, timing, font, BIOS, or browser code.
