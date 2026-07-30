@@ -45,4 +45,16 @@ describe("NativeCoreCheckpoint", () => {
     checkpoint.attachFloppy(new Uint8Array(80 * 2 * 18 * 512));
     expect(checkpoint.core.fdc.controller.snapshot().drives[0]).toMatchObject({ ready: true });
   });
+
+  it("models selected-machine expansion ROM holes as a floating physical bus", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+    expect(checkpoint.memory.readUint8(0xe0000)).toBe(0xff);
+    expect(() => checkpoint.memory.writeUint8(0xe0000, 0x12)).not.toThrow();
+  });
+
+  it("models selected-machine unpopulated I/O as floating reads and ignored writes", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+    expect(checkpoint.core.ports.read(0x4b, 8)).toBe(0xff);
+    expect(() => checkpoint.core.ports.write(0x4b, 0x36, 8)).not.toThrow();
+  });
 });

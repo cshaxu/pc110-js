@@ -30,8 +30,15 @@ export interface NativeCoreCheckpointSnapshot {
 }
 
 export class NativeCoreCheckpoint {
-  public readonly memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
-  public readonly core = new RebuiltPcAt386Core(this.memory);
+  public readonly memory = new PhysicalMemory({
+    ramBytes: 0xa0000,
+    a20Enabled: true,
+    unmappedReadValue: 0xff,
+    ignoreUnmappedWrites: true
+  });
+  public readonly core = new RebuiltPcAt386Core(this.memory, undefined, {
+    unpopulatedIo: "floating"
+  });
   public readonly textFramebuffer = new VgaTextFramebuffer(
     this.core.vgaMemory,
     this.core.crtc,
