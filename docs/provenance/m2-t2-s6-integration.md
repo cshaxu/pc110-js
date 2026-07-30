@@ -142,3 +142,11 @@ P30 uses the project-native dispatcher and independent real-mode RAM images
 for D0-D5 Group Two, AAM/AAD, and D7 XLAT. PCjs remains a verification-only
 oracle; no PCjs source, runtime dependency, or instruction-specific oracle
 logic enters the product.
+
+## P31 Browser-First Validation Direction
+
+P31 changes verification selection only. The project-native browser runtime
+and the test-only PCjs oracle remain separate. Existing lockstep cases remain
+baseline evidence; future oracle additions require a browser-workload finding
+or an approved reusable-observation need. The current browser entry has no
+native firmware, storage, display, or DOS workload and makes no such claim.

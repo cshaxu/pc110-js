@@ -244,6 +244,15 @@ A generic real-mode program matches PCjs for D0-D3 one/CL-count shifts, D4/D5
 AAM/AAD, and D7 XLAT. D6 remains governed by EXC-001; D8-DF vector-six
 delivery, default-32, and address-override forms remain separate S6 work.
 
+## S6 P31 Browser-First Direction
+
+The PCjs harness has established an initial project-native real-mode baseline.
+Future S6 selection is driven by observable browser workload findings; a new
+oracle fixture or observation must directly diagnose such a finding rather than
+serve as numeric coverage expansion. The current browser entry has only
+MachineRuntime controls and is not evidence of native firmware, storage,
+display, or DOS execution.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

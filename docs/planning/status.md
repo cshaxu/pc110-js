@@ -79,4 +79,10 @@ requires a documented exclusion ledger and does not relax the later standalone
 browser DOS workload: that workload must use project-owned CPU, memory, and
 native devices as the M2 whole-machine completion gate.
 
+P31 further corrects the S6 execution method: the lockstep harness has
+established its initial baseline and is now a targeted diagnostic mechanism.
+Browser-visible project-owned workload evidence is the primary S6 driver. The
+current browser entry has only MachineRuntime controls, so it is not yet a
+native firmware, storage, display, or DOS workload claim.
+
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.
