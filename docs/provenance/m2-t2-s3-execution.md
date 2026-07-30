@@ -773,6 +773,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   stack-address behavior. Operand-size controls BP/EBP pop width, while SS D/B
   controls SP/ESP address width. This also corrects project-native contextual
   word push/pop accesses to pass a 32-bit SS address explicitly when required.
+- M2 T2 S3 P279 adds project-native `ARPL` execution. PCjs supplies the
+  protected-mode compatibility authority; the implementation adjusts a 16-bit
+  selector's RPL only when needed, writes ZF through a new generic state API,
+  and uses existing vector-six delivery outside protected mode.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

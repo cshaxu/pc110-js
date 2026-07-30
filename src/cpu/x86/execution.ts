@@ -1107,6 +1107,35 @@ function executeContextualInstruction(
     );
     return { halted: false, fetched };
   }
+  if (context.opcode === 0x63) {
+    const snapshot = state.snapshot();
+    if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected") {
+      deliverCpuFault(memory, state, 6, fetched.instructionPointer);
+      return { halted: false, fetched };
+    }
+    const modRmOffset = context.opcodeOffset + 1;
+    const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+    const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+    const destination = modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+    const sourceRpl = state.readRegister16(modRm.reg) & 0x03;
+    const adjusted = (destination & 0x03) < sourceRpl;
+    const result = adjusted ? (destination & 0xfffc) | sourceRpl : destination;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+    else
+      writeSegmentUint16(
+        memory,
+        state,
+        address!.segment,
+        address!.offset,
+        result,
+        context.addressSize
+      );
+    state.writeZeroFlag(adjusted);
+    state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
+    return { halted: false, fetched };
+  }
   if (context.opcode === 0xff) {
     const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
     if (modRm.reg === 0x06) {

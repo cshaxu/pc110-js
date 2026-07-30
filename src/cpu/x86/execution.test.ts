@@ -4674,6 +4674,63 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("adjusts selector RPLs through default and overridden ARPL addresses", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x63],
+      [0x0101, 0x05],
+      [0x0102, 0x00],
+      [0x0103, 0x20],
+      [0x0104, 0x01],
+      [0x0105, 0x00],
+      [0x0106, 0x67],
+      [0x0107, 0x63],
+      [0x0108, 0x0e],
+      [0x0109, 0x34],
+      [0x010a, 0x12],
+      [0x12000, 0x10],
+      [0x12001, 0x00],
+      [0x1234, 0x13],
+      [0x1235, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister16(0, 0x0003);
+    state.writeRegister16(1, 0x0001);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect([values.get(0x12000), values.get(0x12001)]).toEqual([0x13, 0x00]);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x00000042, eip: 0x0106 });
+    stepInstruction(memory, state);
+    expect([values.get(0x1234), values.get(0x1235)]).toEqual([0x13, 0x00]);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x00000002, eip: 0x010b });
+  });
+
+  it("delivers real-mode ARPL as an invalid opcode", () => {
+    const values = new Map<number, number>([
+      [0x000ffff0, 0x63],
+      [0x000ffff1, 0xc0],
+      [0x00000018, 0x34],
+      [0x00000019, 0x12],
+      [0x0000001a, 0x00],
+      [0x0000001b, 0x20]
+    ]);
+    const state = new Cpu386State();
+    state.loadRealModeSegment("ss", 0);
+    state.writeRegister16(4, 0x1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x2000 },
+      eip: 0x1234,
+      registers: { esp: 0x0ffa }
+    });
+    expect([values.get(0x0ffa), values.get(0x0ffb)]).toEqual([0xf0, 0xff]);
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],
