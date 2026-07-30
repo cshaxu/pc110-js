@@ -1009,6 +1009,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P337 translates NXVM accumulator XCHG behavior into native TypeScript.
   It snapshots AX/EAX before swapping, treats `90` as a no-op, preserves EFLAGS,
   and has no external runtime dependency.
+- M2 T2 S3 P338 translates NXVM CBW/CWDE and CWD/CDQ behavior into native
+  TypeScript. It derives only the architecturally selected sign extension and
+  does not import NXVM, PCjs, or legacy CPU code at runtime.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

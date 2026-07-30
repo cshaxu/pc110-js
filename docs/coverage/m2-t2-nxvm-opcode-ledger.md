@@ -27,7 +27,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 70-7F short Jcc | 7309-7494 | All short conditional transfers | `instructions/control.ts` | Partial | Taken/not-taken; flags; 16/default-32 EIP | Required | Implemented: P331; broader differential evidence remains active |
 | 80, 81, 83 Group One | 7507-7840 | Immediate arithmetic and compare groups | `instructions/group-one.ts` | Partial | Every extension; sign extension; register/memory; widths | Required | Implemented: P332; broader differential evidence remains active |
 | 84-8F ModR/M, segment, and stack forms | 7853-8130 | TEST, XCHG, MOV, segment moves, LEA, POP r/m | `instructions/test.ts`, `instructions/exchange.ts`, `instructions/move.ts`, `instructions/lea.ts`, `instructions/register-stack.ts` | Partial | ModR/M/SIB; segment validation; 66/67 | Required | In progress: P333-P336 implement 84-8D |
-| 90-9F exchange, flags, far call, and flag transfer | 8143-8626 | NOP, XCHG AX, CBW/CWD, far call, PUSHF/POPF, SAHF/LAHF | `instructions/accumulator-exchange.ts`, `instructions/control.ts`, `instructions/register-stack.ts` | Partial | Flag privilege; operand width; far control transfer | Required | In progress: P337 implements 90-97 |
+| 90-9F exchange, flags, far call, and flag transfer | 8143-8626 | NOP, XCHG AX, CBW/CWD, far call, PUSHF/POPF, SAHF/LAHF | `instructions/accumulator-exchange.ts`, `instructions/sign-extension.ts`, `instructions/control.ts`, `instructions/register-stack.ts` | Partial | Flag privilege; operand width; far control transfer | Required | In progress: P337-P338 implement 90-99 |
 | A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | Planned |
 | B0-BF immediate register moves | 9325-9589 | Byte and operand-sized register immediates | `instructions/move.ts` | Partial | All registers; instruction length; 66 | Required | Planned |
 | C0-CF groups, returns, interrupts, frame | 9613-10338 | Shifts/rotates, RET, LES/LDS, MOV immediate groups, ENTER/LEAVE, RETF, INT, IRET | `instructions/groups.ts`, `instructions/control.ts`, `instructions/interrupt.ts` | Partial | Every group extension; count/flags; privilege; fault EIP | Required | Planned |
@@ -134,6 +134,13 @@ P337 follows NXVM's accumulator XCHG handlers and completes `90-97`: `90` is
 NOP and `91-97` exchange AX/EAX with a general register. Focused tests cover
 all exchange registers, `66`, instruction length, and EFLAGS preservation.
 CBW/CWD, far call, flag transfer, and other `90-9F` forms remain active work.
+
+## P338 `98-99` Sign Extension Checklist
+
+P338 follows NXVM CBW/CWDE and CWD/CDQ handlers and completes `98-99`. Focused
+tests cover positive and negative values, default 16-bit mode, `66` dword
+selection, and EFLAGS preservation. Far call and flag-transfer forms remain
+active work.
 
 ## Status Rule
 
