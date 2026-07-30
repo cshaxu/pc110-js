@@ -845,9 +845,12 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `vcpu.h` and `vcpuins.c` define required CPU coverage and validated execution
   behavior; Intel IA-32 documentation resolves conflicts, while PCjs remains
   the PC/AT and whole-machine reference. NXVM C, macros, global state, BIOS,
-  POST, I/O, and guest-service behavior remain excluded. `CPUID`,
-  `RDMSR`/`WRMSR`, `WBINVD`, and `RSM` are required isolated compatibility
-  work.
+  POST, I/O, and guest-service behavior remain excluded.
+- M2 T2 S3 P296 audited the corresponding NXVM handler bodies. `WBINVD`,
+  `WRMSR`, `RDMSR`, `CPUID`, and `RSM` all call `UndefinedOpcode()` and set the
+  instruction-ignore path. M2 therefore preserves and tests their `#UD`
+  behavior; it does not invent later-processor cache, MSR, CPUID, or SMM
+  functionality.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

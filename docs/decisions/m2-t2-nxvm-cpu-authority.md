@@ -9,18 +9,21 @@ compatibility, reference-machine, and whole-machine comparison authority.
 
 ## Required Scope
 
-The M2 T2 CPU must cover every instruction and execution behavior represented
-by NXVM `src/device/vcpu.h` and `src/device/vcpuins.c`, using project-native
-TypeScript. In addition to strict 80386 behavior, the following NXVM
-compatibility extensions are mandatory isolated CPU work:
+The M2 T2 CPU must cover every implemented instruction and execution behavior
+represented by NXVM `src/device/vcpu.h` and `src/device/vcpuins.c`, using
+project-native TypeScript. The following post-80386 opcode entries are present
+in NXVM only as explicit `UndefinedOpcode()` TODO handlers, not as implemented
+extension behavior:
 
 - `CPUID`
 - `RDMSR` and `WRMSR`
 - `WBINVD`
 - `RSM`
 
-Each extension must use a generic CPU compatibility interface with no
-dependency on BIOS, DOS, PC110, browser, or device shortcuts.
+M2 T2 must decode and test their NXVM-compatible `#UD` behavior, including
+fault return EIP. It must not implement their later-processor functionality or
+add SMM, MSR, cache, BIOS, DOS, PC110, browser, or device shortcuts without a
+separate owner authorization.
 
 ## Exclusions
 
@@ -31,7 +34,8 @@ requirements.
 
 ## Completion Evidence
 
-The coverage matrix must map every NXVM CPU instruction family and extension to
-project-native tests, authority notes, and implementation status. M2 T2 cannot
-close until that matrix, paging and fault behavior, the local ROM trace, and
-the PCjs whole-machine comparison gates all pass.
+The coverage matrix must map every NXVM CPU instruction family, including the
+explicit `#UD` entries, to project-native tests, authority notes, and
+implementation status. M2 T2 cannot close until that matrix, paging and fault
+behavior, the local ROM trace, and the PCjs whole-machine comparison gates all
+pass.

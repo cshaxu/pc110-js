@@ -67,14 +67,16 @@ the first-order execution reference, with Intel IA-32 documentation resolving
 semantic conflicts. Do not translate NXVM C, macros, global state, BIOS, POST,
 I/O hacks, or guest-service behavior. PCjs remains the PC/AT compatibility and
 whole-machine reference. NXVM compatibility extensions listed in the decision
-record are mandatory, isolated CPU work. T3 remains prohibited until T2's gates
-pass and the owner grants a new authorization.
+record are mandatory `#UD` behavior only; later-processor functionality remains
+out of scope. T3 remains prohibited until T2's gates pass and the owner grants
+a new authorization.
 
 ## Working Method
 
 1. Classify one observed reset, BIOS, protected-mode, or interrupt blocker.
-2. Compare the exact PCjs behavior and implement the smallest generic CPU
-   boundary that resolves that blocker.
+2. Compare the exact NXVM CPU behavior, resolve semantic conflicts with Intel
+   IA-32 documentation, then use PCjs for PC/AT compatibility and implement the
+   smallest generic CPU boundary that resolves that blocker.
 3. Add focused TypeScript tests, provenance, a PCjs behavior report when
    required, and a concise tracking entry in the same part commit.
 4. Run `pnpm run format`, `pnpm run build`, `pnpm run lint`, `pnpm run test`,

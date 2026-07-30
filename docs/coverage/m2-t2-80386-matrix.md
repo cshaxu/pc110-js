@@ -48,14 +48,14 @@ credit.
 | Privilege model | Partial | Selected CPL-zero checks and TSS stack switching exist; complete CPL/RPL/DPL and conforming-segment behavior remains. |
 | Exceptions and fault restart | Partial | Selected no-error and general-protection delivery exists; full architectural exception matrix, #PF codes, and restart coverage remain. |
 
-## Required NXVM Compatibility Extensions
+## NXVM Post-80386 TODO Entries
 
-| Extension | Status | Required boundary |
+| Opcode | NXVM behavior | Required M2 boundary |
 | --- | --- | --- |
-| `CPUID` | Not started | Generic CPU compatibility interface, deterministic leaf model, and focused register-result tests. |
-| `RDMSR` and `WRMSR` | Not started | Generic CPU compatibility interface, privilege/fault behavior, and no guest-service or device shortcut. |
-| `WBINVD` | Not started | Generic CPU compatibility interface and defined cache-model boundary; no host-cache operation. |
-| `RSM` | Not started | Generic CPU compatibility interface and explicit unsupported-state fault behavior until a resumable SMM model exists. |
+| `0F 09` `WBINVD` | Explicit `UndefinedOpcode()` TODO handler | Decode, `#UD`, and fault-EIP test; no cache model. |
+| `0F 30` `WRMSR` and `0F 32` `RDMSR` | Explicit `UndefinedOpcode()` TODO handlers | Decode, `#UD`, and fault-EIP tests; no MSR model. |
+| `0F A2` `CPUID` | Explicit `UndefinedOpcode()` TODO handler | Decode, `#UD`, and fault-EIP test; no CPUID leaf model. |
+| `0F AA` `RSM` | Explicit `UndefinedOpcode()` TODO handler | Decode, `#UD`, and fault-EIP test; no SMM model. |
 
 ## Explicitly Pending Before T2 Closure
 
