@@ -58,7 +58,14 @@ export function deliverInterrupt(
       ? switchToPrivilegeStack(memory, state, targetPrivilege, virtual8086)
       : undefined;
   if (outerFrame?.virtual8086) {
-    pushVirtual8086Frame(memory, state, gate.operandSize, request.returnEip, outerFrame);
+    pushVirtual8086Frame(
+      memory,
+      state,
+      gate.operandSize,
+      request.returnEip,
+      request.errorCode,
+      outerFrame
+    );
     loadDataSegment(memory, state, "gs", 0);
     loadDataSegment(memory, state, "fs", 0);
     loadDataSegment(memory, state, "ds", 0);
@@ -122,6 +129,7 @@ function pushVirtual8086Frame(
   state: RebuiltCpuState,
   operandSize: OperandSize,
   returnEip: number,
+  errorCode: number | undefined,
   frame: ReturnType<typeof switchToPrivilegeStack>
 ): void {
   pushStack(memory, state, operandSize, frame.gs);
@@ -133,6 +141,7 @@ function pushVirtual8086Frame(
   pushStack(memory, state, operandSize, frame.flags);
   pushStack(memory, state, operandSize, frame.cs);
   pushStack(memory, state, operandSize, returnEip);
+  if (errorCode !== undefined) pushStack(memory, state, operandSize, errorCode);
 }
 
 export function deliverFault(

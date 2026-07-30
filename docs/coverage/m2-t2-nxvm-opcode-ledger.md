@@ -574,6 +574,13 @@ CPL3-to-CPL0 software gate, frame ordering, return to CPL3, and busy state.
 16-bit TSS, v86 interrupt frames, task switching, and gate fault escalation
 remain active dependencies.
 
+## P402 Virtual-8086 Flag Stack Checklist
+
+P402 follows NXVM v86 PUSHF/POPF IOPL admission. IOPL three permits the
+16-bit v86 flag-stack forms; lower IOPL delivers #GP(0) through the rebuilt
+v86 TSS frame. v86 I/O permission maps and later virtual-interrupt extensions
+remain active dependencies.
+
 ## P401 Virtual-8086 Interrupt Frame Checklist
 
 P401 adds the 32-bit TSS-gated v86 interrupt frame and matching IRET restore:
