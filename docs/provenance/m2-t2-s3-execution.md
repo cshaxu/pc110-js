@@ -892,6 +892,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P308 adds project-native contextual FF /0 and /1. The helper uses
   existing word/dword flag writers, keeps CF unchanged, and selects operand and
   ModR/M address widths independently from the instruction context.
+- M2 T2 S3 P309 routes FF /2 through a project-native contextual near-call
+  helper. It reads a complete target before stack mutation, pushes an
+  operand-sized return address through the existing SS stack boundary, and
+  loads IP or EIP from the context-selected operand width.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

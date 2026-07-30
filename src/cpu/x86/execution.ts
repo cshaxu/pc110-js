@@ -1450,6 +1450,35 @@ function executeContextualNearCallReturn(
   return { halted: false, fetched };
 }
 
+function executeContextualNearCallModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): boolean {
+  if (context.opcode !== 0xff) return false;
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x02) return false;
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const target = modRm.registerDirect
+    ? context.operandSize === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : context.operandSize === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  const returnAddress =
+    fetched.instructionPointer +
+    modRmOffset +
+    1 +
+    decodedAddressBytes(address, context.addressSize);
+  pushContextOperand(memory, state, context, returnAddress);
+  if (context.operandSize === 32) state.writeEip(target);
+  else state.writeEip16(target);
+  return true;
+}
+
 function executeContextualNearConditionalJump(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1625,6 +1654,8 @@ function executeContextualInstruction(
   if (nearJump) return nearJump;
   const nearCallReturn = executeContextualNearCallReturn(memory, state, context, fetched);
   if (nearCallReturn) return nearCallReturn;
+  if (executeContextualNearCallModRm(memory, state, context, fetched))
+    return { halted: false, fetched };
   const nearConditionalJump = executeContextualNearConditionalJump(memory, state, context, fetched);
   if (nearConditionalJump) return nearConditionalJump;
   if (context.opcode >= 0x70 && context.opcode <= 0x7f) {
