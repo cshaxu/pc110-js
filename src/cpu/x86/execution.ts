@@ -281,39 +281,54 @@ function executeBound32(
   addressSize: 16 | 32,
   faultInstructionPointer: number
 ): void {
+  executeBound(memory, state, modRmOffset, addressSize, 32, faultInstructionPointer);
+}
+
+function executeBound(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  operandSize: 16 | 32,
+  faultInstructionPointer: number
+): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
   if (modRm.registerDirect) throw new UnsupportedOpcodeError("BOUND requires a memory operand");
-  const address =
-    addressSize === 16
-      ? decodeModRm16Address(
-          modRm,
-          (index) => state.readRegister16(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        )
-      : decodeModRm32Address(
-          modRm,
-          (index) => state.readRegister(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        );
-  const sibBytes =
-    "sibBytes" in address && typeof address.sibBytes === "number" ? address.sibBytes : 0;
-  const addressBytes = address.displacementBytes + sibBytes;
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize)!;
   const offsetMask = addressSize === 16 ? 0xffff : 0xffffffff;
-  const index = state.readRegister(modRm.reg) | 0;
-  const lower = readSegmentUint32(memory, state, address.segment, address.offset, addressSize) | 0;
+  const width = operandSize / 8;
+  const index =
+    operandSize === 32
+      ? state.readRegister(modRm.reg) | 0
+      : (state.readRegister16(modRm.reg) << 16) >> 16;
+  const lower =
+    operandSize === 32
+      ? readSegmentUint32(memory, state, address.segment, address.offset, addressSize) | 0
+      : (readSegmentUint16(memory, state, address.segment, address.offset, addressSize) << 16) >>
+        16;
   const upper =
-    readSegmentUint32(
-      memory,
-      state,
-      address.segment,
-      (address.offset + 4) & offsetMask,
-      addressSize
-    ) | 0;
+    operandSize === 32
+      ? readSegmentUint32(
+          memory,
+          state,
+          address.segment,
+          (address.offset + width) & offsetMask,
+          addressSize
+        ) | 0
+      : (readSegmentUint16(
+          memory,
+          state,
+          address.segment,
+          (address.offset + width) & offsetMask,
+          addressSize
+        ) <<
+          16) >>
+        16;
   if (index < lower || index > upper) {
     deliverCpuFault(memory, state, 5, faultInstructionPointer);
     return;
   }
-  state.advanceEip(modRmOffset + 1 + addressBytes);
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, addressSize));
 }
 
 function writeSegmentUint8(
@@ -1072,6 +1087,17 @@ function executeContextualInstruction(
   if (lea) return lea;
   const immediateMov = executeContextualImmediateMov(memory, state, context, fetched);
   if (immediateMov) return immediateMov;
+  if (context.opcode === 0x62) {
+    executeBound(
+      memory,
+      state,
+      context.opcodeOffset + 1,
+      context.addressSize,
+      context.operandSize,
+      fetched.instructionPointer
+    );
+    return { halted: false, fetched };
+  }
   if (context.opcode === 0xff) {
     const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
     if (modRm.reg === 0x06) {

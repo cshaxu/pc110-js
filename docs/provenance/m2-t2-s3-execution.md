@@ -758,6 +758,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P274 routes `91` through `97` through a project-native accumulator
   exchange path. PCjs operand-size selection controls whether the exchange
   reads and writes AX or EAX plus the selected register; flags remain unchanged.
+- M2 T2 S3 P275 replaces the dword-only BOUND helper with a project-native
+  operand-width helper and routes `62` through context. PCjs operand-size
+  selection controls signed index and range width, while address-size controls
+  the bounds-pair address; existing vector-five fault delivery remains shared.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
