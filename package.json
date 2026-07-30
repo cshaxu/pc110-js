@@ -15,6 +15,7 @@
     "format": "prettier --check \"src/**/*.ts\" \"*.{json,mjs,yaml}\"",
     "dev": "vite",
     "headless": "pnpm run build && node build/headless/main.js",
+    "trace:rebuilt-rom": "pnpm run build && node build/reference/rebuilt-rom-trace.js",
     "reference": "pnpm run build && node build/reference/reference-server.js --open",
     "reference:serve": "pnpm run build && node build/reference/reference-server.js"
   },

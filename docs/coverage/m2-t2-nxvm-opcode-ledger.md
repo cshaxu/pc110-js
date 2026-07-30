@@ -266,3 +266,11 @@ register and memory destinations, overrides, EFLAGS preservation, and length.
 
 "Implemented" means the rebuilt CPU only. Legacy tests and trace evidence may
 support differential tests, but they cannot mark a rebuilt family complete.
+
+## P358 Selected ROM Trace Boundary
+
+P358 provides a local-only trace command for the pinned PCjs DeskPro ROM. The
+rebuilt runner executes the reset `EA` and the following `MOV AL, 0`, then
+stops at `F000:F907` on `E6` (`OUT`). This validates the rebuilt reset, ROM,
+dispatcher, and direct far-JMP path without adding I/O behavior. The `E6-E7`
+I/O family and its device-bus integration remain active S3/S5 dependencies.

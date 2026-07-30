@@ -1067,6 +1067,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P357 adapts NXVM's direct far-JMP control flow into project-native
   TypeScript. Real-mode CS cache loading and operand-selected offsets are
   implemented without importing NXVM, PCjs, or legacy CPU runtime code.
+- M2 T2 S3 P358 reads the pinned PCjs ROM only from the sibling checkout for a
+  local validation command. It does not copy firmware bytes, create device
+  behavior, or introduce PCjs runtime dependencies into the rebuilt CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

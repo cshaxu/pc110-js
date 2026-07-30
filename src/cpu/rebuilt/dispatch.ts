@@ -52,7 +52,7 @@ export function dispatchRebuiltInstruction(context: RebuiltExecutionContext): vo
   if (opcode === 0xd4 || opcode === 0xd5) return executeAsciiAdjust(context);
   if (opcode === 0xd7) return executeXlat(context);
   if ([0xe0, 0xe1, 0xe2, 0xe3].includes(opcode)) return executeLoop(context);
-  if ([0xe8, 0xe9, 0xeb].includes(opcode)) return executeNearControl(context);
+  if ([0xe8, 0xe9, 0xea, 0xeb].includes(opcode)) return executeNearControl(context);
   if ([0xf5, 0xf8, 0xf9, 0xfc, 0xfd].includes(opcode)) return executeFlagControl(context);
   if (opcode === 0xf6 || opcode === 0xf7) return executeGroupThree(context);
   if (opcode === 0xfe || opcode === 0xff) return executeGroupFourFive(context);

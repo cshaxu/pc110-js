@@ -14,4 +14,18 @@ describe("RebuiltCpuRunner", () => {
     runner.run(2);
     expect(runner.state.readEip()).toBe(0xfff2);
   });
+
+  it("routes the reset-vector far JMP through the rebuilt dispatcher", () => {
+    const firmware = new Uint8Array(0x10000);
+    firmware.set([0xea, 0x00, 0x00, 0x00, 0xf0], 0xfff0);
+    firmware[0] = 0x90;
+    const memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+    memory.mapRom(createRomImage("rebuilt-test-bios", firmware), 0x000f0000, [0xffff0000]);
+    const runner = new RebuiltCpuRunner(memory);
+    runner.run(2);
+    expect(runner.state.snapshot()).toMatchObject({
+      eip: 1,
+      segments: { cs: { selector: 0xf000, base: 0x000f0000 } }
+    });
+  });
 });
