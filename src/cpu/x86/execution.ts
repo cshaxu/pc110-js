@@ -723,6 +723,63 @@ function executeContextualRotateLeft(
   state.advanceEip(instructionBytes);
 }
 
+function executeContextualRotateRight(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  count: number,
+  immediateBytes = 0
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x01)
+    throw new UnsupportedOpcodeError("Unsupported contextual rotate opcode form");
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  const width = context.operandSize;
+  const normalizedCount = (count & 0x1f) % width;
+  const instructionBytes =
+    modRmOffset + 1 + decodedAddressBytes(address, context.addressSize) + immediateBytes;
+  if (!normalizedCount) {
+    state.advanceEip(instructionBytes);
+    return;
+  }
+  const source = modRm.registerDirect
+    ? width === 32
+      ? state.readRegister(modRm.rm)
+      : state.readRegister16(modRm.rm)
+    : width === 32
+      ? readSegmentUint32(memory, state, address!.segment, address!.offset, context.addressSize)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+  const result =
+    width === 32
+      ? ((source >>> normalizedCount) | (source << (32 - normalizedCount))) >>> 0
+      : ((source >>> normalizedCount) | (source << (16 - normalizedCount))) & 0xffff;
+  if (modRm.registerDirect) {
+    if (width === 32) state.writeRegister(modRm.rm, result);
+    else state.writeRegister16(modRm.rm, result);
+  } else if (width === 32)
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  else
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      result,
+      context.addressSize
+    );
+  if (width === 32) state.writeRotateRightFlags32(result);
+  else state.writeRotateRightFlags16(result);
+  state.advanceEip(instructionBytes);
+}
+
 function pushUint16(memory: InstructionMemory, state: Cpu386State, value: number): void {
   const stackPointer = (state.readRegister16(4) - 2) & 0xffff;
   state.writeRegister16(4, stackPointer);
@@ -1429,6 +1486,10 @@ function executeContextualInstruction(
       executeContextualRotateLeft(memory, state, context, 1);
       return { halted: false, fetched };
     }
+    if (modRm.reg === 0x01) {
+      executeContextualRotateRight(memory, state, context, 1);
+      return { halted: false, fetched };
+    }
     if (modRm.reg === 0x04 || modRm.reg === 0x05 || modRm.reg === 0x07) {
       executeContextualLogicalShift(memory, state, context, 1);
       return { halted: false, fetched };
@@ -1438,6 +1499,10 @@ function executeContextualInstruction(
     const modRm = decodeModRm(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
     if (modRm.reg === 0x00) {
       executeContextualRotateLeft(memory, state, context, state.readRegister8(1));
+      return { halted: false, fetched };
+    }
+    if (modRm.reg === 0x01) {
+      executeContextualRotateRight(memory, state, context, state.readRegister8(1));
       return { halted: false, fetched };
     }
     if (modRm.reg === 0x04 || modRm.reg === 0x05 || modRm.reg === 0x07) {
@@ -1456,6 +1521,27 @@ function executeContextualInstruction(
         context.addressSize
       );
       executeContextualRotateLeft(
+        memory,
+        state,
+        context,
+        fetchCodeByte(
+          memory,
+          state,
+          context.opcodeOffset + 2 + decodedAddressBytes(address, context.addressSize)
+        ).opcode,
+        1
+      );
+      return { halted: false, fetched };
+    }
+    if (modRm.reg === 0x01) {
+      const address = decodeModRmAddress(
+        memory,
+        state,
+        modRm,
+        context.opcodeOffset + 1,
+        context.addressSize
+      );
+      executeContextualRotateRight(
         memory,
         state,
         context,

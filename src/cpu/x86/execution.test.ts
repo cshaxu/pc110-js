@@ -5181,6 +5181,32 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0x345cf022 }, eip: 0x0108 });
   });
 
+  it("uses contextual operand sizes for Group 2 ROR", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0xc1],
+      [0x0101, 0xc8],
+      [0x0102, 0x04],
+      [0x0103, 0x66],
+      [0x0104, 0xd1],
+      [0x0105, 0xc8],
+      [0x0106, 0xd3],
+      [0x0107, 0xc8]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.writeRegister(0, 0x12345678);
+    state.writeRegister8(1, 4);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x81234567 }, eip: 0x0103 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x8123a2b3 }, eip: 0x0106 });
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x38123a2b }, eip: 0x0108 });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

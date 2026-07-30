@@ -837,6 +837,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   2 `/0` `C1/D1/D3` forms through the context. PCjs remains the behavioral
   authority for normalized count and CF/OF updates; other rotate forms remain
   on their existing path.
+- M2 T2 S3 P294 adds project-native 16- and 32-bit ROR flag writers and routes
+  Group 2 `/1` `C1/D1/D3` forms through the context. PCjs remains the
+  behavioral authority for normalized count and ROR-specific CF/OF updates;
+  rotate-through-carry forms remain on their existing path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
