@@ -49,6 +49,17 @@ function eventTailLength(): number {
   return value;
 }
 
+function watchedAddresses(): ReadonlySet<string> {
+  const raw = process.env.PC110JS_ROM_TRACE_WATCH;
+  if (raw === undefined || raw.trim() === "") return new Set();
+  const values = raw.split(",").map((value) => value.trim().toLowerCase());
+  if (values.some((value) => !/^([0-9a-f]{1,4}):([0-9a-f]{1,8})$/.test(value)))
+    throw new Error(
+      "PC110JS_ROM_TRACE_WATCH must contain comma-separated CS:EIP hexadecimal addresses"
+    );
+  return new Set(values);
+}
+
 function loadRom(): Uint8Array {
   const source = execFileSync(
     "git",
@@ -142,6 +153,18 @@ function writePitState(core: RebuiltPcAt386Core): void {
   }
 }
 
+interface WatchHit {
+  readonly count: number;
+  readonly lastEcx: number;
+}
+
+function writeWatchCounts(hits: ReadonlyMap<string, WatchHit>): void {
+  for (const [address, hit] of hits)
+    process.stdout.write(
+      `  watch ${address} hits=${hit.count} last-cx=${hit.lastEcx.toString(16)}\n`
+    );
+}
+
 function retainTraceEvent(
   events: RebuiltMachineTraceEvent[],
   event: RebuiltMachineTraceEvent,
@@ -156,6 +179,10 @@ function main(): void {
   const tailLength = traceTailLength();
   const eventTailLengthValue = eventTailLength();
   const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
+  const watches = watchedAddresses();
+  const watchHits = new Map<string, WatchHit>(
+    [...watches].map((address) => [address, { count: 0, lastEcx: 0 }])
+  );
   const memory = new PhysicalMemory({
     ramBytes: 0xa0000,
     a20Enabled: true,
@@ -180,6 +207,15 @@ function main(): void {
         event.event.before.segments.cs.selector !== event.event.after.segments.cs.selector
       )
         transferTrace.push(event);
+      if (event.kind === "instruction") {
+        const address = `${event.event.before.segments.cs.selector.toString(16)}:${event.event.before.eip.toString(16)}`;
+        const prior = watchHits.get(address);
+        if (prior)
+          watchHits.set(address, {
+            count: prior.count + 1,
+            lastEcx: event.event.before.registers.ecx
+          });
+      }
     },
     {
       deskProSecondaryPit: true,
@@ -196,6 +232,7 @@ function main(): void {
     writeEventTail(trace, eventTailLengthValue);
     if (transfers) writeSegmentTransfers(transferTrace);
     writePitState(core);
+    writeWatchCounts(watchHits);
   } catch (error) {
     const stop = trace.at(-1);
     const detail = stop?.kind === "stop" && stop.error ? stop.error : String(error);
@@ -207,6 +244,7 @@ function main(): void {
     writeEventTail(trace, eventTailLengthValue);
     if (transfers) writeSegmentTransfers(transferTrace);
     writePitState(core);
+    writeWatchCounts(watchHits);
   }
 }
 
