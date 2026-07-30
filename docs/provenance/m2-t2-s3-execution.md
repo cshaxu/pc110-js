@@ -1215,6 +1215,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   80386 ring-one and ring-two slots. It uses the existing rebuilt event and
   segment contracts without importing a reference runtime or adding task-switch
   behavior.
+- M2 T2 S3 P417 records complete project-native execution evidence for NXVM's
+  `00-3F` handlers. The rebuilt runtime remains independent of NXVM, PCjs, and
+  legacy CPU code; `0F` stays on the separate extended-opcode path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
