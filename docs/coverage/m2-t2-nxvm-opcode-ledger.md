@@ -168,6 +168,12 @@ FS/GS, and string-I/O forms remain separate `60-6F` S6 matrices.
 A declared-port real-mode `INSB`/`OUTSB` program matches PCjs register state,
 changed RAM bytes, and I/O journals at both instruction boundaries.
 
+## S6 P17 Differential Evidence
+
+A single real-mode program passes all `70-7F` short conditional encodings with
+zero rel8 displacements. It compares each predicate's EIP update while retaining
+a linear stream and unchanged EFLAGS.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

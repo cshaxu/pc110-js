@@ -62,3 +62,8 @@ normalization, not a CPU memory-write behavior change.
 
 P16 uses the existing declared-port adapter and independent RAM images. It adds
 no device emulation, PCjs source, or product runtime dependency.
+
+## P17 Conditional Program
+
+P17 provides a generic byte stream to the existing dispatcher. It adds no
+PCjs source or branch-specific oracle behavior.
