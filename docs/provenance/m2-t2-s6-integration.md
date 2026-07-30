@@ -19,3 +19,11 @@ objects from the sibling checkout through relative paths. It must construct an
 isolated oracle machine state, execute one instruction on each side, normalize
 the observed results, and compare them. It must never expose PCjs code in the
 product build, product browser runtime, or distribution.
+
+## P3 Executable Baseline
+
+`src/integration/pcjs/differential-harness.ts` dynamically imports the PCjs
+opcode helper modules, CPUx86, Busx86, and Memoryx86 only while an explicit
+test invokes the oracle. It initializes independent one-megabyte RAM images
+and equivalent real-mode state. No PCjs source is copied, modified, bundled, or
+used by product runtime code.
