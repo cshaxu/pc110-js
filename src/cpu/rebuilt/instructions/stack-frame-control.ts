@@ -1,7 +1,7 @@
 import type { OperandSize } from "../decode/prefix.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { popStack, pushStack } from "../memory/stack.js";
-import { loadCodeSegment } from "../protection/segment-loader.js";
+import { commitCodeTransfer, validateCodeTransferTarget } from "../protection/segment-loader.js";
 
 const ENTER_LEVEL_MASK = 0x1f;
 
@@ -39,13 +39,15 @@ function executeFarReturn(context: RebuiltExecutionContext): void {
   // TODO(High): Match NXVM's explicit TODO boundary for protected RETF returns
   // to an outer privilege level, including its restored SS:ESP frame.
   try {
-    loadCodeSegment(context.memory, context.state, selector);
+    const targetEip = operandSize === 16 ? target & 0xffff : target;
+    const targetCs = validateCodeTransferTarget(context.memory, context.state, selector, targetEip);
+    adjustStackPointer(context, cleanup);
+    commitCodeTransfer(context.state, targetCs);
+    context.state.writeEip(targetEip);
   } catch (error) {
     restoreFarReturnFrame(context, operandSize);
     throw error;
   }
-  adjustStackPointer(context, cleanup);
-  context.state.writeEip(operandSize === 16 ? target & 0xffff : target);
 }
 
 function restoreFarReturnFrame(context: RebuiltExecutionContext, operandSize: OperandSize): void {
@@ -62,8 +64,22 @@ function executeNearReturn(context: RebuiltExecutionContext): void {
     context.instruction.opcode === 0xc2
       ? readUint16(context, context.instruction.opcodeOffset + 1)
       : 0;
+  const targetEip = context.state.codeDefault32() ? target >>> 0 : target & 0xffff;
+  try {
+    context.memory.testCodeOffset(targetEip);
+  } catch (error) {
+    restoreNearReturnFrame(context, operandSize);
+    throw error;
+  }
   adjustStackPointer(context, cleanup);
-  context.state.writeEip(context.state.codeDefault32() ? target >>> 0 : target & 0xffff);
+  context.state.writeEip(targetEip);
+}
+
+function restoreNearReturnFrame(context: RebuiltExecutionContext, operandSize: OperandSize): void {
+  const bytes = operandSize / 8;
+  if (context.state.stackDefault32())
+    context.state.registers.write32(4, context.state.registers.read32(4) - bytes);
+  else context.state.registers.write16(4, context.state.registers.read16(4) - bytes);
 }
 
 function executeEnter(context: RebuiltExecutionContext): void {

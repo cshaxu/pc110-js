@@ -99,6 +99,52 @@ describe("rebuilt near CALL and JMP", () => {
     });
   });
 
+  it("delivers #GP at the source EIP when a protected far target exceeds its code limit", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("cs", {
+      selector: 8,
+      base: 0,
+      limit: 0xffff,
+      default32: false,
+      dpl: 0
+    });
+    state.writeSegment("ss", {
+      selector: 0x18,
+      base: 0,
+      limit: 0xffff,
+      default32: false,
+      dpl: 0
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x1f });
+    state.writeIdtr({ base: 0x300, limit: 0x6f });
+    state.registers.write16(4, 0x100);
+    state.writeEip(0);
+    const memory = new Map<number, number>([0xea, 0x20, 0x00, 0x10, 0x00].map((v, i) => [i, v]));
+    [0xff, 0xff, 0, 0, 0, 0x9a, 0x40, 0].forEach((value, index) =>
+      memory.set(0x208 + index, value)
+    );
+    [0x10, 0, 0, 0, 0, 0x9a, 0x40, 0].forEach((value, index) => memory.set(0x210 + index, value));
+    [0xff, 0xff, 0, 0, 0, 0x92, 0x40, 0].forEach((value, index) =>
+      memory.set(0x218 + index, value)
+    );
+    [0x80, 0, 8, 0, 0, 0x86, 0, 0].forEach((value, index) => memory.set(0x368 + index, value));
+
+    new RebuiltCpuExecutor(state, {
+      readUint8: (address) => memory.get(address) ?? 0,
+      writeUint8: (address, value) => memory.set(address, value)
+    }).step(executeNearControl);
+
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x80,
+      registers: { esp: 0xf8 },
+      segments: { cs: { selector: 8 } }
+    });
+    expect([0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd].map((address) => memory.get(address))).toEqual([
+      0, 0, 0, 0, 8, 0
+    ]);
+  });
+
   it("pushes CS then return EIP for a real-mode far CALL", () => {
     const result = execute([0x9a, 0x34, 0x12, 0x00, 0x20], (state) => {
       state.registers.write16(4, 0x100);

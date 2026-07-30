@@ -63,6 +63,31 @@ export function loadCodeSegment(
   });
 }
 
+export function validateCodeTransferTarget(
+  memory: SegmentedMemory,
+  state: RebuiltCpuState,
+  selector: number,
+  offset: number,
+  targetPrivilege = currentPrivilege(state)
+): ReturnType<RebuiltCpuState["readSegment"]> {
+  const previous = state.readSegment("cs");
+  loadCodeSegment(memory, state, selector, targetPrivilege);
+  const target = state.readSegment("cs");
+  try {
+    memory.testCodeOffset(offset);
+  } finally {
+    state.writeSegment("cs", previous);
+  }
+  return target;
+}
+
+export function commitCodeTransfer(
+  state: RebuiltCpuState,
+  target: ReturnType<RebuiltCpuState["readSegment"]>
+): void {
+  state.writeSegment("cs", target);
+}
+
 function load(
   memory: SegmentedMemory,
   state: RebuiltCpuState,

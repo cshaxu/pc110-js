@@ -2,7 +2,7 @@ import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
 import { deliverFault } from "../events/interrupt-delivery.js";
 import { pushStack } from "../memory/stack.js";
-import { loadCodeSegment } from "../protection/segment-loader.js";
+import { commitCodeTransfer, validateCodeTransferTarget } from "../protection/segment-loader.js";
 import type { SegmentName } from "../state/segments.js";
 import { add, subtract, EFLAGS_CARRY, type ArithmeticWidth } from "./arithmetic.js";
 
@@ -32,10 +32,13 @@ export function executeGroupFourFive(context: RebuiltExecutionContext): void {
   const operandSize = context.instruction.prefixes.operandSize;
   const fallthrough = context.state.readEip() + context.instruction.length + modRm.bytes;
   if (modRm.reg === 2) {
+    context.memory.testCodeOffset(operand);
     pushStack(context.memory, context.state, operandSize, fallthrough);
     writeTarget(context, operand);
-  } else if (modRm.reg === 4) writeTarget(context, operand);
-  else if (modRm.reg === 6) {
+  } else if (modRm.reg === 4) {
+    context.memory.testCodeOffset(operand);
+    writeTarget(context, operand);
+  } else if (modRm.reg === 6) {
     pushStack(context.memory, context.state, operandSize, operand);
     context.state.advanceEip(context.instruction.length + modRm.bytes);
   }
@@ -62,12 +65,14 @@ function executeFarControl(context: RebuiltExecutionContext, modRm: DecodedModRm
   const returnCs = context.state.readSegment("cs").selector;
   // TODO(High): Match NXVM's explicit TODO boundary for protected call gates,
   // task gates, TSS transfers, and cross-privilege far CALL/JMP transitions.
-  loadCodeSegment(context.memory, context.state, selector);
+  const targetEip = width === 16 ? offset & 0xffff : offset;
+  const targetCs = validateCodeTransferTarget(context.memory, context.state, selector, targetEip);
   if (modRm.reg === 3) {
     pushStack(context.memory, context.state, width, returnCs);
     pushStack(context.memory, context.state, width, returnEip);
   }
-  context.state.writeEip(width === 16 ? offset & 0xffff : offset);
+  commitCodeTransfer(context.state, targetCs);
+  context.state.writeEip(targetEip);
 }
 
 function incrementDecrement(

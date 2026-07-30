@@ -43,7 +43,7 @@ handlers have already closed in the opcode ledger.
 
 | Area | Status | Evidence and remaining boundary |
 | --- | --- | --- |
-| Near and far control transfers | Partial architecture closure | Executable NXVM handler coverage is recorded by P422, P425, P427, P429, and P432; non-NXVM-TODO cross-privilege validation remains. Task/call-gate and outer-RETF paths are NXVM TODO-aligned exclusions recorded by P441. |
+| Near and far control transfers | Partial architecture closure | P422, P425, P427, P429, P432, and P444 cover executable NXVM handlers and target-code validation; non-NXVM-TODO cross-privilege validation remains. Task/call-gate and outer-RETF paths are NXVM TODO-aligned exclusions recorded by P441. |
 | Interrupts, traps, and IRET | Partial architecture closure | P400-P416 and P425 close implemented gate/IRET/IRQ paths; remaining non-NXVM-TODO privilege-delivery paths remain. Task gates are NXVM TODO-aligned exclusions recorded by P441. |
 | Descriptor-table and system instructions | Partial architecture closure | P380-P390, P415-P416, and P428 close executable NXVM handler forms; full validation remains. Task/call-gate paths are NXVM TODO-aligned exclusions recorded by P441. |
 | Privilege model | Partial architecture closure | P388, P400-P404, P415-P416, and P421-P422 cover verified paths; remaining non-NXVM-TODO validation remains. Task/call-gate behavior is an NXVM TODO-aligned exclusion recorded by P441. |

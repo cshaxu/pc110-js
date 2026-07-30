@@ -1302,6 +1302,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P443 adapts NXVM protected segment-load Accessed-bit writeback into
   the project-native GDT/LDT descriptor path after successful validation only.
   It imports no reference runtime and adds no device or guest-service behavior.
+- M2 T2 S3 P444 adapts NXVM control-transfer target-code validation into the
+  project-native segmented-memory and transfer paths before state commit. It
+  imports no reference runtime and adds no device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

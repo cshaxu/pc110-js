@@ -19,7 +19,10 @@ export function executeShortConditionalJump(context: RebuiltExecutionContext): v
     ? fallthrough + displacement
     : fallthrough;
   const code32 = context.state.codeDefault32();
-  context.state.writeEip(code32 ? destination >>> 0 : destination & 0xffff);
+  const target = code32 ? destination >>> 0 : destination & 0xffff;
+  if (target !== (code32 ? fallthrough >>> 0 : fallthrough & 0xffff))
+    context.memory.testCodeOffset(target);
+  context.state.writeEip(target);
 }
 
 function condition(flags: number, selector: number): boolean {

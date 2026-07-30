@@ -36,6 +36,10 @@ export class SegmentedMemory {
     return this.bus.readUint8(this.translate("cs", offset, addressSize, false, true)) & 0xff;
   }
 
+  public testCodeOffset(offset: number): void {
+    this.translate("cs", offset, this.state.codeDefault32() ? 32 : 16, false, true);
+  }
+
   public readPhysical8(address: number): number {
     return this.bus.readUint8(address >>> 0) & 0xff;
   }

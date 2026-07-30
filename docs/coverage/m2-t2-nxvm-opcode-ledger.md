@@ -975,3 +975,15 @@ loader validates type, presence, and privilege before writing the bit, so a
 rejected load leaves the descriptor unchanged. Focused tests cover GDT code,
 data, and stack loads plus active-LDT data loading. Task and call-gate paths
 remain NXVM TODO-aligned exclusions.
+
+## P444 Control-Transfer Target Validation Checklist
+
+P444 follows NXVM `_kec_call_near`, `_kec_jmp_near`, `_kec_call_far`,
+`_kec_jmp_far`, `_kec_ret_near`, and `_kec_ret_far` at `vcpuins.c`
+2092-2262. Project-native code now validates a target code offset before
+committing EIP, before pushing a CALL return frame, or before committing a FAR
+CS transfer. Direct and indirect near/far control, conditional transfers,
+LOOP-family transfers, and same-privilege return paths use the shared boundary.
+Focused protected FAR-JMP evidence verifies an out-of-limit target delivers
+`#GP` at the source instruction EIP without committing the target CS. NXVM
+TODO-aligned task/call-gate and outer-RETF paths remain excluded.

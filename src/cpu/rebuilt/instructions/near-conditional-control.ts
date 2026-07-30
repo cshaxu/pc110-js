@@ -20,9 +20,10 @@ export function executeNearConditionalJump(context: RebuiltExecutionContext): vo
   const fallthrough = context.state.readEip() + context.instruction.length + bytes;
   if (condition(context.state.flags.read(), opcode & 0x0f)) {
     const destination = fallthrough + displacement;
-    context.state.writeEip(
-      context.instruction.prefixes.operandSize === 16 ? destination & 0xffff : destination >>> 0
-    );
+    const target =
+      context.instruction.prefixes.operandSize === 16 ? destination & 0xffff : destination >>> 0;
+    context.memory.testCodeOffset(target);
+    context.state.writeEip(target);
     return;
   }
   context.state.writeEip(context.state.codeDefault32() ? fallthrough >>> 0 : fallthrough & 0xffff);

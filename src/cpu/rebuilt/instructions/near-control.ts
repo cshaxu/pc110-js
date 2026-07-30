@@ -1,6 +1,6 @@
 import type { RebuiltExecutionContext } from "../execution.js";
 import { pushStack } from "../memory/stack.js";
-import { loadCodeSegment } from "../protection/segment-loader.js";
+import { commitCodeTransfer, validateCodeTransferTarget } from "../protection/segment-loader.js";
 
 export function executeNearControl(context: RebuiltExecutionContext): void {
   const opcode = context.instruction.opcode;
@@ -11,9 +11,11 @@ export function executeNearControl(context: RebuiltExecutionContext): void {
   const bytes = opcode === 0xeb ? 1 : operandSize / 8;
   const displacement = signedImmediate(context, context.instruction.opcodeOffset + 1, bytes);
   const fallthrough = context.state.readEip() + context.instruction.length + bytes;
-  if (opcode === 0xe8) pushStack(context.memory, context.state, operandSize, fallthrough);
   const target = fallthrough + displacement;
-  context.state.writeEip(operandSize === 16 ? target & 0xffff : target >>> 0);
+  const normalizedTarget = operandSize === 16 ? target & 0xffff : target >>> 0;
+  context.memory.testCodeOffset(normalizedTarget);
+  if (opcode === 0xe8) pushStack(context.memory, context.state, operandSize, fallthrough);
+  context.state.writeEip(normalizedTarget);
 }
 
 function executeFarControl(context: RebuiltExecutionContext, operandSize: 16 | 32): void {
@@ -28,12 +30,14 @@ function executeFarControl(context: RebuiltExecutionContext, operandSize: 16 | 3
   const returnCs = context.state.readSegment("cs").selector;
   // TODO(High): Match NXVM's explicit TODO boundary for protected call gates,
   // task gates, TSS transfers, and cross-privilege far CALL/JMP transitions.
-  loadCodeSegment(context.memory, context.state, selector);
+  const targetEip = operandSize === 16 ? offset & 0xffff : offset;
+  const targetCs = validateCodeTransferTarget(context.memory, context.state, selector, targetEip);
   if (context.instruction.opcode === 0x9a) {
     pushStack(context.memory, context.state, operandSize, returnCs);
     pushStack(context.memory, context.state, operandSize, returnEip);
   }
-  context.state.writeEip(operandSize === 16 ? offset & 0xffff : offset);
+  commitCodeTransfer(context.state, targetCs);
+  context.state.writeEip(targetEip);
 }
 
 function signedImmediate(context: RebuiltExecutionContext, offset: number, bytes: number): number {
