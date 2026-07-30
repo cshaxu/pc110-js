@@ -5164,6 +5164,40 @@ describe("80386 instruction fetch", () => {
     });
   });
 
+  it("returns through a 66-selected same-privilege protected-mode IRET frame", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x66],
+      [0x0101, 0xcf],
+      [0x3008, 0xff],
+      [0x3009, 0xff],
+      [0x300a, 0x00],
+      [0x300b, 0x00],
+      [0x300c, 0x00],
+      [0x300d, 0x9a],
+      [0x300e, 0xcf],
+      [0x300f, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.writeGdtr(0x3000, 0x000f);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x2000);
+    const memory = resetAliasMemory(values);
+    [0x34, 0x12, 0x08, 0x00, 0x02, 0x03].forEach((value, offset) =>
+      memory.writeUint8(0x2000 + offset, value)
+    );
+
+    stepInstruction(memory, state);
+
+    expect(state.snapshot()).toMatchObject({
+      cs: { selector: 0x0008, default32: true },
+      eip: 0x1234,
+      eflags: 0x302,
+      registers: { esp: 0x2006 }
+    });
+  });
+
   it("uses contextual operand size for near conditional-jump targets", () => {
     const values = new Map<number, number>([
       [0x0100, 0x0f],

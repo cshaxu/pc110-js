@@ -924,6 +924,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P318 permits repeated CMPS through the contextual path when a source
   segment override is present. The comparison helper selects the override for
   its source read and retains ES as the fixed destination operand.
+- M2 T2 S3 P319 adds same-privilege protected-mode IRET through contextual
+  frame widths. It peeks the return selector before mutation and only handles a
+  matching privilege level; cross-privilege frames retain the existing path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

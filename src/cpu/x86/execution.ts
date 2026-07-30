@@ -1582,6 +1582,34 @@ function executeContextualEnter(
   return true;
 }
 
+function executeContextualSamePrivilegeIret(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): boolean {
+  if (context.opcode !== 0xcf) return false;
+  const snapshot = state.snapshot();
+  if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected") return false;
+  const width = context.operandSize === 32 ? 4 : 2;
+  const stackPointer =
+    context.stackAddressSize === 32 ? state.readRegister(4) : state.readRegister16(4);
+  const selectorOffset =
+    context.stackAddressSize === 32
+      ? (stackPointer + width) >>> 0
+      : (stackPointer + width) & 0xffff;
+  const selector =
+    (context.operandSize === 32
+      ? readSegmentUint32(memory, state, "ss", selectorOffset, context.stackAddressSize)
+      : readSegmentUint16(memory, state, "ss", selectorOffset, context.stackAddressSize)) & 0xffff;
+  if ((selector & 0x03) !== (snapshot.cs.selector & 0x03)) return false;
+  const instructionPointer = popContextOperand(memory, state, context);
+  popContextOperand(memory, state, context);
+  const flags = popContextOperand(memory, state, context);
+  state.writeEflags(flags);
+  loadProtectedModeCodeSegment(memory, state, selector, instructionPointer);
+  return true;
+}
+
 function executeContextualNearConditionalJump(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1815,6 +1843,7 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   if (executeContextualNearJumpModRm(memory, state, context)) return { halted: false, fetched };
   if (executeContextualEnter(memory, state, context)) return { halted: false, fetched };
+  if (executeContextualSamePrivilegeIret(memory, state, context)) return { halted: false, fetched };
   const nearConditionalJump = executeContextualNearConditionalJump(memory, state, context, fetched);
   if (nearConditionalJump) return nearConditionalJump;
   if (context.opcode >= 0x70 && context.opcode <= 0x7f) {
