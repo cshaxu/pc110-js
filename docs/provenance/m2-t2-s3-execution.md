@@ -936,6 +936,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   semantic conflicts, and PCjs for PC/AT and whole-machine comparison. No
   NXVM C, macros, global state, BIOS, POST, device, I/O, or guest-service
   behavior is copied or authorized.
+- M2 T2 S3 P321 establishes the first project-native rebuilt CPU boundaries:
+  register aliases, EFLAGS storage, reset-visible state, segment-cache data,
+  prefix decoding, event contracts, and trace contracts. The scaffold has no
+  runtime import from legacy CPU modules, PCjs, or NXVM, and does not execute
+  an instruction or alter the active machine composition.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
