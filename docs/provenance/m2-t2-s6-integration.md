@@ -135,3 +135,10 @@ P29 uses the project-native dispatcher and independent real-mode RAM images
 for CC/CD/CE software interrupts and CF IRET through prepared IVT entries.
 PCjs remains a verification-only oracle; no PCjs source, runtime dependency,
 or instruction-specific oracle logic enters the product.
+
+## P30 Shift, Adjust, And Xlat Program
+
+P30 uses the project-native dispatcher and independent real-mode RAM images
+for D0-D5 Group Two, AAM/AAD, and D7 XLAT. PCjs remains a verification-only
+oracle; no PCjs source, runtime dependency, or instruction-specific oracle
+logic enters the product.

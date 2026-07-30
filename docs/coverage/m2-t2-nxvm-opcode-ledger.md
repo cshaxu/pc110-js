@@ -238,6 +238,12 @@ with overflow set, and CF IRET through prepared IVT entries. Clear-overflow,
 default-32, virtual-8086, and protected interrupt-gate forms remain separate
 S6 work.
 
+## S6 P30 Differential Evidence
+
+A generic real-mode program matches PCjs for D0-D3 one/CL-count shifts, D4/D5
+AAM/AAD, and D7 XLAT. D6 remains governed by EXC-001; D8-DF vector-six
+delivery, default-32, and address-override forms remain separate S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

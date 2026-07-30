@@ -301,6 +301,15 @@ describe("PCjs differential CPU harness", () => {
         { address: 0x201, value: 0xcf }
       ],
       instructionCount: 6
+    },
+    {
+      name: "D0-D5 and D7 shift adjust xlat slice",
+      bytes: [
+        0xd0, 0xe0, 0xd2, 0xe0, 0xd1, 0xe1, 0xd3, 0xe1, 0xb0, 0x2a, 0xd4, 0x0a, 0xd5, 0x0a, 0xd7
+      ],
+      registers: { eax: 0x80, ecx: 1, ebx: 0x200 },
+      memory: [{ address: 0x22a, value: 0x5a }],
+      instructionCount: 8
     }
   ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
     const trace = await runPcjsDifferentialTrace(differentialCase);
