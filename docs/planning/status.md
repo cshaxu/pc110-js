@@ -12,9 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T2 S3: active. The owner-authorized execution-size correction establishes
-  generic CS-default operand/address-size context before further protected-mode
-  opcode migration; S4 P4's mapped-ROM trace remains the preserved baseline.
+- M2 T2: active. Complete T2 S3 execution-size migration and the remaining
+  80386 instruction and system paths, then close its ROM-trace, coverage-matrix,
+  and PCjs-comparison evidence. Do not begin T3 until every T2 completion gate
+  passes and the owner authorizes T3.
 
 ## Delivery Nodes
 

@@ -50,6 +50,21 @@ immediates, stack, and string paths in verified parts. It does not authorize
 hardware, storage, video, PC110, 80486, guest-service, BIOS, DOS, or filesystem
 work.
 
+## Owner Priority Clarification
+
+The owner clarified on 2026-07-29 that M2 T2 must finish before any T3 work is
+requested. S3 therefore continues with execution-size migration and the
+remaining 80386 instruction and system paths. T2 closure requires all scheduled
+focused tests, a selected local ROM trace through the project-owned core, a
+coverage matrix, and bounded PCjs comparison evidence.
+
+For the M2 CPU only, NXVM `vcpu.h` and `vcpuins.c` are structural and
+coverage-reference inputs. They set neither behavior nor implementation source:
+do not translate NXVM C, macros, global state, BIOS, POST, I/O hacks, or
+guest-service behavior. PCjs remains the compatibility authority and Intel
+80386 architecture remains the semantic requirement. T3 remains prohibited
+until T2's gates pass and the owner grants a new authorization.
+
 ## Working Method
 
 1. Classify one observed reset, BIOS, protected-mode, or interrupt blocker.

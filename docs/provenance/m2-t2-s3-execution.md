@@ -695,6 +695,12 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   word or dword data width through project-native TypeScript.
 - M2 T2 S3 P257 migrates LOOP-family count selection so CS default and 67
   choose CX or ECX while the CS cache still selects the IP or EIP target width.
+- M2 T2 S3 P258 records the owner priority clarification: T2 execution-size
+  migration, remaining 80386 instruction/system paths, ROM trace, coverage
+  matrix, and PCjs comparison evidence must close before T3 is requested.
+  PCjs remains the behavior authority; NXVM `vcpu.h` and `vcpuins.c` remain
+  M2-only structural and coverage references, never implementation or behavior
+  sources.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
