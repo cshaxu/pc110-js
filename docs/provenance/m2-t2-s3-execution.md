@@ -1003,6 +1003,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P335 translates NXVM's four general-register MOV ModR/M handlers
   into project-native TypeScript. The direction selects a register or segmented
   memory destination without changing EFLAGS or importing external runtimes.
+- M2 T2 S3 P336 translates NXVM LEA into project-native TypeScript. It consumes
+  only rebuilt ModR/M effective-address data, never reads the addressed memory,
+  and has no runtime dependency on NXVM, PCjs, or the legacy CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
