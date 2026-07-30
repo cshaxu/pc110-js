@@ -35,6 +35,22 @@ describe("rebuilt 0F 00 selector group", () => {
     expect(tr.state.registers.read16(0)).toBe(0x5678);
   });
 
+  it("uses the default-32 selector result width in 32-bit code", () => {
+    const ldt = machine([0x0f, 0x00, 0xc0]);
+    ldt.state.writeSegment("cs", {
+      selector: 0,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true,
+      dpl: 0
+    });
+    ldt.state.writeLdtr({ selector: 0x1234, base: 0, limit: 0, default32: false });
+    ldt.state.registers.write32(0, 0xdead0000);
+    ldt.step();
+    expect(ldt.state.registers.read32(0)).toBe(0x1234);
+    expect(ldt.state.readEip()).toBe(3);
+  });
+
   it("loads an available 32-bit TSS into TR and marks its descriptor busy", () => {
     const result = machine([0x0f, 0x00, 0xd8]);
     result.state.writeGdtr({ base: 0x100, limit: 0x2f });

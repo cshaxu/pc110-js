@@ -43,4 +43,20 @@ describe("rebuilt 0F 01 system group", () => {
     lmsw.step();
     expect(lmsw.state.readCr0() & 0xf).toBe(1);
   });
+
+  it("loads a descriptor table through default-32 addressing", () => {
+    const load = machine([0x0f, 0x01, 0x15, 0x00, 0x01, 0x00, 0x00]);
+    load.state.writeSegment("cs", {
+      selector: 0,
+      base: 0,
+      limit: 0xffffffff,
+      default32: true
+    });
+    [0x34, 0x12, 0x78, 0x56, 0x34, 0x12].forEach((value, index) =>
+      load.memory.set(0x100 + index, value)
+    );
+    load.step();
+    expect(load.state.readGdtr()).toEqual({ limit: 0x1234, base: 0x12345678 });
+    expect(load.state.readEip()).toBe(7);
+  });
 });
