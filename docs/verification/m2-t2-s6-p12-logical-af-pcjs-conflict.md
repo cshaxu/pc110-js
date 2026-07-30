@@ -20,7 +20,6 @@ logical helper has the same explicit undefined-AF policy. PCjs differs.
 
 ## Status
 
-This is not an approved compatibility exception. Per the owner-approved S6
-rule, further differential expansion stops until the owner decides whether the
-NXVM-aligned behavior remains and receives a scoped exception entry, or the
-governing policy changes.
+Resolved by owner approval on 2026-07-30. The rebuilt CPU retains its
+NXVM-aligned behavior. EXC-002 in the project-wide compatibility register
+contains the sole approved exception entry; this file remains conflict evidence.

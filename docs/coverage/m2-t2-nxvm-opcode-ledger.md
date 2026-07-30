@@ -145,9 +145,9 @@ gap. S4, S5, and S6 remain required T2 gates.
 An attempted generic real-mode `00-3F` accumulator program stops at `AND AX,
 imm16`: NXVM and rebuilt behavior preserve AF, while the pinned PCjs oracle
 clears it. The minimized fixture and authority evidence are recorded in the S6
-verification conflict record. This is not an approved compatibility exception,
-does not count as differential coverage, and blocks further S6 expansion until
-owner direction.
+verification conflict record. It is now EXC-002 in the project-wide
+compatibility register, does not count as passing differential coverage, and
+does not block further S6 expansion.
 
 ## P329 `40-5F` Checklist
 

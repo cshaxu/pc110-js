@@ -37,11 +37,11 @@ internal memory-block path rather than the public Busx86 setter.
 The pinned PCjs CPU oracle differs from NXVM for real-mode primary opcode D6.
 The owner approved retaining the project's NXVM/80386 vector-six behavior on
 2026-07-30. The exception does not copy or modify PCjs source and is recorded
-as EXC-001 in the sole S6 compatibility register.
+as EXC-001 in the project-wide compatibility register.
 
 ## P12 Logical-Flag Conflict
 
 The existing generic dispatcher exposed a PCjs mismatch in an attempted
-real-mode accumulator-arithmetic program. No PCjs source was copied or changed;
-the minimized fixture is retained only as conflict evidence pending owner
-direction.
+real-mode accumulator-arithmetic program. The owner approved retaining the
+NXVM-aligned behavior and recording EXC-002. No PCjs source was copied or
+changed.
