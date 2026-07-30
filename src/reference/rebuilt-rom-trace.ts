@@ -142,6 +142,15 @@ function writePitState(core: RebuiltPcAt386Core): void {
   }
 }
 
+function retainTraceEvent(
+  events: RebuiltMachineTraceEvent[],
+  event: RebuiltMachineTraceEvent,
+  capacity: number
+): void {
+  if (events.length === capacity) events.shift();
+  events.push(event);
+}
+
 function main(): void {
   const budget = instructionBudget();
   const tailLength = traceTailLength();
@@ -159,10 +168,24 @@ function main(): void {
     [0xf8000, 0xf0000, 0xffff0000]
   );
   const trace: RebuiltMachineTraceEvent[] = [];
-  const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event), {
-    deskProSecondaryPit: true,
-    unpopulatedIo: "floating"
-  });
+  const transferTrace: RebuiltMachineTraceEvent[] = [];
+  const traceCapacity = Math.max(1, tailLength, eventTailLengthValue);
+  const core = new RebuiltPcAt386Core(
+    memory,
+    (event) => {
+      retainTraceEvent(trace, event, traceCapacity);
+      if (
+        transfers &&
+        event.kind === "instruction" &&
+        event.event.before.segments.cs.selector !== event.event.after.segments.cs.selector
+      )
+        transferTrace.push(event);
+    },
+    {
+      deskProSecondaryPit: true,
+      unpopulatedIo: "floating"
+    }
+  );
   attachLocalFloppy(core);
   try {
     const result = core.run(budget);
@@ -171,7 +194,7 @@ function main(): void {
     );
     writeDiagnosticTail(trace, tailLength);
     writeEventTail(trace, eventTailLengthValue);
-    if (transfers) writeSegmentTransfers(trace);
+    if (transfers) writeSegmentTransfers(transferTrace);
     writePitState(core);
   } catch (error) {
     const stop = trace.at(-1);
@@ -182,7 +205,7 @@ function main(): void {
     );
     writeDiagnosticTail(trace, tailLength);
     writeEventTail(trace, eventTailLengthValue);
-    if (transfers) writeSegmentTransfers(trace);
+    if (transfers) writeSegmentTransfers(transferTrace);
     writePitState(core);
   }
 }
