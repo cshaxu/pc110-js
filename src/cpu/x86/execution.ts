@@ -1016,6 +1016,30 @@ function executeContextualInstruction(
   const loop = executeContextualLoop(memory, state, context, fetched);
   if (loop) return loop;
 
+  const aluOperation = modRmAluOperation(context.opcode);
+  if (aluOperation) {
+    const modRmOffset = context.opcodeOffset + 1;
+    if (context.operandSize === 32)
+      executeDwordAluModRm(
+        memory,
+        state,
+        aluOperation,
+        modRmAluDestinationIsRegister(context.opcode),
+        modRmOffset,
+        context.addressSize
+      );
+    else
+      executeWordAluModRm(
+        memory,
+        state,
+        aluOperation,
+        modRmAluDestinationIsRegister(context.opcode),
+        modRmOffset,
+        context.addressSize
+      );
+    return { halted: false, fetched };
+  }
+
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
     if (context.operandSize === 32)
@@ -1920,31 +1944,60 @@ function executeByteAluModRm(
 function executeWordAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  operation: "add" | "sub",
-  destinationIsRegister: boolean
+  operation: DwordAluOperation,
+  destinationIsRegister: boolean,
+  modRmOffset = 1,
+  addressSize: 16 | 32 = 16
 ): void {
-  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-  const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const addressBytes = decodedAddressBytes(address, addressSize);
   const destination = destinationIsRegister
     ? state.readRegister16(modRm.reg)
     : modRm.registerDirect
       ? state.readRegister16(modRm.rm)
-      : readSegmentUint16(memory, state, address!.segment, address!.offset);
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
   const source = destinationIsRegister
     ? modRm.registerDirect
       ? state.readRegister16(modRm.rm)
-      : readSegmentUint16(memory, state, address!.segment, address!.offset)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize)
     : state.readRegister16(modRm.reg);
-  const result = operation === "add" ? destination + source : destination - source;
-  if (destinationIsRegister) state.writeRegister16(modRm.reg, result);
-  else if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
-  else writeSegmentUint16(memory, state, address!.segment, address!.offset, result);
-  if (operation === "add") state.writeAddFlags16(destination, source);
-  else state.writeCompareFlags16(destination, source);
-  state.advanceEip(2 + (address?.displacementBytes ?? 0));
+  const result = writeWordAluResult(state, operation, destination, source);
+  if (operation !== "cmp" && operation !== "test") {
+    if (destinationIsRegister) state.writeRegister16(modRm.reg, result);
+    else if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+    else writeSegmentUint16(memory, state, address!.segment, address!.offset, result, addressSize);
+  }
+  state.advanceEip(modRmOffset + 1 + addressBytes);
 }
 
 type DwordAluOperation = "add" | "adc" | "or" | "and" | "sub" | "xor" | "cmp" | "test" | "sbb";
+
+function modRmAluOperation(opcode: number): DwordAluOperation | undefined {
+  if (opcode === 0x01 || opcode === 0x03) return "add";
+  if (opcode === 0x09 || opcode === 0x0b) return "or";
+  if (opcode === 0x11 || opcode === 0x13) return "adc";
+  if (opcode === 0x19 || opcode === 0x1b) return "sbb";
+  if (opcode === 0x21 || opcode === 0x23) return "and";
+  if (opcode === 0x29 || opcode === 0x2b) return "sub";
+  if (opcode === 0x31 || opcode === 0x33) return "xor";
+  if (opcode === 0x39 || opcode === 0x3b) return "cmp";
+  if (opcode === 0x85) return "test";
+  return undefined;
+}
+
+function modRmAluDestinationIsRegister(opcode: number): boolean {
+  return (
+    opcode === 0x03 ||
+    opcode === 0x0b ||
+    opcode === 0x13 ||
+    opcode === 0x1b ||
+    opcode === 0x23 ||
+    opcode === 0x2b ||
+    opcode === 0x33 ||
+    opcode === 0x3b
+  );
+}
 
 function dwordGroupOneOperation(group: number): DwordAluOperation {
   switch (group) {
@@ -2005,6 +2058,42 @@ function writeDwordAluResult(
   return result;
 }
 
+function writeWordAluResult(
+  state: Cpu386State,
+  operation: DwordAluOperation,
+  destination: number,
+  source: number
+): number {
+  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
+  let result: number;
+  switch (operation) {
+    case "add":
+    case "adc":
+      result = destination + source + carry;
+      break;
+    case "or":
+      result = destination | source;
+      break;
+    case "and":
+    case "test":
+      result = destination & source;
+      break;
+    case "xor":
+      result = destination ^ source;
+      break;
+    case "sub":
+    case "sbb":
+    case "cmp":
+      result = destination - source - carry;
+      break;
+  }
+  if (operation === "add" || operation === "adc") state.writeAddFlags16(destination, source, carry);
+  else if (operation === "sub" || operation === "sbb" || operation === "cmp")
+    state.writeCompareFlags16(destination, source, carry);
+  else state.writeLogicFlags16(result);
+  return result;
+}
+
 function executeDwordAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -2014,22 +2103,8 @@ function executeDwordAluModRm(
   addressSize: 16 | 32
 ): void {
   const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
-  const address: DecodedMemoryAddress | undefined = modRm.registerDirect
-    ? undefined
-    : addressSize === 16
-      ? decodeModRm16Address(
-          modRm,
-          (index) => state.readRegister16(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        )
-      : decodeModRm32Address(
-          modRm,
-          (index) => state.readRegister(index),
-          (offset) => fetchCodeByte(memory, state, modRmOffset - 1 + offset).opcode
-        );
-  const sibBytes =
-    "sibBytes" in (address ?? {}) && typeof address?.sibBytes === "number" ? address.sibBytes : 0;
-  const addressBytes = (address?.displacementBytes ?? 0) + sibBytes;
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const addressBytes = decodedAddressBytes(address, addressSize);
   const destination = destinationIsRegister
     ? state.readRegister(modRm.reg)
     : modRm.registerDirect

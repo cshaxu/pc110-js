@@ -701,6 +701,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   PCjs remains the behavior authority; NXVM `vcpu.h` and `vcpuins.c` remain
   M2-only structural and coverage references, never implementation or behavior
   sources.
+- M2 T2 S3 P259 routes ModR/M word and dword ALU forms through the shared
+  context. PCjs's operand/address-size selection supports the project-native
+  mapping; a `66` prefix selects the non-default operand size, so pre-existing
+  dword fixtures now explicitly use a 16-bit-default code segment. Focused
+  default-32 tests cover dword, `66` word, and `67` address-size behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
