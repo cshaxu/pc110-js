@@ -679,6 +679,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   word or dword register width through the shared execution context.
 - M2 T2 S3 P249 migrates accumulator sign-extension forms so CS defaults and
   66 select CBW/CWDE and CWD/CDQ behavior through the shared context.
+- M2 T2 S3 P250 migrates immediate PUSH forms so CS defaults select word or
+  dword data and SS defaults independently select stack addressing.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

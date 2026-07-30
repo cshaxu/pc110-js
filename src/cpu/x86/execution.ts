@@ -758,6 +758,26 @@ function executeContextualSignExtension(
   return { halted: false, fetched };
 }
 
+function executeContextualImmediatePush(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext,
+  fetched: FetchedOpcode
+): ExecutionResult | undefined {
+  if (context.opcode !== 0x68 && context.opcode !== 0x6a) return undefined;
+  const value =
+    context.opcode === 0x68
+      ? context.operandSize === 32
+        ? fetchCodeUint32(memory, state, context.opcodeOffset + 1)
+        : fetchCodeUint16(memory, state, context.opcodeOffset + 1)
+      : signedByte(fetchCodeByte(memory, state, context.opcodeOffset + 1).opcode);
+  pushContextOperand(memory, state, context, value);
+  state.advanceEip(
+    context.opcodeOffset + (context.opcode === 0x68 ? 1 + context.operandSize / 8 : 2)
+  );
+  return { halted: false, fetched };
+}
+
 function executeContextualInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -776,6 +796,8 @@ function executeContextualInstruction(
   if (incrementDecrement) return incrementDecrement;
   const signExtension = executeContextualSignExtension(state, context, fetched);
   if (signExtension) return signExtension;
+  const immediatePush = executeContextualImmediatePush(memory, state, context, fetched);
+  if (immediatePush) return immediatePush;
 
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
