@@ -974,6 +974,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   with an NXVM handler checklist and include executable behavior plus only the
   infrastructure required by that interval; selector validation and protection
   faults remain ledgered dependencies, not completed behavior.
+- M2 T2 S3 P329 translates NXVM's `40-5F` register handler coverage into the
+  rebuilt TypeScript CPU. INC and DEC preserve CF while using shared arithmetic
+  flag semantics; PUSH and POP use the project-native stack boundary, with
+  operand width distinct from SS D/B stack addressing. The module has no
+  runtime dependency on NXVM, PCjs, or the legacy CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

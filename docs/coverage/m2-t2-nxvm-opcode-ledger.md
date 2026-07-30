@@ -20,8 +20,8 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 28-2D SUB | 5582-5662 | Subtract forms and flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Borrow/overflow; register/memory; widths | Required | In progress: P327 base execution |
 | 30-35 XOR | 5731-5811 | Logical XOR forms and defined flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; 66/67 | Required | Planned |
 | 38-3D CMP | 5878-5948 | Compare forms without destination write | `instructions/arithmetic.ts` | Partial | Full subtraction flags; memory not written | Required | Planned |
-| 40-4F INC and DEC | 6012-6447 | Register inc/dec with preserved CF | `instructions/register-stack.ts` | Partial | 16/default-32; CF preservation; overflow | Required | Planned |
-| 50-5F PUSH and POP | 6476-6866 | General-register stack forms | `instructions/register-stack.ts` | Partial | Operand data versus SS stack address width | Required | Planned |
+| 40-4F INC and DEC | 6012-6447 | Register inc/dec with preserved CF | `instructions/register-stack.ts` | Partial | 16/default-32; CF preservation; overflow | Required | Implemented: P329; broader differential evidence remains active |
+| 50-5F PUSH and POP | 6476-6866 | General-register stack forms | `instructions/register-stack.ts` | Partial | Operand data versus SS stack address width | Required | Implemented: P329; broader differential evidence remains active |
 | 60-61 PUSHA and POPA | 6892-6933 | Full register-frame stack forms | `instructions/register-stack.ts` | Partial | Original SP/ESP; 16/default-32; faults | Required | Planned |
 | 62-6F frame, bounds, immediate arithmetic, string I/O | 6972-7265 | BOUND, ARPL, FS/GS, PUSH/IMUL immediates, INS/OUTS | `instructions/frame-immediate.ts`, `instructions/string-io.ts` | Partial | Bounds faults; privilege; 66/67; REP and I/O boundary | Required | Planned |
 | 70-7F short Jcc | 7309-7494 | All short conditional transfers | `instructions/control.ts` | Partial | Taken/not-taken; flags; 16/default-32 EIP | Required | Planned |
@@ -58,6 +58,17 @@ The following are explicit dependencies before `00-3F` can be complete:
   adjust and segment forms.
 - `0F` is an escape opcode owned by the separate `0F` extended-system ledger
   rows; P327 makes no implementation claim for it.
+
+## P329 `40-5F` Checklist
+
+P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
+`POP_EDI`. It implements every encoding from `40` through `5F` in the rebuilt
+`register-stack.ts` module: `40-47` INC, `48-4F` DEC, `50-57` PUSH, and
+`58-5F` POP. Focused tests cover all register encodings, 16-bit defaults,
+default-32 code, `66`, carry preservation, overflow, independent SS D/B stack
+addressing, 16-bit stack wrap, `PUSH ESP`, and `POP ESP`. No ModR/M, address-
+size (`67`), memory operand, privilege, or protection-fault behavior applies
+to this register-only opcode interval.
 
 ## Status Rule
 
