@@ -1122,6 +1122,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   runtime reference import.
 - M2 T2 S3 P382 adapts NXVM CR/DR transfers into project-native CPU state and
   system-instruction decode without a runtime reference import.
+- M2 T2 S3 P383 adapts NXVM LAR, LSL, and CLTS control flow into project-native
+  descriptor lookup, protected-mode state, and interrupt-delivery contracts
+  without a runtime reference import. It keeps LAR and LSL system-descriptor
+  acceptance sets distinct and takes CPL from the CS hidden cache when present.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

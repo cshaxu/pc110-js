@@ -7,6 +7,9 @@ import type { SegmentName } from "../state/segments.js";
 
 export function executeSystemGroup(context: RebuiltExecutionContext): void {
   if (context.instruction.secondaryOpcode === 0x00) return executeSelectorGroup(context);
+  if (context.instruction.secondaryOpcode === 0x02 || context.instruction.secondaryOpcode === 0x03)
+    return executeAccessOrLimit(context, context.instruction.secondaryOpcode === 0x02);
+  if (context.instruction.secondaryOpcode === 0x06) return executeClts(context);
   if (
     context.instruction.secondaryOpcode !== undefined &&
     context.instruction.secondaryOpcode >= 0x20 &&
@@ -20,6 +23,78 @@ export function executeSystemGroup(context: RebuiltExecutionContext): void {
   if (modRm.reg === 4) return executeSmsw(context, modRm);
   if (modRm.reg === 6) return executeLmsw(context, modRm);
   return deliverFault(context.memory, context.state, 6, context.state.readEip());
+}
+
+function executeAccessOrLimit(context: RebuiltExecutionContext, access: boolean): void {
+  if (!(context.state.readCr0() & 1))
+    return deliverFault(context.memory, context.state, 6, context.state.readEip());
+  const modRm = decode(context);
+  const selector = readRm16(context, modRm);
+  const descriptor = readSelectorDescriptor(context, selector);
+  const valid =
+    descriptor !== undefined && selectorAccessible(context, selector, descriptor, access);
+  if (valid) {
+    const value = access ? descriptorAccessRights(descriptor!) : descriptor!.limit;
+    writeRegister(context, modRm.reg, context.instruction.prefixes.operandSize, value);
+    context.state.flags.set(0x40);
+  } else context.state.flags.clear(0x40);
+  context.state.advanceEip(context.instruction.length + modRm.bytes);
+}
+
+function executeClts(context: RebuiltExecutionContext): void {
+  const protectedMode = Boolean(context.state.readCr0() & 1);
+  const codeSegment = context.state.readSegment("cs");
+  const cpl = codeSegment.dpl ?? codeSegment.selector & 3;
+  if (protectedMode && cpl !== 0)
+    return deliverFault(context.memory, context.state, 13, context.state.readEip());
+  context.state.writeCr0(context.state.readCr0() & ~0x08);
+  context.state.advanceEip(context.instruction.length);
+}
+
+function readSelectorDescriptor(context: RebuiltExecutionContext, selector: number) {
+  if ((selector & 0xfff8) === 0 || selector & 4) return undefined;
+  try {
+    return readGdtDescriptor(
+      {
+        readUint8: (address) => context.memory.readPhysical8(address),
+        writeUint8: () => undefined
+      },
+      context.state.readGdtr(),
+      selector
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+function selectorAccessible(
+  context: RebuiltExecutionContext,
+  selector: number,
+  descriptor: ReturnType<typeof readGdtDescriptor>,
+  access: boolean
+): boolean {
+  const codeSegment = context.state.readSegment("cs");
+  const cpl = codeSegment.dpl ?? codeSegment.selector & 3;
+  if (descriptor.system) {
+    const code = Boolean(descriptor.type & 8);
+    if (code && !(descriptor.type & 2) && access) return false;
+    if (code && descriptor.type & 4) return true;
+    return cpl <= descriptor.dpl && (selector & 3) <= descriptor.dpl;
+  }
+  const allowedTypes = access ? [1, 2, 3, 4, 5, 9, 11, 12] : [1, 2, 3, 9, 11];
+  return allowedTypes.includes(descriptor.type);
+}
+
+function descriptorAccessRights(descriptor: ReturnType<typeof readGdtDescriptor>): number {
+  return (
+    ((descriptor.type << 8) |
+      (descriptor.system ? 0x1000 : 0) |
+      (descriptor.dpl << 13) |
+      (descriptor.present ? 0x8000 : 0) |
+      (descriptor.default32 ? 0x400000 : 0) |
+      (descriptor.granularity ? 0x800000 : 0)) >>>
+    0
+  );
 }
 
 function executeControlTransfer(context: RebuiltExecutionContext): void {
@@ -249,4 +324,14 @@ function writeRm(
     context.memory.write16(segment, memory.offset, value, context.instruction.prefixes.addressSize);
   else
     context.memory.write32(segment, memory.offset, value, context.instruction.prefixes.addressSize);
+}
+
+function writeRegister(
+  context: RebuiltExecutionContext,
+  register: number,
+  width: 16 | 32,
+  value: number
+): void {
+  if (width === 16) context.state.registers.write16(register, value);
+  else context.state.registers.write32(register, value);
 }
