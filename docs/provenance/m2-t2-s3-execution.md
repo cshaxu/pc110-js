@@ -1159,6 +1159,8 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   fetches and the rebuilt trace contract, without importing a reference runtime.
 - M2 T2 S3 P396 adapts NXVM selector-load fault classification into project-native
   segment-loader errors and rebuilt executor delivery, with no runtime reference import.
+- M2 T2 S3 P397 adapts NXVM cached segment access attributes and normal/
+  expand-down range logic into project-native state, memory, and loader modules.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

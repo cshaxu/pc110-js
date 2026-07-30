@@ -47,8 +47,7 @@ export class RebuiltCpuExecutor {
     const before = this.state.snapshot();
     const codeAddressSize = before.segments.cs.default32 ? 32 : 16;
     const reader = {
-      readCodeByte: (offset: number) =>
-        this.memory.read8("cs", before.eip + offset, codeAddressSize)
+      readCodeByte: (offset: number) => this.memory.readCode8(before.eip + offset, codeAddressSize)
     };
     let instruction: DecodedInstruction;
     try {

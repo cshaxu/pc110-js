@@ -7,6 +7,10 @@ export interface SegmentCache {
   readonly default32: boolean;
   readonly valid?: boolean;
   readonly dpl?: number;
+  readonly executable?: boolean;
+  readonly readable?: boolean;
+  readonly writable?: boolean;
+  readonly expandDown?: boolean;
 }
 
 export const REAL_MODE_SEGMENT: SegmentCache = {

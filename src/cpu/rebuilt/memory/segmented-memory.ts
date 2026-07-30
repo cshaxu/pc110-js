@@ -29,7 +29,11 @@ export class SegmentedMemory {
   ) {}
 
   public read8(segment: SegmentName, offset: number, addressSize: 16 | 32): number {
-    return this.bus.readUint8(this.translate(segment, offset, addressSize, false)) & 0xff;
+    return this.bus.readUint8(this.translate(segment, offset, addressSize, false, false)) & 0xff;
+  }
+
+  public readCode8(offset: number, addressSize: 16 | 32): number {
+    return this.bus.readUint8(this.translate("cs", offset, addressSize, false, true)) & 0xff;
   }
 
   public readPhysical8(address: number): number {
@@ -57,7 +61,7 @@ export class SegmentedMemory {
   }
 
   public write8(segment: SegmentName, offset: number, value: number, addressSize: 16 | 32): void {
-    this.bus.writeUint8(this.translate(segment, offset, addressSize, true), value & 0xff);
+    this.bus.writeUint8(this.translate(segment, offset, addressSize, true, false), value & 0xff);
   }
 
   public write16(segment: SegmentName, offset: number, value: number, addressSize: 16 | 32): void {
@@ -76,14 +80,14 @@ export class SegmentedMemory {
     segmentName: SegmentName,
     offset: number,
     addressSize: 16 | 32,
-    write: boolean
+    write: boolean,
+    instructionFetch: boolean
   ): number {
     const segment = this.state.readSegment(segmentName);
     const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
     const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
-    if (protectedMode && (segment.valid === false || normalizedOffset > segment.limit)) {
-      throw new SegmentAccessError(segmentName, `Segment ${segmentName} limit exceeded`);
-    }
+    if (protectedMode)
+      this.validateProtectedAccess(segmentName, segment, normalizedOffset, write, instructionFetch);
     const linear = (segment.base + normalizedOffset) >>> 0;
     try {
       return translateLinearAddress(
@@ -100,6 +104,26 @@ export class SegmentedMemory {
       if (error instanceof PageFaultError) this.state.writeCr2(error.linearAddress);
       throw error;
     }
+  }
+
+  private validateProtectedAccess(
+    segmentName: SegmentName,
+    segment: ReturnType<RebuiltCpuState["readSegment"]>,
+    offset: number,
+    write: boolean,
+    instructionFetch: boolean
+  ): void {
+    if (segment.valid === false)
+      throw new SegmentAccessError(segmentName, `Segment ${segmentName} is invalid`);
+    const lower = segment.expandDown ? (segment.limit + 1) >>> 0 : 0;
+    const upper = segment.expandDown ? (segment.default32 ? 0xffffffff : 0xffff) : segment.limit;
+    if (offset < lower || offset > upper)
+      throw new SegmentAccessError(segmentName, `Segment ${segmentName} limit exceeded`);
+    if (instructionFetch) return;
+    if (write && segment.writable === false)
+      throw new SegmentAccessError(segmentName, `Segment ${segmentName} is not writable`);
+    if (!write && segment.executable === true && segment.readable === false)
+      throw new SegmentAccessError(segmentName, `Segment ${segmentName} is not readable`);
   }
 
   private pagingAccess(write: boolean): PagingAccess {

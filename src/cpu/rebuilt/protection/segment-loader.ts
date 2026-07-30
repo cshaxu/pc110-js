@@ -51,7 +51,11 @@ export function loadCodeSegment(
     limit: descriptor.limit,
     default32: descriptor.default32,
     valid: true,
-    dpl: descriptor.dpl
+    dpl: descriptor.dpl,
+    executable: true,
+    readable: Boolean(descriptor.type & 2),
+    writable: false,
+    expandDown: false
   });
 }
 
@@ -70,7 +74,11 @@ function load(
       limit: 0xffff,
       default32: false,
       valid: true,
-      dpl: 0
+      dpl: 0,
+      executable: false,
+      readable: true,
+      writable: true,
+      expandDown: false
     });
     return;
   }
@@ -82,7 +90,11 @@ function load(
       limit: 0,
       default32: false,
       valid: false,
-      dpl: 0
+      dpl: 0,
+      executable: false,
+      readable: false,
+      writable: false,
+      expandDown: false
     });
     return;
   }
@@ -103,7 +115,11 @@ function load(
     limit: descriptor.limit,
     default32: descriptor.default32,
     valid: true,
-    dpl: descriptor.dpl
+    dpl: descriptor.dpl,
+    executable,
+    readable: !executable || Boolean(descriptor.type & 2),
+    writable: !executable && writable,
+    expandDown: !executable && Boolean(descriptor.type & 4)
   });
 }
 

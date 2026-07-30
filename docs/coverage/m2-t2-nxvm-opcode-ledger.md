@@ -543,3 +543,12 @@ P396 classifies rebuilt code/data/stack selector-load failures as #GP, #NP, or
 the rebuilt executor. Focused tests cover descriptor presence and null SS
 classification. Descriptor gates, task switching, escalation, and all
 outer-privilege paths remain active work.
+
+## P397 Cached Segment-Access Checklist
+
+P397 carries executable, readable, writable, and expand-down attributes in the
+rebuilt hidden segment caches. Protected access validates cache validity, type,
+and normal or expand-down bounds; instruction fetch is distinct from data reads.
+Focused tests cover write denial and 16-bit expand-down range checks. Full
+segment-system fault codes, v86 access semantics, and task/gate paths remain
+active work.

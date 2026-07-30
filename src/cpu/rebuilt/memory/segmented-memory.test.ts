@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PageFaultError } from "../../../memory/address-translation.js";
-import { SegmentedMemory, type RebuiltMemoryBus } from "./segmented-memory.js";
+import { SegmentAccessError, SegmentedMemory, type RebuiltMemoryBus } from "./segmented-memory.js";
 import { RebuiltCpuState } from "../state/cpu-state.js";
 
 function memory(bytes: Uint8Array): RebuiltMemoryBus {
@@ -75,5 +75,41 @@ describe("SegmentedMemory", () => {
 
     expect(() => segmented.read8("ds", 0, 32)).toThrow(PageFaultError);
     expect(state.readCr2()).toBe(0x400000);
+  });
+
+  it("enforces cached protected segment access and expand-down bounds", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("ds", {
+      selector: 8,
+      base: 0,
+      limit: 0xffff,
+      default32: false,
+      valid: true,
+      dpl: 0,
+      executable: false,
+      readable: true,
+      writable: false,
+      expandDown: false
+    });
+    const bytes = new Uint8Array(0x20000);
+    const segmented = new SegmentedMemory(memory(bytes), state);
+    expect(() => segmented.write8("ds", 0, 1, 16)).toThrow(SegmentAccessError);
+
+    state.writeSegment("ds", {
+      selector: 8,
+      base: 0,
+      limit: 0x7fff,
+      default32: false,
+      valid: true,
+      dpl: 0,
+      executable: false,
+      readable: true,
+      writable: true,
+      expandDown: true
+    });
+    bytes[0x8000] = 0x5a;
+    expect(segmented.read8("ds", 0x8000, 16)).toBe(0x5a);
+    expect(() => segmented.read8("ds", 0x7fff, 16)).toThrow(SegmentAccessError);
   });
 });
