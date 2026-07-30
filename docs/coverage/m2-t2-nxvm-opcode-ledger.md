@@ -191,6 +191,11 @@ separate S6 coverage.
 A generic real-mode program matches PCjs for NOP, every accumulator XCHG, CBW,
 CWD, SAHF, and LAHF. WAIT and far CALL remain separate S6 coverage.
 
+## S6 P21 Differential Evidence
+
+A generic real-mode program matches PCjs for byte and word accumulator moffs
+loads and stores across `A0-A3`, including changed RAM deltas.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

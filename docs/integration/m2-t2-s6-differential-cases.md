@@ -31,6 +31,7 @@ It does not yet record writes whose value is unchanged.
 | `80-83` arithmetic slice | ADD, ADC, SBB, SUB, CMP immediate registers | automatic register and flag lockstep |
 | `84-8D` slice | TEST, XCHG, general MOV, LEA | automatic register, flag, and EIP lockstep |
 | `90-99`, `9E-9F` slice | accumulator XCHG, sign extension, flag transfer | automatic register and flag lockstep |
+| `A0-A3` program | byte and word accumulator moffs loads/stores | automatic register, memory, and EIP lockstep |
 | `B0-BF` program | every byte and word immediate-register form | automatic register-width and EIP lockstep |
 
 ## Active Expansion Order

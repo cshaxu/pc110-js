@@ -82,3 +82,8 @@ PCjs source, custom oracle behavior, or product dependency.
 
 P20 uses the shared dispatcher for accumulator and flag-transfer forms. It adds
 no PCjs source, instruction-specific oracle, or product runtime dependency.
+
+## P21 Moffs Program
+
+P21 uses independent RAM images and the shared dispatcher for all accumulator
+moffs forms. It adds no PCjs source or runtime dependency.
