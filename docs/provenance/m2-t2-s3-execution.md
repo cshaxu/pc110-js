@@ -706,6 +706,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   mapping; a `66` prefix selects the non-default operand size, so pre-existing
   dword fixtures now explicitly use a 16-bit-default code segment. Focused
   default-32 tests cover dword, `66` word, and `67` address-size behavior.
+- M2 T2 S3 P260 adds the M2 T2 80386 coverage matrix. NXVM `vcpu.h` and
+  `vcpuins.c` inform only its structural and coverage categories; PCjs remains
+  the behavioral authority. Partial rows are explicitly not T2 completion.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
