@@ -10,6 +10,7 @@ import { executeFlagTransfer } from "./instructions/flag-transfer.js";
 import { executeFlagStack } from "./instructions/flag-stack.js";
 import { executeExchangeModRm } from "./instructions/exchange.js";
 import { executeExtended } from "./instructions/extended.js";
+import { executeSystemGroup } from "./instructions/system.js";
 import { executeFirstIntervalArithmetic } from "./instructions/first-interval.js";
 import { executeFrameImmediateSlice } from "./instructions/frame-immediate.js";
 import { executeGroupFourFive } from "./instructions/group-four-five.js";
@@ -130,6 +131,7 @@ function dispatchExtended(context: RebuiltExecutionContext): void {
   if (opcode !== undefined && opcode >= 0x80 && opcode <= 0x8f)
     return executeNearConditionalJump(context);
   if (opcode !== undefined && opcode >= 0x90 && opcode <= 0x9f) return executeSetCondition(context);
+  if (opcode === 0x01) return executeSystemGroup(context);
   if (
     opcode !== undefined &&
     [
