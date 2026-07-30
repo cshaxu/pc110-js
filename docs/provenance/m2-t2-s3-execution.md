@@ -712,6 +712,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P261 routes Group 1 `81`/`83` immediate ALU forms through context.
   PCjs prefix semantics require the immediate width to follow operand width;
   focused default-32 tests cover dword `83`, `66` word, and `67` addressing.
+- M2 T2 S3 P262 routes byte ModR/M ALU forms through context. PCjs address-size
+  selection makes `67` choose the non-default effective-address form while byte
+  operand width remains unchanged; focused default-32 coverage verifies this.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

@@ -1016,6 +1016,19 @@ function executeContextualInstruction(
   const loop = executeContextualLoop(memory, state, context, fetched);
   if (loop) return loop;
 
+  const byteAluOperation = byteModRmAluOperation(context.opcode);
+  if (byteAluOperation) {
+    executeByteAluModRm(
+      memory,
+      state,
+      byteAluOperation,
+      byteModRmAluDestinationIsRegister(context.opcode),
+      context.opcodeOffset + 1,
+      context.addressSize
+    );
+    return { halted: false, fetched };
+  }
+
   const aluOperation = modRmAluOperation(context.opcode);
   if (aluOperation) {
     const modRmOffset = context.opcodeOffset + 1;
@@ -1927,39 +1940,31 @@ function executeXchgModRm(memory: InstructionMemory, state: Cpu386State, width: 
 function executeByteAluModRm(
   memory: InstructionMemory,
   state: Cpu386State,
-  operation: "add" | "adc" | "sub" | "sbb",
-  destinationIsMemory: boolean
+  operation: DwordAluOperation,
+  destinationIsRegister: boolean,
+  modRmOffset = 1,
+  addressSize: 16 | 32 = 16
 ): void {
-  const modRm = decodeModRm(fetchCodeByte(memory, state, 1).opcode);
-  const destinationRegister = destinationIsMemory ? modRm.rm : modRm.reg;
-  const sourceRegister = destinationIsMemory ? modRm.reg : modRm.rm;
-  let destination: number;
-  let source: number;
-  let address: ReturnType<typeof decodeMemoryAddress> | undefined;
-  if (modRm.registerDirect) {
-    destination = state.readRegister8(destinationRegister);
-    source = state.readRegister8(sourceRegister);
-  } else {
-    address = decodeMemoryAddress(memory, state, modRm);
-    if (destinationIsMemory) {
-      destination = readSegmentUint8(memory, state, address.segment, address.offset);
-      source = state.readRegister8(sourceRegister);
-    } else {
-      destination = state.readRegister8(destinationRegister);
-      source = readSegmentUint8(memory, state, address.segment, address.offset);
-    }
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const addressBytes = decodedAddressBytes(address, addressSize);
+  const destination = destinationIsRegister
+    ? state.readRegister8(modRm.reg)
+    : modRm.registerDirect
+      ? state.readRegister8(modRm.rm)
+      : readSegmentUint8(memory, state, address!.segment, address!.offset, addressSize);
+  const source = destinationIsRegister
+    ? modRm.registerDirect
+      ? state.readRegister8(modRm.rm)
+      : readSegmentUint8(memory, state, address!.segment, address!.offset, addressSize)
+    : state.readRegister8(modRm.reg);
+  const result = writeByteAluResult(state, operation, destination, source);
+  if (operation !== "cmp" && operation !== "test") {
+    if (destinationIsRegister) state.writeRegister8(modRm.reg, result);
+    else if (modRm.registerDirect) state.writeRegister8(modRm.rm, result);
+    else writeSegmentUint8(memory, state, address!.segment, address!.offset, result, addressSize);
   }
-  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
-  const result =
-    operation === "add" || operation === "adc"
-      ? destination + source + carry
-      : destination - source - carry;
-  if (modRm.registerDirect || !destinationIsMemory)
-    state.writeRegister8(destinationRegister, result);
-  else writeSegmentUint8(memory, state, address!.segment, address!.offset, result);
-  if (operation === "add" || operation === "adc") state.writeAddFlags8(destination, source, carry);
-  else state.writeCompareFlags8(destination, source, carry);
-  state.advanceEip(2 + (address?.displacementBytes ?? 0));
+  state.advanceEip(modRmOffset + 1 + addressBytes);
 }
 
 function executeWordAluModRm(
@@ -1993,6 +1998,32 @@ function executeWordAluModRm(
 }
 
 type DwordAluOperation = "add" | "adc" | "or" | "and" | "sub" | "xor" | "cmp" | "test" | "sbb";
+
+function byteModRmAluOperation(opcode: number): DwordAluOperation | undefined {
+  if (opcode === 0x00 || opcode === 0x02) return "add";
+  if (opcode === 0x08 || opcode === 0x0a) return "or";
+  if (opcode === 0x10 || opcode === 0x12) return "adc";
+  if (opcode === 0x18 || opcode === 0x1a) return "sbb";
+  if (opcode === 0x20 || opcode === 0x22) return "and";
+  if (opcode === 0x28 || opcode === 0x2a) return "sub";
+  if (opcode === 0x30 || opcode === 0x32) return "xor";
+  if (opcode === 0x38 || opcode === 0x3a) return "cmp";
+  if (opcode === 0x84) return "test";
+  return undefined;
+}
+
+function byteModRmAluDestinationIsRegister(opcode: number): boolean {
+  return (
+    opcode === 0x02 ||
+    opcode === 0x0a ||
+    opcode === 0x12 ||
+    opcode === 0x1a ||
+    opcode === 0x22 ||
+    opcode === 0x2a ||
+    opcode === 0x32 ||
+    opcode === 0x3a
+  );
+}
 
 function modRmAluOperation(opcode: number): DwordAluOperation | undefined {
   if (opcode === 0x01 || opcode === 0x03) return "add";
@@ -2076,6 +2107,42 @@ function writeDwordAluResult(
   else if (operation === "sub" || operation === "sbb" || operation === "cmp")
     state.writeCompareFlags32(destination, source, carry);
   else state.writeLogicFlags32(result);
+  return result;
+}
+
+function writeByteAluResult(
+  state: Cpu386State,
+  operation: DwordAluOperation,
+  destination: number,
+  source: number
+): number {
+  const carry = operation === "adc" || operation === "sbb" ? (state.carryFlag() ? 1 : 0) : 0;
+  let result: number;
+  switch (operation) {
+    case "add":
+    case "adc":
+      result = destination + source + carry;
+      break;
+    case "or":
+      result = destination | source;
+      break;
+    case "and":
+    case "test":
+      result = destination & source;
+      break;
+    case "xor":
+      result = destination ^ source;
+      break;
+    case "sub":
+    case "sbb":
+    case "cmp":
+      result = destination - source - carry;
+      break;
+  }
+  if (operation === "add" || operation === "adc") state.writeAddFlags8(destination, source, carry);
+  else if (operation === "sub" || operation === "sbb" || operation === "cmp")
+    state.writeCompareFlags8(destination, source, carry);
+  else state.writeLogicFlags8(result);
   return result;
 }
 
@@ -4238,13 +4305,13 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0x00:
-      executeByteAluModRm(memory, state, "add", true);
+      executeByteAluModRm(memory, state, "add", false);
       return { halted: false, fetched };
     case 0x01:
       executeWordAluModRm(memory, state, "add", false);
       return { halted: false, fetched };
     case 0x02:
-      executeByteAluModRm(memory, state, "add", false);
+      executeByteAluModRm(memory, state, "add", true);
       return { halted: false, fetched };
     case 0x03:
       executeWordAluModRm(memory, state, "add", true);
@@ -4282,16 +4349,16 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0x10:
-      executeByteAluModRm(memory, state, "adc", true);
-      return { halted: false, fetched };
-    case 0x12:
       executeByteAluModRm(memory, state, "adc", false);
       return { halted: false, fetched };
+    case 0x12:
+      executeByteAluModRm(memory, state, "adc", true);
+      return { halted: false, fetched };
     case 0x18:
-      executeByteAluModRm(memory, state, "sbb", true);
+      executeByteAluModRm(memory, state, "sbb", false);
       return { halted: false, fetched };
     case 0x1a:
-      executeByteAluModRm(memory, state, "sbb", false);
+      executeByteAluModRm(memory, state, "sbb", true);
       return { halted: false, fetched };
     case 0x14: {
       const accumulator = state.readRegister8(0);
@@ -4349,10 +4416,10 @@ export function stepInstruction(
       return { halted: false, fetched };
     }
     case 0x2a:
-      executeByteAluModRm(memory, state, "sub", false);
+      executeByteAluModRm(memory, state, "sub", true);
       return { halted: false, fetched };
     case 0x28:
-      executeByteAluModRm(memory, state, "sub", true);
+      executeByteAluModRm(memory, state, "sub", false);
       return { halted: false, fetched };
     case 0x29:
       executeWordAluModRm(memory, state, "sub", false);

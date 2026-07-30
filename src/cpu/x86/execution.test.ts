@@ -187,6 +187,27 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0000010b);
   });
 
+  it("selects byte ModR/M ALU address width through the context", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x67],
+      [0x00000101, 0x00],
+      [0x00000102, 0x08],
+      [0x00003010, 0x07]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister8(1, 0x02);
+    state.writeRegister(3, 0xabcd3010);
+    state.writeRegister(6, 0x56780000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(values.get(0x00003010)).toBe(0x09);
+    expect(state.snapshot().eip).toBe(0x00000103);
+  });
+
   it("selects LODS data and index width independently through the context", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xad],
