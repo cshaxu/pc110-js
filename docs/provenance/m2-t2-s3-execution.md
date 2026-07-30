@@ -762,6 +762,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   operand-width helper and routes `62` through context. PCjs operand-size
   selection controls signed index and range width, while address-size controls
   the bounds-pair address; existing vector-five fault delivery remains shared.
+- M2 T2 S3 P276 routes `8C` and `8E` through a project-native segment-transfer
+  helper. Segment selectors remain 16-bit; PCjs address-size selection controls
+  the ModR/M memory form, and existing real/protected segment-load validation
+  remains shared behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

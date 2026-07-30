@@ -1288,6 +1288,11 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   }
 
+  if (context.opcode === 0x8c || context.opcode === 0x8e) {
+    executeContextualMovSegment(memory, state, context);
+    return { halted: false, fetched };
+  }
+
   if (
     context.opcode === 0xa4 ||
     context.opcode === 0xa5 ||
@@ -2063,6 +2068,41 @@ function executeMovSegmentFromModRm(
     loadProtectedModeSegment(memory, state, segment, selector);
   }
   state.advanceEip(modRmOffset + 1 + displacementBytes);
+}
+
+function executeContextualMovSegment(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  if (context.opcode === 0x8c) {
+    const segment = segmentForStore(modRm.reg);
+    if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
+    const selector = state.snapshot()[segment].selector;
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, selector);
+    else
+      writeSegmentUint16(
+        memory,
+        state,
+        address!.segment,
+        address!.offset,
+        selector,
+        context.addressSize
+      );
+  } else {
+    const segment = segmentForMove(modRm.reg);
+    if (!segment) throw new UnsupportedOpcodeError("Unsupported segment register in MOV");
+    const selector = modRm.registerDirect
+      ? state.readRegister16(modRm.rm)
+      : readSegmentUint16(memory, state, address!.segment, address!.offset, context.addressSize);
+    if (addressMode(state.snapshot().cr0, state.snapshot().eflags) === "real")
+      state.loadRealModeSegment(segment, selector);
+    else loadProtectedModeSegment(memory, state, segment, selector);
+  }
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
 }
 
 function executeMov8FromModRm(
