@@ -1024,6 +1024,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P342 translates NXVM accumulator immediate TEST behavior into native
   TypeScript. It uses shared rebuilt logical flags without writing the
   accumulator or importing external runtime code.
+- M2 T2 S3 P343 translates the defined NXVM C6/C7 `/0` MOV behavior into native
+  TypeScript. Non-zero extensions are deliberately surfaced as pending `#UD`
+  delivery, not represented as synthetic MOV behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
