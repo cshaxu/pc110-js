@@ -965,6 +965,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   and trace into an independent single-step boundary. Its reset-vector test
   reads the architectural high-ROM `0xfffffff0` address, not a synthetic low
   alias. It does not import the legacy CPU or claim any dispatched opcode.
+- M2 T2 S3 P327 routes the base `00-3D` arithmetic patterns through rebuilt
+  decode, ModR/M, memory, and EFLAGS boundaries, and implements the four adjust
+  opcodes plus real-mode segment-stack forms. Protected-mode selector validation
+  and fault delivery intentionally remain outside this partial interval slice.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

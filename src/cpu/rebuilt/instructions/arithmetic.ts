@@ -73,6 +73,24 @@ export function logical(
   };
 }
 
+export function decimalAdjustFlags(
+  currentFlags: number,
+  value: number,
+  carry: boolean,
+  auxiliaryCarry: boolean
+): number {
+  let flags =
+    currentFlags &
+    ~(EFLAGS_CARRY | EFLAGS_AUXILIARY_CARRY | EFLAGS_PARITY | EFLAGS_ZERO | EFLAGS_SIGN);
+  const normalized = value & 0xff;
+  if (carry) flags |= EFLAGS_CARRY;
+  if (auxiliaryCarry) flags |= EFLAGS_AUXILIARY_CARRY;
+  if (normalized === 0) flags |= EFLAGS_ZERO;
+  if (normalized & EFLAGS_SIGN) flags |= EFLAGS_SIGN;
+  if (evenParity(normalized)) flags |= EFLAGS_PARITY;
+  return flags >>> 0;
+}
+
 function commonResultFlags(
   currentFlags: number,
   value: number,

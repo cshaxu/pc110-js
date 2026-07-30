@@ -11,13 +11,13 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | Opcode or family | NXVM source location | 80386 behavior | Rebuilt destination | Legacy coverage | Required tests | PCjs comparison | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Prefixes | 1246-1282, 5545-5977, 7041-7073, 10968-11058 | Segment, LOCK, REP, operand-size, address-size, decode length, fault EIP | `decode/prefix.ts`, `decode/decoder.ts` | Partial | Repeated prefixes; 16/default-32; 66/67; overrides; fault EIP | Required | In progress: P321-P322 decode boundary |
-| 00-05 ADD | 4861-4941 | Byte and operand-sized add; ModR/M and accumulator immediates; flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; CF/OF/AF/SF/ZF/PF | Required | Planned |
-| 08-0D OR | 5001-5081 | Logical OR forms and defined flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; 66/67 | Required | Planned |
-| 10-15 ADC | 5153-5233 | Add with carry forms and flags | `instructions/arithmetic.ts` | Partial | Carry boundaries; register/memory; widths | Required | Planned |
-| 18-1D SBB | 5293-5373 | Subtract with borrow forms and flags | `instructions/arithmetic.ts` | Partial | Borrow boundaries; register/memory; widths | Required | Planned |
-| 20-25 AND | 5433-5513 | Logical AND forms and defined flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; 66/67 | Required | Planned |
-| 27-2F decimal and ASCII adjust | 5559-5991 | DAA, DAS, AAA, AAS | `instructions/adjust.ts` | Partial | Defined flags and invalid-mode cases | Required | Planned |
-| 28-2D SUB | 5582-5662 | Subtract forms and flags | `instructions/arithmetic.ts` | Partial | Borrow/overflow; register/memory; widths | Required | Planned |
+| 00-05 ADD | 4861-4941 | Byte and operand-sized add; ModR/M and accumulator immediates; flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Register/memory; widths; CF/OF/AF/SF/ZF/PF | Required | In progress: P327 base execution |
+| 08-0D OR | 5001-5081 | Logical OR forms and defined flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Register/memory; widths; 66/67 | Required | In progress: P327 base execution |
+| 10-15 ADC | 5153-5233 | Add with carry forms and flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Carry boundaries; register/memory; widths | Required | In progress: P327 base execution |
+| 18-1D SBB | 5293-5373 | Subtract with borrow forms and flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Borrow boundaries; register/memory; widths | Required | In progress: P327 base execution |
+| 20-25 AND | 5433-5513 | Logical AND forms and defined flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Register/memory; widths; 66/67 | Required | In progress: P327 base execution |
+| 27-2F decimal and ASCII adjust | 5559-5991 | DAA, DAS, AAA, AAS | `instructions/first-interval.ts` | Partial | Defined flags and invalid-mode cases | Required | In progress: P327 base execution |
+| 28-2D SUB | 5582-5662 | Subtract forms and flags | `instructions/arithmetic.ts`, `instructions/first-interval.ts` | Partial | Borrow/overflow; register/memory; widths | Required | In progress: P327 base execution |
 | 30-35 XOR | 5731-5811 | Logical XOR forms and defined flags | `instructions/arithmetic.ts` | Partial | Register/memory; widths; 66/67 | Required | Planned |
 | 38-3D CMP | 5878-5948 | Compare forms without destination write | `instructions/arithmetic.ts` | Partial | Full subtraction flags; memory not written | Required | Planned |
 | 40-4F INC and DEC | 6012-6447 | Register inc/dec with preserved CF | `instructions/register-stack.ts` | Partial | 16/default-32; CF preservation; overflow | Required | Planned |
