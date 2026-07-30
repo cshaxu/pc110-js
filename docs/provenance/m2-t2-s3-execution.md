@@ -740,6 +740,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   project-native operand-width helper and routes `0F AF` through context.
   PCjs operand/address-size selection controls signed data width and ModR/M
   address form; established CF/OF overflow handling remains shared behavior.
+- M2 T2 S3 P270 replaces the dword-only immediate IMUL helper with a generic
+  project-native operand-width helper and routes `69/6B` through context.
+  PCjs operand/address-size selection controls signed source, immediate, and
+  destination widths, while address-size controls the ModR/M address form.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
