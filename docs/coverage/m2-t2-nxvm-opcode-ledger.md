@@ -359,3 +359,8 @@ P372 implements NXVM PUSHF/POPF real-mode and non-VM protected-mode behavior.
 Tests cover operand width, PUSHFD VM/RF stripping, and nonzero-CPL IOPL
 preservation. Virtual-8086 flag-stack behavior remains an explicit v86-state
 dependency.
+
+## P373 `62` BOUND Checklist
+
+P373 implements signed 16/32-bit memory bounds checks with 66/67 addressing.
+Tests cover in-range, #BR, and register-only #UD behavior.

@@ -41,6 +41,30 @@ function execute(
 }
 
 describe("rebuilt 60-6B frame and immediate forms", () => {
+  it("executes BOUND across signed operand widths and delivers #BR/#UD failures", () => {
+    const inside = execute([0x62, 0x06, 0x20, 0], {
+      setup: (state) => state.registers.write16(0, 3),
+      setupMemory: (memory) =>
+        [0, 0, 5, 0].forEach((value, index) => memory.set(0x20 + index, value))
+    });
+    expect(inside.state.readEip()).toBe(4);
+    const outside = execute([0x62, 0x06, 0x20, 0], {
+      setup: (state) => {
+        state.registers.write16(0, 6);
+        state.registers.write16(4, 0x100);
+      },
+      setupMemory: (memory) => {
+        [0, 0, 5, 0].forEach((value, index) => memory.set(0x20 + index, value));
+        [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x14 + index, value));
+      }
+    });
+    expect(outside.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+    const invalid = execute([0x62, 0xc0], {
+      setup: (state) => state.registers.write16(4, 0x100),
+      setupMemory: (memory) => [0x34, 0x12, 0, 0x20].forEach((value, index) => memory.set(0x18 + index, value))
+    });
+    expect(invalid.state.snapshot()).toMatchObject({ eip: 0x1234, registers: { esp: 0xfa } });
+  });
   it("pushes every 16-bit register plus the original SP in PUSHA order", () => {
     const result = execute([0x60], {
       setup: (state) => {

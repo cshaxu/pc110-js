@@ -78,7 +78,7 @@ function dispatchUnlocked(context: RebuiltExecutionContext): void {
   if (opcode === 0x0f) return dispatchExtended(context);
   if (opcode <= 0x3f) return executeFirstIntervalArithmetic(context);
   if (opcode >= 0x40 && opcode <= 0x5f) return executeRegisterStackInterval(context);
-  if ([0x60, 0x61, 0x68, 0x69, 0x6a, 0x6b].includes(opcode))
+  if ([0x60, 0x61, 0x62, 0x68, 0x69, 0x6a, 0x6b].includes(opcode))
     return executeFrameImmediateSlice(context);
   if (opcode >= 0x70 && opcode <= 0x7f) return executeShortConditionalJump(context);
   if ([0x80, 0x81, 0x83].includes(opcode)) return executeGroupOne(context);

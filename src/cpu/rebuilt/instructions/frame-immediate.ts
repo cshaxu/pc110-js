@@ -1,5 +1,6 @@
 import { decodeModRm, type DecodedModRm } from "../addressing/modrm.js";
 import type { RebuiltExecutionContext } from "../execution.js";
+import { deliverFault } from "../events/interrupt-delivery.js";
 import { popStack, pushStack } from "../memory/stack.js";
 import type { SegmentName } from "../state/segments.js";
 import { EFLAGS_CARRY, EFLAGS_OVERFLOW, type ArithmeticWidth } from "./arithmetic.js";
@@ -9,10 +10,47 @@ export function executeFrameImmediateSlice(context: RebuiltExecutionContext): vo
   let extraBytes = 0;
   if (opcode === 0x60) executePushAll(context);
   else if (opcode === 0x61) executePopAll(context);
+  else if (opcode === 0x62) return executeBound(context);
   else if (opcode === 0x68 || opcode === 0x6a) extraBytes = executePushImmediate(context);
   else if (opcode === 0x69 || opcode === 0x6b) extraBytes = executeImmediateMultiply(context);
   else throw new Error(`Opcode 0x${opcode.toString(16)} is outside rebuilt 60-6B coverage`);
   context.state.advanceEip(context.instruction.length + extraBytes);
+}
+
+function executeBound(context: RebuiltExecutionContext): void {
+  const width = context.instruction.prefixes.operandSize;
+  const modRmOffset = context.instruction.opcodeOffset + 1;
+  const modRm = decodeModRm(
+    context.reader,
+    modRmOffset,
+    context.instruction.prefixes.addressSize,
+    context.state.registers
+  );
+  if (modRm.registerDirect)
+    return deliverFault(context.memory, context.state, 6, context.state.readEip());
+  const memory = modRm.memory!;
+  const segment: SegmentName = context.instruction.prefixes.segmentOverride ?? memory.segment;
+  const bytes = width / 8;
+  const lower =
+    width === 16
+      ? context.memory.read16(segment, memory.offset, context.instruction.prefixes.addressSize)
+      : context.memory.read32(segment, memory.offset, context.instruction.prefixes.addressSize);
+  const upper =
+    width === 16
+      ? context.memory.read16(
+          segment,
+          memory.offset + bytes,
+          context.instruction.prefixes.addressSize
+        )
+      : context.memory.read32(
+          segment,
+          memory.offset + bytes,
+          context.instruction.prefixes.addressSize
+        );
+  const index = readRegister(context, modRm.reg, width);
+  if (signed(index, width) < signed(lower, width) || signed(index, width) > signed(upper, width))
+    return deliverFault(context.memory, context.state, 5, context.state.readEip());
+  context.state.advanceEip(context.instruction.length + modRm.bytes);
 }
 
 function executePushAll(context: RebuiltExecutionContext): void {
