@@ -20,11 +20,12 @@ It does not yet record writes whose value is unchanged.
 | DEC CX | `49` | register decrement and flags |
 | MOV moffs, AL | `A2 00 02` | register/EIP state and changed RAM byte at `0200` |
 | Mixed program | `B0 5A A2 00 02 49 90` | four automatic instruction-by-instruction comparisons |
+| Byte port program | `E4 80 E6 80` | automatic input/output journal comparison |
 
 ## Active Expansion Order
 
 1. ModR/M addressing and broader memory-delta families.
-2. I/O journals and explicit unavailable-port classification.
+2. Word/dword and DX-addressed I/O journal forms.
 3. Prefix, default-32, and 66/67 matrices.
 4. Exceptions, fault EIP, protected mode, descriptor state, paging, and
    privilege transitions.

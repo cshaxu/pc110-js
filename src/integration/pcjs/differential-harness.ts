@@ -1,4 +1,5 @@
 import { RebuiltCpuRunner } from "../../cpu/rebuilt/runner.js";
+import type { PortWidth, RebuiltPortBus } from "../../cpu/rebuilt/io/port-bus.js";
 import type { SegmentCache } from "../../cpu/rebuilt/state/segments.js";
 import { PhysicalMemory } from "../../memory/physical-memory.js";
 
@@ -22,11 +23,29 @@ export interface DifferentialCase {
   readonly registers?: DifferentialRegisterState;
   readonly eflags?: number;
   readonly memory?: readonly DifferentialMemoryByte[];
+  readonly io?: DifferentialIoConfiguration;
 }
 
 export interface DifferentialMemoryByte {
   readonly address: number;
   readonly value: number;
+}
+
+export interface DifferentialIoConfiguration {
+  readonly inputs?: readonly DifferentialIoInput[];
+}
+
+export interface DifferentialIoInput {
+  readonly port: number;
+  readonly value: number;
+  readonly width: PortWidth;
+}
+
+export interface DifferentialIoAccess {
+  readonly direction: "read" | "write";
+  readonly port: number;
+  readonly value: number;
+  readonly width: PortWidth;
 }
 
 export interface DifferentialCpuSnapshot {
@@ -54,6 +73,10 @@ export interface DifferentialStepResult {
     readonly rebuilt: readonly DifferentialMemoryByte[];
     readonly pcjs: readonly DifferentialMemoryByte[];
   };
+  readonly io: {
+    readonly rebuilt: readonly DifferentialIoAccess[];
+    readonly pcjs: readonly DifferentialIoAccess[];
+  };
 }
 
 export interface DifferentialTraceResult {
@@ -62,6 +85,14 @@ export interface DifferentialTraceResult {
 
 interface PcjsBus {
   addMemory(address: number, size: number, type: number): boolean;
+  addPortInputNotify(start: number, end: number, handler: (port: number) => number): void;
+  addPortInputWidth(port: number, size: number): void;
+  addPortOutputNotify(
+    start: number,
+    end: number,
+    handler: (port: number, value: number) => void
+  ): void;
+  addPortOutputWidth(port: number, size: number): void;
   getByte(address: number): number;
   setByte(address: number, value: number): void;
 }
@@ -135,6 +166,8 @@ export async function runPcjsDifferentialTrace(
   for (let instruction = 0; instruction < instructionCount; instruction += 1) {
     const before = { rebuilt: snapshotRebuilt(rebuilt.runner), pcjs: snapshotPcjs(pcjs.cpu) };
     rebuilt.memory.clearWrites();
+    rebuilt.io.clear();
+    pcjs.io.clear();
     const pcjsMemory = snapshotPcjsMemory(pcjs.bus);
     rebuilt.runner.step();
     pcjs.cpu.stepCPU(0);
@@ -145,6 +178,10 @@ export async function runPcjsDifferentialTrace(
       memoryWrites: {
         rebuilt: rebuilt.memory.writes(),
         pcjs: diffPcjsMemory(pcjs.bus, pcjsMemory)
+      },
+      io: {
+        rebuilt: rebuilt.io.accesses(),
+        pcjs: pcjs.io.accesses()
       }
     });
   }
@@ -152,8 +189,16 @@ export async function runPcjsDifferentialTrace(
 }
 
 export function assertDifferentialMatch(result: DifferentialStepResult): void {
-  const left = JSON.stringify({ state: result.rebuilt, memoryWrites: result.memoryWrites.rebuilt });
-  const right = JSON.stringify({ state: result.pcjs, memoryWrites: result.memoryWrites.pcjs });
+  const left = JSON.stringify({
+    state: result.rebuilt,
+    memoryWrites: result.memoryWrites.rebuilt,
+    io: result.io.rebuilt
+  });
+  const right = JSON.stringify({
+    state: result.pcjs,
+    memoryWrites: result.memoryWrites.pcjs,
+    io: result.io.pcjs
+  });
   if (left !== right) {
     throw new Error(`PCjs differential mismatch\nrebuilt=${left}\npcjs=${right}`);
   }
@@ -172,19 +217,22 @@ export function assertDifferentialTraceMatch(trace: DifferentialTraceResult): vo
 function createRebuiltCpu(differentialCase: DifferentialCase): {
   readonly runner: RebuiltCpuRunner;
   readonly memory: RecordingMemory;
+  readonly io: RecordingRebuiltIo;
 } {
   const memory = new PhysicalMemory({ ramBytes: ORACLE_RAM_BYTES, a20Enabled: true });
   differentialCase.bytes.forEach((value, index) => memory.writeUint8(index, value));
   differentialCase.memory?.forEach(({ address, value }) => memory.writeUint8(address, value));
   const recordingMemory = new RecordingMemory(memory);
-  const runner = new RebuiltCpuRunner(recordingMemory);
+  const io = new RecordingRebuiltIo(differentialCase.io);
+  const runner = new RebuiltCpuRunner(recordingMemory, io);
   initializeRebuiltState(runner, differentialCase);
-  return { runner, memory: recordingMemory };
+  return { runner, memory: recordingMemory, io };
 }
 
 async function createPcjsCpu(differentialCase: DifferentialCase): Promise<{
   readonly cpu: PcjsCpu;
   readonly bus: PcjsBus;
+  readonly io: RecordingPcjsIo;
 }> {
   const modules = await loadPcjsModules();
   const cpu = new modules.CPUx86({
@@ -207,7 +255,9 @@ async function createPcjsCpu(differentialCase: DifferentialCase): Promise<{
   differentialCase.bytes.forEach((value, index) => bus.setByte(index, value));
   differentialCase.memory?.forEach(({ address, value }) => bus.setByte(address, value));
   initializePcjsState(cpu, differentialCase);
-  return { cpu, bus };
+  const io = new RecordingPcjsIo(differentialCase.io);
+  io.attach(bus);
+  return { cpu, bus, io };
 }
 
 async function loadPcjsModules(): Promise<PcjsModules> {
@@ -380,6 +430,14 @@ function validateCase(differentialCase: DifferentialCase): void {
       throw new RangeError("Differential instruction bytes must be unsigned bytes");
   });
   differentialCase.memory?.forEach(({ address, value }) => validateMemoryByte(address, value));
+  differentialCase.io?.inputs?.forEach(({ port, value, width }) => {
+    if (!Number.isInteger(port) || port < 0 || port > 0xffff)
+      throw new RangeError("Differential I/O port must be 16-bit");
+    if (![8, 16, 32].includes(width)) throw new RangeError("Differential I/O width is invalid");
+    const mask = width === 8 ? 0xff : width === 16 ? 0xffff : 0xffffffff;
+    if (!Number.isInteger(value) || value < 0 || value > mask)
+      throw new RangeError("Differential I/O value exceeds its width");
+  });
   if (
     differentialCase.instructionCount !== undefined &&
     (!Number.isInteger(differentialCase.instructionCount) || differentialCase.instructionCount <= 0)
@@ -410,6 +468,65 @@ class RecordingMemory {
 
   public clearWrites(): void {
     this.recordedWrites.clear();
+  }
+}
+
+class RecordingRebuiltIo implements RebuiltPortBus {
+  private readonly recorded: DifferentialIoAccess[] = [];
+  private readonly inputs = new Map<number, DifferentialIoInput>();
+
+  public constructor(configuration: DifferentialIoConfiguration | undefined) {
+    configuration?.inputs?.forEach((input) => this.inputs.set(input.port, input));
+  }
+
+  public read(port: number, width: PortWidth): number {
+    const input = this.inputs.get(port);
+    const value = input?.value ?? 0xff;
+    this.recorded.push({ direction: "read", port, value, width });
+    return value;
+  }
+
+  public write(port: number, value: number, width: PortWidth): void {
+    this.recorded.push({ direction: "write", port, value, width });
+  }
+
+  public accesses(): readonly DifferentialIoAccess[] {
+    return [...this.recorded];
+  }
+
+  public clear(): void {
+    this.recorded.length = 0;
+  }
+}
+
+class RecordingPcjsIo {
+  private readonly recorded: DifferentialIoAccess[] = [];
+  private readonly inputs = new Map<number, DifferentialIoInput>();
+
+  public constructor(configuration: DifferentialIoConfiguration | undefined) {
+    configuration?.inputs?.forEach((input) => this.inputs.set(input.port, input));
+  }
+
+  public attach(bus: PcjsBus): void {
+    this.inputs.forEach((input, port) => {
+      bus.addPortInputWidth(port, input.width / 8);
+      bus.addPortInputNotify(port, port, () => {
+        this.recorded.push({ direction: "read", port, value: input.value, width: input.width });
+        return input.value;
+      });
+      bus.addPortOutputWidth(port, input.width / 8);
+      bus.addPortOutputNotify(port, port, (_port, value) => {
+        this.recorded.push({ direction: "write", port, value, width: input.width });
+      });
+    });
+  }
+
+  public accesses(): readonly DifferentialIoAccess[] {
+    return [...this.recorded];
+  }
+
+  public clear(): void {
+    this.recorded.length = 0;
   }
 }
 

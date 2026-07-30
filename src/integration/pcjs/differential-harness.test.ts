@@ -36,4 +36,18 @@ describe("PCjs differential CPU harness", () => {
     expect(() => assertDifferentialTraceMatch(trace)).not.toThrow();
     expect(trace.steps[1]?.memoryWrites.rebuilt).toEqual([{ address: 0x200, value: 0x5a }]);
   });
+
+  it("compares configured input and output port journals at each instruction boundary", async () => {
+    const trace = await runPcjsDifferentialTrace({
+      name: "real-mode byte port program",
+      bytes: [0xe4, 0x80, 0xe6, 0x80],
+      instructionCount: 2,
+      io: { inputs: [{ port: 0x80, value: 0x5a, width: 8 }] }
+    });
+    expect(() => assertDifferentialTraceMatch(trace)).not.toThrow();
+    expect(trace.steps.map((step) => step.io.rebuilt)).toEqual([
+      [{ direction: "read", port: 0x80, value: 0x5a, width: 8 }],
+      [{ direction: "write", port: 0x80, value: 0x5a, width: 8 }]
+    ]);
+  });
 });
