@@ -4423,6 +4423,68 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x010d);
   });
 
+  it("keeps POP r/m data width separate from SS stack-address width", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x8f],
+      [0x0101, 0x05],
+      [0x0102, 0x00],
+      [0x0103, 0x20],
+      [0x0104, 0x01],
+      [0x0105, 0x00],
+      [0x0106, 0x66],
+      [0x0107, 0x67],
+      [0x0108, 0x8f],
+      [0x0109, 0x06],
+      [0x010a, 0x34],
+      [0x010b, 0x12],
+      [0x1000, 0x78],
+      [0x1001, 0x56],
+      [0x1002, 0x34],
+      [0x1003, 0x12],
+      [0x1004, 0xef],
+      [0x1005, 0xbe]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x1000);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(values.get(0x12000)).toBe(0x78);
+    expect(values.get(0x12003)).toBe(0x12);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x1004 }, eip: 0x0106 });
+    stepInstruction(memory, state);
+    expect(values.get(0x1234)).toBe(0xef);
+    expect(values.get(0x1235)).toBe(0xbe);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x1006 }, eip: 0x010c });
+  });
+
+  it("uses a 16-bit SS pointer for a 32-bit POP r/m operand", () => {
+    const values = new Map<number, number>([
+      [0x0100, 0x8f],
+      [0x0101, 0xc2],
+      [0x1000, 0x78],
+      [0x1001, 0x56],
+      [0x1002, 0x34],
+      [0x1003, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x0100, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, false);
+    state.writeRegister(4, 0xabcd1000);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({
+      registers: { edx: 0x12345678, esp: 0xabcd1004 },
+      eip: 0x0102
+    });
+  });
+
   it("sign-extends memory bytes into 32-bit registers through address-size override", () => {
     const values = new Map<number, number>([
       [0x0000, 0x66],

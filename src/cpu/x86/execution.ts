@@ -1072,6 +1072,10 @@ function executeContextualInstruction(
   if (lea) return lea;
   const immediateMov = executeContextualImmediateMov(memory, state, context, fetched);
   if (immediateMov) return immediateMov;
+  if (context.opcode === 0x8f) {
+    executeContextualPopModRm(memory, state, context);
+    return { halted: false, fetched };
+  }
   if (context.opcode === 0x69 || context.opcode === 0x6b) {
     executeImmediateImul(
       memory,
@@ -1904,6 +1908,40 @@ function executePopModRm(
   const value = popUint16(memory, state);
   writeSegmentUint16(memory, state, segmentOverride ?? address.segment, address.offset, value);
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
+}
+
+function executeContextualPopModRm(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): void {
+  const modRmOffset = context.opcodeOffset + 1;
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  if (modRm.reg !== 0x00) throw new UnsupportedOpcodeError("Unsupported 8F opcode form");
+  const value = popContextOperand(memory, state, context);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, context.addressSize);
+  if (modRm.registerDirect) {
+    if (context.operandSize === 32) state.writeRegister(modRm.rm, value);
+    else state.writeRegister16(modRm.rm, value);
+  } else if (context.operandSize === 32)
+    writeSegmentUint32(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      value,
+      context.addressSize
+    );
+  else
+    writeSegmentUint16(
+      memory,
+      state,
+      address!.segment,
+      address!.offset,
+      value,
+      context.addressSize
+    );
+  state.advanceEip(modRmOffset + 1 + decodedAddressBytes(address, context.addressSize));
 }
 
 function executeMovReg16FromModRm(
