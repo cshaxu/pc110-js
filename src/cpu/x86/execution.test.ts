@@ -8216,6 +8216,38 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().eip).toBe(0x0100);
   });
 
+  it("creates contextual ENTER frames with independent operand and stack widths", () => {
+    const values = new Map<number, number>([
+      [0x00000000, 0xc8],
+      [0x00000001, 0x08],
+      [0x00000002, 0x00],
+      [0x00000003, 0x00],
+      [0x00000004, 0x66],
+      [0x00000005, 0xc8],
+      [0x00000006, 0x04],
+      [0x00000007, 0x00],
+      [0x00000008, 0x00]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0, true);
+    state.loadProtectedModeSegment("ss", 0x0010, 0, 0xffffffff, true);
+    state.writeRegister(4, 0x3000);
+    state.writeRegister(5, 0x2ff0);
+    const memory = resetAliasMemory(values);
+
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x2ff4, ebp: 0x2ffc }, eip: 4 });
+    expect([0, 1, 2, 3].map((offset) => values.get(0x2ffc + offset))).toEqual([0xf0, 0x2f, 0, 0]);
+
+    state.writeEip(4);
+    state.writeRegister(4, 0x3000);
+    state.writeRegister(5, 0x2ff0);
+    stepInstruction(memory, state);
+    expect(state.snapshot()).toMatchObject({ registers: { esp: 0x2ffa, ebp: 0x2ffe }, eip: 9 });
+    expect([values.get(0x2ffe), values.get(0x2fff)]).toEqual([0xf0, 0x2f]);
+  });
+
   it("uses 32-bit addressing for dword F7 memory operands", () => {
     const values = new Map<number, number>([
       [0x00000000, 0x66],

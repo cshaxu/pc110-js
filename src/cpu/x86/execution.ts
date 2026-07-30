@@ -1539,6 +1539,46 @@ function executeContextualNearJumpModRm(
   return true;
 }
 
+function executeContextualEnter(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  context: ExecutionContext
+): boolean {
+  if (context.opcode !== 0xc8) return false;
+  const localBytes = fetchCodeUint16(memory, state, context.opcodeOffset + 1);
+  let level = fetchCodeByte(memory, state, context.opcodeOffset + 3).opcode & 0x1f;
+  const width = context.operandSize === 32 ? 4 : 2;
+  const readFrameValue = (offset: number): number =>
+    context.operandSize === 32
+      ? readSegmentUint32(memory, state, "ss", offset, context.stackAddressSize)
+      : readSegmentUint16(memory, state, "ss", offset, context.stackAddressSize);
+
+  pushContextOperand(
+    memory,
+    state,
+    context,
+    context.operandSize === 32 ? state.readRegister(5) : state.readRegister16(5)
+  );
+  const frame = context.stackAddressSize === 32 ? state.readRegister(4) : state.readRegister16(4);
+  if (level > 0) {
+    let basePointer = context.operandSize === 32 ? state.readRegister(5) : state.readRegister16(5);
+    while (--level) {
+      basePointer =
+        context.stackAddressSize === 32
+          ? (basePointer - width) >>> 0
+          : (basePointer - width) & 0xffff;
+      pushContextOperand(memory, state, context, readFrameValue(basePointer));
+    }
+    pushContextOperand(memory, state, context, frame);
+  }
+  if (context.operandSize === 32) state.writeRegister(5, frame);
+  else state.writeRegister16(5, frame);
+  if (context.stackAddressSize === 32) state.writeRegister(4, state.readRegister(4) - localBytes);
+  else state.writeRegister16(4, state.readRegister16(4) - localBytes);
+  state.advanceEip(context.opcodeOffset + 4);
+  return true;
+}
+
 function executeContextualNearConditionalJump(
   memory: InstructionMemory,
   state: Cpu386State,
@@ -1719,6 +1759,7 @@ function executeContextualInstruction(
   if (executeContextualNearCallModRm(memory, state, context, fetched))
     return { halted: false, fetched };
   if (executeContextualNearJumpModRm(memory, state, context)) return { halted: false, fetched };
+  if (executeContextualEnter(memory, state, context)) return { halted: false, fetched };
   const nearConditionalJump = executeContextualNearConditionalJump(memory, state, context, fetched);
   if (nearConditionalJump) return nearConditionalJump;
   if (context.opcode >= 0x70 && context.opcode <= 0x7f) {

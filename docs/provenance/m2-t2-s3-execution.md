@@ -905,6 +905,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   progression.
 - M2 T2 S3 P312 routes XLAT through the execution context. AL remains byte
   data while the DS table index selects BX or EBX from the address size.
+- M2 T2 S3 P313 routes ENTER through a project-native contextual helper. Its
+  frame data width selects BP or EBP values, while SS D/B controls stack
+  addresses; the local allocation immediate remains a 16-bit byte count.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
