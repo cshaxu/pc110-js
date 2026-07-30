@@ -25,7 +25,7 @@ and whole-machine comparison reference.
 | Family | NXVM handlers or groups | M2 status |
 | --- | --- | --- |
 | Integer arithmetic and logic | `ADD`, `OR`, `ADC`, `SBB`, `AND`, `SUB`, `XOR`, `CMP`; groups `80`, `81`, and `83` | Partial |
-| Decimal and ASCII adjust | `DAA`, `DAS`, `AAA`, `AAS`, `AAM`, and `AAD` | Not started |
+| Decimal and ASCII adjust | `DAA`, `DAS`, `AAA`, `AAS`, `AAM`, and `AAD` | Implemented: focused execution coverage exists; default-32 context coverage remains to be audited. |
 | Increment, decrement, negate, multiply, divide, and test | register `INC`/`DEC`; groups `F6`, `F7`, `FE`, and `FF` | Partial |
 | Data movement and exchange | `MOV`, `XCHG`, `LEA`, `LES`, `LDS`, `MOVSX`, `MOVZX`, moffs, immediate, and segment forms | Partial |
 | Stack and frame operations | register/immediate/segment `PUSH`/`POP`, `PUSHA`, `POPA`, `PUSHF`, `POPF`, `ENTER`, and `LEAVE` | Partial |
