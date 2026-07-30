@@ -9,6 +9,8 @@ import {
 import { EFLAGS_OVERFLOW } from "./arithmetic.js";
 
 export function executeInterrupt(context: RebuiltExecutionContext): void {
+  // TODO(High): NXVM leaves INT3, INTO, INT imm8, external interrupt, and IRET
+  // wrappers TODO; retain this separately tested project-native event boundary.
   const { opcode } = context.instruction;
   if (opcode === 0xcc) return interrupt(context, 3, 1);
   if (opcode === 0xcd)

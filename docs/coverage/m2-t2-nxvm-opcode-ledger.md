@@ -952,3 +952,16 @@ return, and IDT task-gate decoding. These correspond to NXVM
 interrupt/trap-gate, privilege-stack, and IRET behavior; NXVM's TODO-marked
 interrupt wrappers do not erase that completed project-native work. These
 boundaries remain visibly deferred and cannot be claimed as implemented.
+
+## P442 Complete NXVM TODO Boundary Alignment Checklist
+
+P442 completes P441's source alignment across every remaining NXVM
+`_______todo` entry. Rebuilt `TODO(High)` comments now identify the NXVM I/O-map
+helper `_kpa_test_iomap` (1170), protected interrupt delivery
+`_ser_int_protected` (2382), interrupt wrappers `_e_int3`, `_e_into`,
+`_e_int_n`, `_e_intr_n`, `_e_except_n`, and `_e_iret` (2738-2816), `WAIT`
+(8466), and the post-80386 undefined entries `WBINVD`, `WRMSR`, `RDMSR`,
+`CPUID`, and `RSM` (12546-12977) in `../nxvm/src/device/vcpuins.c`. The
+project's independently tested I/O bitmap, interrupt delivery, WAIT `#NM`, and
+`#UD` behavior remains executable; the comments preserve NXVM's TODO status as
+an explicit review boundary rather than silently claiming NXVM implementation.

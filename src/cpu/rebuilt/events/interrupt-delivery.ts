@@ -44,6 +44,8 @@ export function deliverInterrupt(
   state: RebuiltCpuState,
   request: InterruptRequest
 ): void {
+  // TODO(High): NXVM leaves protected interrupt delivery TODO; retain this
+  // separately tested project-native gate and privilege-stack boundary.
   if (!(state.readCr0() & 1)) return deliverRealModeInterrupt(memory, state, request);
   let gate;
   try {

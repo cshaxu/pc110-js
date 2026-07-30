@@ -14,6 +14,8 @@ export function assertIoPermission(
   port: number,
   width: PortWidth
 ): void {
+  // TODO(High): NXVM leaves _kpa_test_iomap TODO; retain this independently
+  // tested project-native bitmap behavior as a reviewable compatibility boundary.
   if (!(state.readCr0() & 1)) return;
   const iopl = (state.flags.read() >>> 12) & 3;
   const virtual8086 = state.isVirtual8086();
