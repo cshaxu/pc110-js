@@ -309,6 +309,7 @@ export class RebuiltPcAt386Core {
   private advanceExecutedInstruction(cycles: number): void {
     const scheduled = this.scheduler.advance(cycles);
     if (scheduled.pitTicks > 0) this.advancePit(scheduled.pitTicks);
+    if (scheduled.rtcTicks > 0) this.advanceRtc(scheduled.rtcTicks);
     this.advanceVideo(1);
   }
 

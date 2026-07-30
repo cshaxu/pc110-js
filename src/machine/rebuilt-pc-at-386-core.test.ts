@@ -18,6 +18,23 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.run(5)).toEqual({ executed: 2, halted: true });
   });
 
+  it("advances the native RTC from scheduled CPU cycles", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0, 0x90);
+    const core = new RebuiltPcAt386Core(memory, undefined, {
+      cycleSchedulerProfile: {
+        cpuCyclesPerSecond: 3n,
+        pitTicksPerSecond: 1n,
+        rtcTicksPerSecond: BigInt(RTC_TICKS_PER_SECOND)
+      }
+    });
+    core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeEip(0);
+
+    expect(core.run(1)).toEqual({ executed: 1, halted: false });
+    expect(core.rtc.snapshot().dateTime.second).toBe(1);
+  });
+
   it("composes COM1 with the native IRQ4 path", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     const core = new RebuiltPcAt386Core(memory);
