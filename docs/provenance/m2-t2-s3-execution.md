@@ -1323,6 +1323,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P450 records complete project-native fault-matrix evidence for the
   NXVM segment-load selector validation path. It imports no reference runtime
   and adds no device or guest-service behavior.
+- M2 T2 S3 P451 records focused project-native evidence for the existing
+  NXVM-style page-walk permission, fault-metadata, and Accessed/Dirty behavior.
+  It imports no reference runtime and adds no device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

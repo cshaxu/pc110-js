@@ -119,6 +119,16 @@ non-present descriptors, code/data RPL-DPL violations, stack RPL mismatch, and
 the required `#GP`, `#NP`, or `#SS` selector error codes. Each failure retains
 the original hidden segment cache; successful access-bit behavior remains P443.
 
+## P451 Paging Permission And A/D Matrix Checklist
+
+P451 follows NXVM `_kma_physical_linear` at `vcpuins.c` 75-140. Focused
+project-native tests cover non-present PDE/PTE faults, user U/S and R/W
+rejections at the applicable paging level, supervisor writes to a read-only
+mapping, and successful PDE/PTE Accessed plus PTE Dirty updates. Rejected
+entries are not modified except for the NXVM-defined PDE Accessed update before
+a subsequent PTE lookup. NXVM's `MOV DRx` handlers are covered by P428; NXVM
+does not implement a hardware-breakpoint engine.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through
