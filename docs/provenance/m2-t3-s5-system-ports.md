@@ -20,3 +20,10 @@ reserved for the selected 8042 implementation in S6.
 P1 records that no required PCjs selected-machine evidence supports a synthetic
 port `0x92` path. It also keeps DeskPro-specific NMI/error and chipset wiring
 out of the generic PC/AT baseline pending an explicit selectable variant.
+
+## P2 System-Port State Core
+
+P2 implements the shared low-bit PPI/8042 RWREG state as a local TypeScript
+model. Refresh is an explicit observable signal, rather than a host-clock
+effect. Keyboard-controller, DeskPro-only, NMI, reset, A20, PCjs, firmware,
+media, and browser audio dependencies remain excluded.
