@@ -6,6 +6,7 @@ export interface DecodedInstruction {
   readonly prefixes: PrefixState;
   readonly opcodeOffset: number;
   readonly opcode: number;
+  readonly secondaryOpcode?: number;
   readonly length: number;
 }
 
@@ -25,11 +26,13 @@ export function decodeInstruction(
   if (prefixes.bytes >= 15) throw new InstructionLengthError(startEip >>> 0);
 
   const opcodeOffset = prefixes.bytes;
+  const opcode = reader.readCodeByte(opcodeOffset) & 0xff;
   return {
     startEip: startEip >>> 0,
     prefixes,
     opcodeOffset,
-    opcode: reader.readCodeByte(opcodeOffset) & 0xff,
-    length: opcodeOffset + 1
+    opcode,
+    secondaryOpcode: opcode === 0x0f ? reader.readCodeByte(opcodeOffset + 1) & 0xff : undefined,
+    length: opcodeOffset + (opcode === 0x0f ? 2 : 1)
   };
 }
