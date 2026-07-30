@@ -1275,6 +1275,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   segmented memory without a reference runtime, device, or guest-service path.
 - M2 T2 S3 P434 records project-native rebuilt-ROM trace evidence only; it
   introduces no PCjs, NXVM, device, firmware, or guest-service runtime behavior.
+- M2 T2 S3 P435 reconciles project-native coverage records against the verified
+  opcode ledger. It introduces no runtime behavior or reference dependency and
+  preserves explicit task, gate, descriptor, privilege, paging, and integration
+  closure boundaries.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

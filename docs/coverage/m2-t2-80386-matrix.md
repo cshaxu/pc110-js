@@ -4,8 +4,9 @@
 
 This matrix is the M2 T2 CPU completion ledger. It prevents a ROM-observed
 opcode from being mistaken for complete NXVM CPU coverage. `Implemented`
-requires focused tests and an authority record. `Partial` is not completion
-credit.
+requires focused tests and an authority record. `Partial architecture closure`
+is not completion credit, even where the corresponding executable NXVM opcode
+handlers have already closed in the opcode ledger.
 
 ## Authorities
 
@@ -22,31 +23,31 @@ credit.
 | Area | Status | Evidence and remaining boundary |
 | --- | --- | --- |
 | 32-bit general registers and EFLAGS | Implemented | Project CPU state and focused state tests. |
-| Segment selectors and hidden caches | Partial | Base, limit, D/B, and selected protected-mode loads exist; complete descriptor validation remains required. |
-| GDTR, IDTR, LDTR, TR, CR0, CR2, and CR3 | Partial | State and selected system instructions exist, including bounded SLDT/LLDT; debug registers and complete control-register semantics remain absent. |
-| Real/protected address translation | Partial | Segment translation and selected protection checks exist. |
-| 80386 paging and page faults | Partial | Page-table translation helpers exist; complete execution-core integration and fault matrix remain required. |
+| Segment selectors and hidden caches | Partial architecture closure | P388-P390 and P396-P397 cover cached loads, LDT lookup, and access checks; complete descriptor fault classification and task/call gates remain. |
+| GDTR, IDTR, LDTR, TR, CR0, CR2, and CR3 | Partial architecture closure | P382-P384 and P428 cover the NXVM executable system forms; complete task state and debug semantics remain. |
+| Real/protected address translation | Partial architecture closure | P392, P394-P397, and P433 cover rebuilt translation and access-fault boundaries; remaining architecture cases are ledgered. |
+| 80386 paging and page faults | Partial architecture closure | P392, P394-P395, P411, and P433 cover page walks, fault delivery, escalation, and cross-page atomicity; complete architecture validation remains. |
 
 ## Decode And Data Paths
 
 | Area | Status | Evidence and remaining boundary |
 | --- | --- | --- |
-| Prefix context (`66`, `67`, repeat, segment, LOCK boundary) | Partial | Context parsing and selected migrations exist; all opcode families and LOCK semantics remain. |
-| 16-bit and 32-bit ModR/M plus SIB | Partial | Shared decoders and selected MOV/ALU paths exist; every instruction family must use them. |
-| Integer ALU and flags | Partial | Word/dword register and selected immediate forms, plus focused context ALU tests; byte and group migration remain. |
-| Shifts, rotates, multiply, divide, bit operations | Partial | Selected forms exist; complete 16/32-bit form, count, flags, and fault coverage remains. |
-| String instructions | Partial | Selected MOVS/STOS/LODS/CMPS/SCAS and repeat paths exist; prefix/segment combinations remain. |
-| Data transfer and stack | Partial | Selected MOV, LEA, extension, push/pop, frame, and exchange forms exist; full width and protected-mode coverage remains. |
+| Prefix context (`66`, `67`, repeat, segment, LOCK boundary) | Implemented NXVM handler coverage | P369 and P431 close prefix selection, LOCK admission, and the decode-length boundary; each handler family cites its focused use evidence in the opcode ledger. |
+| 16-bit and 32-bit ModR/M plus SIB | Implemented NXVM handler coverage | P417-P430 contain family-level register/memory, ModR/M, SIB, default-size, and prefix evidence. |
+| Integer ALU and flags | Implemented NXVM handler coverage | P417 and P420 close NXVM arithmetic/group-one forms; shared fault delivery remains separately tracked. |
+| Shifts, rotates, multiply, divide, bit operations | Implemented NXVM handler coverage | P425-P427 and P430 close NXVM executable forms and their explicit undefined/fault paths. |
+| String instructions | Implemented NXVM handler coverage | P419, P423, and P426 close generic/string-I/O/XLAT forms; concrete device routing remains S5. |
+| Data transfer and stack | Implemented NXVM handler coverage | P417, P419-P425, and P430 close executable forms; shared protection boundaries remain separately tracked. |
 
 ## Control, System, And Fault Paths
 
 | Area | Status | Evidence and remaining boundary |
 | --- | --- | --- |
-| Near and far control transfers | Partial | Selected near/far calls, jumps, returns, and conditions exist; complete privilege and gate cases remain. |
-| Interrupts, traps, and IRET | Partial | Real mode and selected same-/cross-privilege protected-mode paths exist; complete gate, error-code, and nested-fault behavior remains. |
-| Descriptor-table and system instructions | Partial | Selected LGDT/LIDT/SGDT/SIDT/LTR/STR/SLDT/LLDT/LMSW/SMSW/CLTS and CR moves exist; task, call-gate, and full validation remain. |
-| Privilege model | Partial | Selected CPL-zero checks and TSS stack switching exist; complete CPL/RPL/DPL and conforming-segment behavior remains. |
-| Exceptions and fault restart | Partial | Selected no-error and general-protection delivery exists; full architectural exception matrix, #PF codes, and restart coverage remain. |
+| Near and far control transfers | Partial architecture closure | Executable NXVM handler coverage is recorded by P422, P425, P427, P429, and P432; task/call-gate and cross-privilege paths remain. |
+| Interrupts, traps, and IRET | Partial architecture closure | P400-P416 and P425 close implemented gate/IRET/IRQ paths; task gates and remaining privilege-delivery paths remain. |
+| Descriptor-table and system instructions | Partial architecture closure | P380-P390, P415-P416, and P428 close executable NXVM handler forms; task/call-gate and full validation remain. |
+| Privilege model | Partial architecture closure | P388, P400-P404, P415-P416, and P421-P422 cover verified paths; full gate/task behavior remains. |
+| Exceptions and fault restart | Partial architecture closure | P394-P396, P406-P413, P431, and P433 cover rebuilt fault handling, restart EIP, escalation, and memory atomicity; the complete architecture matrix remains. |
 
 ## NXVM Post-80386 TODO Entries
 

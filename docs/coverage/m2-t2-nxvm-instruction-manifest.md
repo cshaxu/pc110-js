@@ -9,42 +9,48 @@ project-native TypeScript implementation and focused tests before T2 closure.
 NXVM is the decisive CPU behavior authority. PCjs remains the PC/AT and
 whole-machine comparison reference.
 
+`Implemented NXVM handler coverage` records that the listed executable NXVM
+handler set has project-native implementation and focused evidence. It is not
+an S3 closure claim when it shares an unfinished descriptor, task, gate,
+interrupt, paging, or fault-delivery dependency. `Partial architecture
+closure` identifies those remaining cross-family dependencies.
+
 ## CPU Model And Execution Infrastructure
 
 | Family | NXVM evidence | M2 status |
 | --- | --- | --- |
-| Register, EFLAGS, segment-cache, descriptor, control, debug, and test-register state | `vcpu.h` state and descriptor definitions | Partial |
-| Real/protected segmentation, GDT, LDT, IDT, TSS, and privilege validation | `_ksa_*`, `_s_*`, and `_ser_*` helpers | Partial |
-| Linear address translation, paging, page-table flags, and access checks | `_kma_*` helpers and paging definitions | Partial |
-| Prefix, operand/address size, ModR/M, SIB, immediate, and moffs decoding | `_d_*` helpers and prefix handlers | Partial |
-| Stack, near/far transfer, interrupt, return, and exception delivery | `_kec_*` and `_ser_*` helpers | Partial |
-| Port I/O, trace, and instruction dispatch boundaries | `_p_*`, `ExecIns`, and `ExecInt` | Partial |
+| Register, EFLAGS, segment-cache, descriptor, control, debug, and test-register state | `vcpu.h` state and descriptor definitions | Partial architecture closure: state and executable register transfers are evidenced by P382, P384, P388, and P428; complete debug semantics and task state remain. |
+| Real/protected segmentation, GDT, LDT, IDT, TSS, and privilege validation | `_ksa_*`, `_s_*`, and `_ser_*` helpers | Partial architecture closure: P388-P390, P396-P397, P400-P401, and P415-P416 cover implemented paths; task/call gates and complete descriptor fault classification remain. |
+| Linear address translation, paging, page-table flags, and access checks | `_kma_*` helpers and paging definitions | Partial architecture closure: P392, P394-P395, P411, and P433 cover rebuilt walks, delivery, escalation, and cross-page preflight; complete architecture validation remains. |
+| Prefix, operand/address size, ModR/M, SIB, immediate, and moffs decoding | `_d_*` helpers and prefix handlers | Implemented NXVM handler coverage: P369 and P431 close prefix and length behavior; family-level use is evidenced by P417-P430. |
+| Stack, near/far transfer, interrupt, return, and exception delivery | `_kec_*` and `_ser_*` helpers | Partial architecture closure: implemented handler paths are evidenced by P400-P416 and P422/P425/P427; task/call gates and remaining privilege transitions remain. |
+| Port I/O, trace, and instruction dispatch boundaries | `_p_*`, `ExecIns`, and `ExecInt` | Implemented CPU handler coverage: P355, P359, P410, P418, and P434; project-native concrete port routing remains S5 work. |
 
 ## One-Byte Instruction Families
 
 | Family | NXVM handlers or groups | M2 status |
 | --- | --- | --- |
-| Integer arithmetic and logic | `ADD`, `OR`, `ADC`, `SBB`, `AND`, `SUB`, `XOR`, `CMP`; groups `80`, `81`, and `83` | Partial |
-| Decimal and ASCII adjust | `DAA`, `DAS`, `AAA`, `AAS`, `AAM`, and `AAD` | Implemented: focused execution coverage exists; default-32 context coverage remains to be audited. |
-| Increment, decrement, negate, multiply, divide, and test | register `INC`/`DEC`; groups `F6`, `F7`, `FE`, and `FF` | Partial |
-| Data movement and exchange | `MOV`, `XCHG`, `LEA`, `LES`, `LDS`, `MOVSX`, `MOVZX`, moffs, immediate, and segment forms | Partial |
-| Stack and frame operations | register/immediate/segment `PUSH`/`POP`, `PUSHA`, `POPA`, `PUSHF`, `POPF`, `ENTER`, and `LEAVE` | Partial |
-| Control transfer | `CALL`, `JMP`, `RET`, `RETF`, `INT`, `INTO`, `IRET`, conditional branches, `LOOP*`, and `JCXZ` | Partial |
-| Shift and rotate | groups `C0`, `C1`, `D0` through `D3`; all `/6` forms fault with `#UD` | Partial |
-| String and translation | `MOVS`, `CMPS`, `STOS`, `LODS`, `SCAS`, `INS`, `OUTS`, and `XLAT` | Partial |
-| Port I/O | immediate and `DX` `IN`/`OUT`, plus string I/O | Partial |
-| Flag, halt, and synchronization | `CLC`, `STC`, `CMC`, `CLI`, `STI`, `CLD`, `STD`, `HLT`, `WAIT`, and `LOCK` | Partial |
-| Segment, repeat, and size prefixes | `ES`, `CS`, `SS`, `DS`, `FS`, `GS`, `REPNE`, `REP`, `66`, and `67` | Partial |
+| Integer arithmetic and logic | `ADD`, `OR`, `ADC`, `SBB`, `AND`, `SUB`, `XOR`, `CMP`; groups `80`, `81`, and `83` | Implemented NXVM handler coverage: P417 and P420. |
+| Decimal and ASCII adjust | `DAA`, `DAS`, `AAA`, `AAS`, `AAM`, and `AAD` | Implemented NXVM handler coverage: P405, P417, and P426. |
+| Increment, decrement, negate, multiply, divide, and test | register `INC`/`DEC`; groups `F6`, `F7`, `FE`, and `FF` | Implemented NXVM handler coverage: P417, P420, and P427; shared fault architecture remains separately tracked. |
+| Data movement and exchange | `MOV`, `XCHG`, `LEA`, `LES`, `LDS`, `MOVSX`, `MOVZX`, moffs, immediate, and segment forms | Implemented NXVM handler coverage: P420, P423-P425, and P430; shared segment architecture remains separately tracked. |
+| Stack and frame operations | register/immediate/segment `PUSH`/`POP`, `PUSHA`, `POPA`, `PUSHF`, `POPF`, `ENTER`, and `LEAVE` | Implemented NXVM handler coverage: P417, P419, P422, and P425; task/call-gate transitions remain architecture work. |
+| Control transfer | `CALL`, `JMP`, `RET`, `RETF`, `INT`, `INTO`, `IRET`, conditional branches, `LOOP*`, and `JCXZ` | Implemented NXVM handler coverage: P422, P425, P427, P429, and P432; task/call-gate paths remain architecture work. |
+| Shift and rotate | groups `C0`, `C1`, `D0` through `D3`; all `/6` forms fault with `#UD` | Implemented NXVM handler coverage: P425-P426. |
+| String and translation | `MOVS`, `CMPS`, `STOS`, `LODS`, `SCAS`, `INS`, `OUTS`, and `XLAT` | Implemented NXVM handler coverage: P419, P423, and P426. |
+| Port I/O | immediate and `DX` `IN`/`OUT`, plus string I/O | Implemented CPU handler coverage: P359, P418, P419, and P427; concrete port routing remains S5 work. |
+| Flag, halt, and synchronization | `CLC`, `STC`, `CMC`, `CLI`, `STI`, `CLD`, `STD`, `HLT`, `WAIT`, and `LOCK` | Implemented NXVM handler coverage: P369, P410, P414, P421-P422, and P427. |
+| Segment, repeat, and size prefixes | `ES`, `CS`, `SS`, `DS`, `FS`, `GS`, `REPNE`, `REP`, `66`, and `67` | Implemented NXVM handler coverage: P419, P423, and P431. |
 
 ## Two-Byte Instruction Families
 
 | Family | NXVM handlers or groups | M2 status |
 | --- | --- | --- |
-| System and descriptor operations | `0F 00`, `0F 01`, `LAR`, `LSL`, `CLTS`, `MOV` control/debug/test registers | Partial |
-| Conditional transfer and state | `Jcc rel32` and `SETcc` | Partial |
-| Bit and double-shift operations | `BT`, `BTS`, `BTR`, `BTC`, `0F BA`, `BSF`, `BSR`, `SHLD`, and `SHRD` | Partial |
-| Extended segment operations | `PUSH`/`POP FS`, `PUSH`/`POP GS`, `LSS`, `LFS`, and `LGS` | Partial |
-| Signed multiplication and extension | two-operand `IMUL`, `MOVSX`, and `MOVZX` | Partial |
+| System and descriptor operations | `0F 00`, `0F 01`, `LAR`, `LSL`, `CLTS`, `MOV` control/debug/test registers | Implemented NXVM handler coverage: P428; task and call-gate architecture remains. |
+| Conditional transfer and state | `Jcc rel32` and `SETcc` | Implemented NXVM handler coverage: P429 and P432. |
+| Bit and double-shift operations | `BT`, `BTS`, `BTR`, `BTC`, `0F BA`, `BSF`, `BSR`, `SHLD`, and `SHRD` | Implemented NXVM handler coverage: P430. |
+| Extended segment operations | `PUSH`/`POP FS`, `PUSH`/`POP GS`, `LSS`, `LFS`, and `LGS` | Implemented NXVM handler coverage: P430; shared segment architecture remains separately tracked. |
+| Signed multiplication and extension | two-operand `IMUL`, `MOVSX`, and `MOVZX` | Implemented NXVM handler coverage: P419 and P430. |
 | NXVM explicit undefined entries | `WBINVD`, `WRMSR`, `RDMSR`, `CPUID`, and `RSM` | Implemented: `#UD` behavior only |
 
 ## Audit Rule

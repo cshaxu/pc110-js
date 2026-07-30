@@ -891,3 +891,12 @@ instructions and stops at `F000:F907` because the project-native I/O bus is
 unavailable. This is the next bounded whole-machine blocker: S5 I/O ownership,
 not an unsupported CPU opcode, synthetic port response, firmware workaround,
 or device implementation.
+
+## P435 Coverage-Evidence Reconciliation Checklist
+
+P435 reconciles the instruction manifest and 80386 matrix with the verified
+opcode-ledger closure records P417-P434. It distinguishes completed executable
+NXVM handler coverage from still-open shared architecture closure: complete
+descriptor fault classification, task and call gates, remaining
+privilege-transition cases, and the final S4/S5/S6 integration gates. It adds
+no CPU behavior and does not claim S3 completion.
