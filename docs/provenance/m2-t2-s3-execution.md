@@ -1237,6 +1237,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P422 records complete project-native evidence for executable NXVM
   `90-9F` handlers, including conforming-code far control. NXVM-marked gate and
   cross-privilege TODO paths remain excluded from this handler closure.
+- M2 T2 S3 P423 records complete project-native evidence for executable NXVM
+  `A0-AF` handlers. It expands only focused rebuilt CPU tests for default sizes,
+  `66/67`, strings, and protected access-fault delivery; it imports no NXVM,
+  PCjs, or legacy runtime code and adds no device or guest-service behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

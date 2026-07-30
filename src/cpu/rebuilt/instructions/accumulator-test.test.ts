@@ -4,9 +4,13 @@ import { RebuiltCpuState } from "../state/cpu-state.js";
 import { EFLAGS_CARRY, EFLAGS_OVERFLOW, EFLAGS_ZERO } from "./arithmetic.js";
 import { executeAccumulatorTest } from "./accumulator-test.js";
 
-function execute(bytes: readonly number[], setup?: (state: RebuiltCpuState) => void) {
+function execute(
+  bytes: readonly number[],
+  setup?: (state: RebuiltCpuState) => void,
+  codeDefault32 = false
+) {
   const state = new RebuiltCpuState();
-  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: false });
+  state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: codeDefault32 });
   state.writeEip(0);
   setup?.(state);
   new RebuiltCpuExecutor(state, {
@@ -33,5 +37,23 @@ describe("rebuilt accumulator TEST", () => {
     );
     expect(state.flags.has(EFLAGS_ZERO)).toBe(false);
     expect(state.readEip()).toBe(6);
+  });
+
+  it("uses a default-32 immediate and 66 to select its non-default word form", () => {
+    const dword = execute(
+      [0xa9, 0x00, 0x00, 0x00, 0x80],
+      (cpu) => cpu.registers.write32(0, 0x8000_0000),
+      true
+    );
+    expect(dword.flags.has(EFLAGS_ZERO)).toBe(false);
+    expect(dword.readEip()).toBe(5);
+
+    const word = execute(
+      [0x66, 0xa9, 0x00, 0x80],
+      (cpu) => cpu.registers.write32(0, 0x0000_8000),
+      true
+    );
+    expect(word.flags.has(EFLAGS_ZERO)).toBe(false);
+    expect(word.readEip()).toBe(4);
   });
 });

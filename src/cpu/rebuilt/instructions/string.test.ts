@@ -126,4 +126,66 @@ describe("rebuilt A4-A7 and AA-AF string instructions", () => {
     scan.step();
     expect(scan.state.flags.has(EFLAGS_ZERO)).toBe(true);
   });
+
+  it("selects default-32 data and independent 16-bit string addressing", () => {
+    const machine = createMachine([0x67, 0xa5]);
+    machine.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff_ffff, default32: true });
+    machine.state.registers.write32(1, 0xaaaa_0001);
+    machine.state.registers.write32(6, 0xbbbb_0100);
+    machine.state.registers.write32(7, 0xcccc_0200);
+    [0x78, 0x56, 0x34, 0x12].forEach((value, index) => machine.memory.set(0x100 + index, value));
+    machine.step();
+    expect(machine.state.snapshot()).toMatchObject({
+      eip: 2,
+      registers: { ecx: 0xaaaa_0001, esi: 0xbbbb_0104, edi: 0xcccc_0204 }
+    });
+    expect([0x200, 0x201, 0x202, 0x203].map((address) => machine.memory.get(address))).toEqual([
+      0x78, 0x56, 0x34, 0x12
+    ]);
+  });
+
+  it("advances a zero-count REP without data access and retains the full prefix length", () => {
+    const machine = createMachine([0xf3, 0x66, 0x67, 0xab]);
+    machine.state.registers.write32(1, 0);
+    machine.state.registers.write32(7, 0x200);
+    machine.state.registers.write32(0, 0x1234_5678);
+    machine.step();
+    expect(machine.state.snapshot()).toMatchObject({
+      eip: 4,
+      registers: { ecx: 0, edi: 0x200 }
+    });
+    expect(machine.memory.has(0x200)).toBe(false);
+  });
+
+  it("executes the remaining operand-sized CMPS, STOS, LODS, and SCAS forms", () => {
+    const compare = createMachine([0xa7]);
+    compare.state.registers.write16(6, 0x10);
+    compare.state.registers.write16(7, 0x20);
+    compare.memory.set(0x10, 0x34);
+    compare.memory.set(0x11, 0x12);
+    compare.memory.set(0x20, 0x34);
+    compare.memory.set(0x21, 0x12);
+    compare.step();
+    expect(compare.state.flags.has(EFLAGS_ZERO)).toBe(true);
+
+    const store = createMachine([0xab]);
+    store.state.registers.write16(0, 0x5678);
+    store.state.registers.write16(7, 0x30);
+    store.step();
+    expect([store.memory.get(0x30), store.memory.get(0x31)]).toEqual([0x78, 0x56]);
+
+    const load = createMachine([0xac]);
+    load.state.registers.write16(6, 0x40);
+    load.memory.set(0x40, 0xa5);
+    load.step();
+    expect(load.state.registers.read8(0)).toBe(0xa5);
+
+    const scan = createMachine([0xaf]);
+    scan.state.registers.write16(0, 0x5678);
+    scan.state.registers.write16(7, 0x50);
+    scan.memory.set(0x50, 0x78);
+    scan.memory.set(0x51, 0x56);
+    scan.step();
+    expect(scan.state.flags.has(EFLAGS_ZERO)).toBe(true);
+  });
 });
