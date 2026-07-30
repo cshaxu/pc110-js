@@ -36,6 +36,22 @@ describe("PC/AT physical memory", () => {
     expect(memory.readUint8(0xf0000)).toBe(0xea);
   });
 
+  it("maps the selected M1 low, DeskPro-window, and extended RAM regions", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+    memory.mapRam(0xfa0000, 0x60000);
+    memory.mapRam(0x100000, 0x300000);
+
+    memory.writeUint8(0x09ffff, 0x11);
+    memory.writeUint8(0xfa0000, 0x22);
+    memory.writeUint8(0x3fffff, 0x33);
+    expect(memory.readUint8(0x09ffff)).toBe(0x11);
+    expect(memory.readUint8(0xfa0000)).toBe(0x22);
+    expect(memory.readUint8(0x3fffff)).toBe(0x33);
+    expect(() => memory.readUint8(0x0a0000)).toThrow(PhysicalMemoryError);
+    expect(() => memory.mapRam(0x0f0000, 0x10000)).not.toThrow();
+    expect(() => memory.mapRam(0x0f8000, 0x1000)).toThrow(PhysicalMemoryError);
+  });
+
   it("rejects unmapped accesses and overlapping mappings", () => {
     const memory = new PhysicalMemory({ ramBytes: 0xa0000 });
     expect(() => memory.readUint8(0xf0000)).toThrow(PhysicalMemoryError);

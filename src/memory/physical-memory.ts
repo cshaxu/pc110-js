@@ -34,6 +34,13 @@ export class PhysicalMemory {
     return this.a20Enabled;
   }
 
+  public mapRam(start: number, size: number): void {
+    if (!Number.isSafeInteger(size) || size <= 0) {
+      throw new PhysicalMemoryError("RAM region size must be a positive safe integer");
+    }
+    this.addRegion(this.createRegion(start, new Uint8Array(size), true));
+  }
+
   public mapRom(image: RomImage, start: number, aliases: readonly number[] = []): void {
     const locations = [start, ...aliases];
     for (const location of locations) {
