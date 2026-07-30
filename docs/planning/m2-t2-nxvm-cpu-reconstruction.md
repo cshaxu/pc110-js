@@ -51,9 +51,25 @@ opcode ledger records the reason before implementation.
 Every completed family updates the ledger, tracking, provenance, and a PCjs
 comparison report, runs the full gate, and commits as `M2 T2 S3 Pxxx:`.
 
-Shared decode or addressing infrastructure may be committed before a family
-only when its ledger status remains in progress and its record states that no
-opcode-family execution claim is being made.
+Shared decode or addressing infrastructure is added only within an active
+opcode-interval delivery. Do not create standalone parser, type, adapter,
+trace, or utility parts before an interval has execution behavior.
+
+## Owner-Authorized Interval Delivery Correction
+
+P327 is a verified, pushed `00-3F` in-progress execution slice, not a
+completion claim for that interval or for M2 T2. The owner authorized the
+following delivery correction on 2026-07-29: future parts use NXVM-driven
+large numeric opcode intervals or complete opcode families as their default
+unit. Each part begins with a concise NXVM handler checklist in the ledger and
+delivers executable TypeScript behavior with its necessary local
+infrastructure. Split an interval only for a genuine architectural dependency,
+and record that dependency in the ledger before implementation.
+
+This correction permits P327's selector-validation and protection-fault work
+to remain recorded dependencies; it does not permit those omissions to be
+claimed as completed behavior. It also does not lower any M2 T2 completion
+gate.
 
 ## Exclusions
 

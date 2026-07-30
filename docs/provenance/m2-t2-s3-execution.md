@@ -969,6 +969,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   decode, ModR/M, memory, and EFLAGS boundaries, and implements the four adjust
   opcodes plus real-mode segment-stack forms. Protected-mode selector validation
   and fault delivery intentionally remain outside this partial interval slice.
+- M2 T2 S3 P328 records the owner-authorized shift to NXVM-driven large
+  interval delivery. P327 remains a partial `00-3F` slice. Future parts begin
+  with an NXVM handler checklist and include executable behavior plus only the
+  infrastructure required by that interval; selector validation and protection
+  faults remain ledgered dependencies, not completed behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

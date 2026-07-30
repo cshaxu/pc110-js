@@ -41,4 +41,10 @@ P320 froze the verified incremental CPU at `cpu-legacy-reference` commit
 `26bd074` and changed the active S3 method to a clean project-native TypeScript
 reconstruction in NXVM opcode-family order. No runtime behavior changed.
 
+P328 clarified the delivery cadence: rebuilt CPU work now advances through
+NXVM-driven large numeric opcode intervals or complete families with execution
+behavior, rather than standalone infrastructure parts. P327 remains a partial
+`00-3F` execution slice with its protection dependencies recorded in the
+ledger.
+
 The previous M1-M13 roadmap was superseded before implementation began. M0-M5 identifiers in [breakdown.md](breakdown.md) are frozen.

@@ -40,6 +40,25 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | Explicit NXVM undefined extensions | 12546-12552, 12637-12649, 12924-12977 | WBINVD, WRMSR, RDMSR, CPUID, RSM decode as `#UD` | `instructions/system.ts` | Complete reference evidence | Prefixes and fault EIP | Required | Planned |
 | Segmentation, paging, exceptions, and trace | 51-1145, 2033-3096, 13315-13917 | Logical/linear access, descriptors, stack, faults, interrupts, trace | `protection/`, `events/`, `debug/` | Partial | PF/GP/SS/NP; privilege; ROM trace; differential state dumps | Required | Planned |
 
+## P327 `00-3F` Checklist And Deferred Dependencies
+
+P327 is an in-progress execution slice. It executes the base ALU encodings
+`00-05`, `08-0D`, `10-15`, `18-1D`, `20-25`, `28-2D`, `30-35`, and `38-3D`;
+the adjust encodings `27`, `2F`, `37`, and `3F`; and real-mode forms of
+`06/07`, `0E`, `16/17`, and `1E/1F`. Prefixes `26`, `2E`, `36`, and `3E` are
+decoded and exercised where applicable. The covered ALU rows include
+byte/word/dword, register/memory, default-16, default-32, `66`, `67`, flags,
+and instruction-start preservation tests.
+
+The following are explicit dependencies before `00-3F` can be complete:
+
+- Protected-mode selector validation and `#GP`, `#NP`, and `#SS` delivery for
+  `06/07`, `16/17`, and `1E/1F`.
+- Privileged or mode-specific behavior and fault routing for applicable
+  adjust and segment forms.
+- `0F` is an escape opcode owned by the separate `0F` extended-system ledger
+  rows; P327 makes no implementation claim for it.
+
 ## Status Rule
 
 "Implemented" means the rebuilt CPU only. Legacy tests and trace evidence may
