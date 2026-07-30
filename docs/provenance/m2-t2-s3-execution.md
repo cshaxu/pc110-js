@@ -1000,6 +1000,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P334 translates NXVM XCHG ModR/M behavior into project-native
   TypeScript. It snapshots both operands before writing either result and
   preserves EFLAGS, with no runtime import from NXVM, PCjs, or legacy CPU.
+- M2 T2 S3 P335 translates NXVM's four general-register MOV ModR/M handlers
+  into project-native TypeScript. The direction selects a register or segmented
+  memory destination without changing EFLAGS or importing external runtimes.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
