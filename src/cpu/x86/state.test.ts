@@ -15,6 +15,7 @@ describe("Cpu386State", () => {
       cr3: 0,
       gdtr: { base: 0, limit: 0 },
       idtr: { base: 0, limit: 0x3ff },
+      ldtr: { selector: 0, base: 0, limit: 0 },
       tr: { selector: 0, base: 0, limit: 0, default32: false },
       cs: { selector: 0xf000, base: 0xffff0000, limit: 0xffff, default32: false },
       ds: { selector: 0, base: 0, limit: 0xffff, default32: false },
@@ -57,6 +58,17 @@ describe("Cpu386State", () => {
     });
     cpu.reset();
     expect(cpu.snapshot().tr).toEqual({ selector: 0, base: 0, limit: 0, default32: false });
+  });
+
+  it("stores and resets the cached local descriptor table", () => {
+    const cpu = new Cpu386State();
+    cpu.loadLocalDescriptorTable(0x0010, 0x00123000, 0x00000067);
+    const snapshot = cpu.snapshot();
+    (snapshot.ldtr as { base: number }).base = 0;
+
+    expect(cpu.snapshot().ldtr).toEqual({ selector: 0x0010, base: 0x00123000, limit: 0x67 });
+    cpu.reset();
+    expect(cpu.snapshot().ldtr).toEqual({ selector: 0, base: 0, limit: 0 });
   });
 
   it("stores 32-bit CR0 values for later mode-transition handling", () => {

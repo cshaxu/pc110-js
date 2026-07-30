@@ -31,6 +31,10 @@ export interface TaskRegisterState {
   readonly default32: boolean;
 }
 
+export interface LocalDescriptorTableState extends DescriptorTableState {
+  readonly selector: number;
+}
+
 export interface Cpu386Snapshot {
   readonly registers: Readonly<Record<GeneralRegister, number>>;
   readonly eip: number;
@@ -41,6 +45,7 @@ export interface Cpu386Snapshot {
   readonly cr3: number;
   readonly gdtr: DescriptorTableState;
   readonly idtr: DescriptorTableState;
+  readonly ldtr: LocalDescriptorTableState;
   readonly tr: TaskRegisterState;
   readonly cs: SegmentState;
   readonly ds: SegmentState;
@@ -92,6 +97,10 @@ function cloneTaskRegister(taskRegister: TaskRegisterState): TaskRegisterState {
   return { ...taskRegister };
 }
 
+function cloneLocalDescriptorTable(table: LocalDescriptorTableState): LocalDescriptorTableState {
+  return { ...table };
+}
+
 export class Cpu386State {
   private registers: Record<GeneralRegister, number> = this.emptyRegisters();
   private eip = 0;
@@ -102,6 +111,7 @@ export class Cpu386State {
   private cr3 = 0;
   private gdtr: DescriptorTableState = { base: 0, limit: 0 };
   private idtr: DescriptorTableState = { base: 0, limit: 0x3ff };
+  private ldtr: LocalDescriptorTableState = { selector: 0, base: 0, limit: 0 };
   private tr: TaskRegisterState = { selector: 0, base: 0, limit: 0, default32: false };
   private cs: SegmentState = cloneSegment(RESET_CS);
   private ds: SegmentState = cloneSegment(REAL_MODE_SEGMENT);
@@ -125,6 +135,7 @@ export class Cpu386State {
     this.cr3 = 0;
     this.gdtr = { base: 0, limit: 0 };
     this.idtr = { base: 0, limit: 0x3ff };
+    this.ldtr = { selector: 0, base: 0, limit: 0 };
     this.tr = { selector: 0, base: 0, limit: 0, default32: false };
     this.cs = cloneSegment(RESET_CS);
     this.ds = cloneSegment(REAL_MODE_SEGMENT);
@@ -145,6 +156,7 @@ export class Cpu386State {
       cr3: this.cr3,
       gdtr: cloneDescriptorTable(this.gdtr),
       idtr: cloneDescriptorTable(this.idtr),
+      ldtr: cloneLocalDescriptorTable(this.ldtr),
       tr: cloneTaskRegister(this.tr),
       cs: cloneSegment(this.cs),
       ds: cloneSegment(this.ds),
@@ -700,6 +712,14 @@ export class Cpu386State {
 
   public writeIdtr(base: number, limit: number): void {
     this.idtr = { base: base >>> 0, limit: limit & 0xffff };
+  }
+
+  public loadLocalDescriptorTable(selector: number, base: number, limit: number): void {
+    this.ldtr = {
+      selector: selector & 0xffff,
+      base: base >>> 0,
+      limit: limit >>> 0
+    };
   }
 
   public loadTaskRegister(selector: number, base: number, limit: number, default32: boolean): void {

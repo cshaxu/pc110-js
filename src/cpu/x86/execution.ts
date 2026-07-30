@@ -1,7 +1,11 @@
 import { addressMode, translateSegmentOffset } from "../../memory/address-translation.js";
 import { decodeExecutionContext, type ExecutionContext } from "./execution-context.js";
 import { decodeModRm, decodeModRm16Address, decodeModRm32Address } from "./modrm.js";
-import { loadDescriptor, loadInterruptGate } from "./segmentation.js";
+import {
+  loadDescriptor,
+  loadInterruptGate,
+  loadLocalDescriptorTable as resolveLocalDescriptorTable
+} from "./segmentation.js";
 import { SegmentRegister, type LoadedSegment } from "./segment-register.js";
 import type { Cpu386Snapshot, Cpu386State, LoadableSegment } from "./state.js";
 
@@ -1743,7 +1747,7 @@ function resolveProtectedModeCodeSegment(
     "execute",
     snapshot.cs.selector & 0x03,
     descriptorMemory,
-    { gdt: snapshot.gdtr }
+    descriptorTables(snapshot)
   );
 }
 
@@ -1794,7 +1798,7 @@ function loadProtectedModeSegment(
     segment === "ss" ? "stack" : "read",
     snapshot.cs.selector & 0x03,
     descriptorMemory,
-    { gdt: snapshot.gdtr }
+    descriptorTables(snapshot)
   );
   state.loadProtectedModeSegment(
     segment,
@@ -1803,6 +1807,15 @@ function loadProtectedModeSegment(
     loaded.limit,
     loaded.default32
   );
+}
+
+function descriptorTables(snapshot: Cpu386Snapshot): {
+  gdt: Cpu386Snapshot["gdtr"];
+  ldt?: Cpu386Snapshot["ldtr"];
+} {
+  return snapshot.ldtr.selector === 0
+    ? { gdt: snapshot.gdtr }
+    : { gdt: snapshot.gdtr, ldt: snapshot.ldtr };
 }
 
 function decodeMemoryAddress(
@@ -3005,20 +3018,20 @@ function executeStoreDescriptorTable(
   state.advanceEip(modRmOffset + 1 + address.displacementBytes);
 }
 
-function executeTaskRegisterInstruction(
+function executeSystemSelectorInstruction(
   memory: InstructionMemory,
   state: Cpu386State,
   faultInstructionPointer: number
 ): void {
   const snapshot = state.snapshot();
   if (addressMode(snapshot.cr0, snapshot.eflags) !== "protected")
-    throw new UnsupportedOpcodeError("Task-register instructions require protected mode");
+    throw new UnsupportedOpcodeError("System selector instructions require protected mode");
   const modRm = decodeModRm(fetchCodeByte(memory, state, 2).opcode);
-  if (modRm.reg !== 0x01 && modRm.reg !== 0x03)
+  if (modRm.reg !== 0x00 && modRm.reg !== 0x01 && modRm.reg !== 0x02 && modRm.reg !== 0x03)
     throw new UnsupportedOpcodeError("Unsupported 0F 00 opcode form");
   const address = modRm.registerDirect ? undefined : decodeMemoryAddress(memory, state, modRm);
-  if (modRm.reg === 0x01) {
-    const selector = snapshot.tr.selector;
+  if (modRm.reg === 0x00 || modRm.reg === 0x01) {
+    const selector = modRm.reg === 0x00 ? snapshot.ldtr.selector : snapshot.tr.selector;
     if (modRm.registerDirect) state.writeRegister16(modRm.rm, selector);
     else writeSegmentUint16(memory, state, address!.segment, address!.offset, selector);
     state.advanceEip(3 + (address?.displacementBytes ?? 0));
@@ -3028,10 +3041,6 @@ function executeTaskRegisterInstruction(
     deliverCpuFault(memory, state, 13, faultInstructionPointer, 0);
     return;
   }
-  const selector = modRm.registerDirect
-    ? state.readRegister16(modRm.rm)
-    : readSegmentUint16(memory, state, address!.segment, address!.offset);
-  if (selector & 0x04) throw new UnsupportedOpcodeError("LTR requires a GDT selector");
   const descriptorMemory = {
     readUint32: (linearAddress: number) =>
       (memory.readUint8(linearAddress) & 0xff) |
@@ -3039,6 +3048,16 @@ function executeTaskRegisterInstruction(
       ((memory.readUint8((linearAddress + 2) >>> 0) & 0xff) << 16) |
       ((memory.readUint8((linearAddress + 3) >>> 0) & 0xff) << 24)
   };
+  const selector = modRm.registerDirect
+    ? state.readRegister16(modRm.rm)
+    : readSegmentUint16(memory, state, address!.segment, address!.offset);
+  if (modRm.reg === 0x02) {
+    const table = resolveLocalDescriptorTable(descriptorMemory, snapshot.gdtr, selector);
+    state.loadLocalDescriptorTable(selector, table?.base ?? 0, table?.limit ?? 0);
+    state.advanceEip(3 + (address?.displacementBytes ?? 0));
+    return;
+  }
+  if (selector & 0x04) throw new UnsupportedOpcodeError("LTR requires a GDT selector");
   const descriptor = loadDescriptor(descriptorMemory, snapshot.gdtr, selector);
   if (descriptor.system || (descriptor.type !== 0x01 && descriptor.type !== 0x09))
     throw new UnsupportedOpcodeError("LTR requires an available TSS descriptor");
@@ -4164,7 +4183,7 @@ export function stepInstruction(
         return { halted: false, fetched };
       }
       if (extension === 0x00) {
-        executeTaskRegisterInstruction(memory, state, fetched.instructionPointer);
+        executeSystemSelectorInstruction(memory, state, fetched.instructionPointer);
         return { halted: false, fetched };
       }
       if (extension === 0xa0 || extension === 0xa8) {

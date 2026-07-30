@@ -777,6 +777,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   protected-mode compatibility authority; the implementation adjusts a 16-bit
   selector's RPL only when needed, writes ZF through a new generic state API,
   and uses existing vector-six delivery outside protected mode.
+- M2 T2 S3 P280 adds a project-native LDTR cache and completes its bounded
+  instruction path. PCjs remains the behavior authority: `LLDT` is CPL-zero,
+  resolves an LDT descriptor in the GDT, and supports a null selector; `SLDT`
+  exposes the cached selector. Existing descriptor loading now receives the
+  active LDT for TI-selected segment selectors.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
