@@ -598,6 +598,49 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   }
 
+  if (
+    context.opcode === 0xa6 ||
+    context.opcode === 0xa7 ||
+    context.opcode === 0xae ||
+    context.opcode === 0xaf
+  ) {
+    const compare = context.opcode === 0xa6 || context.opcode === 0xa7;
+    const width =
+      context.opcode === 0xa6 || context.opcode === 0xae ? 1 : context.operandSize === 32 ? 4 : 2;
+    const source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);
+    const destination =
+      context.addressSize === 32 ? state.readRegister(7) : state.readRegister16(7);
+    const left = compare
+      ? width === 1
+        ? readSegmentUint8(memory, state, "ds", source, context.addressSize)
+        : width === 2
+          ? readSegmentUint16(memory, state, "ds", source, context.addressSize)
+          : readSegmentUint32(memory, state, "ds", source, context.addressSize)
+      : width === 1
+        ? state.readRegister8(0)
+        : width === 2
+          ? state.readRegister16(0)
+          : state.readRegister(0);
+    const right =
+      width === 1
+        ? readSegmentUint8(memory, state, "es", destination, context.addressSize)
+        : width === 2
+          ? readSegmentUint16(memory, state, "es", destination, context.addressSize)
+          : readSegmentUint32(memory, state, "es", destination, context.addressSize);
+    if (width === 1) state.writeCompareFlags8(left, right);
+    else if (width === 2) state.writeCompareFlags16(left, right);
+    else state.writeCompareFlags32(left, right);
+    const delta = state.directionFlag() ? -width : width;
+    if (compare) {
+      if (context.addressSize === 32) state.writeRegister(6, source + delta);
+      else state.writeRegister16(6, source + delta);
+    }
+    if (context.addressSize === 32) state.writeRegister(7, destination + delta);
+    else state.writeRegister16(7, destination + delta);
+    state.advanceEip(context.opcodeOffset + 1);
+    return { halted: false, fetched };
+  }
+
   if (context.opcode === 0xac || context.opcode === 0xad) {
     const width = context.opcode === 0xac ? 1 : context.operandSize === 32 ? 4 : 2;
     const source = context.addressSize === 32 ? state.readRegister(6) : state.readRegister16(6);

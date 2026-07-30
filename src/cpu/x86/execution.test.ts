@@ -199,6 +199,67 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot().registers.edi).toBe(0x00014004);
   });
 
+  it("selects CMPS and SCAS data and index width independently through the context", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0xa7],
+      [0x00000101, 0x66],
+      [0x00000102, 0xa7],
+      [0x00000103, 0x67],
+      [0x00000104, 0xa7],
+      [0x00000105, 0xaf],
+      [0x00012000, 0x11],
+      [0x00012001, 0x22],
+      [0x00012002, 0x33],
+      [0x00012003, 0x44],
+      [0x00013000, 0x11],
+      [0x00013001, 0x22],
+      [0x00013002, 0x33],
+      [0x00013003, 0x44],
+      [0x00002000, 0xaa],
+      [0x00002001, 0xbb],
+      [0x00002002, 0xcc],
+      [0x00002003, 0xdd],
+      [0x00003000, 0xaa],
+      [0x00003001, 0xbb],
+      [0x00003002, 0xcc],
+      [0x00003003, 0xdd]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x00000100, true);
+    state.loadProtectedModeSegment("ds", 0x0010, 0, 0xffffffff, true);
+    state.loadProtectedModeSegment("es", 0x0018, 0, 0xffffffff, true);
+    state.writeRegister(6, 0x00012000);
+    state.writeRegister(7, 0x00013000);
+
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eflags: 0x00000046,
+      registers: { esi: 0x00012004, edi: 0x00013004 }
+    });
+
+    state.writeRegister(6, 0x00012000);
+    state.writeRegister(7, 0x00013000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eflags: 0x00000046,
+      registers: { esi: 0x00012002, edi: 0x00013002 }
+    });
+
+    state.writeRegister(6, 0xabcd2000);
+    state.writeRegister(7, 0xdcba3000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({
+      eflags: 0x00000046,
+      registers: { esi: 0xabcd2004, edi: 0xdcba3004 }
+    });
+
+    state.writeRegister(0, 0xddccbbaa);
+    state.writeRegister(7, 0x00003000);
+    stepInstruction(resetAliasMemory(values), state);
+    expect(state.snapshot()).toMatchObject({ eflags: 0x00000046, registers: { edi: 0x00003004 } });
+  });
+
   it("fetches the reset-vector opcode through the current CS:EIP state", () => {
     const values = new Map<number, number>([[0x000ffff0, 0xea]]);
     const memory = resetAliasMemory(values);

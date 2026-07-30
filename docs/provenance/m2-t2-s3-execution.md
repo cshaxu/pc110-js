@@ -665,6 +665,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P243 migrates non-repeated default-segment MOVS and STOS. Their
   data width and source or destination index width are selected by the shared
   context; repeat and segment-override behavior remains deliberately separate.
+- M2 T2 S3 P244 migrates non-repeated default-segment CMPS and SCAS. Context
+  now selects comparison width and SI/ESI/DI/EDI updates; REP/REPNE remains a
+  distinct future migration because it adds count and termination semantics.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
