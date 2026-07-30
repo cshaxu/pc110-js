@@ -389,6 +389,29 @@ describe("80386 instruction fetch", () => {
     expect(state.snapshot()).toMatchObject({ registers: { eax: 0xa5 }, eip: 0x103 });
   });
 
+  it("executes segment-overridden contextual moffs at the default 32-bit width", () => {
+    const values = new Map<number, number>([
+      [0x00000100, 0x64],
+      [0x00000101, 0xa1],
+      [0x00000102, 0x00],
+      [0x00000103, 0x20],
+      [0x00000104, 0x00],
+      [0x00000105, 0x00],
+      [0x00012000, 0x78],
+      [0x00012001, 0x56],
+      [0x00012002, 0x34],
+      [0x00012003, 0x12]
+    ]);
+    const state = new Cpu386State();
+    state.writeCr0(0x00000001);
+    state.loadProtectedModeCodeSegment(0x0008, 0, 0xffffffff, 0x100, true);
+    state.loadProtectedModeSegment("fs", 0x0030, 0x00010000, 0xffffffff, true);
+
+    stepInstruction(resetAliasMemory(values), state);
+
+    expect(state.snapshot()).toMatchObject({ registers: { eax: 0x12345678 }, eip: 0x106 });
+  });
+
   it("repeats LODS through contextual data and address widths", () => {
     const values = new Map<number, number>([
       [0x00000100, 0xf3],

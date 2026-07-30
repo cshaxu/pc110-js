@@ -1709,19 +1709,33 @@ function executeContextualMoffs(
       ? fetchCodeUint32(memory, state, context.opcodeOffset + 1)
       : fetchCodeUint16(memory, state, context.opcodeOffset + 1);
   const offsetBytes = context.addressSize === 32 ? 4 : 2;
+  const segment = context.segmentOverride ?? "ds";
   if (context.opcode === 0xa0)
-    state.writeRegister8(0, readSegmentUint8(memory, state, "ds", offset, context.addressSize));
+    state.writeRegister8(0, readSegmentUint8(memory, state, segment, offset, context.addressSize));
   else if (context.opcode === 0xa2)
-    writeSegmentUint8(memory, state, "ds", offset, state.readRegister8(0), context.addressSize);
+    writeSegmentUint8(memory, state, segment, offset, state.readRegister8(0), context.addressSize);
   else if (context.opcode === 0xa1) {
     if (context.operandSize === 32)
-      state.writeRegister(0, readSegmentUint32(memory, state, "ds", offset, context.addressSize));
+      state.writeRegister(
+        0,
+        readSegmentUint32(memory, state, segment, offset, context.addressSize)
+      );
     else
-      state.writeRegister16(0, readSegmentUint16(memory, state, "ds", offset, context.addressSize));
+      state.writeRegister16(
+        0,
+        readSegmentUint16(memory, state, segment, offset, context.addressSize)
+      );
   } else if (context.operandSize === 32)
-    writeSegmentUint32(memory, state, "ds", offset, state.readRegister(0), context.addressSize);
+    writeSegmentUint32(memory, state, segment, offset, state.readRegister(0), context.addressSize);
   else
-    writeSegmentUint16(memory, state, "ds", offset, state.readRegister16(0), context.addressSize);
+    writeSegmentUint16(
+      memory,
+      state,
+      segment,
+      offset,
+      state.readRegister16(0),
+      context.addressSize
+    );
   state.advanceEip(context.opcodeOffset + 1 + offsetBytes);
   return { halted: false, fetched };
 }
@@ -1732,7 +1746,8 @@ function executeContextualInstruction(
   context: ExecutionContext,
   fetched: FetchedOpcode
 ): ExecutionResult | undefined {
-  if (context.segmentOverride || context.lock) return undefined;
+  if (context.lock) return undefined;
+  if (context.segmentOverride) return executeContextualMoffs(memory, state, context, fetched);
   const repeatedComparison = executeContextualRepeatComparison(memory, state, context, fetched);
   if (repeatedComparison) return repeatedComparison;
   const repeatedTransfer = executeContextualRepeatTransfer(memory, state, context, fetched);

@@ -908,6 +908,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P313 routes ENTER through a project-native contextual helper. Its
   frame data width selects BP or EBP values, while SS D/B controls stack
   addresses; the local allocation immediate remains a 16-bit byte count.
+- M2 T2 S3 P314 permits only A0-A3 moffs forms through the contextual path when
+  a segment override is present. The helper applies the selected segment to the
+  direct offset, while other segment-overridden opcode families retain their
+  existing dispatcher boundary.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
