@@ -64,6 +64,35 @@ export class RebuiltCpuState {
     };
   }
 
+  public readEip(): number {
+    return this.eip;
+  }
+
+  public writeEip(value: number): void {
+    this.eip = value >>> 0;
+  }
+
+  public advanceEip(bytes: number): void {
+    const next = (this.eip + bytes) >>> 0;
+    this.eip = this.segments.cs.default32 ? next : next & 0xffff;
+  }
+
+  public readSegment(name: SegmentName): SegmentCache {
+    return cloneSegment(this.segments[name]);
+  }
+
+  public writeSegment(name: SegmentName, segment: SegmentCache): void {
+    this.segments[name] = cloneSegment(segment);
+  }
+
+  public readCr0(): number {
+    return this.cr0;
+  }
+
+  public writeCr0(value: number): void {
+    this.cr0 = value >>> 0;
+  }
+
   private resetSegments(): Record<SegmentName, SegmentCache> {
     return {
       cs: cloneSegment(RESET_CODE_SEGMENT),

@@ -951,6 +951,11 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   while keeping register reads and instruction bytes injected through local
   TypeScript interfaces. It does not import legacy CPU code or perform memory
   access, segment translation, or opcode execution.
+- M2 T2 S3 P324 adds project-native segmented memory access to the rebuilt
+  core. It uses the rebuilt segment cache, treats 16-bit and 32-bit offset
+  wrapping independently from CS D/B EIP advancement, and checks protected
+  segment limits. Paging, privilege, and architectural fault delivery remain
+  separate later rebuilt-core work.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
