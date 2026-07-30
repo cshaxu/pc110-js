@@ -1040,6 +1040,27 @@ function executeContextualInstruction(
     return { halted: false, fetched };
   }
 
+  if (context.opcode === 0x81 || context.opcode === 0x83) {
+    const modRmOffset = context.opcodeOffset + 1;
+    if (context.operandSize === 32)
+      executeDwordGroupOneImmediate(
+        memory,
+        state,
+        modRmOffset,
+        context.addressSize,
+        context.opcode === 0x81 ? 4 : 1
+      );
+    else
+      executeWordGroupOneImmediate(
+        memory,
+        state,
+        modRmOffset,
+        context.addressSize,
+        context.opcode === 0x81 ? 2 : 1
+      );
+    return { halted: false, fetched };
+  }
+
   if (context.opcode >= 0xb8 && context.opcode <= 0xbf) {
     const register = context.opcode - 0xb8;
     if (context.operandSize === 32)
@@ -2161,6 +2182,33 @@ function executeDwordGroupOneImmediate(
   if (operation !== "cmp") {
     if (modRm.registerDirect) state.writeRegister(modRm.rm, result);
     else writeSegmentUint32(memory, state, address!.segment, address!.offset, result, addressSize);
+  }
+  state.advanceEip(immediateOffset + immediateBytes);
+}
+
+function executeWordGroupOneImmediate(
+  memory: InstructionMemory,
+  state: Cpu386State,
+  modRmOffset: number,
+  addressSize: 16 | 32,
+  immediateBytes: 1 | 2
+): void {
+  const modRm = decodeModRm(fetchCodeByte(memory, state, modRmOffset).opcode);
+  const address = decodeModRmAddress(memory, state, modRm, modRmOffset, addressSize);
+  const addressBytes = decodedAddressBytes(address, addressSize);
+  const destination = modRm.registerDirect
+    ? state.readRegister16(modRm.rm)
+    : readSegmentUint16(memory, state, address!.segment, address!.offset, addressSize);
+  const immediateOffset = modRmOffset + 1 + addressBytes;
+  const immediate =
+    immediateBytes === 2
+      ? fetchCodeUint16(memory, state, immediateOffset)
+      : signedByte(fetchCodeByte(memory, state, immediateOffset).opcode) & 0xffff;
+  const operation = dwordGroupOneOperation(modRm.reg);
+  const result = writeWordAluResult(state, operation, destination, immediate);
+  if (operation !== "cmp") {
+    if (modRm.registerDirect) state.writeRegister16(modRm.rm, result);
+    else writeSegmentUint16(memory, state, address!.segment, address!.offset, result, addressSize);
   }
   state.advanceEip(immediateOffset + immediateBytes);
 }
