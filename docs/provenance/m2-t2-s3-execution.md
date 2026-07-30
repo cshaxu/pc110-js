@@ -989,6 +989,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   instruction-start relative-base behavior through decoded length and applies
   CS D/B only to the resulting EIP width. No external runtime dependency is
   introduced.
+- M2 T2 S3 P332 translates NXVM Group One into project-native TypeScript
+  immediate arithmetic. Shared rebuilt arithmetic supplies EFLAGS behavior;
+  local ModR/M and segmented-memory access provide all eight extensions without
+  runtime imports from NXVM, PCjs, or the legacy CPU.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

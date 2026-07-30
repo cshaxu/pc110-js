@@ -25,7 +25,7 @@ tracking, provenance, and full gate are recorded in the same verified part.
 | 60-61 PUSHA and POPA | 6892-6933 | Full register-frame stack forms | `instructions/frame-immediate.ts` | Partial | Original SP/ESP; 16/default-32; faults | Required | Implemented: P330; fault delivery remains active |
 | 62-6F frame, bounds, immediate arithmetic, string I/O | 6972-7265 | BOUND, ARPL, FS/GS, PUSH/IMUL immediates, INS/OUTS | `instructions/frame-immediate.ts`, `instructions/string-io.ts` | Partial | Bounds faults; privilege; 66/67; REP and I/O boundary | Required | In progress: P330 implements 68-6B only |
 | 70-7F short Jcc | 7309-7494 | All short conditional transfers | `instructions/control.ts` | Partial | Taken/not-taken; flags; 16/default-32 EIP | Required | Implemented: P331; broader differential evidence remains active |
-| 80, 81, 83 Group One | 7507-7840 | Immediate arithmetic and compare groups | `instructions/group-one.ts` | Partial | Every extension; sign extension; register/memory; widths | Required | Planned |
+| 80, 81, 83 Group One | 7507-7840 | Immediate arithmetic and compare groups | `instructions/group-one.ts` | Partial | Every extension; sign extension; register/memory; widths | Required | Implemented: P332; broader differential evidence remains active |
 | 84-8F ModR/M, segment, and stack forms | 7853-8130 | TEST, XCHG, MOV, segment moves, LEA, POP r/m | `instructions/move.ts`, `instructions/register-stack.ts` | Partial | ModR/M/SIB; segment validation; 66/67 | Required | Planned |
 | 90-9F exchange, flags, far call, and flag transfer | 8143-8626 | NOP, XCHG AX, CBW/CWD, far call, PUSHF/POPF, SAHF/LAHF | `instructions/control.ts`, `instructions/register-stack.ts` | Partial | Flag privilege; operand width; far control transfer | Required | Planned |
 | A0-AF moffs, strings, TEST, immediates | 8637-9589 | Moffs, MOVS/CMPS/STOS/LODS/SCAS, accumulator TEST, register immediates | `instructions/string.ts`, `instructions/move.ts` | Partial | REP/REPNE; source overrides; 16/default-32; faults | Required | Planned |
@@ -91,6 +91,13 @@ short conditional-transfer opcodes in `control.ts`. Focused tests cover every
 true and false EFLAGS predicate, signed forward and backward rel8 movement,
 16-bit and 32-bit CS EIP wrapping, and `66` instruction length. No ModR/M,
 memory operand, privilege, fault, or address-size (`67`) behavior applies.
+
+## P332 Group One Checklist
+
+P332 follows NXVM `INS_80`, `INS_81`, and `INS_83` and implements all `/0-7`
+ADD, OR, ADC, SBB, AND, SUB, XOR, and CMP forms. Tests cover byte and dword
+operation, every extension, register and memory destinations, CMP non-writeback,
+`66`, `67`, segment override, and `83` immediate sign extension.
 
 ## Status Rule
 
