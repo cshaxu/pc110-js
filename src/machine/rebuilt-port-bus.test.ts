@@ -47,4 +47,15 @@ describe("RebuiltMachinePortBus", () => {
     expect(() => bus.read(0x71, 8)).toThrow("Unmapped I/O read port");
     expect(() => bus.write(0x71, 0, 8)).toThrow("Unmapped I/O write port");
   });
+
+  it("can model unpopulated machine I/O as floating reads and ignored writes", () => {
+    const bus = new RebuiltMachinePortBus(undefined, {
+      unmappedRead: "ff",
+      unmappedWrite: "ignore"
+    });
+
+    expect(bus.read(0x3bc, 8)).toBe(0xff);
+    expect(bus.read(0x1234, 16)).toBe(0xffff);
+    expect(() => bus.write(0x3bc, 0x12, 8)).not.toThrow();
+  });
 });

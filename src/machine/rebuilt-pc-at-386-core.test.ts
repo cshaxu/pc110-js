@@ -26,6 +26,13 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.ports.read(0x2f8, 8)).toBe(0x5a);
   });
 
+  it("selects floating unpopulated I/O only when the machine profile requests it", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory, undefined, { unpopulatedIo: "floating" });
+    expect(core.ports.read(0x3bc, 8)).toBe(0xff);
+    expect(() => core.ports.write(0x3bc, 0, 8)).not.toThrow();
+  });
+
   it("composes rebuilt CPU stepping, port dispatch, and trace hooks", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0xe6);

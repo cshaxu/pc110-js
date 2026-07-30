@@ -130,7 +130,8 @@ function main(): void {
   );
   const trace: RebuiltMachineTraceEvent[] = [];
   const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event), {
-    deskProSecondaryPit: true
+    deskProSecondaryPit: true,
+    unpopulatedIo: "floating"
   });
   try {
     const result = core.run(budget);

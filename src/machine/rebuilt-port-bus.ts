@@ -24,6 +24,11 @@ export interface RebuiltPortTraceEvent {
 
 export type RebuiltPortTrace = (event: RebuiltPortTraceEvent) => void;
 
+export interface RebuiltMachinePortBusOptions {
+  readonly unmappedRead?: "error" | "ff";
+  readonly unmappedWrite?: "error" | "ignore";
+}
+
 function maskForWidth(width: PortWidth): number {
   return width === 8 ? 0xff : width === 16 ? 0xffff : 0xffffffff;
 }
@@ -31,8 +36,16 @@ function maskForWidth(width: PortWidth): number {
 export class RebuiltMachinePortBus implements RebuiltPortBus {
   private readonly readers = new Map<number, RebuiltPortRead>();
   private readonly writers = new Map<number, RebuiltPortWrite>();
+  private readonly unmappedRead: "error" | "ff";
+  private readonly unmappedWrite: "error" | "ignore";
 
-  public constructor(private readonly trace?: RebuiltPortTrace) {}
+  public constructor(
+    private readonly trace?: RebuiltPortTrace,
+    options: RebuiltMachinePortBusOptions = {}
+  ) {
+    this.unmappedRead = options.unmappedRead ?? "error";
+    this.unmappedWrite = options.unmappedWrite ?? "error";
+  }
 
   public register(range: RebuiltPortRange): void {
     const start = normalizePort(range.start);
@@ -57,9 +70,11 @@ export class RebuiltMachinePortBus implements RebuiltPortBus {
   public read(port: number, width: PortWidth): number {
     const normalizedPort = normalizePort(port);
     const reader = this.readers.get(normalizedPort);
-    if (!reader)
+    if (!reader && this.unmappedRead === "error")
       throw new RebuiltPortAccessError(`Unmapped I/O read port: 0x${normalizedPort.toString(16)}`);
-    const value = reader(normalizedPort, width) & maskForWidth(width);
+    const value = reader
+      ? reader(normalizedPort, width) & maskForWidth(width)
+      : maskForWidth(width);
     this.trace?.({ direction: "read", port: normalizedPort, width, value });
     return value;
   }
@@ -67,10 +82,10 @@ export class RebuiltMachinePortBus implements RebuiltPortBus {
   public write(port: number, value: number, width: PortWidth): void {
     const normalizedPort = normalizePort(port);
     const writer = this.writers.get(normalizedPort);
-    if (!writer)
+    if (!writer && this.unmappedWrite === "error")
       throw new RebuiltPortAccessError(`Unmapped I/O write port: 0x${normalizedPort.toString(16)}`);
     const normalizedValue = value & maskForWidth(width);
-    writer(normalizedPort, normalizedValue, width);
+    writer?.(normalizedPort, normalizedValue, width);
     this.trace?.({ direction: "write", port: normalizedPort, width, value: normalizedValue });
   }
 }

@@ -37,6 +37,7 @@ export interface RebuiltMachineRunResult {
 export interface RebuiltPcAt386Options {
   readonly deskProSecondaryPit?: boolean;
   readonly cycleSchedulerProfile?: CycleSchedulerProfile;
+  readonly unpopulatedIo?: "strict" | "floating";
 }
 
 export type RebuiltMachineTraceEvent =
@@ -94,7 +95,12 @@ export class RebuiltPcAt386Core {
     options: RebuiltPcAt386Options = {}
   ) {
     this.scheduler = new CycleScheduler(options.cycleSchedulerProfile ?? deskPro386CycleProfile);
-    this.ports = new RebuiltMachinePortBus((event) => this.trace?.({ kind: "port", event }));
+    this.ports = new RebuiltMachinePortBus(
+      (event) => this.trace?.({ kind: "port", event }),
+      options.unpopulatedIo === "floating"
+        ? { unmappedRead: "ff", unmappedWrite: "ignore" }
+        : undefined
+    );
     this.runner = new RebuiltCpuRunner(memory, this.ports, (event) =>
       this.trace?.({ kind: "instruction", event })
     );
