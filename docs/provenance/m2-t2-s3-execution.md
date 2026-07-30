@@ -1241,6 +1241,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   `A0-AF` handlers. It expands only focused rebuilt CPU tests for default sizes,
   `66/67`, strings, and protected access-fault delivery; it imports no NXVM,
   PCjs, or legacy runtime code and adds no device or guest-service behavior.
+- M2 T2 S3 P424 records complete project-native evidence for executable NXVM
+  `B0-BF` immediate-register MOV handlers across both code defaults and `66`.
+  It imports no reference runtime and introduces no device or guest-service path.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
