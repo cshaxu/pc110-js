@@ -1033,6 +1033,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P345 translates NXVM XLAT into native TypeScript through rebuilt
   segmented-memory access. It selects BX or EBX from address size and never
   imports NXVM, PCjs, or legacy CPU code at runtime.
+- M2 T2 S3 P346 translates NXVM LOOP-family control flow into native TypeScript.
+  The address-size-selected counter and CS-width destination EIP are explicit;
+  no external runtime dependency is introduced.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
