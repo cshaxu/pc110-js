@@ -9,6 +9,7 @@ import { executeFlagControl } from "./instructions/flag-control.js";
 import { executeFlagTransfer } from "./instructions/flag-transfer.js";
 import { executeFlagStack } from "./instructions/flag-stack.js";
 import { executeExchangeModRm } from "./instructions/exchange.js";
+import { executeExtended } from "./instructions/extended.js";
 import { executeFirstIntervalArithmetic } from "./instructions/first-interval.js";
 import { executeFrameImmediateSlice } from "./instructions/frame-immediate.js";
 import { executeGroupFourFive } from "./instructions/group-four-five.js";
@@ -129,5 +130,13 @@ function dispatchExtended(context: RebuiltExecutionContext): void {
   if (opcode !== undefined && opcode >= 0x80 && opcode <= 0x8f)
     return executeNearConditionalJump(context);
   if (opcode !== undefined && opcode >= 0x90 && opcode <= 0x9f) return executeSetCondition(context);
+  if (
+    opcode !== undefined &&
+    [
+      0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae,
+      0xaf, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7
+    ].includes(opcode)
+  )
+    return executeExtended(context);
   throw new Error(`Unsupported rebuilt 0F opcode 0x${opcode?.toString(16) ?? "??"}`);
 }
