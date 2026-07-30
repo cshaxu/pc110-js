@@ -1036,6 +1036,9 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
 - M2 T2 S3 P346 translates NXVM LOOP-family control flow into native TypeScript.
   The address-size-selected counter and CS-width destination EIP are explicit;
   no external runtime dependency is introduced.
+- M2 T2 S3 P347 translates NXVM near relative CALL/JMP behavior into native
+  TypeScript. It derives the fallthrough address before a CALL stack push and
+  applies CS D/B only to the resulting EIP width.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
