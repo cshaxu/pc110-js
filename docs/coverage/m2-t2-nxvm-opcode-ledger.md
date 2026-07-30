@@ -225,6 +225,12 @@ A generic real-mode program matches PCjs for C8/C9 ENTER and LEAVE stack-frame
 operations. Nested frames, default-32 code, and independent stack-address
 width remain separate S6 work.
 
+## S6 P28 Differential Evidence
+
+A generic real-mode program matches PCjs for CA/CB far returns with and
+without immediate cleanup across code-segment changes. Default-32 and
+protected-mode returns remain separate S6 work.
+
 ## P329 `40-5F` Checklist
 
 P329 follows NXVM handlers `INC_EAX` through `DEC_EDI` and `PUSH_EAX` through

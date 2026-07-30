@@ -121,3 +121,10 @@ P27 uses the project-native dispatcher and independent real-mode RAM images
 for C8/C9 ENTER and LEAVE stack-frame operations. PCjs remains a
 verification-only oracle; no PCjs source, runtime dependency, or
 instruction-specific oracle logic enters the product.
+
+## P28 Far Return Program
+
+P28 uses the project-native dispatcher and independent real-mode RAM images
+for CA/CB far returns through prepared frames across two code segments. PCjs
+remains a verification-only oracle; no PCjs source, runtime dependency, or
+instruction-specific oracle logic enters the product.

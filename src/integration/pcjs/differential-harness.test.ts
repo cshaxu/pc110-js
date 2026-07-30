@@ -265,6 +265,23 @@ describe("PCjs differential CPU harness", () => {
       bytes: [0xc8, 0x04, 0x00, 0x00, 0xc9],
       registers: { esp: 0x800, ebp: 0x812 },
       instructionCount: 2
+    },
+    {
+      name: "CA-CB far return slice",
+      bytes: [0xca, 0x04, 0x00],
+      registers: { esp: 0x800 },
+      memory: [
+        { address: 0x800, value: 0x00 },
+        { address: 0x801, value: 0x02 },
+        { address: 0x802, value: 0x00 },
+        { address: 0x803, value: 0x10 },
+        { address: 0x808, value: 0x04 },
+        { address: 0x809, value: 0x02 },
+        { address: 0x80a, value: 0x00 },
+        { address: 0x80b, value: 0x00 },
+        { address: 0x10200, value: 0xcb }
+      ],
+      instructionCount: 2
     }
   ])("matches PCjs through numeric program interval: $name", async (differentialCase) => {
     const trace = await runPcjsDifferentialTrace(differentialCase);
