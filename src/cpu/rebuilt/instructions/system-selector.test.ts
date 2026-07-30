@@ -49,6 +49,20 @@ describe("rebuilt 0F 00 selector group", () => {
     expect(result.memory.get(0x10d)! & 0x0f).toBe(0x0b);
   });
 
+  it("loads an available 16-bit TSS into TR and marks its descriptor busy", () => {
+    const result = machine([0x0f, 0x00, 0xd8]);
+    result.state.writeGdtr({ base: 0x100, limit: 0x2f });
+    result.state.registers.write16(0, 8);
+    [0x2b, 0, 0, 0, 0, 0x81, 0, 0].forEach((value, index) =>
+      result.memory.set(0x108 + index, value)
+    );
+
+    result.step();
+
+    expect(result.state.readTr()).toMatchObject({ selector: 8, default32: false, type: 3 });
+    expect(result.memory.get(0x10d)! & 0x0f).toBe(0x03);
+  });
+
   it("reports invalid VERR and VERW selectors through ZF without changing the selector source", () => {
     const verr = machine([0x0f, 0x00, 0xe0]);
     verr.state.registers.write16(0, 0);

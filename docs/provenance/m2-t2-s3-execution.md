@@ -1207,6 +1207,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   into project-native event delivery without a reference runtime or host error.
 - M2 T2 S3 P414 adapts NXVM's `flagMaskInt` behavior into project-native CPU
   state and external-interrupt admission without a reference runtime or PIC.
+- M2 T2 S3 P415 adapts NXVM's 16-bit and 32-bit TSS stack-layout selection into
+  project-native interrupt delivery. It reads only rebuilt TR state and memory,
+  keeps SS D/B addressing independent, and introduces no reference runtime,
+  task switch, BIOS, or device behavior.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.

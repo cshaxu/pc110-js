@@ -571,7 +571,7 @@ P400 adds project-native 32-bit TSS ring-zero stack switching for protected
 interrupt gates and matching outer-privilege IRET restoration. LTR records the
 TSS type and marks an available TSS descriptor busy. Focused tests cover a
 CPL3-to-CPL0 software gate, frame ordering, return to CPL3, and busy state.
-16-bit TSS, v86 interrupt frames, task switching, and gate fault escalation
+16-bit TSS is completed by P415; task switching and gate fault escalation
 remain active dependencies.
 
 ## P402 Virtual-8086 Flag Stack Checklist
@@ -585,8 +585,9 @@ remain active dependencies.
 
 P401 adds the 32-bit TSS-gated v86 interrupt frame and matching IRET restore:
 VM state, full ESP, all segment selectors, and data-segment nulling/restoration.
-Focused evidence covers a v86-to-CPL0 round trip. 16-bit TSS, task switching,
-and complete v86 I/O and flag privilege paths remain active dependencies.
+Focused evidence covers a v86-to-CPL0 round trip. P415 extends that stack
+selection to 16-bit TSS layouts; task switching and complete v86 I/O and flag
+privilege paths remain active dependencies.
 
 ## P399 `30-3D` XOR/CMP Checklist
 
@@ -684,3 +685,14 @@ P414 models the one succeeding-instruction maskable-interrupt inhibition after
 IRQ admission during that bounded state and accepts it after the following
 instruction boundary. Focused runner evidence covers all three sources. NMI and
 PIC/device scheduling remain outside this CPU-only part.
+
+## P415 16-bit TSS Privilege-Stack Checklist
+
+P415 follows NXVM's `TSS_16` offsets for SP0 and SS0 while retaining the
+existing 32-bit TSS offsets for ESP0 and SS0. Rebuilt interrupt delivery accepts
+available or busy 16/32-bit TR cache types, verifies each layout's final TSS
+byte, and assigns the selected SS D/B stack width independently from the TSS
+layout. Focused tests cover `LTR` busy conversion for an available 16-bit TSS,
+outer-privilege interrupt/IRET round trips through a 16-bit busy TSS, and the
+NXVM-relevant v86 interrupt/IRET round trip. Task switching and stacks for
+target rings one and two remain active dependencies.

@@ -145,9 +145,13 @@ function switchToPrivilegeStack(
   readonly gs: number;
 } {
   const tr = state.readTr();
-  if ((tr.selector & 0xfff8) === 0 || tr.type !== 9 || tr.limit < 9)
+  const tss32 = tr.type === 9 || tr.type === 11;
+  const tss16 = tr.type === 1 || tr.type === 3;
+  const stackPointerOffset = tss32 ? 4 : 2;
+  const stackSelectorOffset = tss32 ? 8 : 4;
+  if ((tr.selector & 0xfff8) === 0 || (!tss16 && !tss32) || tr.limit < stackSelectorOffset + 1)
     throw new InterruptDeliveryError(
-      "Interrupt privilege change requires a valid 32-bit TSS",
+      "Interrupt privilege change requires a valid TSS",
       10,
       tr.selector
     );
@@ -157,8 +161,13 @@ function switchToPrivilegeStack(
       10,
       tr.selector
     );
-  const esp = readPhysical32(memory, tr.base + 4);
-  const ss = memory.readPhysical8(tr.base + 8) | (memory.readPhysical8(tr.base + 9) << 8);
+  const esp = tss32
+    ? readPhysical32(memory, tr.base + stackPointerOffset)
+    : memory.readPhysical8(tr.base + stackPointerOffset) |
+      (memory.readPhysical8(tr.base + stackPointerOffset + 1) << 8);
+  const ss =
+    memory.readPhysical8(tr.base + stackSelectorOffset) |
+    (memory.readPhysical8(tr.base + stackSelectorOffset + 1) << 8);
   const old = {
     esp:
       virtual8086 || state.stackDefault32() ? state.registers.read32(4) : state.registers.read16(4),

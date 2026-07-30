@@ -143,6 +143,58 @@ describe("rebuilt INT and IRET", () => {
     });
   });
 
+  it("switches through a 16-bit busy TSS stack for an outer-privilege gate and IRET", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.writeSegment("cs", {
+      selector: 0x1b,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeSegment("ss", {
+      selector: 0x23,
+      base: 0,
+      limit: 0xffff_ffff,
+      default32: true,
+      dpl: 3
+    });
+    state.writeGdtr({ base: 0x200, limit: 0x2f });
+    state.writeIdtr({ base: 0x300, limit: 0x1ff });
+    state.writeTr({ selector: 0x28, base: 0x400, limit: 0x2b, default32: false, type: 3 });
+    state.writeEip(0);
+    state.registers.write32(4, 0x100);
+    state.flags.set(0x300);
+    const memory = new Map<number, number>();
+    write(memory, 0, [0xcd, 0x30]);
+    write(memory, 0x80, [0xcf]);
+    write(memory, 0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(memory, 0x218, [0xff, 0xff, 0, 0, 0, 0xfa, 0xcf, 0]);
+    write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0x0f, 0]);
+    write(memory, 0x220, [0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0]);
+    write(memory, 0x480, [0x80, 0, 8, 0, 0, 0xee, 0, 0]);
+    write(memory, 0x402, [0, 2, 0x10, 0]);
+    const cpu = executor(state, memory);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({
+      eip: 0x80,
+      registers: { esp: 0x1ec },
+      segments: { cs: { selector: 8, dpl: 0 }, ss: { selector: 0x10, dpl: 0, default32: false } }
+    });
+    expect([0x1ec, 0x1f0, 0x1f4, 0x1f8, 0x1fc].map((address) => memory.get(address))).toEqual([
+      2, 0x1b, 2, 0, 0x23
+    ]);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({
+      eip: 2,
+      registers: { esp: 0x100 },
+      segments: { cs: { selector: 0x1b, dpl: 3 }, ss: { selector: 0x23, dpl: 3 } }
+    });
+  });
+
   it("round-trips a virtual-8086 interrupt frame through a 32-bit TSS stack", () => {
     const state = new RebuiltCpuState();
     state.writeCr0(1);
@@ -174,6 +226,52 @@ describe("rebuilt INT and IRET", () => {
     write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0]);
     write(memory, 0x480, [0x80, 0, 8, 0, 0, 0xee, 0, 0]);
     write(memory, 0x404, [0, 2, 0, 0, 0x10, 0]);
+    const cpu = executor(state, memory);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({ eip: 0x80, registers: { esp: 0x1dc } });
+    expect(state.flags.read() & 0x00020000).toBe(0);
+    expect(state.readSegment("ds").valid).toBe(false);
+
+    cpu.step(dispatchRebuiltInstruction);
+    expect(state.snapshot()).toMatchObject({ eip: 3, registers: { esp: 0x12340080 } });
+    expect(state.flags.read() & 0x00020000).toBe(0x00020000);
+    expect(
+      ["cs", "ss", "es", "ds", "fs", "gs"].map((name) => state.readSegment(name as "cs").selector)
+    ).toEqual([0x1000, 0x2000, 0x3000, 0x4000, 0x5000, 0x6000]);
+  });
+
+  it("round-trips a virtual-8086 interrupt frame through a 16-bit TSS stack", () => {
+    const state = new RebuiltCpuState();
+    state.writeCr0(1);
+    state.flags.write(0x0002_3002);
+    for (const [name, selector] of [
+      ["cs", 0x1000],
+      ["ss", 0x2000],
+      ["es", 0x3000],
+      ["ds", 0x4000],
+      ["fs", 0x5000],
+      ["gs", 0x6000]
+    ] as const)
+      state.writeSegment(name, {
+        selector,
+        base: selector << 4,
+        limit: 0xffff,
+        default32: false,
+        dpl: 3
+      });
+    state.writeGdtr({ base: 0x200, limit: 0x2f });
+    state.writeIdtr({ base: 0x300, limit: 0x1ff });
+    state.writeTr({ selector: 0x28, base: 0x400, limit: 0x2b, default32: false, type: 3 });
+    state.writeEip(0);
+    state.registers.write32(4, 0x12340080);
+    const memory = new Map<number, number>();
+    write(memory, 0x10000, [0x66, 0xcd, 0x30]);
+    write(memory, 0x80, [0xcf]);
+    write(memory, 0x208, [0xff, 0xff, 0, 0, 0, 0x9a, 0xcf, 0]);
+    write(memory, 0x210, [0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0]);
+    write(memory, 0x480, [0x80, 0, 8, 0, 0, 0xee, 0, 0]);
+    write(memory, 0x402, [0, 2, 0x10, 0]);
     const cpu = executor(state, memory);
 
     cpu.step(dispatchRebuiltInstruction);
