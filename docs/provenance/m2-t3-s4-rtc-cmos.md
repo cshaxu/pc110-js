@@ -1,0 +1,22 @@
+# M2 T3 S4 RTC/CMOS Provenance
+
+## Reference Boundary
+
+- Behavioral reference: pinned read-only PCjs
+  `machines/pcx86/modules/v2/chipset.js` RTC/CMOS constants, port handlers,
+  IRQ8 relation, and selected generic PC/AT configuration definitions.
+- Product code: original TypeScript only; no PCjs device, runtime, firmware,
+  media, browser resource, host-clock, or storage behavior is imported.
+
+## Initial Scope
+
+The local device will own CMOS register state, deterministic calendar/event
+advancement, `0x70`/`0x71` access, and IRQ8 signaling. The NMI-disable bit is
+an explicit output boundary for T3 S5 rather than an NMI implementation.
+
+## P1 Plan Boundary
+
+P1 records the selected MC146818-compatible contract before executable work.
+It excludes PCjs model-specific ROM-test accommodations, host-date policy, and
+any firmware or storage configuration shortcut. Future configuration bytes must
+be tied to the selected M1 PC/AT contract and accompanied by focused evidence.
