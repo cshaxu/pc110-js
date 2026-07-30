@@ -687,6 +687,34 @@ export class Cpu386State {
     this.eflags = (flags | RESET_EFLAGS) >>> 0;
   }
 
+  public writeArithmeticShiftRightFlags16(value: number, count: number): void {
+    const source = value & 0xffff;
+    const normalizedCount = count & 0x1f;
+    if (normalizedCount === 0) return;
+    const carry = source >>> (normalizedCount - 1);
+    const result = (((source << 16) >> 16) >> normalizedCount) & 0xffff;
+    let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (carry & 0x01) flags |= EFLAGS_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x8000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
+  public writeArithmeticShiftRightFlags32(value: number, count: number): void {
+    const source = value | 0;
+    const normalizedCount = count & 0x1f;
+    if (normalizedCount === 0) return;
+    const carry = source >>> (normalizedCount - 1);
+    const result = source >> normalizedCount;
+    let flags = this.eflags & ~EFLAGS_LOGIC_MASK;
+    if (carry & 0x01) flags |= EFLAGS_CARRY;
+    if (result === 0) flags |= EFLAGS_ZERO;
+    if (result & 0x80000000) flags |= EFLAGS_SIGN;
+    if (((result & 0xff).toString(2).replace(/0/g, "").length & 1) === 0) flags |= EFLAGS_PARITY;
+    this.eflags = (flags | RESET_EFLAGS) >>> 0;
+  }
+
   public loadRealModeCodeSegment(selector: number, instructionPointer: number): void {
     this.cs = {
       selector: selector & 0xffff,

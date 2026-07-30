@@ -829,6 +829,10 @@ CL` forms (`D2/D3 /0`), using the PCjs 80386 count mask and rotate flags.
   remains the behavioral authority for normalized counts, operand widths, and
   ModR/M address widths; unported rotate and arithmetic-right forms remain on
   their existing path.
+- M2 T2 S3 P292 adds project-native 16- and 32-bit SAR flag writers and routes
+  Group 2 `/7` `C1/D1/D3` forms through the same context. PCjs remains the
+  behavior authority for count normalization and arithmetic sign extension;
+  rotate and byte forms remain outside this part.
 - Mechanical adaptation: a narrow byte-reader interface replaces PCjs bus and
   cache objects.
 - Intentional behavior changes: none.
