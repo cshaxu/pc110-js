@@ -83,6 +83,12 @@ export interface LockstepBoundary {
   };
 }
 
+export interface LockstepInstructionTiming {
+  readonly nativeCycles: number;
+  readonly pcjsCycles: number;
+  readonly equal: boolean;
+}
+
 export interface NativeLockstepEndpoint {
   snapshot(): NativeLockstepSnapshot;
   resetMachine(): void;
@@ -125,6 +131,7 @@ export type ControlledLockstepResult =
       readonly before: LockstepBoundary;
       readonly after: LockstepBoundary;
       readonly comparison: LockstepComparison;
+      readonly timing: LockstepInstructionTiming;
     };
 
 export type ControlledLockstepResetResult =
@@ -259,7 +266,12 @@ export function stepControlledLockstep(
     pcjsStep,
     before: lockstepBoundary(beforeNative, beforePcjs),
     after: lockstepBoundary(afterNative, pcjsStep.after),
-    comparison: compareLockstepCpu(afterNative, pcjsStep.after)
+    comparison: compareLockstepCpu(afterNative, pcjsStep.after),
+    timing: {
+      nativeCycles: nativeStep.cycles,
+      pcjsCycles: pcjsStep.cyclesConsumed,
+      equal: nativeStep.cycles === pcjsStep.cyclesConsumed
+    }
   };
 }
 

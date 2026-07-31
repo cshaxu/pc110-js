@@ -278,7 +278,8 @@ describe("controlled lockstep comparator", () => {
     expect(result).toMatchObject({
       kind: "stepped",
       before: { native: { cs: 0, eip: 0, eflags: 2, virtualCycles: "0" } },
-      after: { pcjs: { cs: 0, eip: 0, eflags: 2, virtualCycles: 0 } }
+      after: { pcjs: { cs: 0, eip: 0, eflags: 2, virtualCycles: 0 } },
+      timing: { nativeCycles: 1, pcjsCycles: 1, equal: true }
     });
   });
 

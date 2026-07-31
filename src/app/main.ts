@@ -273,7 +273,7 @@ function compareBrowserLockstep(): void {
       return;
     case "stepped":
       controls.nativeStatus.textContent = result.comparison.equal
-        ? `Lockstep boundary matched: native ${result.nativeStep.kind}, PCjs ${result.pcjsStep.cyclesConsumed} cycles`
+        ? `Lockstep boundary matched: native ${result.nativeStep.kind} ${result.timing.nativeCycles} cycles, PCjs ${result.timing.pcjsCycles} cycles${result.timing.equal ? "" : " (timing difference)"}`
         : `Lockstep boundary mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}`;
   }
 }
