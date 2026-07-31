@@ -1,5 +1,6 @@
 dist/
 build/
+.cache/
 node_modules/
 local-assets/*
 !local-assets/README.md
