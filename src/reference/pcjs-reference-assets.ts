@@ -182,6 +182,11 @@ export class PcjsReferenceAssets {
             output.textContent = JSON.stringify({
               components: components.map((component) => component?.id).filter(Boolean),
               enabled: chipset?.fPC110Probe ?? null,
+              lifecycle: {
+                computerReady: chipset?.cmp?.isReady?.() ?? null,
+                cpuReady: chipset?.cpu?.isReady?.() ?? null,
+                cpuRunning: chipset?.cpu?.flags?.running ?? null
+              },
               events: chipset?.pc110ProbeEvents?.slice(-32) ?? [],
               lockstep: chipset?.pc110Lockstep?.snapshot?.() ?? null
             });
