@@ -27,7 +27,8 @@ small before/after event window.
 
 The opt-in PCjs control plane must expose, without changing normal execution:
 
-1. reset and pause state;
+1. reset and pause state: implemented as paired normal reset controls with an
+   immediate observable-state comparison; equivalence remains to be proven;
 2. one decoded-instruction stepping, including prefixes, plus an explicit
    bounded virtual-cycle operation where PCjs can provide one honestly;
 3. PCjs virtual cycle count and the cycles consumed by the latest operation;

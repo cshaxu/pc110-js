@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compareLockstepCpu,
+  resetControlledLockstep,
   stepControlledLockstep,
   type PcjsLockstepSnapshot
 } from "./lockstep-coordinator.js";
@@ -170,10 +171,17 @@ describe("controlled lockstep comparator", () => {
       stepControlledLockstep(
         {
           snapshot: () => native,
+          resetMachine: () => undefined,
           stepInstruction: () => ((nativeSteps += 1), { kind: "instruction", cycles: 1 })
         },
         {
           snapshot: () => changed,
+          resetMachine: () => ({
+            accepted: false,
+            reason: "not-used",
+            before: changed,
+            after: changed
+          }),
           stepInstruction: () => (
             (pcjsSteps += 1),
             {
@@ -192,5 +200,37 @@ describe("controlled lockstep comparator", () => {
     });
     expect(nativeSteps).toBe(0);
     expect(pcjsSteps).toBe(0);
+  });
+
+  it("resets only through accepted paused endpoint controls", () => {
+    const { native, pcjs } = snapshots();
+    let nativeResets = 0;
+    let pcjsResets = 0;
+    const result = resetControlledLockstep(
+      {
+        snapshot: () => native,
+        resetMachine: () => {
+          nativeResets += 1;
+        },
+        stepInstruction: () => ({ kind: "instruction", cycles: 1 })
+      },
+      {
+        snapshot: () => pcjs,
+        resetMachine: () => {
+          pcjsResets += 1;
+          return { accepted: true, reason: "reset", before: pcjs, after: pcjs };
+        },
+        stepInstruction: () => ({
+          accepted: true,
+          reason: "executed",
+          cyclesConsumed: 1,
+          before: pcjs,
+          after: pcjs
+        })
+      }
+    );
+    expect(result).toMatchObject({ kind: "reset", comparison: { equal: true } });
+    expect(nativeResets).toBe(1);
+    expect(pcjsResets).toBe(1);
   });
 });

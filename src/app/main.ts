@@ -3,8 +3,10 @@ import { MachineRuntime, type MachineSnapshot } from "../machine/machine-runtime
 import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
 import { NativeLockstepAdapter } from "../reference/native-lockstep-adapter.js";
 import {
+  resetControlledLockstep,
   stepControlledLockstep,
   type PcjsLockstepEndpoint,
+  type PcjsLockstepReset,
   type PcjsLockstepSnapshot,
   type PcjsLockstepStep
 } from "../reference/lockstep-coordinator.js";
@@ -59,6 +61,7 @@ root.innerHTML = `
       ${developerMediaEnabled ? '<button id="dev-media" type="button">Load local media</button>' : ""}
       ${developerMediaEnabled ? '<button id="dev-key-a" type="button">Send A</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep" type="button">Compare boundary</button>' : ""}
+      ${pcjsReferenceEnabled ? '<button id="lockstep-reset" type="button">Reset boundary</button>' : ""}
     </footer>
   </section>
 `;
@@ -76,6 +79,7 @@ const mount = root.querySelector<HTMLButtonElement>("#mount");
 const developerMedia = root.querySelector<HTMLButtonElement>("#dev-media");
 const developerKeyA = root.querySelector<HTMLButtonElement>("#dev-key-a");
 const lockstep = root.querySelector<HTMLButtonElement>("#lockstep");
+const lockstepReset = root.querySelector<HTMLButtonElement>("#lockstep-reset");
 const referenceFrame = root.querySelector<HTMLIFrameElement>("#pcjs-reference");
 if (
   !state ||
@@ -188,6 +192,7 @@ developerKeyA?.addEventListener("click", () => {
   enqueueKeyboardCode("KeyA", false);
 });
 lockstep?.addEventListener("click", () => compareBrowserLockstep());
+lockstepReset?.addEventListener("click", () => resetBrowserLockstep());
 
 async function mountDeveloperMedia(): Promise<void> {
   try {
@@ -268,6 +273,32 @@ function compareBrowserLockstep(): void {
   }
 }
 
+function resetBrowserLockstep(): void {
+  if (machine.snapshot().runState === "running") {
+    controls.nativeStatus.textContent = "Pause the native machine before resetting a boundary";
+    return;
+  }
+  const pcjs = pcjsLockstepEndpoint(referenceFrame);
+  if (!pcjs) {
+    controls.nativeStatus.textContent = "PCjs lockstep control is not ready";
+    return;
+  }
+  const result = resetControlledLockstep(nativeLockstep, pcjs);
+  switch (result.kind) {
+    case "pcjs-not-paused":
+      controls.nativeStatus.textContent = "Pause the PCjs machine before resetting a boundary";
+      return;
+    case "pcjs-reset-rejected":
+      controls.nativeStatus.textContent = `PCjs rejected boundary reset: ${result.reset.reason}`;
+      return;
+    case "reset":
+      machine.reset();
+      controls.nativeStatus.textContent = result.comparison.equal
+        ? "Lockstep reset boundary matched"
+        : `Lockstep reset boundary mismatch: ${formatDifference(result.comparison)}`;
+  }
+}
+
 function pcjsLockstepEndpoint(frame: HTMLIFrameElement | null): PcjsLockstepEndpoint | undefined {
   const referenceWindow = frame?.contentWindow as
     | (Window & {
@@ -286,14 +317,17 @@ function pcjsLockstepEndpoint(frame: HTMLIFrameElement | null): PcjsLockstepEndp
   const control = chipset?.pc110Lockstep as
     | {
         readonly snapshot?: () => PcjsLockstepSnapshot;
+        readonly resetMachine?: () => PcjsLockstepReset;
         readonly stepInstruction?: () => PcjsLockstepStep;
       }
     | undefined;
   const snapshot = control?.snapshot;
+  const resetMachine = control?.resetMachine;
   const stepInstruction = control?.stepInstruction;
-  if (!snapshot || !stepInstruction) return undefined;
+  if (!snapshot || !resetMachine || !stepInstruction) return undefined;
   return {
     snapshot,
+    resetMachine,
     stepInstruction
   };
 }

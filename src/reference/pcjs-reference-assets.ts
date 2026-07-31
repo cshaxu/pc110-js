@@ -61,6 +61,12 @@ export class PcjsReferenceAssets {
       if (
         !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
           .toString("utf8")
+          .includes("resetPC110LockstepMachine")
+      )
+        throw new Error("PCjs pc110 branch is missing the opt-in reset control");
+      if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
           .includes("registers: {")
       )
         throw new Error("PCjs pc110 branch is missing the normalized CPU snapshot");

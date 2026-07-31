@@ -66,7 +66,15 @@ export interface LockstepComparison {
 
 export interface NativeLockstepEndpoint {
   snapshot(): NativeLockstepSnapshot;
+  resetMachine(): void;
   stepInstruction(): RebuiltMachineStepResult;
+}
+
+export interface PcjsLockstepReset {
+  readonly accepted: boolean;
+  readonly reason: string;
+  readonly before: PcjsLockstepSnapshot;
+  readonly after: PcjsLockstepSnapshot;
 }
 
 export interface PcjsLockstepStep {
@@ -79,6 +87,7 @@ export interface PcjsLockstepStep {
 
 export interface PcjsLockstepEndpoint {
   snapshot(): PcjsLockstepSnapshot;
+  resetMachine(): PcjsLockstepReset;
   stepInstruction(): PcjsLockstepStep;
 }
 
@@ -90,6 +99,15 @@ export type ControlledLockstepResult =
       readonly kind: "stepped";
       readonly nativeStep: RebuiltMachineStepResult;
       readonly pcjsStep: PcjsLockstepStep;
+      readonly comparison: LockstepComparison;
+    };
+
+export type ControlledLockstepResetResult =
+  | { readonly kind: "pcjs-not-paused"; readonly snapshot: PcjsLockstepSnapshot }
+  | { readonly kind: "pcjs-reset-rejected"; readonly reset: PcjsLockstepReset }
+  | {
+      readonly kind: "reset";
+      readonly pcjsReset: PcjsLockstepReset;
       readonly comparison: LockstepComparison;
     };
 
@@ -209,6 +227,25 @@ export function stepControlledLockstep(
     nativeStep,
     pcjsStep,
     comparison: compareLockstepCpu(native.snapshot(), pcjsStep.after)
+  };
+}
+
+/** Resets both machines only through their normal diagnostic control paths. */
+export function resetControlledLockstep(
+  native: NativeLockstepEndpoint,
+  pcjs: PcjsLockstepEndpoint
+): ControlledLockstepResetResult {
+  const beforePcjs = pcjs.snapshot();
+  if (!beforePcjs.paused) return { kind: "pcjs-not-paused", snapshot: beforePcjs };
+
+  const pcjsReset = pcjs.resetMachine();
+  if (!pcjsReset.accepted) return { kind: "pcjs-reset-rejected", reset: pcjsReset };
+
+  native.resetMachine();
+  return {
+    kind: "reset",
+    pcjsReset,
+    comparison: compareLockstepCpu(native.snapshot(), pcjsReset.after)
   };
 }
 

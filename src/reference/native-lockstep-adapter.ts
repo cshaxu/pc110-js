@@ -83,6 +83,10 @@ export class NativeLockstepAdapter {
     return this.checkpoint.core.step();
   }
 
+  public resetMachine(): void {
+    this.checkpoint.reset();
+  }
+
   public snapshot(): NativeLockstepSnapshot {
     const cpu = this.checkpoint.core.runner.state.snapshot();
     return {
