@@ -37,6 +37,7 @@ export class NativeCoreCheckpoint {
     ignoreUnmappedWrites: true
   });
   public readonly core = new RebuiltPcAt386Core(this.memory, undefined, {
+    deskProSecondaryPit: true,
     unpopulatedIo: "floating"
   });
   public readonly textFramebuffer = new VgaTextFramebuffer(

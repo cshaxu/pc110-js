@@ -36,6 +36,7 @@ describe("NativeCoreCheckpoint", () => {
 
   it("maps native system and VGA ROMs, then attaches selected raw floppy media", () => {
     const checkpoint = new NativeCoreCheckpoint();
+    expect(checkpoint.core.deskProSecondaryPit).toBeDefined();
     const rom = new Uint8Array(0x8000);
     rom[0x7ff0] = 0xea;
     checkpoint.mapSystemRom(rom);
@@ -61,7 +62,8 @@ describe("NativeCoreCheckpoint", () => {
 
   it("models selected-machine unpopulated I/O as floating reads and ignored writes", () => {
     const checkpoint = new NativeCoreCheckpoint();
-    expect(checkpoint.core.ports.read(0x4b, 8)).toBe(0xff);
-    expect(() => checkpoint.core.ports.write(0x4b, 0x36, 8)).not.toThrow();
+    expect(checkpoint.core.ports.read(0x4b, 8)).toBe(0);
+    expect(checkpoint.core.ports.read(0x4c, 8)).toBe(0xff);
+    expect(() => checkpoint.core.ports.write(0x4c, 0x36, 8)).not.toThrow();
   });
 });
