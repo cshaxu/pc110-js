@@ -25,4 +25,17 @@ describe("Set-1 browser keyboard boundary", () => {
     expect(delivered).toEqual([0xe0, 0x48]);
     expect(queue.size()).toBe(0);
   });
+
+  it("restores queued browser input without delivering it early", () => {
+    const queue = new KeyboardByteQueue();
+    queue.enqueue([0xe0, 0x48]);
+    const checkpoint = queue.capture();
+
+    queue.drain(() => true);
+    queue.restore(checkpoint);
+
+    expect(queue.capture()).toEqual(checkpoint);
+    expect(queue.drain(() => false)).toBe(0);
+    expect(queue.size()).toBe(2);
+  });
 });

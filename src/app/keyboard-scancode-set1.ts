@@ -107,6 +107,16 @@ export class KeyboardByteQueue {
     this.bytes.length = 0;
   }
 
+  public capture(): readonly number[] {
+    return [...this.bytes];
+  }
+
+  public restore(state: readonly number[]): void {
+    if (state.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xff))
+      throw new RangeError("Keyboard checkpoint queue contains an invalid byte");
+    this.bytes.splice(0, this.bytes.length, ...state);
+  }
+
   public size(): number {
     return this.bytes.length;
   }
