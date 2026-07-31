@@ -21,5 +21,9 @@ describe("PCjs diagnostic reference assets", () => {
     expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(
       "pitTiming: {"
     );
+    expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(
+      "pc110ProbeCommandBytes"
+    );
+    expect(assets.pageHtml().toString("utf8")).toContain("commandBytes");
   });
 });
