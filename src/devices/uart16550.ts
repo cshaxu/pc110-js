@@ -53,6 +53,11 @@ export interface Uart16550Snapshot {
   readonly transmitFifo: readonly number[];
 }
 
+export interface Uart16550State extends Uart16550Snapshot {
+  readonly thrInterruptPending: boolean;
+  readonly interruptActive: boolean;
+}
+
 export interface Uart16550Options {
   readonly basePort?: number;
   readonly fifoCapacity?: number;
@@ -209,6 +214,45 @@ export class Uart16550 {
       receiveFifo: [...this.receiveFifo],
       transmitFifo: [...this.transmitFifo]
     };
+  }
+
+  public capture(): Uart16550State {
+    return {
+      ...this.snapshot(),
+      thrInterruptPending: this.thrInterruptPending,
+      interruptActive: this.interruptActive
+    };
+  }
+
+  public restore(state: Uart16550State): void {
+    if (
+      !Number.isInteger(state.divisor) ||
+      state.divisor < 0 ||
+      state.divisor > 0xffff ||
+      state.receiveFifo.length > this.fifoCapacity ||
+      state.transmitFifo.length > this.fifoCapacity
+    )
+      throw new RangeError("UART checkpoint state is invalid");
+    this.divisor = state.divisor;
+    this.interruptEnable = state.interruptEnable & 0x0f;
+    this.fifoControl = state.fifoControl & (FCR_ENABLE | FCR_TRIGGER_MASK);
+    this.lineControl = state.lineControl & 0xff;
+    this.modemControl = state.modemControl & 0x1f;
+    this.lineStatus = state.lineStatus & 0xff;
+    this.modemStatus = state.modemStatus & 0xff;
+    this.scratch = state.scratch & 0xff;
+    this.receiveFifo.splice(
+      0,
+      this.receiveFifo.length,
+      ...state.receiveFifo.map((value) => value & 0xff)
+    );
+    this.transmitFifo.splice(
+      0,
+      this.transmitFifo.length,
+      ...state.transmitFifo.map((value) => value & 0xff)
+    );
+    this.thrInterruptPending = state.thrInterruptPending;
+    this.interruptActive = state.interruptActive;
   }
 
   public portRanges(): readonly Uart16550PortRange[] {

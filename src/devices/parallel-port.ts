@@ -24,6 +24,10 @@ export interface ParallelPortSnapshot {
   readonly control: number;
 }
 
+export interface ParallelPortState extends ParallelPortSnapshot {
+  readonly interruptActive: boolean;
+}
+
 export interface ParallelPortOptions {
   readonly basePort?: number;
   readonly onInterrupt?: (active: boolean) => void;
@@ -98,6 +102,19 @@ export class ParallelPort {
 
   public snapshot(): ParallelPortSnapshot {
     return { data: this.data, status: this.status, control: this.control };
+  }
+
+  public capture(): ParallelPortState {
+    return { ...this.snapshot(), interruptActive: this.interruptActive };
+  }
+
+  public restore(state: ParallelPortState): void {
+    if (![state.data, state.status, state.control].every(Number.isInteger))
+      throw new RangeError("Parallel-port checkpoint state is invalid");
+    this.data = state.data & 0xff;
+    this.status = state.status & 0xff;
+    this.control = state.control & 0xff;
+    this.interruptActive = state.interruptActive;
   }
 
   public portRanges(): readonly ParallelPortPortRange[] {

@@ -42,4 +42,20 @@ describe("PC-compatible parallel port", () => {
     port.reset();
     expect(port.snapshot()).toEqual({ data: 0, status: 0xcf, control: 0xe0 });
   });
+
+  it("restores register and pending-IRQ state without printer transport", () => {
+    const port = new ParallelPort();
+    port.write(LPT1_BASE_PORT, 0xa5, 8);
+    port.write(LPT1_BASE_PORT + 2, 0x10, 8);
+    port.setStatus(0x8f);
+    const checkpoint = port.capture();
+
+    port.read(LPT1_BASE_PORT + 1, 8);
+    port.reset();
+    port.restore(checkpoint);
+
+    expect(port.capture()).toEqual(checkpoint);
+    expect(port.read(LPT1_BASE_PORT, 8)).toBe(0xa5);
+    expect(port.read(LPT1_BASE_PORT + 1, 8)).toBe(0x8f);
+  });
 });

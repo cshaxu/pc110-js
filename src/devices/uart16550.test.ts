@@ -66,4 +66,21 @@ describe("16550 UART", () => {
     uart.reset();
     expect(uart.snapshot()).toMatchObject({ divisor: 1, lineStatus: 0x60, interruptEnable: 0 });
   });
+
+  it("restores FIFO, modem, and interrupt-selection state without host transport", () => {
+    const uart = new Uart16550();
+    uart.write(COM1_BASE_PORT + 1, 0x09, 8);
+    uart.receiveByte(0xa5);
+    uart.setModemInputs({ cts: true });
+    const checkpoint = uart.capture();
+
+    uart.read(COM1_BASE_PORT, 8);
+    uart.read(COM1_BASE_PORT + 6, 8);
+    uart.reset();
+    uart.restore(checkpoint);
+
+    expect(uart.capture()).toEqual(checkpoint);
+    expect(uart.read(COM1_BASE_PORT + 2, 8)).toBe(0x04);
+    expect(uart.read(COM1_BASE_PORT, 8)).toBe(0xa5);
+  });
 });
