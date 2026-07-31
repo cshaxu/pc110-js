@@ -53,11 +53,17 @@ export class PcjsReferenceAssets {
       )
         throw new Error("PCjs pc110 branch is missing the opt-in 8042 probe");
       if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
+          .includes("stepPC110LockstepInstruction")
+      )
+        throw new Error("PCjs pc110 branch is missing the opt-in lockstep control");
+      if (
         !this.readWorkingResource(
           `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
         )
           .toString("utf8")
-          .includes("pc110ProbeEvents")
+          .includes("pc110Lockstep")
       )
         throw new Error("PCjs pc110 branch is missing the diagnostic uncompiled bundle");
     } else {
@@ -115,7 +121,7 @@ export class PcjsReferenceAssets {
     return Buffer.from(
       machine
         .replace(root, `${root} uncompiled="true"`)
-        .replace(chipset, `${chipset.slice(0, -2)} pc110Probe="true"/>`),
+        .replace(chipset, `${chipset.slice(0, -2)} pc110Probe="true" pc110Lockstep="true"/>`),
       "utf8"
     );
   }
@@ -131,20 +137,31 @@ export class PcjsReferenceAssets {
         '<head><meta charset="utf-8"><title>PCjs diagnostic reference</title></head>',
         "<body>",
         '<div id="deskpro386"></div>',
+        '<button id="pc110-lockstep-step" type="button">Step PCjs</button>',
         '<output id="pc110-probe" aria-label="PCjs 8042 probe"></output>',
         `<script src="${bundle}"></script>`,
         `<script>embedPCx86("deskpro386", "${PCJS_REFERENCE_MACHINE}", "/machines/pcx86/xsl/components.xsl");</script>`,
         `<script>(() => {
           const output = document.getElementById("pc110-probe");
+          const step = document.getElementById("pc110-lockstep-step");
+          const getChipset = () => {
+            const components = window.PCjs?.components ?? [];
+            return components.find((component) => String(component?.id ?? "").endsWith(".chipset"));
+          };
           const render = () => {
             const components = window.PCjs?.components ?? [];
-            const chipset = components.find((component) => String(component?.id ?? "").endsWith(".chipset"));
+            const chipset = getChipset();
             output.textContent = JSON.stringify({
               components: components.map((component) => component?.id).filter(Boolean),
               enabled: chipset?.fPC110Probe ?? null,
-              events: chipset?.pc110ProbeEvents?.slice(-32) ?? []
+              events: chipset?.pc110ProbeEvents?.slice(-32) ?? [],
+              lockstep: chipset?.pc110Lockstep?.snapshot?.() ?? null
             });
           };
+          step.addEventListener("click", () => {
+            getChipset()?.pc110Lockstep?.stepInstruction?.();
+            render();
+          });
           render();
           window.setInterval(render, 100);
         })();</script>`,
@@ -214,7 +231,7 @@ export class PcjsReferenceAssets {
       throw new Error("PCjs components XSL has unexpected chipset parameters");
     return configuredVersion.replace(
       originalChipsetParameters,
-      ",monitor:'<xsl:value-of select=\"$monitor\"/>',dateRTC:'<xsl:value-of select=\"$dateRTC\"/>',pc110Probe:true</xsl:with-param>"
+      ",monitor:'<xsl:value-of select=\"$monitor\"/>',dateRTC:'<xsl:value-of select=\"$dateRTC\"/>',pc110Probe:true,pc110Lockstep:true</xsl:with-param>"
     );
   }
 }
