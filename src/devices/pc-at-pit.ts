@@ -21,20 +21,17 @@ export interface PcAtPitPortRange {
 export interface PcAtPitState {
   readonly timer: Pit8254State;
   readonly cycleRemainders: readonly bigint[];
-  readonly skipCurrentInstruction: readonly boolean[];
 }
 
 export class PcAtPit {
   public readonly timer = new Pit8254();
   private readonly cycleRemainders = [0n, 0n, 0n];
-  private readonly skipCurrentInstruction = [false, false, false];
 
   public constructor(private readonly raiseIrq?: (irq: number) => void) {}
 
   public reset(): void {
     this.timer.reset();
     this.cycleRemainders.fill(0n);
-    this.skipCurrentInstruction.fill(false);
   }
 
   public read(port: number, width: PortWidth): number {
@@ -50,7 +47,6 @@ export class PcAtPit {
       const index = port - PIT_COUNTER0_PORT;
       if (this.timer.writeCounter(index, value)) {
         this.cycleRemainders[index] = 0n;
-        this.skipCurrentInstruction[index] = true;
       }
       return;
     }
@@ -73,10 +69,6 @@ export class PcAtPit {
     if (!Number.isSafeInteger(cycles) || cycles < 0)
       throw new RangeError("PIT CPU cycles must be non-negative safe integers");
     for (let index = 0; index < 3; index += 1) {
-      if (this.skipCurrentInstruction[index]) {
-        this.skipCurrentInstruction[index] = false;
-        continue;
-      }
       const numerator = this.cycleRemainders[index] + BigInt(cycles) * pitTicksPerSecond;
       const ticks = numerator / cpuCyclesPerSecond;
       this.cycleRemainders[index] = numerator % cpuCyclesPerSecond;
@@ -102,21 +94,17 @@ export class PcAtPit {
   public capture(): PcAtPitState {
     return {
       timer: this.timer.capture(),
-      cycleRemainders: [...this.cycleRemainders],
-      skipCurrentInstruction: [...this.skipCurrentInstruction]
+      cycleRemainders: [...this.cycleRemainders]
     };
   }
 
   public restore(state: PcAtPitState): void {
-    if (state.cycleRemainders.length !== 3 || state.skipCurrentInstruction.length !== 3)
+    if (state.cycleRemainders.length !== 3)
       throw new RangeError("PC/AT PIT phase state must contain three counters");
     this.timer.restore(state.timer);
     state.cycleRemainders.forEach((remainder, index) => {
       if (remainder < 0n) throw new RangeError("PC/AT PIT cycle remainder must be non-negative");
       this.cycleRemainders[index] = remainder;
-    });
-    state.skipCurrentInstruction.forEach((skip, index) => {
-      this.skipCurrentInstruction[index] = skip;
     });
   }
 

@@ -30,7 +30,7 @@ describe("project-native PC/AT PIT", () => {
     expect(pit.counter2Output()).toBe(false);
   });
 
-  it("starts a loaded counter on the following CPU instruction and restores its phase", () => {
+  it("starts a loaded counter from its reload-relative CPU-cycle phase", () => {
     const pit = new PcAtPit();
     pit.write(PIT_CONTROL_PORT, 0x54, 8);
     pit.write(PIT_COUNTER0_PORT + 1, 0x12, 8);
@@ -39,10 +39,10 @@ describe("project-native PC/AT PIT", () => {
     expect(pit.snapshot(1).count).toBe(0x12);
     const checkpoint = pit.capture();
 
-    pit.advanceCycles(16, 16n, 1n);
+    pit.advanceCycles(4, 16n, 1n);
     expect(pit.snapshot(1).count).toBe(0x11);
     pit.restore(checkpoint);
-    pit.advanceCycles(16, 16n, 1n);
+    pit.advanceCycles(4, 16n, 1n);
     expect(pit.snapshot(1).count).toBe(0x11);
   });
 });

@@ -114,6 +114,14 @@ export interface RebuiltPcAt386CoreState {
   readonly miscellaneousOutput: ReturnType<VgaMiscellaneousOutput["capture"]>;
   readonly deskProSecondaryPit: ReturnType<DeskPro386SecondaryPit["capture"]> | undefined;
   readonly nmiPending: boolean;
+  readonly pendingDeviceWork: PendingDeviceWork | undefined;
+}
+
+interface PendingDeviceWork {
+  readonly cycles: number;
+  readonly pitTicks: number;
+  readonly rtcTicks: number;
+  readonly fdcDmaSlots: number;
 }
 
 export class RebuiltPcAt386Core {
@@ -158,6 +166,7 @@ export class RebuiltPcAt386Core {
   public readonly scheduler: CycleScheduler;
   private nmiPending = false;
   private readonly cycleSchedulerProfile: CycleSchedulerProfile;
+  private pendingDeviceWork: PendingDeviceWork | undefined;
 
   public constructor(
     private readonly memory: PhysicalMemory,
@@ -250,6 +259,7 @@ export class RebuiltPcAt386Core {
     this.scheduler.reset();
     this.memory.setA20Enabled(true);
     this.nmiPending = false;
+    this.pendingDeviceWork = undefined;
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
   }
@@ -283,7 +293,8 @@ export class RebuiltPcAt386Core {
       featureControl: this.featureControl.capture(),
       miscellaneousOutput: this.miscellaneousOutput.capture(),
       deskProSecondaryPit: this.deskProSecondaryPit?.capture(),
-      nmiPending: this.nmiPending
+      nmiPending: this.nmiPending,
+      pendingDeviceWork: this.pendingDeviceWork
     };
   }
 
@@ -318,15 +329,17 @@ export class RebuiltPcAt386Core {
     this.deskProSecondaryPit?.restore(state.deskProSecondaryPit!);
     this.pic.restore(state.pic);
     this.nmiPending = state.nmiPending;
+    this.pendingDeviceWork = state.pendingDeviceWork;
   }
 
   public step(): RebuiltMachineStepResult {
+    this.settlePendingDeviceWork();
     if (this.servicePendingNmi()) return { kind: "nmi", cycles: 0, vector: 2 };
     const interrupt = this.servicePendingInterrupt();
     if (interrupt !== undefined) return { kind: "interrupt", cycles: 0, vector: interrupt };
     if (this.runner.state.isHalted()) return { kind: "halted", cycles: 0 };
     const result = this.runner.step();
-    this.advanceExecutedInstruction(result.cycles);
+    this.queueExecutedInstruction(result.cycles);
     return { kind: "instruction", cycles: result.cycles };
   }
 
@@ -401,10 +414,9 @@ export class RebuiltPcAt386Core {
     let executed = 0;
     try {
       while (executed < maxInstructions) {
-        if (this.servicePendingInterrupt() !== undefined) continue;
-        if (this.runner.state.isHalted()) break;
-        this.advanceExecutedInstruction(this.runner.step().cycles);
-        executed += 1;
+        const result = this.step();
+        if (result.kind === "instruction") executed += 1;
+        else if (result.kind === "halted") break;
       }
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -417,6 +429,7 @@ export class RebuiltPcAt386Core {
       });
       throw error;
     }
+    this.settlePendingDeviceWork();
     const halted = this.runner.state.isHalted();
     this.trace?.({
       kind: "stop",
@@ -439,11 +452,9 @@ export class RebuiltPcAt386Core {
           this.trace?.({ kind: "stop", reason: "checkpoint", executed, state });
           return { executed, halted: state.halted, reached: true };
         }
-        if (this.servicePendingNmi()) continue;
-        if (this.servicePendingInterrupt() !== undefined) continue;
-        if (this.runner.state.isHalted()) break;
-        this.advanceExecutedInstruction(this.runner.step().cycles);
-        executed += 1;
+        const result = this.step();
+        if (result.kind === "instruction") executed += 1;
+        else if (result.kind === "halted") break;
       }
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -456,6 +467,7 @@ export class RebuiltPcAt386Core {
       });
       throw error;
     }
+    this.settlePendingDeviceWork();
     const halted = this.runner.state.isHalted();
     this.trace?.({
       kind: "stop",
@@ -476,23 +488,33 @@ export class RebuiltPcAt386Core {
     return vector;
   }
 
-  private advanceExecutedInstruction(cycles: number): void {
+  private queueExecutedInstruction(cycles: number): void {
     const scheduled = this.scheduler.advance(cycles);
-    this.pit.advanceCycles(
+    const fdcDmaSlots = this.dma.snapshot(2).requested
+      ? this.scheduler.advanceFdcDmaSlots(cycles, this.fdc.controller.dmaBytesPerSecond())
+      : 0;
+    if (!this.dma.snapshot(2).requested) this.scheduler.resetFdcDmaSlots();
+    this.pendingDeviceWork = {
       cycles,
+      pitTicks: scheduled.pitTicks,
+      rtcTicks: scheduled.rtcTicks,
+      fdcDmaSlots
+    };
+  }
+
+  private settlePendingDeviceWork(): void {
+    const work = this.pendingDeviceWork;
+    if (!work) return;
+    this.pendingDeviceWork = undefined;
+    this.pit.advanceCycles(
+      work.cycles,
       this.cycleSchedulerProfile.cpuCyclesPerSecond,
       this.cycleSchedulerProfile.pitTicksPerSecond
     );
-    if (scheduled.pitTicks > 0) this.deskProSecondaryPit?.advance(scheduled.pitTicks);
-    if (scheduled.rtcTicks > 0) this.advanceRtc(scheduled.rtcTicks);
-    if (this.dma.snapshot(2).requested) {
-      const slots = this.scheduler.advanceFdcDmaSlots(
-        cycles,
-        this.fdc.controller.dmaBytesPerSecond()
-      );
-      if (slots > 0) this.advanceFdcDma(slots);
-    } else this.scheduler.resetFdcDmaSlots();
-    this.advanceVideo(cycles);
+    if (work.pitTicks > 0) this.deskProSecondaryPit?.advance(work.pitTicks);
+    if (work.rtcTicks > 0) this.advanceRtc(work.rtcTicks);
+    if (work.fdcDmaSlots > 0) this.advanceFdcDma(work.fdcDmaSlots);
+    this.advanceVideo(work.cycles);
   }
 
   private servicePendingNmi(): boolean {
