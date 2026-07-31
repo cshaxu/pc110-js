@@ -58,3 +58,17 @@ or the proposed entry would broaden an existing scope.
 - Scope and test treatment: only `0F 20` and `0F 22`, CPL 0, with the MOD field
   ignored. Debug and test-register forms retain their existing register-direct
   requirement.
+
+## EXC-004: Volatile RTC Status-C Diagnostic Snapshot
+
+- Fixture: a paused same-media PCjs cold reference immediately before any guest
+  `0x71` read, compared with the project-native reset boundary.
+- Rebuilt result: RTC `Status C` is zero until its deterministic RTC event path
+  raises and the guest reads the latch.
+- PCjs result: `Status C` may expose an alarm latch during diagnostic snapshot
+  collection because its timer update phase is not part of the lockstep step.
+- Authority evidence: PCjs `ChipSet.updateRTCTime()` evaluates alarm matching
+  separately from CPU instruction stepping; status C is read-to-clear.
+- Scope and test treatment: exclude only `devices.rtc.statusC` from ordinary
+  boundary snapshots. Guest `IN 0x71` results remain CPU-state comparisons and
+  are not excluded.

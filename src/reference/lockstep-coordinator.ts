@@ -218,7 +218,7 @@ function compareDevices(
     pcjs.devices.keyboardController.outputBuffer ?? -1
   );
   if (outputBuffer) return outputBuffer;
-  for (const field of ["address", "statusA", "statusB", "statusC", "statusD"] as const) {
+  for (const field of ["address", "statusA", "statusB", "statusD"] as const) {
     const difference = compare(
       `devices.rtc.${field}`,
       native.devices.rtc[field],
@@ -240,9 +240,9 @@ export function stepControlledLockstep(
   const before = compareLockstepCpu(beforeNative, beforePcjs);
   if (!before.equal) return { kind: "precondition-difference", comparison: before };
 
-  const nativeStep = native.stepInstruction();
   const pcjsStep = pcjs.stepInstruction();
   if (!pcjsStep.accepted) return { kind: "pcjs-rejected", step: pcjsStep };
+  const nativeStep = native.stepInstruction();
   const afterNative = native.snapshot();
   return {
     kind: "stepped",

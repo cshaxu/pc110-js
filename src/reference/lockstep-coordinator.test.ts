@@ -149,16 +149,13 @@ describe("controlled lockstep comparator", () => {
     });
   });
 
-  it("reports the first selected-device difference after equal CPU state", () => {
+  it("excludes the volatile RTC status-C latch from boundary snapshots", () => {
     const { native, pcjs } = snapshots();
     const changed = {
       ...pcjs,
       devices: { ...pcjs.devices, rtc: { ...pcjs.devices.rtc, statusC: 0x40 } }
     };
-    expect(compareLockstepCpu(native, changed)).toEqual({
-      equal: false,
-      difference: { path: "devices.rtc.statusC", native: 0, pcjs: 0x40 }
-    });
+    expect(compareLockstepCpu(native, changed)).toEqual({ equal: true, difference: undefined });
   });
 
   it("treats explicitly absent pre-ICW PIC registers as equal", () => {
@@ -229,6 +226,31 @@ describe("controlled lockstep comparator", () => {
     });
     expect(nativeSteps).toBe(0);
     expect(pcjsSteps).toBe(0);
+  });
+
+  it("does not step native execution when PCjs rejects the boundary", () => {
+    const { native, pcjs } = snapshots();
+    let nativeSteps = 0;
+    const result = stepControlledLockstep(
+      {
+        snapshot: () => native,
+        resetMachine: () => undefined,
+        stepInstruction: () => ((nativeSteps += 1), { kind: "instruction", cycles: 1 })
+      },
+      {
+        snapshot: () => pcjs,
+        resetMachine: () => ({ accepted: true, reason: "reset", before: pcjs, after: pcjs }),
+        stepInstruction: () => ({
+          accepted: false,
+          reason: "stopped",
+          cyclesConsumed: 0,
+          before: pcjs,
+          after: pcjs
+        })
+      }
+    );
+    expect(result).toMatchObject({ kind: "pcjs-rejected", step: { reason: "stopped" } });
+    expect(nativeSteps).toBe(0);
   });
 
   it("retains the exact pre- and post-instruction diagnostic boundaries", () => {
