@@ -18,5 +18,8 @@ describe("PCjs diagnostic reference assets", () => {
     expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(
       "c8000: this.bus.getByteDirect"
     );
+    expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(
+      "pitTiming: {"
+    );
   });
 });

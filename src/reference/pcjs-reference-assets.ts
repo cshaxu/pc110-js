@@ -84,6 +84,12 @@ export class PcjsReferenceAssets {
       )
         throw new Error("PCjs pc110 branch is missing the physical-memory diagnostic probe");
       if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
+          .includes("pitTiming: {")
+      )
+        throw new Error("PCjs pc110 branch is missing PIT timing observation");
+      if (
         !this.readWorkingResource(
           `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
         )
