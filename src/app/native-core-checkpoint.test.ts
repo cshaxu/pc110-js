@@ -39,6 +39,7 @@ describe("NativeCoreCheckpoint", () => {
       bdaKeyboardHead: "0000",
       bdaKeyboardTail: "0000",
       recentKeyboardControllerWrites: "--",
+      keyboardControllerCommandByteTransitions: "--",
       recentKeyboardControllerPortEvents: "--",
       recentPortEvents: "--"
     });
@@ -97,11 +98,13 @@ describe("NativeCoreCheckpoint", () => {
 
     expect(checkpoint.snapshot().recentPortEvents).toBe("W0064:AE R0064:18");
     expect(checkpoint.snapshot().recentKeyboardControllerWrites).toBe("W0064:AE");
+    expect(checkpoint.snapshot().keyboardControllerCommandByteTransitions).toBe("0064:AE 10>00");
     expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("W0064:AE R0064:18");
     checkpoint.reset();
     expect(checkpoint.snapshot().recentPortEvents).toBe("--");
     expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("--");
     expect(checkpoint.snapshot().recentKeyboardControllerWrites).toBe("--");
+    expect(checkpoint.snapshot().keyboardControllerCommandByteTransitions).toBe("--");
   });
 
   it("keeps Fast Execution free of port-tail formatting unless diagnostics enable it", () => {
@@ -112,6 +115,7 @@ describe("NativeCoreCheckpoint", () => {
     expect(checkpoint.snapshot()).toMatchObject({
       recentPortEvents: "--",
       recentKeyboardControllerWrites: "--",
+      keyboardControllerCommandByteTransitions: "0064:AE 10>00",
       recentKeyboardControllerPortEvents: "--"
     });
   });

@@ -21,9 +21,19 @@ export interface PcAtKeyboardControllerState {
   readonly controller: KeyboardController8042State;
   readonly keyboard: AtKeyboardState;
   readonly pendingKeyboardBytes: readonly number[];
+  readonly commandByteTransitions: readonly KeyboardCommandByteTransition[];
 }
 
 export type PcAtKeyboardControllerOptions = KeyboardController8042Options;
+
+export interface KeyboardCommandByteTransition {
+  readonly port: number;
+  readonly value: number;
+  readonly previous: number;
+  readonly current: number;
+}
+
+const COMMAND_BYTE_TRANSITION_CAPACITY = 16;
 
 /**
  * PC/AT-facing 8042 adapter. It owns only ports 0x60/0x64 and routes explicit
@@ -33,6 +43,7 @@ export class PcAtKeyboardController {
   public readonly controller: KeyboardController8042;
   public readonly keyboard = new AtKeyboard();
   private pendingKeyboardBytes: number[] = [];
+  private commandByteTransitions: KeyboardCommandByteTransition[] = [];
 
   public constructor(
     private readonly raiseIrq: (irq: number) => void,
@@ -47,6 +58,7 @@ export class PcAtKeyboardController {
     this.controller.reset();
     this.keyboard.reset();
     this.pendingKeyboardBytes = [];
+    this.commandByteTransitions = [];
   }
 
   public read(port: number, width: PortWidth): number {
@@ -59,6 +71,7 @@ export class PcAtKeyboardController {
 
   public write(port: number, value: number, width: PortWidth): void {
     this.requirePort(port, width);
+    const previousCommandByte = this.controller.snapshot().commandByte;
     if (port === KEYBOARD_CONTROLLER_DATA_PORT) {
       const controllerData = this.controller.expectsData();
       const operation = this.controller.writeData(value);
@@ -68,11 +81,13 @@ export class PcAtKeyboardController {
         this.deliverKeyboardBytes(this.keyboard.receiveCommand(value));
       }
       this.synchronizeKeyboardLines();
+      this.recordCommandByteTransition(port, value, previousCommandByte);
       return;
     }
     const operation = this.controller.writeCommand(value);
     this.apply(operation);
     this.synchronizeKeyboardLines();
+    this.recordCommandByteTransition(port, value, previousCommandByte);
   }
 
   public receiveKeyboardByte(value: number): boolean {
@@ -84,11 +99,17 @@ export class PcAtKeyboardController {
     return this.controller.snapshot();
   }
 
+  /** Returns bounded command-byte changes for development diagnostics. */
+  public commandByteTransitionHistory(): readonly KeyboardCommandByteTransition[] {
+    return this.commandByteTransitions.map((transition) => ({ ...transition }));
+  }
+
   public capture(): PcAtKeyboardControllerState {
     return {
       controller: this.controller.capture(),
       keyboard: this.keyboard.snapshot(),
-      pendingKeyboardBytes: [...this.pendingKeyboardBytes]
+      pendingKeyboardBytes: [...this.pendingKeyboardBytes],
+      commandByteTransitions: this.commandByteTransitionHistory()
     };
   }
 
@@ -96,6 +117,9 @@ export class PcAtKeyboardController {
     this.controller.restore(state.controller);
     this.keyboard.restore(state.keyboard);
     this.pendingKeyboardBytes = [...state.pendingKeyboardBytes];
+    this.commandByteTransitions = state.commandByteTransitions.map((transition) => ({
+      ...transition
+    }));
   }
 
   public portRanges(): readonly PcAtKeyboardControllerPortRange[] {
@@ -142,6 +166,14 @@ export class PcAtKeyboardController {
       if (!this.apply(this.controller.receiveKeyboardByte(this.pendingKeyboardBytes[0]!))) return;
       this.pendingKeyboardBytes.shift();
     }
+  }
+
+  private recordCommandByteTransition(port: number, value: number, previous: number): void {
+    const current = this.controller.snapshot().commandByte;
+    if (current === previous) return;
+    if (this.commandByteTransitions.length === COMMAND_BYTE_TRANSITION_CAPACITY)
+      this.commandByteTransitions.shift();
+    this.commandByteTransitions.push({ port, value: value & 0xff, previous, current });
   }
 
   private requirePort(port: number, width: PortWidth): void {

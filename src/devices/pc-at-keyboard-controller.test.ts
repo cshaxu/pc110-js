@@ -157,6 +157,10 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(controller.read(0x60, 8)).toBe(0xfa);
     expect(controller.read(0x60, 8)).toBe(0xaa);
     expect(irqs).toEqual([1, 1]);
+    expect(controller.commandByteTransitionHistory()).toEqual([
+      { port: 0x60, value: 0x5d, previous: 0x10, current: 0x5d },
+      { port: 0x60, value: 0xff, previous: 0x5d, current: 0x4d }
+    ]);
   });
 
   it("accepts scan codes with the clock released when data inhibit remains active", () => {
@@ -211,5 +215,23 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(controller.capture()).toEqual(captured);
     expect(controller.read(0x60, 8)).toBe(0xaa);
     expect(irqs).toEqual([1]);
+  });
+
+  it("bounds and restores command-byte diagnostic history without callbacks", () => {
+    const controller = new PcAtKeyboardController(
+      () => {},
+      () => {},
+      () => {}
+    );
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x5d, 8);
+    const captured = controller.capture();
+    controller.write(0x60, 0xf4, 8);
+
+    controller.restore(captured);
+
+    expect(controller.commandByteTransitionHistory()).toEqual([
+      { port: 0x60, value: 0x5d, previous: 0x10, current: 0x5d }
+    ]);
   });
 });

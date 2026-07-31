@@ -50,6 +50,7 @@ export interface NativeCoreCheckpointSnapshot {
   readonly bdaKeyboardHead: string;
   readonly bdaKeyboardTail: string;
   readonly recentKeyboardControllerWrites: string;
+  readonly keyboardControllerCommandByteTransitions: string;
   readonly recentKeyboardControllerPortEvents: string;
   readonly recentPortEvents: string;
 }
@@ -154,6 +155,14 @@ export class NativeCoreCheckpoint {
       bdaKeyboardHead: hex16(readUint16(this.memory, BDA_KEYBOARD_HEAD)),
       bdaKeyboardTail: hex16(readUint16(this.memory, BDA_KEYBOARD_TAIL)),
       recentKeyboardControllerWrites: this.recentKeyboardControllerWrites.join(" ") || "--",
+      keyboardControllerCommandByteTransitions:
+        this.core.keyboardController
+          .commandByteTransitionHistory()
+          .map(
+            (transition) =>
+              `${hex16(transition.port)}:${hex8(transition.value)} ${hex8(transition.previous)}>${hex8(transition.current)}`
+          )
+          .join(" ") || "--",
       recentKeyboardControllerPortEvents: this.recentKeyboardControllerPortEvents.join(" ") || "--",
       recentPortEvents: this.recentPortEvents.join(" ") || "--"
     };

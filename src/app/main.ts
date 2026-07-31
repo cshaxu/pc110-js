@@ -150,6 +150,7 @@ function render(snapshot: MachineSnapshot): void {
     ...(portTraceEnabled
       ? [
           `8042 WRITES ${native.recentKeyboardControllerWrites}`,
+          `8042 CMD ${native.keyboardControllerCommandByteTransitions}`,
           `8042 PORTS ${native.recentKeyboardControllerPortEvents}`,
           `PORTS ${native.recentPortEvents}`
         ]
