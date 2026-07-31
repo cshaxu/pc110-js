@@ -35,4 +35,23 @@ describe("RebuiltCpuState", () => {
     state.completeInstructionBoundary();
     expect(state.maskableInterruptsInhibited()).toBe(false);
   });
+
+  it("round-trips architectural and hidden CPU state for diagnostic restoration", () => {
+    const state = new RebuiltCpuState();
+    state.registers.write32(0, 0x12345678);
+    state.writeEip(0x10203040);
+    state.flags.write(0x246);
+    state.inhibitMaskableInterruptsForNextInstruction();
+    state.writeCr0(0x80000011);
+    state.writeCr2(0xdeadbeef);
+    state.writeCr3(0x12345000);
+    state.writeDebug(7, 0x55);
+    state.writeSegment("fs", { selector: 0x30, base: 0x400000, limit: 0xffff, default32: true });
+    const captured = state.snapshot();
+
+    state.reset();
+    state.restore(captured);
+
+    expect(state.snapshot()).toEqual(captured);
+  });
 });

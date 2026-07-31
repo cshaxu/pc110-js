@@ -25,6 +25,11 @@ export interface PhysicalMemoryOptions {
   readonly ignoreUnmappedWrites?: boolean;
 }
 
+export interface PhysicalMemorySnapshot {
+  readonly a20Enabled: boolean;
+  readonly writableRegions: readonly { readonly start: number; readonly bytes: Uint8Array }[];
+}
+
 export class PhysicalMemoryError extends Error {}
 
 export class PhysicalMemory {
@@ -131,6 +136,29 @@ export class PhysicalMemory {
     this.writeUint8(address + 1, value >>> 8);
     this.writeUint8(address + 2, value >>> 16);
     this.writeUint8(address + 3, value >>> 24);
+  }
+
+  /** Captures mutable memory only; ROM and device ownership remain immutable. */
+  public capture(): PhysicalMemorySnapshot {
+    return {
+      a20Enabled: this.a20Enabled,
+      writableRegions: this.regions
+        .filter((region) => region.writable)
+        .map((region) => ({ start: region.start, bytes: region.bytes.slice() }))
+    };
+  }
+
+  public restore(snapshot: PhysicalMemorySnapshot): void {
+    const writable = this.regions.filter((region) => region.writable);
+    if (snapshot.writableRegions.length !== writable.length)
+      throw new PhysicalMemoryError("Writable memory region layout changed since capture");
+    snapshot.writableRegions.forEach((saved, index) => {
+      const region = writable[index]!;
+      if (saved.start !== region.start || saved.bytes.byteLength !== region.bytes.byteLength)
+        throw new PhysicalMemoryError("Writable memory region layout changed since capture");
+      region.bytes.set(saved.bytes);
+    });
+    this.a20Enabled = snapshot.a20Enabled;
   }
 
   private createRegion(start: number, bytes: Uint8Array, writable: boolean): MemoryRegion {

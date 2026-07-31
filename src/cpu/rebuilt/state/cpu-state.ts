@@ -13,6 +13,7 @@ export interface RebuiltCpuSnapshot {
   readonly eip: number;
   readonly eflags: number;
   readonly halted: boolean;
+  readonly interruptInhibitBoundaries: number;
   readonly maskableInterruptsInhibited: boolean;
   readonly cr0: number;
   readonly cr2: number;
@@ -84,6 +85,7 @@ export class RebuiltCpuState {
       eip: this.eip,
       eflags: this.flags.read(),
       halted: this.halted,
+      interruptInhibitBoundaries: this.interruptInhibitBoundaries,
       maskableInterruptsInhibited: this.maskableInterruptsInhibited(),
       cr0: this.cr0,
       cr2: this.cr2,
@@ -102,6 +104,37 @@ export class RebuiltCpuState {
         fs: cloneSegment(this.segments.fs),
         gs: cloneSegment(this.segments.gs)
       }
+    };
+  }
+
+  /** Restores a previously captured project-native CPU state. */
+  public restore(snapshot: RebuiltCpuSnapshot): void {
+    if (
+      !Number.isInteger(snapshot.interruptInhibitBoundaries) ||
+      snapshot.interruptInhibitBoundaries < 0
+    )
+      throw new RangeError("Interrupt inhibition boundary count must be non-negative");
+    this.registers.restore(snapshot.registers);
+    this.flags.write(snapshot.eflags);
+    this.eip = snapshot.eip >>> 0;
+    this.halted = snapshot.halted;
+    this.interruptInhibitBoundaries = snapshot.interruptInhibitBoundaries;
+    this.cr0 = snapshot.cr0 >>> 0;
+    this.cr2 = snapshot.cr2 >>> 0;
+    this.cr3 = snapshot.cr3 & 0xfffff000;
+    this.debug.set(snapshot.debug);
+    this.test.set(snapshot.test);
+    this.gdtr = validateDescriptorTable(snapshot.gdtr);
+    this.idtr = validateDescriptorTable(snapshot.idtr);
+    this.ldtr = validateSystemSelector(snapshot.ldtr);
+    this.tr = validateSystemSelector(snapshot.tr);
+    this.segments = {
+      cs: cloneSegment(snapshot.segments.cs),
+      ds: cloneSegment(snapshot.segments.ds),
+      es: cloneSegment(snapshot.segments.es),
+      ss: cloneSegment(snapshot.segments.ss),
+      fs: cloneSegment(snapshot.segments.fs),
+      gs: cloneSegment(snapshot.segments.gs)
     };
   }
 

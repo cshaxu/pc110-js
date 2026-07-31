@@ -62,6 +62,10 @@ export class RegisterFile {
     ) as RegisterFileSnapshot;
   }
 
+  public restore(snapshot: RegisterFileSnapshot): void {
+    REGISTER_NAMES.forEach((name, index) => this.write32(index, snapshot[name]));
+  }
+
   private assertIndex(index: number): number {
     if (!Number.isInteger(index) || index < 0 || index >= REGISTER_NAMES.length) {
       throw new RangeError(`Invalid general-register index ${index}`);

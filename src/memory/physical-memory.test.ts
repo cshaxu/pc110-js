@@ -12,6 +12,25 @@ describe("PC/AT physical memory", () => {
     expect(memory.readUint32(0x1000)).toBe(0x12345678);
   });
 
+  it("round-trips writable RAM and A20 without changing immutable ROM", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0xa0000, a20Enabled: true });
+    memory.mapRam(0x100000, 0x1000);
+    memory.mapRom(createRomImage("system-rom", Uint8Array.of(0xea)), 0xf0000);
+    memory.writeUint8(0x20, 0x11);
+    memory.writeUint8(0x100020, 0x22);
+    const captured = memory.capture();
+
+    memory.setA20Enabled(false);
+    memory.writeUint8(0x20, 0x33);
+    memory.writeUint8(0xf0000, 0x90);
+    memory.restore(captured);
+
+    expect(memory.isA20Enabled()).toBe(true);
+    expect(memory.readUint8(0x20)).toBe(0x11);
+    expect(memory.readUint8(0x100020)).toBe(0x22);
+    expect(memory.readUint8(0xf0000)).toBe(0xea);
+  });
+
   it("gates address bit 20 when A20 is disabled", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x200000 });
     memory.writeUint8(0x000000, 0x11);
