@@ -141,6 +141,14 @@ baseline. The product runtime must not import the legacy CPU, NXVM, PCjs CPU,
 or PCjs devices. Its required evidence is instruction-level comparison with a
 case-by-case exclusion ledger and the project-owned selected-ROM trace.
 
+For a whole-machine mismatch that cannot be classified from short checkpoints
+or transaction tails, use the bounded controlled-lockstep diagnostic defined
+in [M2 T5 Controlled Lockstep](m2-t5-controlled-lockstep.md). It advances the
+project-native and PCjs machines from equivalent diagnostic state by an
+explicit instruction or cycle budget, then compares normalized state at the
+instruction boundary. The PCjs diagnostic control plane exists only on its
+local `pc110` branch; it must never be imported by the product runtime.
+
 After the harness passes, every M2 T3 through M4 native-device migration must
 add a project-owned device or tightly coupled device group, rerun the relevant
 focused and whole-machine workload, and preserve the standalone browser DOS
