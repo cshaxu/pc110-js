@@ -58,4 +58,11 @@ describe("project-native PC/AT PIT", () => {
     pit.advanceCycles(4, 16, 1);
     expect(pit.snapshot(0)).toMatchObject({ count: 2, output: true });
   });
+
+  it("rejects a cycle charge whose exact clock numerator would exceed safe integers", () => {
+    const pit = new PcAtPit();
+    expect(() => pit.advanceCycles(Number.MAX_SAFE_INTEGER, 16_000_000, 1_193_181)).toThrow(
+      "PIT clock numerator"
+    );
+  });
 });

@@ -58,6 +58,9 @@ describe("CycleScheduler", () => {
       () =>
         new CycleScheduler({ cpuCyclesPerSecond: 1n, pitTicksPerSecond: 1n, rtcTicksPerSecond: 0n })
     ).toThrow("positive");
+    expect(() =>
+      new CycleScheduler(deskPro386CycleProfile).advance(Number.MAX_SAFE_INTEGER)
+    ).toThrow("PIT clock numerator");
   });
 
   it("converts CPU cycles to FDC DMA slots with an independent remainder", () => {

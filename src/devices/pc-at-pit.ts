@@ -76,7 +76,10 @@ export class PcAtPit {
     )
       throw new RangeError("PIT clock frequencies must be positive safe integers");
     for (let index = 0; index < 3; index += 1) {
-      const numerator = this.cycleRemainders[index]! + cycles * pitTicksPerSecond;
+      const remainder = this.cycleRemainders[index]!;
+      if (cycles > Math.floor((Number.MAX_SAFE_INTEGER - remainder) / pitTicksPerSecond))
+        throw new RangeError("PIT clock numerator exceeds the safe integer range");
+      const numerator = remainder + cycles * pitTicksPerSecond;
       const ticks = Math.floor(numerator / cpuCyclesPerSecond);
       this.cycleRemainders[index] = numerator % cpuCyclesPerSecond;
       const result = this.timer.advanceCounter(index, ticks);

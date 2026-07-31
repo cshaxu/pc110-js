@@ -48,10 +48,10 @@ export class CycleScheduler {
   } {
     if (!Number.isSafeInteger(cycles) || cycles < 0)
       throw new RangeError("CPU cycle charge must be a non-negative safe integer");
-    const pitNumerator = this.pitRemainder + cycles * this.pitTicksPerSecond;
+    const pitNumerator = safeNumerator(this.pitRemainder, cycles, this.pitTicksPerSecond, "PIT");
     const pitTicks = Math.floor(pitNumerator / this.cpuCyclesPerSecond);
     this.pitRemainder = pitNumerator % this.cpuCyclesPerSecond;
-    const rtcNumerator = this.rtcRemainder + cycles * this.rtcTicksPerSecond;
+    const rtcNumerator = safeNumerator(this.rtcRemainder, cycles, this.rtcTicksPerSecond, "RTC");
     const rtcTicks = Math.floor(rtcNumerator / this.cpuCyclesPerSecond);
     this.rtcRemainder = rtcNumerator % this.cpuCyclesPerSecond;
     return {
@@ -74,7 +74,7 @@ export class CycleScheduler {
       throw new RangeError("CPU cycle charge must be a non-negative safe integer");
     if (!Number.isSafeInteger(bytesPerSecond) || bytesPerSecond < 0)
       throw new RangeError("FDC DMA byte rate must be a non-negative safe integer");
-    const numerator = this.fdcDmaRemainder + cycles * bytesPerSecond;
+    const numerator = safeNumerator(this.fdcDmaRemainder, cycles, bytesPerSecond, "FDC DMA");
     const slots = Math.floor(numerator / this.cpuCyclesPerSecond);
     this.fdcDmaRemainder = numerator % this.cpuCyclesPerSecond;
     return slots;
@@ -117,4 +117,10 @@ function safeFrequency(value: bigint, name: string): number {
   if (value > BigInt(Number.MAX_SAFE_INTEGER))
     throw new RangeError(`${name} frequency exceeds the safe integer range`);
   return Number(value);
+}
+
+function safeNumerator(remainder: number, cycles: number, rate: number, name: string): number {
+  if (cycles > Math.floor((Number.MAX_SAFE_INTEGER - remainder) / rate))
+    throw new RangeError(`${name} clock numerator exceeds the safe integer range`);
+  return remainder + cycles * rate;
 }
