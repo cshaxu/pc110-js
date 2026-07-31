@@ -9,6 +9,7 @@ const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 const FLOPPY_SHA256 = "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5";
 const FLOPPY_SIZE = 1_474_560;
 const SOURCE_MACHINE = "machines/pcx86/compaq/deskpro386/vga/4096kb/machine.xml";
+const PC110_PROBE_RELEASE = "2.25";
 const LOCAL_MACHINE = "/_pc110js/machine.xml";
 const LOCAL_FLOPPY = "/_pc110js/media/fdd.img";
 const LOCAL_AUTOMOUNT = '{A:{name:"Local DOS floppy",path:"/_pc110js/media/fdd.img"}}';
@@ -65,6 +66,11 @@ function verifyInputs(): Buffer {
     const chipset = readWorkingResource("machines/pcx86/modules/v2/chipset.js").toString("utf8");
     if (!chipset.includes("pc110ProbeEvents"))
       throw new Error("PCjs pc110 branch is missing the opt-in 8042 probe");
+    const bundle = readWorkingResource(
+      `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
+    ).toString("utf8");
+    if (!bundle.includes("pc110ProbeEvents"))
+      throw new Error("PCjs pc110 branch is missing the diagnostic uncompiled bundle");
   } else {
     try {
       runGit(["cat-file", "-e", `${PINNED_PCJS_COMMIT}:${SOURCE_MACHINE}`]);
@@ -124,7 +130,20 @@ function readWorkingResource(pathname: string): Buffer {
 }
 
 function readReferenceResource(pathname: string): Buffer {
-  return diagnosticProbe ? readWorkingResource(pathname) : readPinnedResource(pathname);
+  if (!diagnosticProbe) return readPinnedResource(pathname);
+  const content = readWorkingResource(pathname);
+  if (pathname !== "/machines/pcx86/xsl/components.xsl") return content;
+  const source = content.toString("utf8");
+  const originalVersion = '<xsl:variable name="APPVERSION">2.23</xsl:variable>';
+  if (!source.includes(originalVersion))
+    throw new Error("PCjs components XSL no longer has the expected release version");
+  return Buffer.from(
+    source.replace(
+      originalVersion,
+      `<xsl:variable name="APPVERSION">${PC110_PROBE_RELEASE}</xsl:variable>`
+    ),
+    "utf8"
+  );
 }
 
 function makeMachineXml(): Buffer {
@@ -140,12 +159,17 @@ function makeMachineXml(): Buffer {
   }
   const machine = localMediaMachine.replace(originalCpu, CPU_CONTROLS);
   if (!diagnosticProbe) return Buffer.from(machine, "utf8");
+  const originalMachine = '<machine id="deskpro386" type="pcx86"';
+  if (!machine.includes(originalMachine))
+    throw new Error("Selected PCjs machine no longer has the expected root definition");
   const originalChipset =
     '<chipset id="chipset" model="deskpro386" floppies="[1440,1440]" monitor="vga"/>';
   if (!machine.includes(originalChipset))
     throw new Error("Selected PCjs machine no longer has the expected ChipSet definition");
   return Buffer.from(
-    machine.replace(originalChipset, `${originalChipset.slice(0, -2)} pc110Probe="true"/>`),
+    machine
+      .replace(originalMachine, `${originalMachine} uncompiled="true"`)
+      .replace(originalChipset, `${originalChipset.slice(0, -2)} pc110Probe="true"/>`),
     "utf8"
   );
 }
