@@ -6,6 +6,10 @@ import { dirname, relative, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { KeyboardByteQueue } from "../app/keyboard-scancode-set1.js";
 import { createRomImage } from "../firmware/rom-image.js";
+import {
+  deskPro386CmosConfiguration,
+  deskPro386ReferenceRtcDateTime
+} from "../machine/configurations/deskpro386.js";
 import { createDeskPro386Memory } from "../machine/configurations/deskpro386-memory.js";
 import {
   RebuiltPcAt386Core,
@@ -211,6 +215,10 @@ function createTraceCore(
   const core = new RebuiltPcAt386Core(memory, trace, {
     deskProSecondaryPit: true,
     unpopulatedIo: "floating",
+    rtc: {
+      initialDateTime: deskPro386ReferenceRtcDateTime,
+      configuration: deskPro386CmosConfiguration
+    },
     instructionTrace,
     instructionTraceSelector
   });

@@ -22,5 +22,6 @@ export const deskPro386ReferenceRtcDateTime: RtcDateTime = {
  */
 export const deskPro386CmosConfiguration: RtcCmosConfiguration = {
   baseMemoryKiB: 640,
-  extendedMemoryKiB: 3072
+  extendedMemoryKiB: 3072,
+  floppyDriveTypes: 0x44
 };

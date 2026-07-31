@@ -7,7 +7,10 @@ import { VgaTextFramebuffer } from "../devices/vga-text-framebuffer.js";
 import { createRomImage } from "../firmware/rom-image.js";
 import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
 import { createDeskPro386Memory } from "../machine/configurations/deskpro386-memory.js";
-import { deskPro386ReferenceRtcDateTime } from "../machine/configurations/deskpro386.js";
+import {
+  deskPro386CmosConfiguration,
+  deskPro386ReferenceRtcDateTime
+} from "../machine/configurations/deskpro386.js";
 
 const PORT_EVENT_CAPACITY = 16;
 const KEYBOARD_PORT_EVENT_CAPACITY = 16;
@@ -76,7 +79,10 @@ export class NativeCoreCheckpoint {
         deskProSecondaryPit: true,
         unpopulatedIo: "floating",
         instructionTrace: false,
-        rtc: { initialDateTime: deskPro386ReferenceRtcDateTime }
+        rtc: {
+          initialDateTime: deskPro386ReferenceRtcDateTime,
+          configuration: deskPro386CmosConfiguration
+        }
       }
     );
     this.textFramebuffer = new VgaTextFramebuffer(

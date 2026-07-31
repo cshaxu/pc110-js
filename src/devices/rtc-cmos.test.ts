@@ -83,11 +83,17 @@ describe("project-native MC146818 RTC/CMOS state", () => {
 
   it("applies bounded configuration bytes and recalculates the checksum", () => {
     const rtc = new RtcCmos();
-    rtc.applyConfiguration({ baseMemoryKiB: 640, extendedMemoryKiB: 3072, equipment: 0x41 });
+    rtc.applyConfiguration({
+      baseMemoryKiB: 640,
+      extendedMemoryKiB: 3072,
+      floppyDriveTypes: 0x44,
+      equipment: 0x41
+    });
     expect(rtc.read(RtcCmosRegister.BaseMemoryLow)).toBe(0x80);
     expect(rtc.read(RtcCmosRegister.BaseMemoryHigh)).toBe(0x02);
     expect(rtc.read(RtcCmosRegister.ExtendedMemoryLow)).toBe(0);
     expect(rtc.read(RtcCmosRegister.ExtendedMemoryHigh)).toBe(0x0c);
+    expect(rtc.read(RtcCmosRegister.FloppyDriveType)).toBe(0x44);
     expect(rtc.read(RtcCmosRegister.Equipment)).toBe(0x41);
     expect(() => rtc.applyConfiguration({ baseMemoryKiB: 0x1_0000 })).toThrow("outside");
   });

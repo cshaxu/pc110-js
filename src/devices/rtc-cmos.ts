@@ -15,6 +15,7 @@ export const enum RtcCmosRegister {
   StatusB = 0x0b,
   StatusC = 0x0c,
   StatusD = 0x0d,
+  FloppyDriveType = 0x10,
   Equipment = 0x14,
   BaseMemoryLow = 0x15,
   BaseMemoryHigh = 0x16,
@@ -53,6 +54,7 @@ export interface RtcCmosOptions {
 export interface RtcCmosConfiguration {
   readonly baseMemoryKiB?: number;
   readonly extendedMemoryKiB?: number;
+  readonly floppyDriveTypes?: number;
   readonly equipment?: number;
 }
 
@@ -206,6 +208,8 @@ export class RtcCmos {
       this.writeWord(RtcCmosRegister.BaseMemoryLow, configuration.baseMemoryKiB);
     if (configuration.extendedMemoryKiB !== undefined)
       this.writeWord(RtcCmosRegister.ExtendedMemoryLow, configuration.extendedMemoryKiB);
+    if (configuration.floppyDriveTypes !== undefined)
+      this.data[RtcCmosRegister.FloppyDriveType] = byte(configuration.floppyDriveTypes);
     if (configuration.equipment !== undefined)
       this.data[RtcCmosRegister.Equipment] = byte(configuration.equipment);
     this.updateChecksum();
