@@ -47,6 +47,13 @@ export interface RebuiltMachineUntilResult extends RebuiltMachineRunResult {
   readonly reached: boolean;
 }
 
+/** Result of one machine boundary for diagnostic stepping. */
+export type RebuiltMachineStepResult =
+  | { readonly kind: "instruction"; readonly cycles: number }
+  | { readonly kind: "nmi"; readonly cycles: 0; readonly vector: 2 }
+  | { readonly kind: "interrupt"; readonly cycles: 0; readonly vector: number }
+  | { readonly kind: "halted"; readonly cycles: 0 };
+
 export interface RebuiltPcAt386Options {
   readonly deskProSecondaryPit?: boolean;
   /** ROM-evidenced 8042 interface-test result for a selected machine profile. */
@@ -307,11 +314,14 @@ export class RebuiltPcAt386Core {
     this.nmiPending = state.nmiPending;
   }
 
-  public step(): void {
-    if (this.servicePendingNmi()) return;
-    if (this.servicePendingInterrupt()) return;
-    if (this.runner.state.isHalted()) return;
-    this.advanceExecutedInstruction(this.runner.step().cycles);
+  public step(): RebuiltMachineStepResult {
+    if (this.servicePendingNmi()) return { kind: "nmi", cycles: 0, vector: 2 };
+    const interrupt = this.servicePendingInterrupt();
+    if (interrupt !== undefined) return { kind: "interrupt", cycles: 0, vector: interrupt };
+    if (this.runner.state.isHalted()) return { kind: "halted", cycles: 0 };
+    const result = this.runner.step();
+    this.advanceExecutedInstruction(result.cycles);
+    return { kind: "instruction", cycles: result.cycles };
   }
 
   public advancePit(ticks: number): void {
@@ -385,7 +395,7 @@ export class RebuiltPcAt386Core {
     let executed = 0;
     try {
       while (executed < maxInstructions) {
-        if (this.servicePendingInterrupt()) continue;
+        if (this.servicePendingInterrupt() !== undefined) continue;
         if (this.runner.state.isHalted()) break;
         this.advanceExecutedInstruction(this.runner.step().cycles);
         executed += 1;
@@ -424,7 +434,7 @@ export class RebuiltPcAt386Core {
           return { executed, halted: state.halted, reached: true };
         }
         if (this.servicePendingNmi()) continue;
-        if (this.servicePendingInterrupt()) continue;
+        if (this.servicePendingInterrupt() !== undefined) continue;
         if (this.runner.state.isHalted()) break;
         this.advanceExecutedInstruction(this.runner.step().cycles);
         executed += 1;
@@ -450,14 +460,14 @@ export class RebuiltPcAt386Core {
     return { executed, halted, reached: false };
   }
 
-  private servicePendingInterrupt(): boolean {
+  private servicePendingInterrupt(): number | undefined {
     const vector = this.pic.pendingVector();
-    if (vector === undefined || !this.runner.serviceExternalInterrupt(vector)) return false;
+    if (vector === undefined || !this.runner.serviceExternalInterrupt(vector)) return undefined;
     const acknowledged = this.pic.acknowledge();
     if (acknowledged !== vector)
       throw new Error("PC/AT PIC acknowledgement changed after CPU interrupt admission");
     this.trace?.({ kind: "interrupt", vector });
-    return true;
+    return vector;
   }
 
   private advanceExecutedInstruction(cycles: number): void {
