@@ -81,6 +81,14 @@ describe("NativeCoreCheckpoint", () => {
     expect(() => checkpoint.core.ports.write(0x4c, 0x36, 8)).not.toThrow();
   });
 
+  it("keeps the selected browser checkpoint on the generic 8042 interface-test result", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+
+    checkpoint.core.ports.write(0x64, 0xab, 8);
+
+    expect(checkpoint.core.ports.read(0x60, 8)).toBe(0x00);
+  });
+
   it("retains a bounded native port-event tail without instruction snapshots", () => {
     const checkpoint = new NativeCoreCheckpoint();
     checkpoint.core.ports.write(0x64, 0xae, 8);
