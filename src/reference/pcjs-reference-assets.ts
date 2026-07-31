@@ -145,8 +145,11 @@ export class PcjsReferenceAssets {
       throw new Error("Selected PCjs machine has an unexpected diagnostic configuration");
     return Buffer.from(
       machine
-        .replace(root, `${root} dateRTC="${deskPro386ReferenceRtcDate}" uncompiled="true"`)
-        .replace(chipset, `${chipset.slice(0, -2)} pc110Probe="true" pc110Lockstep="true"/>`),
+        .replace(root, `${root} uncompiled="true"`)
+        .replace(
+          chipset,
+          `${chipset.slice(0, -2)} dateRTC="${deskPro386ReferenceRtcDate}" pc110Probe="true" pc110Lockstep="true"/>`
+        ),
       "utf8"
     );
   }
