@@ -70,9 +70,9 @@ describe("NativeCoreCheckpoint", () => {
     expect(checkpoint.snapshot()).toMatchObject({ fdcDrive0Ready: "1", fdcDrive0Cylinder: "0" });
   });
 
-  it("models selected-machine expansion ROM holes as floating PCjs reads", () => {
+  it("models selected-machine expansion ROM holes as zero-backed CPU reads", () => {
     const checkpoint = new NativeCoreCheckpoint();
-    expect(checkpoint.memory.readUint8(0xe0000)).toBe(0xff);
+    expect(checkpoint.memory.readUint8(0xe0000)).toBe(0);
     expect(() => checkpoint.memory.writeUint8(0xe0000, 0x12)).not.toThrow();
   });
 

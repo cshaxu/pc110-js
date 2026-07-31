@@ -41,6 +41,16 @@ describe("rebuilt Group One immediate arithmetic", () => {
     expect(signed.state.registers.read32(0)).toBe(2);
   });
 
+  it("sets the ROM-observed borrow and auxiliary flags for CMP r/m16,imm16", () => {
+    const result = execute([0x81, 0x3f, 0xaa, 0x55], (state, memory) => {
+      state.registers.write16(3, 0x0100);
+      memory.set(0x0100, 0);
+      memory.set(0x0101, 0);
+    });
+
+    expect(result.state.flags.read()).toBe(0x97);
+  });
+
   it("uses 67 and a segment override for memory destinations", () => {
     const result = execute(
       [0x26, 0x66, 0x67, 0x83, 0x05, 0x00, 0x10, 0x00, 0x00, 0xff],

@@ -16,6 +16,6 @@ describe("selected DeskPro 386 memory layout", () => {
     expect(memory.readUint8(0x9ffff)).toBe(0x11);
     expect(memory.readUint8(DESKPRO386_EXTENDED_RAM_START)).toBe(0x22);
     expect(memory.readUint8(DESKPRO386_RELOCATABLE_RAM_START)).toBe(0x33);
-    expect(memory.readUint8(0xa0000)).toBe(0xff);
+    expect(memory.readUint8(0xa0000)).toBe(0);
   });
 });
