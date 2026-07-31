@@ -7,6 +7,38 @@ import { FixedDrive } from "../devices/fixed-drive.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
+  it("restores CPU, memory, scheduling, device, video, and pending-NMI state atomically", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0, 0x90);
+    memory.writeUint8(1, 0xf4);
+    const core = new RebuiltPcAt386Core(memory, undefined, { deskProSecondaryPit: true });
+    core.reset();
+    core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeEip(0);
+    core.runner.state.registers.write16(4, 0x0800);
+    core.ports.write(0x3c4, 0x02, 8);
+    core.ports.write(0x3c5, 0x0f, 8);
+    core.vgaMemory.writeUint8(0, 0xa5);
+    core.ports.write(0x3f9, 0x01, 8);
+    core.com1.receiveByte(0x5a);
+    core.requestNmi();
+    const checkpoint = core.capture();
+
+    core.run(2);
+    memory.writeUint8(0, 0xcc);
+    core.ports.write(0x3c5, 0, 8);
+    core.com1.reset();
+    core.restore(checkpoint);
+
+    const restored = core.capture();
+    for (const key of Object.keys(checkpoint) as (keyof typeof checkpoint)[])
+      expect(restored[key], `checkpoint component: ${key}`).toEqual(checkpoint[key]);
+    core.step();
+    expect(core.runner.state.snapshot().eip).toBe(0);
+    core.step();
+    expect(core.runner.state.snapshot().eip).toBe(1);
+  });
+
   it("runs rebuilt instructions without an optional trace hook", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0x90);

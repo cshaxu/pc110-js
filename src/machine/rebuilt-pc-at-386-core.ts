@@ -68,6 +68,38 @@ export type RebuiltMachineTraceEvent =
 
 export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 
+/** One in-memory diagnostic replay point for the project-native machine core. */
+export interface RebuiltPcAt386CoreState {
+  readonly cpu: RebuiltCpuSnapshot;
+  readonly memory: ReturnType<PhysicalMemory["capture"]>;
+  readonly scheduler: ReturnType<CycleScheduler["capture"]>;
+  readonly keyboardOutputPort: number;
+  readonly pic: ReturnType<PcAtPic["capture"]>;
+  readonly pit: ReturnType<PcAtPit["capture"]>;
+  readonly dma: ReturnType<PcAtDma["capture"]>;
+  readonly rtc: ReturnType<PcAtRtc["capture"]>;
+  readonly systemPort: ReturnType<PcAtSystemControl["capture"]>;
+  readonly keyboardController: ReturnType<PcAtKeyboardController["capture"]>;
+  readonly fpuControl: ReturnType<PcAtFpuControl["capture"]>;
+  readonly fdc: ReturnType<PcAtFdc["capture"]>;
+  readonly com1: ReturnType<Uart16550["capture"]>;
+  readonly com2: ReturnType<Uart16550["capture"]>;
+  readonly lpt1: ReturnType<ParallelPort["capture"]>;
+  readonly hdc: ReturnType<AtFixedDiskController["capture"]>;
+  readonly mdaCompatibility: ReturnType<MdaCompatibility["capture"]>;
+  readonly cgaCompatibility: ReturnType<CgaCompatibility["capture"]>;
+  readonly attributeController: ReturnType<VgaAttributeController["capture"]>;
+  readonly sequencer: ReturnType<VgaSequencer["capture"]>;
+  readonly graphicsController: ReturnType<VgaGraphicsController["capture"]>;
+  readonly vgaMemory: ReturnType<VgaMemory["capture"]>;
+  readonly crtc: ReturnType<VgaCrtc["capture"]>;
+  readonly dac: ReturnType<VgaDac["capture"]>;
+  readonly featureControl: ReturnType<VgaFeatureControl["capture"]>;
+  readonly miscellaneousOutput: ReturnType<VgaMiscellaneousOutput["capture"]>;
+  readonly deskProSecondaryPit: ReturnType<DeskPro386SecondaryPit["capture"]> | undefined;
+  readonly nmiPending: boolean;
+}
+
 export class RebuiltPcAt386Core {
   public readonly keyboardOutputPort = new KeyboardOutputPort();
   public readonly pic = new PcAtPic();
@@ -199,6 +231,72 @@ export class RebuiltPcAt386Core {
     this.nmiPending = false;
     this.runner.reset();
     this.trace?.({ kind: "reset", state: this.runner.state.snapshot() });
+  }
+
+  public capture(): RebuiltPcAt386CoreState {
+    return {
+      cpu: this.runner.state.snapshot(),
+      memory: this.memory.capture(),
+      scheduler: this.scheduler.capture(),
+      keyboardOutputPort: this.keyboardOutputPort.capture(),
+      pic: this.pic.capture(),
+      pit: this.pit.capture(),
+      dma: this.dma.capture(),
+      rtc: this.rtc.capture(),
+      systemPort: this.systemPort.capture(),
+      keyboardController: this.keyboardController.capture(),
+      fpuControl: this.fpuControl.capture(),
+      fdc: this.fdc.capture(),
+      com1: this.com1.capture(),
+      com2: this.com2.capture(),
+      lpt1: this.lpt1.capture(),
+      hdc: this.hdc.capture(),
+      mdaCompatibility: this.mdaCompatibility.capture(),
+      cgaCompatibility: this.cgaCompatibility.capture(),
+      attributeController: this.attributeController.capture(),
+      sequencer: this.sequencer.capture(),
+      graphicsController: this.graphicsController.capture(),
+      vgaMemory: this.vgaMemory.capture(),
+      crtc: this.crtc.capture(),
+      dac: this.dac.capture(),
+      featureControl: this.featureControl.capture(),
+      miscellaneousOutput: this.miscellaneousOutput.capture(),
+      deskProSecondaryPit: this.deskProSecondaryPit?.capture(),
+      nmiPending: this.nmiPending
+    };
+  }
+
+  public restore(state: RebuiltPcAt386CoreState): void {
+    if ((state.deskProSecondaryPit === undefined) !== (this.deskProSecondaryPit === undefined))
+      throw new RangeError("Machine checkpoint configuration changed since capture");
+    this.memory.restore(state.memory);
+    this.runner.state.restore(state.cpu);
+    this.scheduler.restore(state.scheduler);
+    this.keyboardOutputPort.restore(state.keyboardOutputPort);
+    this.pit.restore(state.pit);
+    this.systemPort.restore(state.systemPort);
+    this.rtc.restore(state.rtc);
+    this.keyboardController.restore(state.keyboardController);
+    this.fpuControl.restore(state.fpuControl);
+    this.fdc.restore(state.fdc);
+    this.dma.restore(state.dma);
+    this.com1.restore(state.com1);
+    this.com2.restore(state.com2);
+    this.lpt1.restore(state.lpt1);
+    this.hdc.restore(state.hdc);
+    this.mdaCompatibility.restore(state.mdaCompatibility);
+    this.cgaCompatibility.restore(state.cgaCompatibility);
+    this.attributeController.restore(state.attributeController);
+    this.sequencer.restore(state.sequencer);
+    this.graphicsController.restore(state.graphicsController);
+    this.vgaMemory.restore(state.vgaMemory);
+    this.crtc.restore(state.crtc);
+    this.dac.restore(state.dac);
+    this.featureControl.restore(state.featureControl);
+    this.miscellaneousOutput.restore(state.miscellaneousOutput);
+    this.deskProSecondaryPit?.restore(state.deskProSecondaryPit!);
+    this.pic.restore(state.pic);
+    this.nmiPending = state.nmiPending;
   }
 
   public step(): void {

@@ -295,11 +295,12 @@ function validateSystemSelector(value: SystemSelector): SystemSelector {
     !Number.isSafeInteger(value.limit)
   )
     throw new RangeError("System selector values must be integers");
-  return {
+  const result: SystemSelector = {
     selector: value.selector & 0xffff,
     base: value.base >>> 0,
     limit: value.limit >>> 0,
-    default32: value.default32,
-    type: value.type
+    default32: value.default32
   };
+  if (value.type !== undefined) return { ...result, type: value.type };
+  return result;
 }
