@@ -29,6 +29,17 @@ describe("decodeInstruction", () => {
     });
   });
 
+  it("retains ModR/M shape only for timing-sensitive decoded forms", () => {
+    expect(decodeInstruction(reader([0x2e, 0x3a, 0x06]), 0, false).modRm).toEqual({
+      raw: 0x06,
+      mod: 0,
+      reg: 0,
+      rm: 6,
+      memory: true
+    });
+    expect(decodeInstruction(reader([0xb0, 0x01]), 0, false).modRm).toBeUndefined();
+  });
+
   it("accepts a fifteen-byte instruction and rejects fifteen prefixes", () => {
     expect(decodeInstruction(reader([...Array(14).fill(0x66), 0x90]), 0x10, false)).toMatchObject({
       length: 15,

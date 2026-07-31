@@ -39,4 +39,31 @@ describe("80386 cycle estimator", () => {
     expect(estimate386Cycles({ opcode: 0x9a, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(13);
     expect(estimate386Cycles({ opcode: 0xcf, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(17);
   });
+
+  it("classifies observed PCjs ModR/M timing forms without address-specific rules", () => {
+    const direct = { raw: 0xfb, mod: 3, reg: 7, rm: 3, memory: false };
+    const memory = { raw: 0x06, mod: 0, reg: 0, rm: 6, memory: true };
+    expect(
+      estimate386Cycles({ opcode: 0x80, prefixes: { bytes: 0 }, modRm: direct } as never, 0, 0)
+    ).toBe(3);
+    expect(
+      estimate386Cycles({ opcode: 0x81, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
+    ).toBe(7);
+    expect(
+      estimate386Cycles({ opcode: 0x3a, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
+    ).toBe(6);
+    expect(
+      estimate386Cycles({ opcode: 0x8b, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
+    ).toBe(3);
+    expect(
+      estimate386Cycles({ opcode: 0xf7, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
+    ).toBe(6);
+    expect(
+      estimate386Cycles(
+        { opcode: 0xff, prefixes: { bytes: 0 }, modRm: { ...direct, reg: 4 } } as never,
+        0,
+        0
+      )
+    ).toBe(7);
+  });
 });

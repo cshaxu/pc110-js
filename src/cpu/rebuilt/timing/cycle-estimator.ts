@@ -18,8 +18,23 @@ export function estimate386Cycles(
 ): number {
   if (!instruction) return 3;
   const opcode = instruction.opcode;
+  const modRm = instruction.modRm;
   if (isStringOpcode(opcode)) return 5;
   if (isIoOpcode(opcode)) return 5;
+  if (opcode === 0xa8 || opcode === 0xa9 || opcode === 0x3c || opcode === 0x3d || opcode === 0xfa)
+    return 3;
+  if (opcode >= 0xa0 && opcode <= 0xa1) return 5;
+  if (opcode >= 0xa2 && opcode <= 0xa3) return 3;
+  if (opcode === 0x0f && instruction.secondaryOpcode === 0x01 && modRm?.reg === 6 && !modRm.memory)
+    return 3;
+  if (opcode >= 0x80 && opcode <= 0x83 && modRm) return modRm.memory ? 7 : 3;
+  if (opcode >= 0x38 && opcode <= 0x3b && modRm) return modRm.memory ? 6 : 2;
+  if (opcode >= 0x88 && opcode <= 0x8b && modRm) {
+    if (!modRm.memory) return 2;
+    return opcode === 0x88 || opcode === 0x89 ? 5 : 3;
+  }
+  if ((opcode === 0xf6 || opcode === 0xf7) && modRm?.reg === 0) return modRm.memory ? 6 : 3;
+  if (opcode === 0xff && modRm?.reg === 4) return modRm.memory ? 11 : 7;
   if (isPushOpcode(opcode)) return withPrefixes(3, instruction);
   if (isPopOpcode(opcode)) return withPrefixes(5, instruction);
   if (opcode === 0x60) return withPrefixes(17, instruction);
@@ -47,7 +62,7 @@ export function estimate386Cycles(
   if (opcode === 0xca || opcode === 0xcb) return withPrefixes(15, instruction);
   if (opcode === 0xcf) return withPrefixes(17, instruction);
   if (opcode === 0xf4) return 2;
-  return 2 + instruction.prefixes.bytes;
+  return 2;
 }
 
 function withPrefixes(cycles: number, instruction: DecodedInstruction): number {
@@ -56,7 +71,11 @@ function withPrefixes(cycles: number, instruction: DecodedInstruction): number {
 }
 
 function isStringOpcode(opcode: number): boolean {
-  return (opcode >= 0x6c && opcode <= 0x6f) || (opcode >= 0xa4 && opcode <= 0xaf);
+  return (
+    (opcode >= 0x6c && opcode <= 0x6f) ||
+    (opcode >= 0xa4 && opcode <= 0xa7) ||
+    (opcode >= 0xaa && opcode <= 0xaf)
+  );
 }
 
 function isIoOpcode(opcode: number): boolean {
