@@ -231,6 +231,34 @@ describe("controlled lockstep comparator", () => {
     expect(pcjsSteps).toBe(0);
   });
 
+  it("retains the exact pre- and post-instruction diagnostic boundaries", () => {
+    const { native, pcjs } = snapshots();
+    const result = stepControlledLockstep(
+      {
+        snapshot: () => native,
+        resetMachine: () => undefined,
+        stepInstruction: () => ({ kind: "instruction", cycles: 1 })
+      },
+      {
+        snapshot: () => pcjs,
+        resetMachine: () => ({ accepted: true, reason: "reset", before: pcjs, after: pcjs }),
+        stepInstruction: () => ({
+          accepted: true,
+          reason: "executed",
+          cyclesConsumed: 1,
+          before: pcjs,
+          after: pcjs
+        })
+      }
+    );
+
+    expect(result).toMatchObject({
+      kind: "stepped",
+      before: { native: { cs: 0, eip: 0, eflags: 2, virtualCycles: "0" } },
+      after: { pcjs: { cs: 0, eip: 0, eflags: 2, virtualCycles: 0 } }
+    });
+  });
+
   it("resets only through accepted paused endpoint controls", () => {
     const { native, pcjs } = snapshots();
     let nativeResets = 0;

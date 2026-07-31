@@ -64,6 +64,21 @@ export interface LockstepComparison {
   readonly difference: LockstepDifference | undefined;
 }
 
+export interface LockstepBoundary {
+  readonly native: {
+    readonly cs: number;
+    readonly eip: number;
+    readonly eflags: number;
+    readonly virtualCycles: string;
+  };
+  readonly pcjs: {
+    readonly cs: number;
+    readonly eip: number;
+    readonly eflags: number;
+    readonly virtualCycles: number;
+  };
+}
+
 export interface NativeLockstepEndpoint {
   snapshot(): NativeLockstepSnapshot;
   resetMachine(): void;
@@ -99,6 +114,8 @@ export type ControlledLockstepResult =
       readonly kind: "stepped";
       readonly nativeStep: RebuiltMachineStepResult;
       readonly pcjsStep: PcjsLockstepStep;
+      readonly before: LockstepBoundary;
+      readonly after: LockstepBoundary;
       readonly comparison: LockstepComparison;
     };
 
@@ -222,11 +239,14 @@ export function stepControlledLockstep(
   const nativeStep = native.stepInstruction();
   const pcjsStep = pcjs.stepInstruction();
   if (!pcjsStep.accepted) return { kind: "pcjs-rejected", step: pcjsStep };
+  const afterNative = native.snapshot();
   return {
     kind: "stepped",
     nativeStep,
     pcjsStep,
-    comparison: compareLockstepCpu(native.snapshot(), pcjsStep.after)
+    before: lockstepBoundary(beforeNative, beforePcjs),
+    after: lockstepBoundary(afterNative, pcjsStep.after),
+    comparison: compareLockstepCpu(afterNative, pcjsStep.after)
   };
 }
 
@@ -255,4 +275,24 @@ function compare(
   pcjs: number | boolean | undefined
 ): LockstepDifference | undefined {
   return native === pcjs ? undefined : { path, native, pcjs };
+}
+
+function lockstepBoundary(
+  native: NativeLockstepSnapshot,
+  pcjs: PcjsLockstepSnapshot
+): LockstepBoundary {
+  return {
+    native: {
+      cs: native.cpu.segments.cs.selector,
+      eip: native.cpu.eip,
+      eflags: native.cpu.eflags,
+      virtualCycles: native.virtualCycles
+    },
+    pcjs: {
+      cs: pcjs.cpu.segments.cs.selector,
+      eip: pcjs.cpu.eip,
+      eflags: pcjs.cpu.eflags,
+      virtualCycles: pcjs.cycles
+    }
+  };
 }

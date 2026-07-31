@@ -274,8 +274,23 @@ function compareBrowserLockstep(): void {
     case "stepped":
       controls.nativeStatus.textContent = result.comparison.equal
         ? `Lockstep boundary matched: native ${result.nativeStep.kind}, PCjs ${result.pcjsStep.cyclesConsumed} cycles`
-        : `Lockstep boundary mismatch: ${formatDifference(result.comparison)}`;
+        : `Lockstep boundary mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}`;
   }
+}
+
+function formatBoundary(boundary: {
+  readonly native: { readonly cs: number; readonly eip: number; readonly virtualCycles: string };
+  readonly pcjs: { readonly cs: number; readonly eip: number; readonly virtualCycles: number };
+}): string {
+  return `native ${hex16(boundary.native.cs)}:${hex32(boundary.native.eip)}@${boundary.native.virtualCycles} PCjs ${hex16(boundary.pcjs.cs)}:${hex32(boundary.pcjs.eip)}@${boundary.pcjs.virtualCycles}`;
+}
+
+function hex16(value: number): string {
+  return (value & 0xffff).toString(16).padStart(4, "0").toUpperCase();
+}
+
+function hex32(value: number): string {
+  return (value >>> 0).toString(16).padStart(8, "0").toUpperCase();
 }
 
 function resetBrowserLockstep(): void {
