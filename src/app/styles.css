@@ -44,6 +44,35 @@ header span {
   font-family: monospace;
 }
 
+.machine-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 260px;
+}
+
+.machine-workbench:has(.reference-panel) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.reference-panel {
+  display: grid;
+  grid-template-rows: auto minmax(420px, 1fr);
+  min-width: 0;
+  border-left: 1px solid #94a3b8;
+  background: #ffffff;
+}
+
+.reference-panel header {
+  padding: 8px 12px;
+  background: #dbe4ea;
+}
+
+.reference-panel iframe {
+  width: 100%;
+  min-height: 420px;
+  border: 0;
+}
+
 #screen {
   width: min(720px, 100%);
   height: auto;
@@ -71,4 +100,15 @@ button {
 button:disabled {
   color: #64748b;
   background: #e2e8f0;
+}
+
+@media (max-width: 900px) {
+  .machine-workbench:has(.reference-panel) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reference-panel {
+    border-top: 1px solid #94a3b8;
+    border-left: 0;
+  }
 }

@@ -12,10 +12,10 @@
 
 ## Next Eligible Work
 
-- M2 T5 S1: active. The selected ROM has crossed the implemented T3/T4 paths
-  and reached the selected VGA compatibility domain at `0x3B8`. Preserve the
-  verified T2 CPU oracle baseline, native platform devices, raw FDC/DMA2/IRQ6
-  path, and no-PCjs-runtime boundary.
+- M2 T5 S6: active. The native browser workload reaches firmware execution but
+  not DOS. Preserve the verified T2 CPU oracle baseline, native platform
+  devices, raw FDC/DMA2/IRQ6 path, and no-PCjs-runtime boundary while using
+  the opt-in same-origin PCjs diagnostic surface only for comparison.
 
 ## Delivery Nodes
 

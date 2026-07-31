@@ -27,6 +27,8 @@ const projectRoot = resolve(moduleDirectory, "..");
 const pcjsRoot = resolve(projectRoot, "..", "pcjs");
 const floppyPath = resolve(projectRoot, "..", "fdd.img");
 const generatedMediaRoot = resolve(projectRoot, ".cache", "developer-media");
+const diagnosticReference = process.argv.includes("--pcjs-reference");
+const viteArguments = process.argv.slice(2).filter((argument) => argument !== "--pcjs-reference");
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -56,13 +58,14 @@ const [systemRom, vgaRom] = MEDIA.map(exportRom);
 const floppy = readFileSync(floppyPath);
 requireAsset("fdd.img", floppy, FLOPPY_BYTES, FLOPPY_SHA256);
 
-const child = spawn(process.execPath, ["node_modules/vite/bin/vite.js", ...process.argv.slice(2)], {
+const child = spawn(process.execPath, ["node_modules/vite/bin/vite.js", ...viteArguments], {
   cwd: projectRoot,
   env: {
     ...process.env,
     PC110JS_DEV_SYSTEM_ROM: systemRom,
     PC110JS_DEV_VGA_ROM: vgaRom,
-    PC110JS_DEV_FLOPPY: floppyPath
+    PC110JS_DEV_FLOPPY: floppyPath,
+    PC110JS_REFERENCE_PC110_PROBE: diagnosticReference ? "1" : ""
   },
   stdio: "inherit"
 });

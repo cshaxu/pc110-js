@@ -15,16 +15,30 @@ if (!root) throw new Error("Missing application root");
 
 const machine = new MachineRuntime(pcAt386Profile);
 const checkpoint = new NativeCoreCheckpoint();
-const developerMediaEnabled = new URLSearchParams(window.location.search).has("dev-media");
+const parameters = new URLSearchParams(window.location.search);
+const developerMediaEnabled = parameters.has("dev-media");
+const pcjsReferenceEnabled = developerMediaEnabled && parameters.has("pcjs-reference");
 root.innerHTML = `
   <section class="machine-shell" aria-label="pc110-js machine">
     <header>
       <strong>pc110-js</strong>
       <span id="state" role="status"></span>
     </header>
-    <div class="display" aria-label="Machine display">
-      <canvas id="screen" width="720" height="400" tabindex="0" aria-label="Native VGA text display"></canvas>
-      <div class="native-status" id="native-status" aria-live="polite"></div>
+    <div class="machine-workbench">
+      <div class="display" aria-label="Machine display">
+        <canvas id="screen" width="720" height="400" tabindex="0" aria-label="Native VGA text display"></canvas>
+        <div class="native-status" id="native-status" aria-live="polite"></div>
+      </div>
+      ${
+        pcjsReferenceEnabled
+          ? `
+        <section class="reference-panel" aria-label="PCjs reference machine">
+          <header><strong>PCjs reference</strong></header>
+          <iframe id="pcjs-reference" title="PCjs reference machine" src="/_pc110js-reference/machine.xml"></iframe>
+        </section>
+      `
+          : ""
+      }
     </div>
     <footer>
       <button id="run" type="button">Run</button>
