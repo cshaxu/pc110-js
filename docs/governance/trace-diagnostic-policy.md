@@ -82,6 +82,10 @@ to an excluded trace class.
 - Trace buffers, event journals, and snapshots must be bounded by an explicit
   capacity or checkpoint policy. A long ROM run must not retain every event by
   default.
+- A milestone Fast run must write its complete bounded result to an explicit
+  identity-bearing diagnostic log as well as any interactive terminal. A lost
+  terminal session is not evidence of its final boundary and does not justify
+  repeating the same long run without a new diagnostic reason.
 - Instrumentation overhead must be measured separately from emulator behavior.
   Benchmark reports state whether fast, selective, or full-debug mode was used.
 - Performance optimization may batch host scheduling, rendering, or diagnostic
