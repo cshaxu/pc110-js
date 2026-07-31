@@ -5,6 +5,8 @@ describe("Set-1 browser keyboard boundary", () => {
   it("maps make and break bytes for normal and extended keys", () => {
     expect(set1ScancodeBytes("KeyA", true)).toEqual([0x1e]);
     expect(set1ScancodeBytes("KeyA", false)).toEqual([0x9e]);
+    expect(set1ScancodeBytes("F1", true)).toEqual([0x3b]);
+    expect(set1ScancodeBytes("F1", false)).toEqual([0xbb]);
     expect(set1ScancodeBytes("ArrowUp", true)).toEqual([0xe0, 0x48]);
     expect(set1ScancodeBytes("ArrowUp", false)).toEqual([0xe0, 0xc8]);
     expect(set1ScancodeBytes("Unidentified", true)).toBeUndefined();

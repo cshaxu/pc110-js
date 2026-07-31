@@ -62,6 +62,7 @@ root.innerHTML = `
       <button id="mount" type="button">Mount</button>
       ${developerMediaEnabled ? '<button id="dev-media" type="button">Load local media</button>' : ""}
       ${developerMediaEnabled ? '<button id="dev-key-a" type="button">Send A</button>' : ""}
+      ${developerMediaEnabled ? '<button id="dev-key-f1" type="button">Send F1</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep" type="button">Compare boundary</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-window" type="button">Compare 16 boundaries</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-reset" type="button">Reset boundary</button>' : ""}
@@ -81,6 +82,7 @@ const floppy = root.querySelector<HTMLInputElement>("#floppy");
 const mount = root.querySelector<HTMLButtonElement>("#mount");
 const developerMedia = root.querySelector<HTMLButtonElement>("#dev-media");
 const developerKeyA = root.querySelector<HTMLButtonElement>("#dev-key-a");
+const developerKeyF1 = root.querySelector<HTMLButtonElement>("#dev-key-f1");
 const lockstep = root.querySelector<HTMLButtonElement>("#lockstep");
 const lockstepWindow = root.querySelector<HTMLButtonElement>("#lockstep-window");
 const lockstepReset = root.querySelector<HTMLButtonElement>("#lockstep-reset");
@@ -198,6 +200,10 @@ developerMedia?.addEventListener("click", () => void mountDeveloperMedia());
 developerKeyA?.addEventListener("click", () => {
   enqueueKeyboardCode("KeyA", true);
   enqueueKeyboardCode("KeyA", false);
+});
+developerKeyF1?.addEventListener("click", () => {
+  enqueueKeyboardCode("F1", true);
+  enqueueKeyboardCode("F1", false);
 });
 lockstep?.addEventListener("click", () => compareBrowserLockstep());
 lockstepWindow?.addEventListener("click", () => compareBrowserLockstepWindow());
