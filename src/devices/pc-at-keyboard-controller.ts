@@ -7,7 +7,7 @@ import {
   type KeyboardController8042Snapshot,
   type KeyboardController8042State
 } from "./keyboard-controller8042.js";
-import { AtKeyboard, type AtKeyboardLines } from "./at-keyboard.js";
+import { AtKeyboard, type AtKeyboardState } from "./at-keyboard.js";
 
 export interface PcAtKeyboardControllerPortRange {
   readonly start: number;
@@ -18,7 +18,7 @@ export interface PcAtKeyboardControllerPortRange {
 
 export interface PcAtKeyboardControllerState {
   readonly controller: KeyboardController8042State;
-  readonly keyboard: Readonly<AtKeyboardLines> & { readonly batPending: boolean };
+  readonly keyboard: AtKeyboardState;
 }
 
 /**
@@ -49,15 +49,21 @@ export class PcAtKeyboardController {
 
   public write(port: number, value: number, width: PortWidth): void {
     this.requirePort(port, width);
-    const operation =
-      port === KEYBOARD_CONTROLLER_DATA_PORT
-        ? this.controller.writeData(value)
-        : this.controller.writeCommand(value);
+    if (port === KEYBOARD_CONTROLLER_DATA_PORT) {
+      const controllerData = this.controller.expectsData();
+      const operation = this.controller.writeData(value);
+      this.apply(operation);
+      if (!controllerData) this.deliverKeyboardBytes(this.keyboard.receiveCommand(value));
+      this.synchronizeKeyboardLines();
+      return;
+    }
+    const operation = this.controller.writeCommand(value);
     this.apply(operation);
     this.synchronizeKeyboardLines();
   }
 
   public receiveKeyboardByte(value: number): boolean {
+    if (!this.keyboard.canTransmitScanCodes()) return false;
     return this.apply(this.controller.receiveKeyboardByte(value));
   }
 
@@ -105,6 +111,10 @@ export class PcAtKeyboardController {
       dataEnabled: Boolean(commandByte & 0x08),
       clockEnabled: !(commandByte & 0x10)
     });
+    this.deliverKeyboardBytes(bytes);
+  }
+
+  private deliverKeyboardBytes(bytes: readonly number[]): void {
     for (const byte of bytes) this.apply(this.controller.receiveKeyboardByte(byte));
   }
 

@@ -144,6 +144,10 @@ export class KeyboardController8042 {
     return result(false);
   }
 
+  public expectsData(): boolean {
+    return this.expectingDataFor !== undefined;
+  }
+
   public receiveKeyboardByte(value: number): KeyboardController8042Result {
     const data = this.requireByte(value);
     if (!this.keyboardEnabled() || this.outputBuffer !== undefined) return result(false);

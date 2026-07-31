@@ -406,7 +406,8 @@ describe("RebuiltPcAt386Core", () => {
     core.ports.write(0x21, 0x04, 8);
     core.ports.write(0x21, 0x01, 8);
     core.ports.write(0x64, 0x60, 8);
-    core.ports.write(0x60, 0x01, 8);
+    core.ports.write(0x60, 0x09, 8);
+    expect(core.ports.read(0x60, 8)).toBe(0xaa);
 
     expect(core.receiveKeyboardByte(0x1c)).toBe(true);
     expect(core.pic.pendingVector()).toBe(0x21);
