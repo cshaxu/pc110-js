@@ -13,6 +13,7 @@ describe("project-native PC/AT 8042 adapter", () => {
     for (const range of controller.portRanges()) bus.register(range);
 
     bus.write(0x64, 0x20, 8);
+    expect(bus.read(0x64, 8) & 0x01).toBe(0);
     expect(bus.read(0x64, 8) & 0x01).toBe(0x01);
     expect(bus.read(0x60, 8)).toBe(0x10);
     expect(() => bus.read(0x60, 16)).toThrow("8-bit");

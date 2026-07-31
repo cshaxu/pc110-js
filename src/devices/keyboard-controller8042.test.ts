@@ -9,6 +9,7 @@ describe("project-native selected PC/AT 8042 state", () => {
       inputPort: 0xa0,
       outputPort: 0x03,
       outputBuffer: undefined,
+      controllerOutputPending: false,
       keyboardEnabled: false,
       status: 0
     });
@@ -25,6 +26,7 @@ describe("project-native selected PC/AT 8042 state", () => {
       status: 0x14
     });
     controller.writeCommand(0x20);
+    expect(controller.readStatus() & 0x01).toBe(0);
     expect(controller.readStatus() & 0x01).toBe(0x01);
     expect(controller.readData()).toBe(0x0d);
     expect(controller.readStatus() & 0x01).toBe(0);
@@ -51,6 +53,29 @@ describe("project-native selected PC/AT 8042 state", () => {
     controller.writeCommand(0xab);
 
     expect(controller.readData()).toBe(0x05);
+  });
+
+  it("publishes controller replies after one status poll without delaying keyboard data", () => {
+    const controller = new KeyboardController8042();
+
+    controller.writeCommand(0xab);
+    expect(controller.snapshot()).toMatchObject({
+      outputBuffer: 0x00,
+      outputSource: "controller",
+      controllerOutputPending: true,
+      status: 0x08
+    });
+    const captured = controller.capture();
+    expect(controller.readStatus() & 0x01).toBe(0);
+    controller.restore(captured);
+    expect(controller.readStatus() & 0x01).toBe(0);
+    expect(controller.readStatus() & 0x01).toBe(0x01);
+    expect(controller.readData()).toBe(0x00);
+
+    controller.writeCommand(0x60);
+    controller.writeData(0x01);
+    expect(controller.receiveKeyboardByte(0x1c)).toMatchObject({ accepted: true });
+    expect(controller.readStatus() & 0x01).toBe(0x01);
   });
 
   it("controls keyboard ingress and requests IRQ1 only for enabled interrupt input", () => {

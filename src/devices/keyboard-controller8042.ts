@@ -27,6 +27,7 @@ export interface KeyboardController8042Snapshot {
   readonly outputPort: number;
   readonly outputBuffer: number | undefined;
   readonly outputSource: KeyboardControllerOutputSource | undefined;
+  readonly controllerOutputPending: boolean;
   readonly expectingDataFor: number | undefined;
   readonly keyboardEnabled: boolean;
   readonly status: number;
@@ -66,6 +67,7 @@ export class KeyboardController8042 {
   private outputPort = OUTPUT_PORT_DEFAULT;
   private outputBuffer: number | undefined;
   private outputSource: KeyboardControllerOutputSource | undefined;
+  private controllerOutputPending = false;
   private expectingDataFor: number | undefined;
   private lastWriteWasCommand = false;
 
@@ -81,6 +83,7 @@ export class KeyboardController8042 {
     this.outputPort = OUTPUT_PORT_DEFAULT;
     this.outputBuffer = undefined;
     this.outputSource = undefined;
+    this.controllerOutputPending = false;
     this.expectingDataFor = undefined;
     this.lastWriteWasCommand = false;
   }
@@ -89,12 +92,20 @@ export class KeyboardController8042 {
     const value = this.outputBuffer ?? 0;
     this.outputBuffer = undefined;
     this.outputSource = undefined;
+    this.controllerOutputPending = false;
     return value;
   }
 
   public readStatus(): number {
+    const status = this.currentStatus();
+    this.controllerOutputPending = false;
+    return status;
+  }
+
+  private currentStatus(): number {
     let status = 0;
-    if (this.outputBuffer !== undefined) status |= STATUS_OUTPUT_BUFFER_FULL;
+    if (this.outputBuffer !== undefined && !this.controllerOutputPending)
+      status |= STATUS_OUTPUT_BUFFER_FULL;
     if (this.commandByte & COMMAND_SYSTEM_FLAG) status |= STATUS_SYSTEM_FLAG;
     if (this.lastWriteWasCommand) status |= STATUS_COMMAND;
     if (this.commandByte & COMMAND_NO_INHIBIT) status |= STATUS_NO_INHIBIT;
@@ -169,6 +180,7 @@ export class KeyboardController8042 {
     if (!this.keyboardEnabled() || this.outputBuffer !== undefined) return result(false);
     this.outputBuffer = data;
     this.outputSource = "keyboard";
+    this.controllerOutputPending = false;
     return result(true, { irq1Requested: Boolean(this.commandByte & COMMAND_INTERRUPT_ENABLE) });
   }
 
@@ -179,9 +191,10 @@ export class KeyboardController8042 {
       outputPort: this.outputPort,
       outputBuffer: this.outputBuffer,
       outputSource: this.outputSource,
+      controllerOutputPending: this.controllerOutputPending,
       expectingDataFor: this.expectingDataFor,
       keyboardEnabled: this.keyboardEnabled(),
-      status: this.readStatus()
+      status: this.currentStatus()
     };
   }
 
@@ -195,6 +208,7 @@ export class KeyboardController8042 {
     this.outputPort = state.outputPort;
     this.outputBuffer = state.outputBuffer;
     this.outputSource = state.outputSource;
+    this.controllerOutputPending = state.controllerOutputPending;
     this.expectingDataFor = state.expectingDataFor;
     this.lastWriteWasCommand = state.lastWriteWasCommand;
   }
@@ -207,6 +221,7 @@ export class KeyboardController8042 {
     if (this.outputBuffer !== undefined) return result(false);
     this.outputBuffer = value & 0xff;
     this.outputSource = "controller";
+    this.controllerOutputPending = true;
     return result(true);
   }
 
