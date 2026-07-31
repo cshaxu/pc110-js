@@ -172,6 +172,23 @@ investigation.
 - Do not use host wall time, timer forcing, synthetic interrupts, or delay-loop
   skipping as ordinary performance optimization.
 
+## Browser Resource Budget
+
+Browser verification is a constrained local resource, not an unlimited test
+surface.
+
+- Reuse an existing relevant Codex browser tab before opening a new one.
+- Keep at most one tab open for ordinary verification. A second tab is allowed
+  only while an active, bounded native-versus-PCjs comparison needs both live
+  pages.
+- Before CPU-intensive browser execution, close every tab that is not required
+  for that specific check. Close or finalize the remaining verification tabs as
+  soon as the evidence has been recorded.
+- If the control surface cannot close a tab, stop opening additional tabs and
+  reuse an already controlled tab.
+- Browser-tab count does not relax the existing Fast Execution, selective
+  tracing, deterministic replay, or no-shortcut rules.
+
 ## Escalation Conditions
 
 Stop and request owner direction when:

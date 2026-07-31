@@ -104,6 +104,13 @@ Do not treat this file as a substitute for those canonical documents.
 - Use npm only for this repository. Run `npm install` from the repository root
   when dependencies change, and use `npm run <script>` for project scripts.
   Do not add pnpm, Yarn, Bun, or their lockfiles/workspace files.
+- Keep browser diagnostics within a low-resource tab budget. Reuse an existing
+  relevant Codex browser tab whenever possible. Keep at most one tab for
+  ordinary verification; a second tab is permitted only for an active,
+  short-lived native-versus-PCjs comparison. Before CPU-intensive testing,
+  close every browser tab not required by that check, and close or finalize
+  the remaining tabs immediately afterward. If the browser control surface
+  cannot close a tab, do not open another tab; reuse a controlled tab instead.
 - Define exact verification commands and observable acceptance evidence before
   implementation.
 - Run all required automated checks and manual browser checks. Do not claim a
