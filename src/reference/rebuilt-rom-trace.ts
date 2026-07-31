@@ -6,7 +6,7 @@ import { dirname, relative, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { KeyboardByteQueue } from "../app/keyboard-scancode-set1.js";
 import { createRomImage } from "../firmware/rom-image.js";
-import { PhysicalMemory } from "../memory/physical-memory.js";
+import { createDeskPro386Memory } from "../machine/configurations/deskpro386-memory.js";
 import {
   RebuiltPcAt386Core,
   type RebuiltMachineTrace,
@@ -201,12 +201,7 @@ function createTraceCore(
   instructionTrace: boolean,
   instructionTraceSelector?: (point: RebuiltTracePoint) => boolean
 ): RebuiltPcAt386Core {
-  const memory = new PhysicalMemory({
-    ramBytes: 0xa0000,
-    a20Enabled: true,
-    unmappedReadValue: 0xff,
-    ignoreUnmappedWrites: true
-  });
+  const memory = createDeskPro386Memory();
   memory.mapRom(
     createRomImage("deskpro386", assets.systemRom),
     0xffff8000,

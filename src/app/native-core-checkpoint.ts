@@ -1,11 +1,12 @@
-import { PhysicalMemory } from "../memory/physical-memory.js";
 import {
   RebuiltPcAt386Core,
   type RebuiltMachineTraceEvent
 } from "../machine/rebuilt-pc-at-386-core.js";
+import type { PhysicalMemory } from "../memory/physical-memory.js";
 import { VgaTextFramebuffer } from "../devices/vga-text-framebuffer.js";
 import { createRomImage } from "../firmware/rom-image.js";
 import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
+import { createDeskPro386Memory } from "../machine/configurations/deskpro386-memory.js";
 
 const PORT_EVENT_CAPACITY = 16;
 const KEYBOARD_PORT_EVENT_CAPACITY = 16;
@@ -53,12 +54,7 @@ export interface NativeCoreCheckpointSnapshot {
 export class NativeCoreCheckpoint {
   private readonly recentPortEvents: string[] = [];
   private readonly recentKeyboardControllerPortEvents: string[] = [];
-  public readonly memory = new PhysicalMemory({
-    ramBytes: 0xa0000,
-    a20Enabled: true,
-    unmappedReadValue: 0xff,
-    ignoreUnmappedWrites: true
-  });
+  public readonly memory = createDeskPro386Memory();
   public readonly core = new RebuiltPcAt386Core(
     this.memory,
     (event) => this.recordMachineEvent(event),
