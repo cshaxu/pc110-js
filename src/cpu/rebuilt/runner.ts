@@ -35,6 +35,7 @@ export class RebuiltCpuRunner {
   public step(): RebuiltCpuStepResult {
     const beforeEip = this.state.readEip();
     const codeDefault32 = this.state.codeDefault32();
+    const protectedMode = Boolean(this.state.readCr0() & 1);
     const instruction = this.executor.step(dispatchRebuiltInstruction);
     const repeatContinuation = this.repeatContinuation === beforeEip;
     const continues =
@@ -46,7 +47,8 @@ export class RebuiltCpuRunner {
         beforeEip,
         this.state.readEip(),
         codeDefault32,
-        repeatContinuation
+        repeatContinuation,
+        protectedMode
       )
     };
   }

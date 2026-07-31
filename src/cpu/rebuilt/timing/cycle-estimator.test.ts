@@ -115,6 +115,26 @@ describe("80386 cycle estimator", () => {
       estimate386Cycles({ opcode: 0x8e, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
     ).toBe(3);
     expect(
+      estimate386Cycles(
+        { opcode: 0x8e, prefixes: { bytes: 0 }, modRm: direct } as never,
+        0,
+        0,
+        true,
+        false,
+        true
+      )
+    ).toBe(17);
+    expect(
+      estimate386Cycles(
+        { opcode: 0x8e, prefixes: { bytes: 0 }, modRm: memory } as never,
+        0,
+        0,
+        true,
+        false,
+        true
+      )
+    ).toBe(18);
+    expect(
       estimate386Cycles({ opcode: 0xf7, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
     ).toBe(6);
     expect(
