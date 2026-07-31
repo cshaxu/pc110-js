@@ -25,5 +25,6 @@ describe("PCjs diagnostic reference assets", () => {
       "pc110ProbeCommandBytes"
     );
     expect(assets.pageHtml().toString("utf8")).toContain("commandBytes");
+    expect(assets.pageHtml().toString("utf8")).toContain("pc110ProbeEvents ?? []");
   });
 });

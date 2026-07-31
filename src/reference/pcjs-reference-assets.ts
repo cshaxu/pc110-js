@@ -193,7 +193,7 @@ export class PcjsReferenceAssets {
                 cpuReady: chipset?.cpu?.isReady?.() ?? null,
                 cpuRunning: chipset?.cpu?.flags?.running ?? null
               },
-              events: chipset?.pc110ProbeEvents?.slice(-32) ?? [],
+              events: chipset?.pc110ProbeEvents ?? [],
               commandBytes: chipset?.pc110ProbeCommandBytes?.slice(-64) ?? [],
               lockstep: chipset?.pc110Lockstep?.snapshot?.() ?? null
             });
