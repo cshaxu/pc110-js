@@ -13,6 +13,10 @@ export interface FloppyDriveSnapshot {
   readonly bytes: number;
 }
 
+export interface FloppyDriveState extends FloppyDriveSnapshot {
+  readonly media: Uint8Array | undefined;
+}
+
 export const FLOPPY_1440K_GEOMETRY: FloppyGeometry = {
   cylinders: 80,
   heads: 2,
@@ -75,6 +79,20 @@ export class FloppyDrive {
       changed: this.changed,
       bytes: this.media?.byteLength ?? 0
     };
+  }
+
+  public capture(): FloppyDriveState {
+    return { ...this.snapshot(), media: this.media?.slice() };
+  }
+
+  public restore(state: FloppyDriveState): void {
+    if (state.media?.byteLength !== undefined && state.media.byteLength !== this.byteLength())
+      throw new RangeError("Floppy checkpoint media size is invalid");
+    if (state.attached !== (state.media !== undefined))
+      throw new RangeError("Floppy checkpoint attachment state is invalid");
+    this.media = state.media?.slice();
+    this.writeProtected = state.writeProtected;
+    this.changed = state.changed;
   }
 
   public byteLength(): number {

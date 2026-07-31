@@ -56,6 +56,12 @@ export interface Fdc765Snapshot {
   readonly drives: readonly FdcDriveState[];
 }
 
+export interface Fdc765State extends Fdc765Snapshot {
+  readonly interruptResults: readonly InterruptResult[];
+  readonly dmaBytes: readonly number[];
+  readonly dmaResult: readonly number[] | undefined;
+}
+
 export interface Fdc765Result {
   readonly accepted: boolean;
   readonly irqRequested: boolean;
@@ -214,6 +220,41 @@ export class Fdc765 {
     };
   }
 
+  public capture(): Fdc765State {
+    return {
+      ...this.snapshot(),
+      drives: this.drives.map((drive) => ({ ...drive })),
+      interruptResults: this.interruptResults.map((interrupt) => ({ ...interrupt })),
+      dmaBytes: [...this.dmaBytes],
+      dmaResult: this.dmaResult === undefined ? undefined : [...this.dmaResult]
+    };
+  }
+
+  public restore(state: Fdc765State): void {
+    if (state.drives.length !== this.drives.length)
+      throw new RangeError("FDC checkpoint drive count is invalid");
+    this.dor = this.byte(state.dor);
+    this.control = this.byte(state.control) & 0x03;
+    this.phase = state.phase;
+    this.commandBytes = state.commandBytes.map((value) => this.byte(value));
+    this.resultBytes = state.resultBytes.map((value) => this.byte(value));
+    this.interruptPending = state.interruptPending;
+    this.nonDma = state.nonDma;
+    this.selectedDrive = this.driveIndex(state.selectedDrive);
+    state.drives.forEach((drive, index) => {
+      this.drives[index] = { ready: drive.ready, cylinder: this.byte(drive.cylinder) };
+    });
+    this.interruptResults.length = 0;
+    this.interruptResults.push(
+      ...state.interruptResults.map((interrupt) => ({
+        status0: this.byte(interrupt.status0),
+        cylinder: this.byte(interrupt.cylinder)
+      }))
+    );
+    this.dmaBytes = state.dmaBytes.map((value) => this.byte(value));
+    this.dmaResult = state.dmaResult?.map((value) => this.byte(value));
+  }
+
   private execute(command: number): Fdc765Result {
     const bytes = this.commandBytes;
     this.commandBytes = [];
@@ -296,9 +337,14 @@ export class Fdc765 {
   }
 
   private drive(index: number): { ready: boolean; cylinder: number } {
+    this.driveIndex(index);
+    return this.drives[index]!;
+  }
+
+  private driveIndex(index: number): number {
     if (!Number.isInteger(index) || index < 0 || index > 3)
       throw new RangeError(`FDC drive is outside 0-3: ${index}`);
-    return this.drives[index]!;
+    return index;
   }
 
   private driveReady(index: number): boolean {

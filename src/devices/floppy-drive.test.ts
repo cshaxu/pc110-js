@@ -54,6 +54,25 @@ describe("raw CHS floppy drive", () => {
     expect(drive.readSector(0, 0, 1)).toEqual(Uint8Array.from([5, 6, 7, 8]));
   });
 
+  it("restores media bytes and attachment metadata independently of host files", () => {
+    const drive = new FloppyDrive({
+      cylinders: 1,
+      heads: 1,
+      sectorsPerTrack: 1,
+      bytesPerSector: 4
+    });
+    drive.attach(Uint8Array.from([1, 2, 3, 4]), false);
+    drive.clearChanged();
+    const checkpoint = drive.capture();
+
+    drive.writeSector(0, 0, 1, Uint8Array.from([5, 6, 7, 8]));
+    drive.eject();
+    drive.restore(checkpoint);
+
+    expect(drive.capture()).toEqual(checkpoint);
+    expect(drive.readSector(0, 0, 1)).toEqual(Uint8Array.from([1, 2, 3, 4]));
+  });
+
   it("defines the selected known-good image geometry without attaching protected media", () => {
     const drive = new FloppyDrive(FLOPPY_1440K_GEOMETRY);
     expect(drive.byteLength()).toBe(1_474_560);

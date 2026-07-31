@@ -1,5 +1,5 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
-import { Fdc765, type Fdc765Result } from "./fdc765.js";
+import { Fdc765, type Fdc765Result, type Fdc765State } from "./fdc765.js";
 
 export const FDC_DOR_PORT = 0x3f2;
 export const FDC_MAIN_STATUS_PORT = 0x3f4;
@@ -11,6 +11,10 @@ export interface PcAtFdcPortRange {
   readonly end: number;
   readonly read?: (port: number, width: PortWidth) => number;
   readonly write?: (port: number, value: number, width: PortWidth) => void;
+}
+
+export interface PcAtFdcState {
+  readonly controller: Fdc765State;
 }
 
 /**
@@ -65,6 +69,15 @@ export class PcAtFdc {
 
   public completeDma(terminalCount: boolean): void {
     this.apply(this.controller.completeDma(terminalCount));
+  }
+
+  public capture(): PcAtFdcState {
+    return { controller: this.controller.capture() };
+  }
+
+  public restore(state: PcAtFdcState): void {
+    this.controller.restore(state.controller);
+    this.setDmaRequest(this.controller.snapshot().phase === "execution");
   }
 
   public portRanges(): readonly PcAtFdcPortRange[] {

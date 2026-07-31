@@ -23,4 +23,21 @@ describe("PC/AT FDC port adapter", () => {
     expect(() => bus.write(FDC_DOR_PORT, 0, 16)).toThrow("8-bit");
     expect(() => bus.read(FDC_DOR_PORT, 8)).toThrow("Unmapped I/O read");
   });
+
+  it("restores controller state and recomputes the DMA request signal", () => {
+    const requests: boolean[] = [];
+    const fdc = new PcAtFdc(
+      () => undefined,
+      (active) => requests.push(active)
+    );
+    fdc.controller.writeDor(0x04);
+    fdc.controller.writeData(0x03);
+    const checkpoint = fdc.capture();
+
+    fdc.controller.writeData(0xdf);
+    fdc.restore(checkpoint);
+
+    expect(fdc.capture()).toEqual(checkpoint);
+    expect(requests.at(-1)).toBe(false);
+  });
 });

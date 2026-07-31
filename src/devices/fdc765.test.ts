@@ -132,4 +132,28 @@ describe("project-native 765/8272 controller state", () => {
     expect(controller.snapshot().phase).toBe("result");
     expect(Array.from({ length: 7 }, () => controller.readData())).toEqual([0, 0, 0, 0, 0, 1, 0]);
   });
+
+  it("restores pending command, interrupt, and DMA execution state", () => {
+    const controller = new Fdc765();
+    const drive = new FloppyDrive({
+      cylinders: 1,
+      heads: 1,
+      sectorsPerTrack: 1,
+      bytesPerSector: 128
+    });
+    drive.attach(Uint8Array.from({ length: 128 }, (_, index) => index));
+    controller.attachDrive(0, drive);
+    enable(controller);
+    for (const byte of [0x06, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00])
+      controller.writeData(byte);
+    controller.readDmaByte();
+    const checkpoint = controller.capture();
+
+    controller.readDmaByte();
+    controller.completeDma(true);
+    controller.restore(checkpoint);
+
+    expect(controller.capture()).toEqual(checkpoint);
+    expect([controller.readDmaByte(), controller.readDmaByte()]).toEqual([1, 2]);
+  });
 });
