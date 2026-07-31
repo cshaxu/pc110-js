@@ -19,6 +19,15 @@ M2 will define a machine-readable ignored local manifest. It must map logical as
 
 An example manifest may contain placeholders and expected hashes but no protected bytes.
 
+## Local Development Endpoint Exception
+
+An owner-authorized development server may expose a fixed logical asset through
+an uncommitted process environment path for a bounded verification task. The
+endpoint must be loopback-only, enabled only in development, absent from
+production builds, and retain normal descriptor size and SHA-256 validation.
+Committed source, browser defaults, and persistent configuration must not
+contain the host path or automatically mount the asset.
+
 ## Recorded Local Assets
 
 - The known-good DOS floppy identity is recorded in [local-media-fdd-fadeb3a2.md](../baselines/local-media-fdd-fadeb3a2.md).

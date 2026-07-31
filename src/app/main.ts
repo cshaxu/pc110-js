@@ -15,6 +15,7 @@ if (!root) throw new Error("Missing application root");
 
 const machine = new MachineRuntime(pcAt386Profile);
 const checkpoint = new NativeCoreCheckpoint();
+const developerMediaEnabled = new URLSearchParams(window.location.search).has("dev-media");
 root.innerHTML = `
   <section class="machine-shell" aria-label="pc110-js machine">
     <header>
@@ -33,6 +34,7 @@ root.innerHTML = `
       <label>VGA ROM <input id="vga-rom" type="file" /></label>
       <label>Floppy <input id="floppy" type="file" /></label>
       <button id="mount" type="button">Mount</button>
+      ${developerMediaEnabled ? '<button id="dev-media" type="button">Load local media</button>' : ""}
     </footer>
   </section>
 `;
@@ -47,6 +49,7 @@ const rom = root.querySelector<HTMLInputElement>("#rom");
 const vgaRom = root.querySelector<HTMLInputElement>("#vga-rom");
 const floppy = root.querySelector<HTMLInputElement>("#floppy");
 const mount = root.querySelector<HTMLButtonElement>("#mount");
+const developerMedia = root.querySelector<HTMLButtonElement>("#dev-media");
 if (
   !state ||
   !run ||
@@ -149,6 +152,26 @@ mount.addEventListener("click", async () => {
     controls.nativeStatus.textContent = error instanceof Error ? error.message : String(error);
   }
 });
+developerMedia?.addEventListener("click", () => void mountDeveloperMedia());
+
+async function mountDeveloperMedia(): Promise<void> {
+  try {
+    const [romBytes, vgaRomBytes, floppyBytes] = await Promise.all([
+      loader.loadUrl("/_pc110js-dev-media/deskpro-rom", selectedDeskProRom),
+      loader.loadUrl("/_pc110js-dev-media/vga-rom", selectedIbmVgaRom),
+      loader.loadUrl("/_pc110js-dev-media/floppy", selectedDosFloppy)
+    ]);
+    checkpoint.mapSystemRom(romBytes);
+    checkpoint.mapVgaRom(vgaRomBytes);
+    checkpoint.attachFloppy(floppyBytes);
+    checkpoint.reset();
+    keyboardQueue.clear();
+    mediaMounted = true;
+    render(machine.snapshot());
+  } catch (error) {
+    controls.nativeStatus.textContent = error instanceof Error ? error.message : String(error);
+  }
+}
 
 function scheduleNativeRun(timestamp = 0): void {
   if (machine.snapshot().runState !== "running") return;
