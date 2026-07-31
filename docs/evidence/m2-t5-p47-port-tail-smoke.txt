@@ -1,0 +1,12 @@
+Trace identity mode=fast-machine-events project=5232f08a33fdba186e81e8ca08d5d9a0c688c539 pcjs=c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70 budget=1000 floppy=none
+Rebuilt selected-ROM trace completed 1000 instructions at f000:9c05
+  port write 3d4
+  port write 3d5
+  port write 3d4
+  port write 3d5
+  port write 3d4
+  port write 3d5
+  port write 3d4
+  port write 3d5
+  port write 3d9
+  port write 84

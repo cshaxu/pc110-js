@@ -66,6 +66,15 @@ function eventTailLength(): number {
   return value;
 }
 
+function portTailLength(): number {
+  const raw = process.env.PC110JS_ROM_TRACE_PORT_TAIL;
+  if (raw === undefined) return 0;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(value) || value < 0)
+    throw new Error("PC110JS_ROM_TRACE_PORT_TAIL must be a non-negative safe integer");
+  return value;
+}
+
 function watchedAddresses(): ReadonlySet<string> {
   const raw = process.env.PC110JS_ROM_TRACE_WATCH;
   if (raw === undefined || raw.trim() === "") return new Set();
@@ -151,6 +160,14 @@ function writeEventTail(trace: readonly RebuiltMachineTraceEvent[], length: numb
   }
 }
 
+function writePortTail(trace: readonly RebuiltMachineTraceEvent[], length: number): void {
+  if (length === 0) return;
+  for (const event of trace.slice(-length)) {
+    if (event.kind !== "port") continue;
+    emit(`  port ${event.event.direction} ${event.event.port.toString(16)}\n`);
+  }
+}
+
 function writeSegmentTransfers(trace: readonly RebuiltMachineTraceEvent[]): void {
   for (const entry of trace) {
     if (entry.kind !== "instruction") continue;
@@ -202,9 +219,15 @@ function main(): void {
   const budget = instructionBudget();
   const tailLength = traceTailLength();
   const eventTailLengthValue = eventTailLength();
+  const portTailLengthValue = portTailLength();
   const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
   const watches = watchedAddresses();
-  const needsTrace = tailLength > 0 || eventTailLengthValue > 0 || transfers || watches.size > 0;
+  const needsTrace =
+    tailLength > 0 ||
+    eventTailLengthValue > 0 ||
+    portTailLengthValue > 0 ||
+    transfers ||
+    watches.size > 0;
   const fullDebug = tailLength > 0 || transfers;
   const traceMode = !needsTrace
     ? "fast"
@@ -229,10 +252,13 @@ function main(): void {
   );
   memory.mapRom(createRomImage("ibm-vga", loadRom(SOURCE_VGA_ROM, 0x6000)), 0xc0000);
   const trace: RebuiltMachineTraceEvent[] = [];
+  const portTrace: RebuiltMachineTraceEvent[] = [];
   const transferTrace: RebuiltMachineTraceEvent[] = [];
   const traceCapacity = Math.max(1, tailLength, eventTailLengthValue);
   const recordTrace = (event: RebuiltMachineTraceEvent): void => {
-    retainTraceEvent(trace, event, traceCapacity);
+    if (tailLength > 0 || eventTailLengthValue > 0) retainTraceEvent(trace, event, traceCapacity);
+    if (event.kind === "port" && portTailLengthValue > 0)
+      retainTraceEvent(portTrace, event, portTailLengthValue);
     if (
       transfers &&
       event.kind === "instruction" &&
@@ -269,6 +295,7 @@ function main(): void {
     );
     writeDiagnosticTail(trace, tailLength);
     writeEventTail(trace, eventTailLengthValue);
+    writePortTail(portTrace, portTailLengthValue);
     if (transfers) writeSegmentTransfers(transferTrace);
     writePitState(core);
     writeWatchCounts(watchHits);
@@ -281,6 +308,7 @@ function main(): void {
     );
     writeDiagnosticTail(trace, tailLength);
     writeEventTail(trace, eventTailLengthValue);
+    writePortTail(portTrace, portTailLengthValue);
     if (transfers) writeSegmentTransfers(transferTrace);
     writePitState(core);
     writeWatchCounts(watchHits);
