@@ -13,7 +13,8 @@ import type { DecodedInstruction } from "../decode/decoder.js";
 export function estimate386Cycles(
   instruction: DecodedInstruction | undefined,
   beforeEip: number,
-  afterEip: number
+  afterEip: number,
+  codeDefault32 = true
 ): number {
   if (!instruction) return 3;
   const opcode = instruction.opcode;
@@ -25,7 +26,20 @@ export function estimate386Cycles(
   if (opcode === 0x61) return withPrefixes(19, instruction);
   if (opcode === 0x90 || (opcode >= 0x91 && opcode <= 0x97) || opcode === 0x86 || opcode === 0x87)
     return withPrefixes(3, instruction);
-  if (isConditionalBranch(instruction)) return afterEip === beforeEip + instruction.length ? 3 : 7;
+  if (isLoopOpcode(opcode))
+    return fellThrough(instruction, beforeEip, afterEip, 1, codeDefault32) ? 4 : 8;
+  if (isShortConditionalJump(opcode))
+    return fellThrough(instruction, beforeEip, afterEip, 1, codeDefault32) ? 3 : 7;
+  if (isNearConditionalJump(instruction))
+    return fellThrough(
+      instruction,
+      beforeEip,
+      afterEip,
+      instruction.prefixes.operandSize / 8,
+      codeDefault32
+    )
+      ? 3
+      : 7;
   if (opcode === 0xea) return withPrefixes(11, instruction);
   if (opcode === 0x9a) return withPrefixes(13, instruction);
   if (opcode === 0xe8 || opcode === 0xe9 || opcode === 0xeb) return withPrefixes(7, instruction);
@@ -37,7 +51,8 @@ export function estimate386Cycles(
 }
 
 function withPrefixes(cycles: number, instruction: DecodedInstruction): number {
-  return cycles + instruction.prefixes.bytes;
+  void instruction;
+  return cycles;
 }
 
 function isStringOpcode(opcode: number): boolean {
@@ -71,16 +86,31 @@ function isPopOpcode(opcode: number): boolean {
   );
 }
 
-function isConditionalBranch(instruction: DecodedInstruction): boolean {
+function isLoopOpcode(opcode: number): boolean {
+  return opcode >= 0xe0 && opcode <= 0xe3;
+}
+
+function isShortConditionalJump(opcode: number): boolean {
+  return opcode >= 0x70 && opcode <= 0x7f;
+}
+
+function isNearConditionalJump(instruction: DecodedInstruction): boolean {
   return (
-    (instruction.opcode >= 0x70 && instruction.opcode <= 0x7f) ||
-    instruction.opcode === 0xe0 ||
-    instruction.opcode === 0xe1 ||
-    instruction.opcode === 0xe2 ||
-    instruction.opcode === 0xe3 ||
-    (instruction.opcode === 0x0f &&
-      instruction.secondaryOpcode !== undefined &&
-      instruction.secondaryOpcode >= 0x80 &&
-      instruction.secondaryOpcode <= 0x8f)
+    instruction.opcode === 0x0f &&
+    instruction.secondaryOpcode !== undefined &&
+    instruction.secondaryOpcode >= 0x80 &&
+    instruction.secondaryOpcode <= 0x8f
   );
+}
+
+function fellThrough(
+  instruction: DecodedInstruction,
+  beforeEip: number,
+  afterEip: number,
+  trailingBytes: number,
+  codeDefault32: boolean
+): boolean {
+  const next = beforeEip + instruction.length + trailingBytes;
+  const fallthrough = codeDefault32 ? next >>> 0 : next & 0xffff;
+  return afterEip === fallthrough;
 }

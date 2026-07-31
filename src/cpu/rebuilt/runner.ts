@@ -28,8 +28,11 @@ export class RebuiltCpuRunner {
 
   public step(): RebuiltCpuStepResult {
     const beforeEip = this.state.readEip();
+    const codeDefault32 = this.state.codeDefault32();
     const instruction = this.executor.step(dispatchRebuiltInstruction);
-    return { cycles: estimate386Cycles(instruction, beforeEip, this.state.readEip()) };
+    return {
+      cycles: estimate386Cycles(instruction, beforeEip, this.state.readEip(), codeDefault32)
+    };
   }
 
   public serviceExternalInterrupt(vector: number): boolean {
