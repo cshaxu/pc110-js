@@ -89,6 +89,13 @@ export interface LockstepInstructionTiming {
   readonly equal: boolean;
 }
 
+export interface LockstepTimingDifference {
+  readonly instruction: number;
+  readonly before: LockstepBoundary;
+  readonly after: LockstepBoundary;
+  readonly timing: LockstepInstructionTiming;
+}
+
 export interface NativeLockstepEndpoint {
   snapshot(): NativeLockstepSnapshot;
   resetMachine(): void;
@@ -141,6 +148,25 @@ export type ControlledLockstepResetResult =
       readonly kind: "reset";
       readonly pcjsReset: PcjsLockstepReset;
       readonly comparison: LockstepComparison;
+    };
+
+export type ControlledLockstepWindowResult =
+  | {
+      readonly kind: "completed";
+      readonly instructions: number;
+      readonly timingDifferences: readonly LockstepTimingDifference[];
+    }
+  | {
+      readonly kind: "architectural-difference";
+      readonly instructions: number;
+      readonly timingDifferences: readonly LockstepTimingDifference[];
+      readonly result: Extract<ControlledLockstepResult, { readonly kind: "stepped" }>;
+    }
+  | {
+      readonly kind: "stopped";
+      readonly instructions: number;
+      readonly timingDifferences: readonly LockstepTimingDifference[];
+      readonly result: Exclude<ControlledLockstepResult, { readonly kind: "stepped" }>;
     };
 
 const REGISTER_NAMES = ["eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"] as const;
@@ -273,6 +299,41 @@ export function stepControlledLockstep(
       equal: nativeStep.cycles === pcjsStep.cyclesConsumed
     }
   };
+}
+
+/**
+ * Runs one short diagnostic window. Cycle-only differences remain evidence;
+ * the first architectural or device difference stops the window immediately.
+ */
+export function runControlledLockstepWindow(
+  native: NativeLockstepEndpoint,
+  pcjs: PcjsLockstepEndpoint,
+  maximumInstructions: number
+): ControlledLockstepWindowResult {
+  if (!Number.isSafeInteger(maximumInstructions) || maximumInstructions < 1)
+    throw new RangeError("Lockstep window size must be a positive integer");
+
+  const timingDifferences: LockstepTimingDifference[] = [];
+  for (let instruction = 1; instruction <= maximumInstructions; instruction += 1) {
+    const result = stepControlledLockstep(native, pcjs);
+    if (result.kind !== "stepped")
+      return { kind: "stopped", instructions: instruction - 1, timingDifferences, result };
+    if (!result.timing.equal)
+      timingDifferences.push({
+        instruction,
+        before: result.before,
+        after: result.after,
+        timing: result.timing
+      });
+    if (!result.comparison.equal)
+      return {
+        kind: "architectural-difference",
+        instructions: instruction,
+        timingDifferences,
+        result
+      };
+  }
+  return { kind: "completed", instructions: maximumInstructions, timingDifferences };
 }
 
 /** Resets both machines only through their normal diagnostic control paths. */

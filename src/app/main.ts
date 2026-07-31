@@ -4,6 +4,7 @@ import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
 import { NativeLockstepAdapter } from "../reference/native-lockstep-adapter.js";
 import {
   resetControlledLockstep,
+  runControlledLockstepWindow,
   stepControlledLockstep,
   type PcjsLockstepEndpoint,
   type PcjsLockstepReset,
@@ -61,6 +62,7 @@ root.innerHTML = `
       ${developerMediaEnabled ? '<button id="dev-media" type="button">Load local media</button>' : ""}
       ${developerMediaEnabled ? '<button id="dev-key-a" type="button">Send A</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep" type="button">Compare boundary</button>' : ""}
+      ${pcjsReferenceEnabled ? '<button id="lockstep-window" type="button">Compare 16 boundaries</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-reset" type="button">Reset boundary</button>' : ""}
     </footer>
   </section>
@@ -79,6 +81,7 @@ const mount = root.querySelector<HTMLButtonElement>("#mount");
 const developerMedia = root.querySelector<HTMLButtonElement>("#dev-media");
 const developerKeyA = root.querySelector<HTMLButtonElement>("#dev-key-a");
 const lockstep = root.querySelector<HTMLButtonElement>("#lockstep");
+const lockstepWindow = root.querySelector<HTMLButtonElement>("#lockstep-window");
 const lockstepReset = root.querySelector<HTMLButtonElement>("#lockstep-reset");
 const referenceFrame = root.querySelector<HTMLIFrameElement>("#pcjs-reference");
 if (
@@ -192,6 +195,7 @@ developerKeyA?.addEventListener("click", () => {
   enqueueKeyboardCode("KeyA", false);
 });
 lockstep?.addEventListener("click", () => compareBrowserLockstep());
+lockstepWindow?.addEventListener("click", () => compareBrowserLockstepWindow());
 lockstepReset?.addEventListener("click", () => resetBrowserLockstep());
 
 async function mountDeveloperMedia(): Promise<void> {
@@ -275,6 +279,54 @@ function compareBrowserLockstep(): void {
       controls.nativeStatus.textContent = result.comparison.equal
         ? `Lockstep boundary matched: native ${result.nativeStep.kind} ${result.timing.nativeCycles} cycles, PCjs ${result.timing.pcjsCycles} cycles${result.timing.equal ? "" : " (timing difference)"}`
         : `Lockstep boundary mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}`;
+  }
+}
+
+function compareBrowserLockstepWindow(): void {
+  if (!mediaMounted) {
+    controls.nativeStatus.textContent =
+      "Load verified local media before comparing an instruction window";
+    return;
+  }
+  if (machine.snapshot().runState === "running") {
+    controls.nativeStatus.textContent = "Pause the native machine before comparing a window";
+    return;
+  }
+  const pcjs = pcjsLockstepEndpoint(referenceFrame);
+  if (!pcjs) {
+    controls.nativeStatus.textContent = "PCjs lockstep control is not ready";
+    return;
+  }
+  const result = runControlledLockstepWindow(nativeLockstep, pcjs, 16);
+  const timing = result.timingDifferences
+    .map(
+      (difference) =>
+        `${difference.instruction}@${formatBoundary(difference.before)} ${difference.timing.nativeCycles}/${difference.timing.pcjsCycles}`
+    )
+    .join(", ");
+  const timingSummary = timing ? `; timing differences ${timing}` : "; timing matched";
+  switch (result.kind) {
+    case "completed":
+      controls.nativeStatus.textContent = `Lockstep window matched: ${result.instructions} boundaries${timingSummary}`;
+      return;
+    case "architectural-difference":
+      controls.nativeStatus.textContent = `Lockstep window mismatch at ${formatBoundary(result.result.before)}: ${formatDifference(result.result.comparison)}${timingSummary}`;
+      return;
+    case "stopped":
+      controls.nativeStatus.textContent = `Lockstep window stopped after ${result.instructions} boundaries: ${formatLockstepStop(result.result)}${timingSummary}`;
+  }
+}
+
+function formatLockstepStop(
+  result: Exclude<ReturnType<typeof stepControlledLockstep>, { kind: "stepped" }>
+): string {
+  switch (result.kind) {
+    case "precondition-difference":
+      return `entry mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}`;
+    case "pcjs-not-paused":
+      return "PCjs is not paused";
+    case "pcjs-rejected":
+      return `PCjs rejected boundary step: ${result.step.reason}`;
   }
 }
 

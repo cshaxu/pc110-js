@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compareLockstepCpu,
   resetControlledLockstep,
+  runControlledLockstepWindow,
   stepControlledLockstep,
   type PcjsLockstepSnapshot
 } from "./lockstep-coordinator.js";
@@ -313,5 +314,84 @@ describe("controlled lockstep comparator", () => {
     expect(result).toMatchObject({ kind: "reset", comparison: { equal: true } });
     expect(nativeResets).toBe(1);
     expect(pcjsResets).toBe(1);
+  });
+
+  it("retains cycle-only evidence through a bounded matched window", () => {
+    const { native, pcjs } = snapshots();
+    const result = runControlledLockstepWindow(
+      {
+        snapshot: () => native,
+        resetMachine: () => undefined,
+        stepInstruction: () => ({ kind: "instruction", cycles: 2 })
+      },
+      {
+        snapshot: () => pcjs,
+        resetMachine: () => ({ accepted: true, reason: "reset", before: pcjs, after: pcjs }),
+        stepInstruction: () => ({
+          accepted: true,
+          reason: "executed",
+          cyclesConsumed: 3,
+          before: pcjs,
+          after: pcjs
+        })
+      },
+      3
+    );
+
+    expect(result).toMatchObject({
+      kind: "completed",
+      instructions: 3,
+      timingDifferences: [
+        { instruction: 1, timing: { nativeCycles: 2, pcjsCycles: 3 } },
+        { instruction: 2, timing: { nativeCycles: 2, pcjsCycles: 3 } },
+        { instruction: 3, timing: { nativeCycles: 2, pcjsCycles: 3 } }
+      ]
+    });
+  });
+
+  it("stops the window at the first architectural difference", () => {
+    const { native, pcjs } = snapshots();
+    let nativeCurrent = native;
+    let pcjsCurrent = pcjs;
+    let pcjsSteps = 0;
+    const result = runControlledLockstepWindow(
+      {
+        snapshot: () => nativeCurrent,
+        resetMachine: () => undefined,
+        stepInstruction: () => {
+          nativeCurrent = {
+            ...nativeCurrent,
+            cpu: { ...nativeCurrent.cpu, eip: nativeCurrent.cpu.eip + 1 }
+          };
+          return { kind: "instruction", cycles: 2 };
+        }
+      },
+      {
+        snapshot: () => pcjsCurrent,
+        resetMachine: () => ({
+          accepted: true,
+          reason: "reset",
+          before: pcjsCurrent,
+          after: pcjsCurrent
+        }),
+        stepInstruction: () => {
+          pcjsSteps += 1;
+          const after =
+            pcjsSteps === 2
+              ? { ...pcjsCurrent, cpu: { ...pcjsCurrent.cpu, eip: 3 } }
+              : { ...pcjsCurrent, cpu: { ...pcjsCurrent.cpu, eip: 1 } };
+          const before = pcjsCurrent;
+          pcjsCurrent = after;
+          return { accepted: true, reason: "executed", cyclesConsumed: 2, before, after };
+        }
+      },
+      4
+    );
+
+    expect(result).toMatchObject({
+      kind: "architectural-difference",
+      instructions: 2,
+      result: { comparison: { difference: { path: "cpu.eip", native: 2, pcjs: 3 } } }
+    });
   });
 });
