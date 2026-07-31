@@ -25,6 +25,7 @@ const pcjsRoot = resolve(projectRoot, "..", "pcjs");
 const floppyPath = resolve(projectRoot, "..", "fdd.img");
 const port = parsePort(process.env.PORT ?? "5173");
 const shouldOpen = process.argv.includes("--open");
+const diagnosticProbe = process.env.PC110JS_REFERENCE_PC110_PROBE === "1";
 const resourceCache = new Map<string, Buffer>();
 
 function parsePort(value: string): number {
@@ -54,12 +55,24 @@ function verifyInputs(): Buffer {
     throw new Error(`Missing sibling PCjs checkout: ${pcjsRoot}`);
   }
 
-  try {
-    runGit(["cat-file", "-e", `${PINNED_PCJS_COMMIT}:${SOURCE_MACHINE}`]);
-  } catch {
-    throw new Error(
-      `Pinned PCjs baseline ${PINNED_PCJS_COMMIT} or selected machine is unavailable in ../pcjs`
-    );
+  if (diagnosticProbe) {
+    const branch = runGit(["branch", "--show-current"]).toString("utf8").trim();
+    if (branch !== "pc110")
+      throw new Error("PC110JS_REFERENCE_PC110_PROBE requires the sibling PCjs pc110 branch");
+    const source = readWorkingResource(SOURCE_MACHINE).toString("utf8");
+    if (!source.includes("deskpro386"))
+      throw new Error("PCjs pc110 branch is missing the selected DeskPro machine");
+    const chipset = readWorkingResource("machines/pcx86/modules/v2/chipset.js").toString("utf8");
+    if (!chipset.includes("pc110ProbeEvents"))
+      throw new Error("PCjs pc110 branch is missing the opt-in 8042 probe");
+  } else {
+    try {
+      runGit(["cat-file", "-e", `${PINNED_PCJS_COMMIT}:${SOURCE_MACHINE}`]);
+    } catch {
+      throw new Error(
+        `Pinned PCjs baseline ${PINNED_PCJS_COMMIT} or selected machine is unavailable in ../pcjs`
+      );
+    }
   }
 
   let floppy: Buffer;
@@ -95,8 +108,27 @@ function readPinnedResource(pathname: string): Buffer {
   return content;
 }
 
+function readWorkingResource(pathname: string): Buffer {
+  const normalized = pathname.replace(/^\/+/, "");
+  if (
+    !normalized ||
+    normalized.includes("\\") ||
+    normalized.split("/").some((part) => part === "." || part === "..")
+  ) {
+    throw new Error("Invalid PCjs resource path");
+  }
+  const candidate = resolve(pcjsRoot, normalized);
+  const pathFromRoot = candidate.slice(pcjsRoot.length + 1);
+  if (!pathFromRoot || pathFromRoot.startsWith("..")) throw new Error("Invalid PCjs resource path");
+  return readFileSync(candidate);
+}
+
+function readReferenceResource(pathname: string): Buffer {
+  return diagnosticProbe ? readWorkingResource(pathname) : readPinnedResource(pathname);
+}
+
 function makeMachineXml(): Buffer {
-  const source = readPinnedResource(SOURCE_MACHINE).toString("utf8");
+  const source = readReferenceResource(SOURCE_MACHINE).toString("utf8");
   const originalMount = /autoMount='[^']*'/;
   if (!originalMount.test(source)) {
     throw new Error("Selected PCjs machine no longer has an autoMount definition");
@@ -106,7 +138,16 @@ function makeMachineXml(): Buffer {
   if (!localMediaMachine.includes(originalCpu)) {
     throw new Error("Selected PCjs machine no longer has the expected CPU definition");
   }
-  return Buffer.from(localMediaMachine.replace(originalCpu, CPU_CONTROLS), "utf8");
+  const machine = localMediaMachine.replace(originalCpu, CPU_CONTROLS);
+  if (!diagnosticProbe) return Buffer.from(machine, "utf8");
+  const originalChipset =
+    '<chipset id="chipset" model="deskpro386" floppies="[1440,1440]" monitor="vga"/>';
+  if (!machine.includes(originalChipset))
+    throw new Error("Selected PCjs machine no longer has the expected ChipSet definition");
+  return Buffer.from(
+    machine.replace(originalChipset, `${originalChipset.slice(0, -2)} pc110Probe="true"/>`),
+    "utf8"
+  );
 }
 
 function contentType(pathname: string): string {
@@ -166,7 +207,7 @@ function handleRequest(floppy: Buffer, request: IncomingMessage, response: Serve
       body = floppy;
       type = "application/octet-stream";
     } else {
-      body = readPinnedResource(pathname);
+      body = readReferenceResource(pathname);
       type = contentType(pathname);
     }
     if (request.method === "HEAD") {
@@ -193,7 +234,11 @@ function main(): void {
   server.listen(port, "127.0.0.1", () => {
     const url = `http://127.0.0.1:${port}${LOCAL_MACHINE}`;
     process.stdout.write(`PCjs reference runner listening at ${url}\n`);
-    process.stdout.write(`Pinned PCjs commit: ${PINNED_PCJS_COMMIT}\n`);
+    process.stdout.write(
+      diagnosticProbe
+        ? "PCjs diagnostic source: clean local pc110 branch with opt-in 8042 probe\n"
+        : `Pinned PCjs commit: ${PINNED_PCJS_COMMIT}\n`
+    );
     process.stdout.write(`Read-only floppy: ${basename(floppyPath)} (${FLOPPY_SHA256})\n`);
     if (shouldOpen) openBrowser(url);
   });
