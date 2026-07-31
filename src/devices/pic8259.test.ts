@@ -9,6 +9,17 @@ function initialize(pic: Pic8259, vectorBase = 0x20): void {
 }
 
 describe("project-native 8259A PIC", () => {
+  it("preserves PCjs's observable pre-ICW reset register state", () => {
+    const pic = new Pic8259();
+    pic.reset();
+
+    expect(pic.snapshot()).toMatchObject({
+      mask: undefined,
+      request: undefined,
+      inService: undefined
+    });
+  });
+
   it("accepts ICW1-4 and exposes its vector base and mask", () => {
     const pic = new Pic8259();
     initialize(pic);

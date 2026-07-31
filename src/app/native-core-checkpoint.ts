@@ -106,12 +106,12 @@ export class NativeCoreCheckpoint {
     const fdcDrive0 = fdc.drives[0];
     return {
       codeAddress: `${hex16(cpu.segments.cs.selector)}:${hex16(cpu.eip)}`,
-      masterRequest: hex8(pic.master.request),
-      masterInService: hex8(pic.master.inService),
-      masterMask: hex8(pic.master.mask),
-      slaveRequest: hex8(pic.slave.request),
-      slaveInService: hex8(pic.slave.inService),
-      slaveMask: hex8(pic.slave.mask),
+      masterRequest: hex8OrUnset(pic.master.request),
+      masterInService: hex8OrUnset(pic.master.inService),
+      masterMask: hex8OrUnset(pic.master.mask),
+      slaveRequest: hex8OrUnset(pic.slave.request),
+      slaveInService: hex8OrUnset(pic.slave.inService),
+      slaveMask: hex8OrUnset(pic.slave.mask),
       timer0Output: bit(this.core.pit.snapshot(0).output),
       timer2Output: bit(this.core.pit.counter2Output()),
       dma0Masks: hex8(this.core.dma.maskBits(0)),
@@ -184,6 +184,10 @@ function retainPortEvent(events: string[], event: string, capacity: number): voi
 
 function hex8(value: number): string {
   return value.toString(16).padStart(2, "0").toUpperCase();
+}
+
+function hex8OrUnset(value: number | undefined): string {
+  return value === undefined ? "--" : hex8(value);
 }
 
 function readUint16(memory: PhysicalMemory, address: number): number {

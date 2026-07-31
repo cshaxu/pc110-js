@@ -517,7 +517,7 @@ describe("RebuiltPcAt386Core", () => {
       0xa5, 0xa4, 0xa7, 0xa6
     ]);
     expect(core.fdc.controller.snapshot()).toMatchObject({ phase: "result", dmaBytesPending: 0 });
-    expect(core.pic.master.snapshot().request & 0x40).toBe(0x40);
+    expect((core.pic.master.snapshot().request ?? 0) & 0x40).toBe(0x40);
   });
 
   it("services a requested native FDC DMA transfer from CPU-cycle time", () => {
@@ -566,7 +566,7 @@ describe("RebuiltPcAt386Core", () => {
       0xa5, 0xa4, 0xa7, 0xa6
     ]);
     expect(core.fdc.controller.snapshot()).toMatchObject({ phase: "result", dmaBytesPending: 0 });
-    expect(core.pic.master.snapshot().request & 0x40).toBe(0x40);
+    expect((core.pic.master.snapshot().request ?? 0) & 0x40).toBe(0x40);
   });
 
   it("registers retained MDA compatibility state for selected VGA firmware probes", () => {

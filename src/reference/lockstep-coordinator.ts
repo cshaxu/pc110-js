@@ -27,9 +27,9 @@ export interface PcjsLockstepSnapshot {
   };
   readonly devices: {
     readonly pic: readonly {
-      readonly mask: number;
-      readonly request: number;
-      readonly inService: number;
+      readonly mask: number | undefined;
+      readonly request: number | undefined;
+      readonly inService: number | undefined;
     }[];
     readonly pit: readonly {
       readonly reload: number;
@@ -55,8 +55,8 @@ export interface PcjsLockstepSnapshot {
 
 export interface LockstepDifference {
   readonly path: string;
-  readonly native: number | boolean | string;
-  readonly pcjs: number | boolean | string;
+  readonly native: number | boolean | string | undefined;
+  readonly pcjs: number | boolean | string | undefined;
 }
 
 export interface LockstepComparison {
@@ -158,7 +158,7 @@ function compareDevices(
       const difference = compare(
         `devices.pic.${controller}.${field}`,
         native.devices.pic[controller][field],
-        pcjs.devices.pic[controller === "master" ? 0 : 1]?.[field] ?? -1
+        pcjs.devices.pic[controller === "master" ? 0 : 1]?.[field]
       );
       if (difference) return difference;
     }
@@ -251,8 +251,8 @@ export function resetControlledLockstep(
 
 function compare(
   path: string,
-  native: number | boolean,
-  pcjs: number | boolean
+  native: number | boolean | undefined,
+  pcjs: number | boolean | undefined
 ): LockstepDifference | undefined {
   return native === pcjs ? undefined : { path, native, pcjs };
 }

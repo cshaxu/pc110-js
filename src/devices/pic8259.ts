@@ -2,9 +2,9 @@ export type PicReadRegister = "irr" | "isr";
 
 export interface Pic8259Snapshot {
   readonly vectorBase: number;
-  readonly mask: number;
-  readonly request: number;
-  readonly inService: number;
+  readonly mask: number | undefined;
+  readonly request: number | undefined;
+  readonly inService: number | undefined;
   readonly lowestPriority: number;
   readonly readRegister: PicReadRegister;
   readonly initialized: boolean;
@@ -21,9 +21,10 @@ export interface Pic8259State extends Pic8259Snapshot {
 
 export class Pic8259 {
   private vectorBase = 0;
-  private mask = 0xff;
-  private request = 0;
-  private inService = 0;
+  /* PCjs leaves these registers absent until the guest begins the ICW sequence. */
+  private mask: number | undefined;
+  private request: number | undefined;
+  private inService: number | undefined;
   private lowestPriority = 7;
   private readRegister: PicReadRegister = "irr";
   private initializationPhase: InitializationPhase = "idle";
@@ -33,9 +34,9 @@ export class Pic8259 {
 
   public reset(): void {
     this.vectorBase = 0;
-    this.mask = 0xff;
-    this.request = 0;
-    this.inService = 0;
+    this.mask = undefined;
+    this.request = undefined;
+    this.inService = undefined;
     this.lowestPriority = 7;
     this.readRegister = "irr";
     this.initializationPhase = "idle";
@@ -45,11 +46,11 @@ export class Pic8259 {
   }
 
   public readCommand(): number {
-    return this.readRegister === "irr" ? this.request : this.inService;
+    return this.readRegister === "irr" ? (this.request ?? 0) : (this.inService ?? 0);
   }
 
   public readData(): number {
-    return this.mask;
+    return this.mask ?? 0;
   }
 
   public writeCommand(value: number): void {
@@ -88,12 +89,12 @@ export class Pic8259 {
   }
 
   public raise(line: number): void {
-    this.request |= bitForLine(line);
+    this.request = (this.request ?? 0) | bitForLine(line);
   }
 
   public pendingLine(): number | undefined {
-    const request = this.request & ~this.mask;
-    const active = this.highestPriorityLine(this.inService);
+    const request = (this.request ?? 0) & ~(this.mask ?? 0);
+    const active = this.highestPriorityLine(this.inService ?? 0);
     for (let offset = 1; offset <= 8; offset += 1) {
       const line = (this.lowestPriority + offset) & 7;
       if (!(request & (1 << line))) continue;
@@ -107,8 +108,8 @@ export class Pic8259 {
     const line = this.pendingLine();
     if (line === undefined) return undefined;
     const bit = bitForLine(line);
-    this.request &= ~bit;
-    if (!this.automaticEoi) this.inService |= bit;
+    this.request = (this.request ?? 0) & ~bit;
+    if (!this.automaticEoi) this.inService = (this.inService ?? 0) | bit;
     return this.vectorBase | line;
   }
 
@@ -162,8 +163,8 @@ export class Pic8259 {
   private writeOperationCommand(command: number): void {
     const operation = command & 0xe0;
     if (operation & 0x20) {
-      const line = operation === 0x60 ? command & 7 : this.highestPriorityLine(this.inService);
-      if (line !== undefined) this.inService &= ~bitForLine(line);
+      const line = operation === 0x60 ? command & 7 : this.highestPriorityLine(this.inService ?? 0);
+      if (line !== undefined) this.inService = (this.inService ?? 0) & ~bitForLine(line);
       return;
     }
     if (operation === 0xc0) this.lowestPriority = command & 7;

@@ -45,11 +45,15 @@ export interface NativeLockstepSnapshot {
 export interface NativeLockstepDeviceSnapshot {
   readonly pic: {
     readonly master: {
-      readonly mask: number;
-      readonly request: number;
-      readonly inService: number;
+      readonly mask: number | undefined;
+      readonly request: number | undefined;
+      readonly inService: number | undefined;
     };
-    readonly slave: { readonly mask: number; readonly request: number; readonly inService: number };
+    readonly slave: {
+      readonly mask: number | undefined;
+      readonly request: number | undefined;
+      readonly inService: number | undefined;
+    };
   };
   readonly pit: readonly {
     readonly reload: number;
@@ -130,9 +134,9 @@ export class NativeLockstepAdapter {
 }
 
 function normalizePic(pic: {
-  readonly mask: number;
-  readonly request: number;
-  readonly inService: number;
+  readonly mask: number | undefined;
+  readonly request: number | undefined;
+  readonly inService: number | undefined;
 }) {
   return { mask: pic.mask, request: pic.request, inService: pic.inService };
 }

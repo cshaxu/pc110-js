@@ -161,6 +161,35 @@ describe("controlled lockstep comparator", () => {
     });
   });
 
+  it("treats explicitly absent pre-ICW PIC registers as equal", () => {
+    const { native, pcjs } = snapshots();
+    const nativeReset = {
+      ...native,
+      devices: {
+        ...native.devices,
+        pic: {
+          master: { mask: undefined, request: undefined, inService: undefined },
+          slave: { mask: undefined, request: undefined, inService: undefined }
+        }
+      }
+    };
+    const pcjsReset = {
+      ...pcjs,
+      devices: {
+        ...pcjs.devices,
+        pic: [
+          { mask: undefined, request: undefined, inService: undefined },
+          { mask: undefined, request: undefined, inService: undefined }
+        ]
+      }
+    };
+
+    expect(compareLockstepCpu(nativeReset, pcjsReset)).toEqual({
+      equal: true,
+      difference: undefined
+    });
+  });
+
   it("does not step either endpoint when the entry boundary differs", () => {
     const { native, pcjs } = snapshots();
     let nativeSteps = 0;
