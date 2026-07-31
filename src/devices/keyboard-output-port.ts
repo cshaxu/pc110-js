@@ -32,4 +32,14 @@ export class KeyboardOutputPort {
       resetRequested: !(this.value & OUTPUT_NO_RESET)
     };
   }
+
+  public capture(): number {
+    return this.value;
+  }
+
+  public restore(value: number): void {
+    if (!Number.isInteger(value))
+      throw new RangeError(`8042 output-port byte is not an integer: ${value}`);
+    this.value = value & 0xff;
+  }
 }

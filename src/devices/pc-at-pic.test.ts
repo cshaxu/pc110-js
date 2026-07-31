@@ -85,4 +85,17 @@ describe("project-native PC/AT PIC cascade", () => {
     expect(() => pic.write(MASTER_PIC_DATA_PORT, 0, 16)).toThrow("8-bit");
     expect(() => pic.raiseIrq(16)).toThrow("outside 0-15");
   });
+
+  it("restores both cascade controllers without acknowledging pending IRQs", () => {
+    const pic = new PcAtPic();
+    initialize(pic);
+    pic.raiseIrq(10);
+    const captured = pic.capture();
+    pic.acknowledge();
+
+    pic.restore(captured);
+
+    expect(pic.capture()).toEqual(captured);
+    expect(pic.acknowledge()).toBe(0x2a);
+  });
 });

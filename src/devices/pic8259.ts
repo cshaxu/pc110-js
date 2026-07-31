@@ -12,6 +12,13 @@ export interface Pic8259Snapshot {
 
 type InitializationPhase = "idle" | "icw2" | "icw3" | "icw4";
 
+export interface Pic8259State extends Pic8259Snapshot {
+  readonly initializationPhase: InitializationPhase;
+  readonly single: boolean;
+  readonly icw4Required: boolean;
+  readonly automaticEoi: boolean;
+}
+
 export class Pic8259 {
   private vectorBase = 0;
   private mask = 0xff;
@@ -115,6 +122,29 @@ export class Pic8259 {
       readRegister: this.readRegister,
       initialized: this.initializationPhase === "idle"
     };
+  }
+
+  public capture(): Pic8259State {
+    return {
+      ...this.snapshot(),
+      initializationPhase: this.initializationPhase,
+      single: this.single,
+      icw4Required: this.icw4Required,
+      automaticEoi: this.automaticEoi
+    };
+  }
+
+  public restore(state: Pic8259State): void {
+    this.vectorBase = state.vectorBase;
+    this.mask = state.mask;
+    this.request = state.request;
+    this.inService = state.inService;
+    this.lowestPriority = state.lowestPriority;
+    this.readRegister = state.readRegister;
+    this.initializationPhase = state.initializationPhase;
+    this.single = state.single;
+    this.icw4Required = state.icw4Required;
+    this.automaticEoi = state.automaticEoi;
   }
 
   private beginInitialization(command: number): void {

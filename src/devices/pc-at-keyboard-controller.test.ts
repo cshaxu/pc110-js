@@ -84,4 +84,23 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(outputPorts).toEqual([0x02]);
     expect(resets).toBe(1);
   });
+
+  it("restores controller and keyboard state without replaying callbacks", () => {
+    const irqs: number[] = [];
+    const controller = new PcAtKeyboardController(
+      (irq) => irqs.push(irq),
+      () => {},
+      () => {}
+    );
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x4d, 8);
+    const captured = controller.capture();
+    controller.read(0x60, 8);
+
+    controller.restore(captured);
+
+    expect(controller.capture()).toEqual(captured);
+    expect(controller.read(0x60, 8)).toBe(0xaa);
+    expect(irqs).toEqual([1]);
+  });
 });

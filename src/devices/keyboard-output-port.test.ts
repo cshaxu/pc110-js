@@ -17,4 +17,17 @@ describe("project-native 8042 output-port contract", () => {
     port.reset();
     expect(port.snapshot()).toMatchObject({ a20Enabled: true, resetRequested: false });
   });
+
+  it("restores the raw output byte without emitting a new update", () => {
+    const port = new KeyboardOutputPort();
+    port.write(0x01);
+    const captured = port.capture();
+    port.write(0x02);
+    port.restore(captured);
+    expect(port.snapshot()).toMatchObject({
+      value: 0x01,
+      a20Enabled: false,
+      resetRequested: false
+    });
+  });
 });

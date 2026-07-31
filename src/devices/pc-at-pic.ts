@@ -1,5 +1,5 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
-import { Pic8259, type Pic8259Snapshot } from "./pic8259.js";
+import { Pic8259, type Pic8259Snapshot, type Pic8259State } from "./pic8259.js";
 
 export const MASTER_PIC_COMMAND_PORT = 0x20;
 export const MASTER_PIC_DATA_PORT = 0x21;
@@ -9,6 +9,11 @@ export const SLAVE_PIC_DATA_PORT = 0xa1;
 export interface PcAtPicSnapshot {
   readonly master: Pic8259Snapshot;
   readonly slave: Pic8259Snapshot;
+}
+
+export interface PcAtPicState {
+  readonly master: Pic8259State;
+  readonly slave: Pic8259State;
 }
 
 export interface PcAtPicPortRange {
@@ -98,6 +103,15 @@ export class PcAtPic {
 
   public snapshot(): PcAtPicSnapshot {
     return { master: this.master.snapshot(), slave: this.slave.snapshot() };
+  }
+
+  public capture(): PcAtPicState {
+    return { master: this.master.capture(), slave: this.slave.capture() };
+  }
+
+  public restore(state: PcAtPicState): void {
+    this.master.restore(state.master);
+    this.slave.restore(state.slave);
   }
 
   public portRanges(): readonly PcAtPicPortRange[] {

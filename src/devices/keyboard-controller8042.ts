@@ -27,6 +27,10 @@ export interface KeyboardController8042Snapshot {
   readonly status: number;
 }
 
+export interface KeyboardController8042State extends KeyboardController8042Snapshot {
+  readonly lastWriteWasCommand: boolean;
+}
+
 export interface KeyboardController8042Result {
   readonly accepted: boolean;
   readonly irq1Requested: boolean;
@@ -159,6 +163,20 @@ export class KeyboardController8042 {
       keyboardEnabled: this.keyboardEnabled(),
       status: this.readStatus()
     };
+  }
+
+  public capture(): KeyboardController8042State {
+    return { ...this.snapshot(), lastWriteWasCommand: this.lastWriteWasCommand };
+  }
+
+  public restore(state: KeyboardController8042State): void {
+    this.commandByte = state.commandByte;
+    this.inputPort = state.inputPort;
+    this.outputPort = state.outputPort;
+    this.outputBuffer = state.outputBuffer;
+    this.outputSource = state.outputSource;
+    this.expectingDataFor = state.expectingDataFor;
+    this.lastWriteWasCommand = state.lastWriteWasCommand;
   }
 
   private keyboardEnabled(): boolean {

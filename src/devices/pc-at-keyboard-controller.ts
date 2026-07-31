@@ -4,15 +4,21 @@ import {
   KEYBOARD_CONTROLLER_STATUS_PORT,
   KeyboardController8042,
   type KeyboardController8042Result,
-  type KeyboardController8042Snapshot
+  type KeyboardController8042Snapshot,
+  type KeyboardController8042State
 } from "./keyboard-controller8042.js";
-import { AtKeyboard } from "./at-keyboard.js";
+import { AtKeyboard, type AtKeyboardLines } from "./at-keyboard.js";
 
 export interface PcAtKeyboardControllerPortRange {
   readonly start: number;
   readonly end: number;
   readonly read: (port: number, width: PortWidth) => number;
   readonly write: (port: number, value: number, width: PortWidth) => void;
+}
+
+export interface PcAtKeyboardControllerState {
+  readonly controller: KeyboardController8042State;
+  readonly keyboard: Readonly<AtKeyboardLines> & { readonly batPending: boolean };
 }
 
 /**
@@ -57,6 +63,15 @@ export class PcAtKeyboardController {
 
   public snapshot(): KeyboardController8042Snapshot {
     return this.controller.snapshot();
+  }
+
+  public capture(): PcAtKeyboardControllerState {
+    return { controller: this.controller.capture(), keyboard: this.keyboard.snapshot() };
+  }
+
+  public restore(state: PcAtKeyboardControllerState): void {
+    this.controller.restore(state.controller);
+    this.keyboard.restore(state.keyboard);
   }
 
   public portRanges(): readonly PcAtKeyboardControllerPortRange[] {

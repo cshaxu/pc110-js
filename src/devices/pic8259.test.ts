@@ -63,4 +63,22 @@ describe("project-native 8259A PIC", () => {
     expect(auto.acknowledge()).toBe(0x20);
     expect(auto.snapshot().inService).toBe(0);
   });
+
+  it("restores initialization and arbitration state exactly", () => {
+    const pic = new Pic8259();
+    pic.writeCommand(0x11);
+    pic.writeData(0x20);
+    const captured = pic.capture();
+    pic.writeData(0x04);
+    pic.writeData(0x01);
+    pic.raise(1);
+
+    pic.restore(captured);
+
+    expect(pic.capture()).toEqual(captured);
+    pic.writeData(0x04);
+    pic.writeData(0x01);
+    pic.raise(1);
+    expect(pic.acknowledge()).toBe(0x21);
+  });
 });

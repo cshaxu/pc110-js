@@ -30,5 +30,10 @@ export class AtKeyboard {
     return { ...this.lines, batPending: this.batPending };
   }
 
+  public restore(state: Readonly<AtKeyboardLines> & { readonly batPending: boolean }): void {
+    this.lines = { dataEnabled: state.dataEnabled, clockEnabled: state.clockEnabled };
+    this.batPending = state.batPending;
+  }
+
   // TODO(High): Add the keyboard command protocol when selected-ROM evidence requires it.
 }
