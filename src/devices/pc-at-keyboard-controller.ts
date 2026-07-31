@@ -19,6 +19,7 @@ export interface PcAtKeyboardControllerPortRange {
 export interface PcAtKeyboardControllerState {
   readonly controller: KeyboardController8042State;
   readonly keyboard: AtKeyboardState;
+  readonly pendingKeyboardBytes: readonly number[];
 }
 
 /**
@@ -28,6 +29,7 @@ export interface PcAtKeyboardControllerState {
 export class PcAtKeyboardController {
   public readonly controller = new KeyboardController8042();
   public readonly keyboard = new AtKeyboard();
+  private pendingKeyboardBytes: number[] = [];
 
   public constructor(
     private readonly raiseIrq: (irq: number) => void,
@@ -38,13 +40,15 @@ export class PcAtKeyboardController {
   public reset(): void {
     this.controller.reset();
     this.keyboard.reset();
+    this.pendingKeyboardBytes = [];
   }
 
   public read(port: number, width: PortWidth): number {
     this.requirePort(port, width);
-    return port === KEYBOARD_CONTROLLER_DATA_PORT
-      ? this.controller.readData()
-      : this.controller.readStatus();
+    if (port === KEYBOARD_CONTROLLER_STATUS_PORT) return this.controller.readStatus();
+    const value = this.controller.readData();
+    this.drainKeyboardBytes();
+    return value;
   }
 
   public write(port: number, value: number, width: PortWidth): void {
@@ -72,12 +76,17 @@ export class PcAtKeyboardController {
   }
 
   public capture(): PcAtKeyboardControllerState {
-    return { controller: this.controller.capture(), keyboard: this.keyboard.snapshot() };
+    return {
+      controller: this.controller.capture(),
+      keyboard: this.keyboard.snapshot(),
+      pendingKeyboardBytes: [...this.pendingKeyboardBytes]
+    };
   }
 
   public restore(state: PcAtKeyboardControllerState): void {
     this.controller.restore(state.controller);
     this.keyboard.restore(state.keyboard);
+    this.pendingKeyboardBytes = [...state.pendingKeyboardBytes];
   }
 
   public portRanges(): readonly PcAtKeyboardControllerPortRange[] {
@@ -115,7 +124,15 @@ export class PcAtKeyboardController {
   }
 
   private deliverKeyboardBytes(bytes: readonly number[]): void {
-    for (const byte of bytes) this.apply(this.controller.receiveKeyboardByte(byte));
+    this.pendingKeyboardBytes.push(...bytes);
+    this.drainKeyboardBytes();
+  }
+
+  private drainKeyboardBytes(): void {
+    while (this.pendingKeyboardBytes.length > 0) {
+      if (!this.apply(this.controller.receiveKeyboardByte(this.pendingKeyboardBytes[0]!))) return;
+      this.pendingKeyboardBytes.shift();
+    }
   }
 
   private requirePort(port: number, width: PortWidth): void {
