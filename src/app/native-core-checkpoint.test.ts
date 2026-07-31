@@ -8,8 +8,10 @@ describe("NativeCoreCheckpoint", () => {
       codeAddress: "F000:FFF0",
       masterRequest: "00",
       masterInService: "00",
+      masterMask: "FF",
       slaveRequest: "00",
       slaveInService: "00",
+      slaveMask: "FF",
       timer0Output: "0",
       timer2Output: "0",
       dma0Masks: "0F",
@@ -33,6 +35,7 @@ describe("NativeCoreCheckpoint", () => {
       keyboardControllerCommandByte: "10",
       keyboardControllerOutputBuffer: "--",
       keyboardControllerKeyboardEnabled: "0",
+      keyboardScanningEnabled: "0",
       recentPortEvents: "--"
     });
 

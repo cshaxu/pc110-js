@@ -13,8 +13,10 @@ export interface NativeCoreCheckpointSnapshot {
   readonly codeAddress: string;
   readonly masterRequest: string;
   readonly masterInService: string;
+  readonly masterMask: string;
   readonly slaveRequest: string;
   readonly slaveInService: string;
+  readonly slaveMask: string;
   readonly timer0Output: string;
   readonly timer2Output: string;
   readonly dma0Masks: string;
@@ -38,6 +40,7 @@ export interface NativeCoreCheckpointSnapshot {
   readonly keyboardControllerCommandByte: string;
   readonly keyboardControllerOutputBuffer: string;
   readonly keyboardControllerKeyboardEnabled: string;
+  readonly keyboardScanningEnabled: string;
   readonly recentPortEvents: string;
 }
 
@@ -97,8 +100,10 @@ export class NativeCoreCheckpoint {
       codeAddress: `${hex16(cpu.segments.cs.selector)}:${hex16(cpu.eip)}`,
       masterRequest: hex8(pic.master.request),
       masterInService: hex8(pic.master.inService),
+      masterMask: hex8(pic.master.mask),
       slaveRequest: hex8(pic.slave.request),
       slaveInService: hex8(pic.slave.inService),
+      slaveMask: hex8(pic.slave.mask),
       timer0Output: bit(this.core.pit.snapshot(0).output),
       timer2Output: bit(this.core.pit.counter2Output()),
       dma0Masks: hex8(this.core.dma.maskBits(0)),
@@ -125,6 +130,7 @@ export class NativeCoreCheckpoint {
           ? "--"
           : hex8(keyboardController.outputBuffer),
       keyboardControllerKeyboardEnabled: bit(keyboardController.keyboardEnabled),
+      keyboardScanningEnabled: bit(this.core.keyboardController.keyboard.canTransmitScanCodes()),
       recentPortEvents: this.recentPortEvents.join(" ") || "--"
     };
   }
