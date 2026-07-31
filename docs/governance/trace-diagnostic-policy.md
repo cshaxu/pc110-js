@@ -22,11 +22,12 @@ or the product runtime dependency boundary.
 
 Fast execution is the default for browser workloads and long ROM runs. It
 executes the project-native core without per-instruction full-state snapshots.
-It may retain bounded counters, selected coverage markers, replay identity,
-and verified checkpoints needed for normal UI presentation. An instruction
-budget in the hundreds of millions is milestone evidence only: use at most one
-Fast run to establish a newly observed whole-machine boundary, not as normal
-CPU or device development workflow.
+For a long run, it retains only replay identity, sparse verified checkpoints,
+and the final or newly observed boundary. It must not retain per-instruction
+transient state, a complete event journal, or an implicit Selective Trace
+tail. An instruction budget in the hundreds of millions is milestone evidence
+only: for each new whole-machine blocker, use at most one Fast run to establish
+the boundary, not as normal CPU or device development workflow.
 
 ### Selective Trace
 
@@ -56,7 +57,9 @@ to selective capture rather than exclusion.
 Do not use Selective Trace for an ordinary long ROM run. Routine CPU and device
 work uses short programs, differential harnesses, and short ROM checkpoints.
 When Fast execution reaches a mismatch or unexpected boundary, replay from the
-nearest verified checkpoint with Full Debug over only the bounded interval.
+nearest verified checkpoint with Full Debug over only the shortest bounded
+interval needed to classify the result. Fast execution records no evidence that
+would make this replay redundant.
 
 ### Full Debug Replay
 
@@ -81,7 +84,9 @@ to an excluded trace class.
 
 - Trace buffers, event journals, and snapshots must be bounded by an explicit
   capacity or checkpoint policy. A long ROM run must not retain every event by
-  default.
+  default. Its ordinary record is replay identity, sparse checkpoints, and an
+  observed boundary; detailed state is collected only by a subsequent bounded
+  replay.
 - A milestone Fast run must write its complete bounded result to an explicit
   identity-bearing diagnostic log as well as any interactive terminal. A lost
   terminal session is not evidence of its final boundary and does not justify
