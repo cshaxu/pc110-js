@@ -11,5 +11,8 @@ describe("PCjs diagnostic reference assets", () => {
     expect(assets.pageHtml().toString("utf8")).toContain('id="pc110-lockstep-step"');
     expect(assets.pageHtml().toString("utf8")).toContain("stepInstruction");
     expect(assets.pageHtml().toString("utf8")).toContain("snapshot");
+    expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(
+      "c8000: this.bus.getByteDirect"
+    );
   });
 });

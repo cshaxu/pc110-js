@@ -5,6 +5,10 @@ export interface PcjsLockstepSnapshot {
   readonly version: number;
   readonly cycles: number;
   readonly paused: boolean;
+  readonly memory?: {
+    readonly c8000: number;
+    readonly e0000: number;
+  };
   readonly cpu: {
     readonly registers: Record<
       "eax" | "ecx" | "edx" | "ebx" | "esp" | "ebp" | "esi" | "edi",

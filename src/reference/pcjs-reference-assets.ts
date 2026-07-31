@@ -78,6 +78,12 @@ export class PcjsReferenceAssets {
       )
         throw new Error("PCjs pc110 branch is missing the selected device snapshot");
       if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
+          .includes("c8000: this.bus.getByteDirect")
+      )
+        throw new Error("PCjs pc110 branch is missing the physical-memory diagnostic probe");
+      if (
         !this.readWorkingResource(
           `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
         )
