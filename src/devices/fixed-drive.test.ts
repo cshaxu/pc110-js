@@ -39,6 +39,20 @@ describe("raw CHS fixed drive", () => {
     expect(drive.readSector(0, 0, 1)).toEqual(Uint8Array.from([5, 6, 7, 8]));
   });
 
+  it("restores writable media bytes and attachment metadata", () => {
+    const drive = new FixedDrive({ cylinders: 1, heads: 1, sectorsPerTrack: 1, bytesPerSector: 4 });
+    drive.attach(Uint8Array.from([1, 2, 3, 4]), false);
+    drive.clearChanged();
+    const checkpoint = drive.capture();
+
+    drive.writeSector(0, 0, 1, Uint8Array.from([5, 6, 7, 8]));
+    drive.eject();
+    drive.restore(checkpoint);
+
+    expect(drive.capture()).toEqual(checkpoint);
+    expect(drive.readSector(0, 0, 1)).toEqual(Uint8Array.from([1, 2, 3, 4]));
+  });
+
   it("defines the selected Type 5 geometry without attaching protected media", () => {
     const drive = new FixedDrive(IBM_AT_TYPE_5_GEOMETRY);
     expect(drive.byteLength()).toBe(49_090_560);

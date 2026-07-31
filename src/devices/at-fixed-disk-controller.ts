@@ -1,5 +1,5 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
-import { FixedDrive } from "./fixed-drive.js";
+import { FixedDrive, type FixedDriveState } from "./fixed-drive.js";
 
 export const ATC_DATA_PORT = 0x1f0;
 export const ATC_ERROR_PORT = 0x1f1;
@@ -42,6 +42,16 @@ export interface AtFixedDiskSnapshot {
   readonly interruptActive: boolean;
   readonly dataBytesPending: number;
   readonly drives: readonly boolean[];
+}
+
+export interface AtFixedDiskState extends AtFixedDiskSnapshot {
+  readonly cylinderLow: number;
+  readonly cylinderHigh: number;
+  readonly transfer: Uint8Array | undefined;
+  readonly transferMode: "read" | "write" | undefined;
+  readonly transferOffset: number;
+  readonly sectorsPending: number;
+  readonly driveMedia: readonly (FixedDriveState | undefined)[];
 }
 
 /**
@@ -178,6 +188,54 @@ export class AtFixedDiskController {
         this.transfer === undefined ? 0 : this.transfer.byteLength - this.transferOffset,
       drives: this.drives.map((drive) => drive?.snapshot().ready ?? false)
     };
+  }
+
+  public capture(): AtFixedDiskState {
+    return {
+      ...this.snapshot(),
+      cylinderLow: this.cylinderLow,
+      cylinderHigh: this.cylinderHigh,
+      transfer: this.transfer?.slice(),
+      transferMode: this.transferMode,
+      transferOffset: this.transferOffset,
+      sectorsPending: this.sectorsPending,
+      driveMedia: this.drives.map((drive) => drive?.capture())
+    };
+  }
+
+  public restore(state: AtFixedDiskState): void {
+    if (
+      state.driveMedia.length !== this.drives.length ||
+      !Number.isInteger(state.transferOffset) ||
+      state.transferOffset < 0 ||
+      !Number.isInteger(state.sectorsPending) ||
+      state.sectorsPending < 0 ||
+      (state.transfer === undefined) !== (state.transferMode === undefined) ||
+      (state.transfer !== undefined && state.transferOffset > state.transfer.byteLength)
+    )
+      throw new RangeError("AT fixed-disk checkpoint state is invalid");
+    state.driveMedia.forEach((media, index) => {
+      const drive = this.drives[index];
+      if (media === undefined) {
+        drive?.eject();
+        return;
+      }
+      if (!drive) throw new RangeError("AT fixed-disk checkpoint drive attachment changed");
+      drive.restore(media);
+    });
+    this.error = state.error & 0xff;
+    this.sectorCount = state.sectorCount & 0xff;
+    this.sectorNumber = state.sectorNumber & 0xff;
+    this.cylinderLow = state.cylinderLow & 0xff;
+    this.cylinderHigh = state.cylinderHigh & 0xff;
+    this.driveHead = (state.driveHead & 0x1f) | DRIVE_HEAD_REQUIRED_BITS;
+    this.status = state.status & 0xff;
+    this.deviceControl = state.deviceControl & 0x0f;
+    this.interruptActive = state.interruptActive;
+    this.transfer = state.transfer?.slice();
+    this.transferMode = state.transferMode;
+    this.transferOffset = state.transferOffset;
+    this.sectorsPending = state.sectorsPending;
   }
 
   public portRanges(): readonly AtFixedDiskPortRange[] {

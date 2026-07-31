@@ -136,4 +136,24 @@ describe("primary AT fixed-disk controller", () => {
     expect(controller.read(ATC_STATUS_PORT, 8)).toBe(0x51);
     expect(controller.read(ATC_ERROR_PORT, 8)).toBe(0x04);
   });
+
+  it("restores an in-flight PIO transfer, controller registers, and drive media", () => {
+    const controller = new AtFixedDiskController();
+    const drive = new FixedDrive({ cylinders: 1, heads: 1, sectorsPerTrack: 1, bytesPerSector: 4 });
+    drive.attach(Uint8Array.from([0x10, 0x11, 0x12, 0x13]), false);
+    controller.attachDrive(0, drive);
+    controller.write(ATC_SECTOR_COUNT_PORT, 1, 8);
+    controller.write(ATC_SECTOR_NUMBER_PORT, 1, 8);
+    controller.write(ATC_STATUS_PORT, 0x20, 8);
+    expect(controller.read(ATC_DATA_PORT, 8)).toBe(0x10);
+    const checkpoint = controller.capture();
+
+    controller.read(ATC_DATA_PORT, 8);
+    drive.writeSector(0, 0, 1, Uint8Array.from([0, 0, 0, 0]));
+    controller.restore(checkpoint);
+
+    expect(controller.capture()).toEqual(checkpoint);
+    expect(controller.read(ATC_DATA_PORT, 8)).toBe(0x11);
+    expect(drive.readSector(0, 0, 1)).toEqual(Uint8Array.from([0x10, 0x11, 0x12, 0x13]));
+  });
 });

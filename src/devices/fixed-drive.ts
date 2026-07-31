@@ -13,6 +13,10 @@ export interface FixedDriveSnapshot {
   readonly bytes: number;
 }
 
+export interface FixedDriveState extends FixedDriveSnapshot {
+  readonly media: Uint8Array | undefined;
+}
+
 export const IBM_AT_TYPE_5_GEOMETRY: FixedDriveGeometry = {
   cylinders: 940,
   heads: 6,
@@ -75,6 +79,20 @@ export class FixedDrive {
       changed: this.changed,
       bytes: this.media?.byteLength ?? 0
     };
+  }
+
+  public capture(): FixedDriveState {
+    return { ...this.snapshot(), media: this.media?.slice() };
+  }
+
+  public restore(state: FixedDriveState): void {
+    if (state.media?.byteLength !== undefined && state.media.byteLength !== this.byteLength())
+      throw new RangeError("Fixed-disk checkpoint media size is invalid");
+    if (state.attached !== (state.media !== undefined))
+      throw new RangeError("Fixed-disk checkpoint attachment state is invalid");
+    this.media = state.media?.slice();
+    this.writeProtected = state.writeProtected;
+    this.changed = state.changed;
   }
 
   public byteLength(): number {
