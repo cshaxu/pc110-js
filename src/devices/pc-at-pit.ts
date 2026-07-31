@@ -82,9 +82,9 @@ export class PcAtPit {
       const numerator = remainder + cycles * pitTicksPerSecond;
       const ticks = Math.floor(numerator / cpuCyclesPerSecond);
       this.cycleRemainders[index] = numerator % cpuCyclesPerSecond;
-      const result = this.timer.advanceCounter(index, ticks);
-      if (result.risingEdges.length) this.cycleRemainders[index] = 0;
-      if (index === 0 && result.risingEdges.length) this.raiseIrq?.(0);
+      const risingEdge = this.timer.advanceCounterHasRisingEdge(index, ticks);
+      if (risingEdge) this.cycleRemainders[index] = 0;
+      if (index === 0 && risingEdge) this.raiseIrq?.(0);
     }
   }
 

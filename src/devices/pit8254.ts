@@ -95,6 +95,17 @@ export class Pit8254 {
     return { risingEdges };
   }
 
+  public advanceCounterHasRisingEdge(index: number, ticks: number): boolean {
+    if (!Number.isInteger(ticks) || ticks < 0)
+      throw new RangeError("PIT ticks must be non-negative integers");
+    const counter = this.counter(index);
+    let risingEdge = false;
+    for (let tick = 0; tick < ticks; tick += 1) {
+      if (counter.advanceOne()) risingEdge = true;
+    }
+    return risingEdge;
+  }
+
   private writeReadBack(command: number): void {
     for (let index = 0; index < 3; index += 1) {
       if (command & (1 << (index + 1))) continue;

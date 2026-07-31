@@ -25,6 +25,14 @@ describe("project-native 8254 PIT", () => {
     expect(pit.snapshot(0)).toMatchObject({ count: 0, output: true });
   });
 
+  it("reports counter rising edges without allocating an edge list", () => {
+    const pit = new Pit8254();
+    program(pit, 0, 0, 2);
+    expect(pit.advanceCounterHasRisingEdge(0, 1)).toBe(false);
+    expect(pit.advanceCounterHasRisingEdge(0, 1)).toBe(true);
+    expect(pit.snapshot(0)).toMatchObject({ count: 0, output: true });
+  });
+
   it("implements mode 1 as a gate-rising triggered one-shot", () => {
     const pit = new Pit8254();
     program(pit, 0, 1, 2);
