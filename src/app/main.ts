@@ -1,6 +1,13 @@
 import { pcAt386Profile } from "../machine/configurations/pc-at-386.js";
 import { MachineRuntime, type MachineSnapshot } from "../machine/machine-runtime.js";
 import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
+import { NativeLockstepAdapter } from "../reference/native-lockstep-adapter.js";
+import {
+  stepControlledLockstep,
+  type PcjsLockstepEndpoint,
+  type PcjsLockstepSnapshot,
+  type PcjsLockstepStep
+} from "../reference/lockstep-coordinator.js";
 import { LocalAssetLoader } from "./local-asset-loader.js";
 import {
   selectedDeskProRom,
@@ -15,6 +22,7 @@ if (!root) throw new Error("Missing application root");
 
 const machine = new MachineRuntime(pcAt386Profile);
 const checkpoint = new NativeCoreCheckpoint();
+const nativeLockstep = new NativeLockstepAdapter(checkpoint);
 const parameters = new URLSearchParams(window.location.search);
 const developerMediaEnabled = parameters.has("dev-media");
 const pcjsReferenceEnabled = developerMediaEnabled && parameters.has("pcjs-reference");
@@ -50,6 +58,7 @@ root.innerHTML = `
       <button id="mount" type="button">Mount</button>
       ${developerMediaEnabled ? '<button id="dev-media" type="button">Load local media</button>' : ""}
       ${developerMediaEnabled ? '<button id="dev-key-a" type="button">Send A</button>' : ""}
+      ${pcjsReferenceEnabled ? '<button id="lockstep" type="button">Compare boundary</button>' : ""}
     </footer>
   </section>
 `;
@@ -66,6 +75,8 @@ const floppy = root.querySelector<HTMLInputElement>("#floppy");
 const mount = root.querySelector<HTMLButtonElement>("#mount");
 const developerMedia = root.querySelector<HTMLButtonElement>("#dev-media");
 const developerKeyA = root.querySelector<HTMLButtonElement>("#dev-key-a");
+const lockstep = root.querySelector<HTMLButtonElement>("#lockstep");
+const referenceFrame = root.querySelector<HTMLIFrameElement>("#pcjs-reference");
 if (
   !state ||
   !run ||
@@ -176,6 +187,7 @@ developerKeyA?.addEventListener("click", () => {
   enqueueKeyboardCode("KeyA", true);
   enqueueKeyboardCode("KeyA", false);
 });
+lockstep?.addEventListener("click", () => compareBrowserLockstep());
 
 async function mountDeveloperMedia(): Promise<void> {
   try {
@@ -226,5 +238,74 @@ function enqueueKeyboardCode(code: string, pressed: boolean): boolean {
   if (!bytes) return false;
   keyboardQueue.enqueue(bytes);
   return true;
+}
+
+function compareBrowserLockstep(): void {
+  if (machine.snapshot().runState === "running") {
+    controls.nativeStatus.textContent = "Pause the native machine before comparing a boundary";
+    return;
+  }
+  const pcjs = pcjsLockstepEndpoint(referenceFrame);
+  if (!pcjs) {
+    controls.nativeStatus.textContent = "PCjs lockstep control is not ready";
+    return;
+  }
+  const result = stepControlledLockstep(nativeLockstep, pcjs);
+  switch (result.kind) {
+    case "precondition-difference":
+      controls.nativeStatus.textContent = `Lockstep entry mismatch: ${formatDifference(result.comparison)}`;
+      return;
+    case "pcjs-not-paused":
+      controls.nativeStatus.textContent = "Pause the PCjs machine before comparing a boundary";
+      return;
+    case "pcjs-rejected":
+      controls.nativeStatus.textContent = `PCjs rejected boundary step: ${result.step.reason}`;
+      return;
+    case "stepped":
+      controls.nativeStatus.textContent = result.comparison.equal
+        ? `Lockstep boundary matched: native ${result.nativeStep.kind}, PCjs ${result.pcjsStep.cyclesConsumed} cycles`
+        : `Lockstep boundary mismatch: ${formatDifference(result.comparison)}`;
+  }
+}
+
+function pcjsLockstepEndpoint(frame: HTMLIFrameElement | null): PcjsLockstepEndpoint | undefined {
+  const referenceWindow = frame?.contentWindow as
+    | (Window & {
+        readonly PCjs?: {
+          readonly components?: readonly {
+            readonly id?: unknown;
+            readonly pc110Lockstep?: unknown;
+          }[];
+        };
+      })
+    | null;
+  const components = referenceWindow?.PCjs?.components;
+  const chipset = components?.find((component: { id?: unknown }) =>
+    String(component?.id ?? "").endsWith(".chipset")
+  );
+  const control = chipset?.pc110Lockstep as
+    | {
+        readonly snapshot?: () => PcjsLockstepSnapshot;
+        readonly stepInstruction?: () => PcjsLockstepStep;
+      }
+    | undefined;
+  const snapshot = control?.snapshot;
+  const stepInstruction = control?.stepInstruction;
+  if (!snapshot || !stepInstruction) return undefined;
+  return {
+    snapshot,
+    stepInstruction
+  };
+}
+
+function formatDifference(comparison: {
+  readonly difference:
+    | { readonly path: string; readonly native: unknown; readonly pcjs: unknown }
+    | undefined;
+}): string {
+  const difference = comparison.difference;
+  return difference
+    ? `${difference.path} native=${String(difference.native)} pcjs=${String(difference.pcjs)}`
+    : "unknown";
 }
 machine.subscribe(render);

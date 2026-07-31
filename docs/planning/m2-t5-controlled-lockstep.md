@@ -50,8 +50,10 @@ an authority, rationale, and activation condition.
 2. Add the native normalized CPU and cycle snapshot endpoint, then add matching
    PCjs CPU, cycle, and I/O snapshots. Compare established CPU fields through a
    project-owned first-difference comparator before wiring browser sampling.
-3. Add the smallest selected-device snapshot adapters needed for the actual
-   whole-machine blocker, beginning with PIC, PIT, DMA, 8042, and RTC.
+3. Bind the native and same-origin browser PCjs diagnostic endpoints to the
+   comparator. Add the smallest selected-device snapshot adapters needed for
+   the actual whole-machine blocker, beginning with PIC, PIT, DMA, 8042, and
+   RTC.
 4. Start reset-to-checkpoint selected-ROM windows only after both sides prove
    equivalent at the chosen entry boundary.
 5. On the first mismatch, stop, retain the preceding bounded window, and run

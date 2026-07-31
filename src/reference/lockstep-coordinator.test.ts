@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { compareLockstepCpu, type PcjsLockstepSnapshot } from "./lockstep-coordinator.js";
+import {
+  compareLockstepCpu,
+  stepControlledLockstep,
+  type PcjsLockstepSnapshot
+} from "./lockstep-coordinator.js";
 import type { NativeLockstepSnapshot } from "./native-lockstep-adapter.js";
 
 function snapshots(): { native: NativeLockstepSnapshot; pcjs: PcjsLockstepSnapshot } {
@@ -104,5 +108,39 @@ describe("controlled lockstep comparator", () => {
       equal: false,
       difference: { path: "cpu.registers.ecx", native: 2, pcjs: 9 }
     });
+  });
+
+  it("does not step either endpoint when the entry boundary differs", () => {
+    const { native, pcjs } = snapshots();
+    let nativeSteps = 0;
+    let pcjsSteps = 0;
+    const changed = { ...pcjs, cpu: { ...pcjs.cpu, eip: 1 } };
+
+    expect(
+      stepControlledLockstep(
+        {
+          snapshot: () => native,
+          stepInstruction: () => ((nativeSteps += 1), { kind: "instruction", cycles: 1 })
+        },
+        {
+          snapshot: () => changed,
+          stepInstruction: () => (
+            (pcjsSteps += 1),
+            {
+              accepted: true,
+              reason: "executed",
+              cyclesConsumed: 1,
+              before: changed,
+              after: changed
+            }
+          )
+        }
+      )
+    ).toMatchObject({
+      kind: "precondition-difference",
+      comparison: { difference: { path: "cpu.eip" } }
+    });
+    expect(nativeSteps).toBe(0);
+    expect(pcjsSteps).toBe(0);
   });
 });

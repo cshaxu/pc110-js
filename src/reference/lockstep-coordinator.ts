@@ -1,4 +1,5 @@
 import type { NativeLockstepSnapshot } from "./native-lockstep-adapter.js";
+import type { RebuiltMachineStepResult } from "../machine/rebuilt-pc-at-386-core.js";
 
 export interface PcjsLockstepSnapshot {
   readonly version: number;
@@ -37,6 +38,35 @@ export interface LockstepComparison {
   readonly difference: LockstepDifference | undefined;
 }
 
+export interface NativeLockstepEndpoint {
+  snapshot(): NativeLockstepSnapshot;
+  stepInstruction(): RebuiltMachineStepResult;
+}
+
+export interface PcjsLockstepStep {
+  readonly accepted: boolean;
+  readonly reason: string;
+  readonly cyclesConsumed: number;
+  readonly before: PcjsLockstepSnapshot;
+  readonly after: PcjsLockstepSnapshot;
+}
+
+export interface PcjsLockstepEndpoint {
+  snapshot(): PcjsLockstepSnapshot;
+  stepInstruction(): PcjsLockstepStep;
+}
+
+export type ControlledLockstepResult =
+  | { readonly kind: "precondition-difference"; readonly comparison: LockstepComparison }
+  | { readonly kind: "pcjs-not-paused"; readonly snapshot: PcjsLockstepSnapshot }
+  | { readonly kind: "pcjs-rejected"; readonly step: PcjsLockstepStep }
+  | {
+      readonly kind: "stepped";
+      readonly nativeStep: RebuiltMachineStepResult;
+      readonly pcjsStep: PcjsLockstepStep;
+      readonly comparison: LockstepComparison;
+    };
+
 const REGISTER_NAMES = ["eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"] as const;
 const SEGMENT_NAMES = ["cs", "ds", "es", "ss", "fs", "gs"] as const;
 
@@ -71,6 +101,28 @@ export function compareLockstepCpu(
     }
   }
   return { equal: true, difference: undefined };
+}
+
+/** Advances both endpoints only after their established CPU state matches. */
+export function stepControlledLockstep(
+  native: NativeLockstepEndpoint,
+  pcjs: PcjsLockstepEndpoint
+): ControlledLockstepResult {
+  const beforeNative = native.snapshot();
+  const beforePcjs = pcjs.snapshot();
+  if (!beforePcjs.paused) return { kind: "pcjs-not-paused", snapshot: beforePcjs };
+  const before = compareLockstepCpu(beforeNative, beforePcjs);
+  if (!before.equal) return { kind: "precondition-difference", comparison: before };
+
+  const nativeStep = native.stepInstruction();
+  const pcjsStep = pcjs.stepInstruction();
+  if (!pcjsStep.accepted) return { kind: "pcjs-rejected", step: pcjsStep };
+  return {
+    kind: "stepped",
+    nativeStep,
+    pcjsStep,
+    comparison: compareLockstepCpu(native.snapshot(), pcjsStep.after)
+  };
 }
 
 function compare(
