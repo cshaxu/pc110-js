@@ -9,6 +9,8 @@ import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
 
 const PORT_EVENT_CAPACITY = 16;
 const KEYBOARD_PORT_EVENT_CAPACITY = 16;
+const BDA_KEYBOARD_HEAD = 0x41a;
+const BDA_KEYBOARD_TAIL = 0x41c;
 
 export interface NativeCoreCheckpointSnapshot {
   readonly codeAddress: string;
@@ -42,6 +44,8 @@ export interface NativeCoreCheckpointSnapshot {
   readonly keyboardControllerOutputBuffer: string;
   readonly keyboardControllerKeyboardEnabled: string;
   readonly keyboardScanningEnabled: string;
+  readonly bdaKeyboardHead: string;
+  readonly bdaKeyboardTail: string;
   readonly recentKeyboardControllerPortEvents: string;
   readonly recentPortEvents: string;
 }
@@ -136,6 +140,8 @@ export class NativeCoreCheckpoint {
           : hex8(keyboardController.outputBuffer),
       keyboardControllerKeyboardEnabled: bit(keyboardController.keyboardEnabled),
       keyboardScanningEnabled: bit(this.core.keyboardController.keyboard.canTransmitScanCodes()),
+      bdaKeyboardHead: hex16(readUint16(this.memory, BDA_KEYBOARD_HEAD)),
+      bdaKeyboardTail: hex16(readUint16(this.memory, BDA_KEYBOARD_TAIL)),
       recentKeyboardControllerPortEvents: this.recentKeyboardControllerPortEvents.join(" ") || "--",
       recentPortEvents: this.recentPortEvents.join(" ") || "--"
     };
@@ -169,6 +175,10 @@ function retainPortEvent(events: string[], event: string, capacity: number): voi
 
 function hex8(value: number): string {
   return value.toString(16).padStart(2, "0").toUpperCase();
+}
+
+function readUint16(memory: PhysicalMemory, address: number): number {
+  return memory.readUint8(address) | (memory.readUint8(address + 1) << 8);
 }
 
 function hex16(value: number): string {

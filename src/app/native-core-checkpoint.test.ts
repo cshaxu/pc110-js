@@ -36,6 +36,8 @@ describe("NativeCoreCheckpoint", () => {
       keyboardControllerOutputBuffer: "--",
       keyboardControllerKeyboardEnabled: "0",
       keyboardScanningEnabled: "0",
+      bdaKeyboardHead: "0000",
+      bdaKeyboardTail: "0000",
       recentKeyboardControllerPortEvents: "--",
       recentPortEvents: "--"
     });
@@ -89,5 +91,18 @@ describe("NativeCoreCheckpoint", () => {
     checkpoint.reset();
     expect(checkpoint.snapshot().recentPortEvents).toBe("--");
     expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("--");
+  });
+
+  it("reports BDA keyboard buffer pointers without changing their state", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+    checkpoint.memory.writeUint8(0x41a, 0x1e);
+    checkpoint.memory.writeUint8(0x41b, 0x00);
+    checkpoint.memory.writeUint8(0x41c, 0x20);
+    checkpoint.memory.writeUint8(0x41d, 0x00);
+
+    expect(checkpoint.snapshot()).toMatchObject({
+      bdaKeyboardHead: "001E",
+      bdaKeyboardTail: "0020"
+    });
   });
 });
