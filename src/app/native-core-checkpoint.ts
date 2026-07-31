@@ -54,26 +54,36 @@ export interface NativeCoreCheckpointSnapshot {
   readonly recentPortEvents: string;
 }
 
+export interface NativeCoreCheckpointOptions {
+  /** Enables bounded port-tail diagnostics outside the Fast Execution path. */
+  readonly portTrace?: boolean;
+}
+
 export class NativeCoreCheckpoint {
   private readonly recentPortEvents: string[] = [];
   private readonly recentKeyboardControllerPortEvents: string[] = [];
   private readonly recentKeyboardControllerWrites: string[] = [];
   public readonly memory = createDeskPro386Memory();
-  public readonly core = new RebuiltPcAt386Core(
-    this.memory,
-    (event) => this.recordMachineEvent(event),
-    {
-      deskProSecondaryPit: true,
-      unpopulatedIo: "floating",
-      instructionTrace: false,
-      rtc: { initialDateTime: deskPro386ReferenceRtcDateTime }
-    }
-  );
-  public readonly textFramebuffer = new VgaTextFramebuffer(
-    this.core.vgaMemory,
-    this.core.crtc,
-    this.core.dac
-  );
+  public readonly core: RebuiltPcAt386Core;
+  public readonly textFramebuffer: VgaTextFramebuffer;
+
+  public constructor(options: NativeCoreCheckpointOptions = {}) {
+    this.core = new RebuiltPcAt386Core(
+      this.memory,
+      options.portTrace ? (event) => this.recordMachineEvent(event) : undefined,
+      {
+        deskProSecondaryPit: true,
+        unpopulatedIo: "floating",
+        instructionTrace: false,
+        rtc: { initialDateTime: deskPro386ReferenceRtcDateTime }
+      }
+    );
+    this.textFramebuffer = new VgaTextFramebuffer(
+      this.core.vgaMemory,
+      this.core.crtc,
+      this.core.dac
+    );
+  }
 
   public reset(): void {
     this.recentPortEvents.length = 0;

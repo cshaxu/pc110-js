@@ -91,7 +91,7 @@ describe("NativeCoreCheckpoint", () => {
   });
 
   it("retains a bounded native port-event tail without instruction snapshots", () => {
-    const checkpoint = new NativeCoreCheckpoint();
+    const checkpoint = new NativeCoreCheckpoint({ portTrace: true });
     checkpoint.core.ports.write(0x64, 0xae, 8);
     checkpoint.core.ports.read(0x64, 8);
 
@@ -102,6 +102,18 @@ describe("NativeCoreCheckpoint", () => {
     expect(checkpoint.snapshot().recentPortEvents).toBe("--");
     expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("--");
     expect(checkpoint.snapshot().recentKeyboardControllerWrites).toBe("--");
+  });
+
+  it("keeps Fast Execution free of port-tail formatting unless diagnostics enable it", () => {
+    const checkpoint = new NativeCoreCheckpoint({ portTrace: false });
+    checkpoint.core.ports.write(0x64, 0xae, 8);
+    checkpoint.core.ports.read(0x64, 8);
+
+    expect(checkpoint.snapshot()).toMatchObject({
+      recentPortEvents: "--",
+      recentKeyboardControllerWrites: "--",
+      recentKeyboardControllerPortEvents: "--"
+    });
   });
 
   it("reports BDA keyboard buffer pointers without changing their state", () => {

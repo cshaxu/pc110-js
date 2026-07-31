@@ -23,12 +23,13 @@ import "./styles.css";
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("Missing application root");
 
-const machine = new MachineRuntime(pcAt386Profile);
-const checkpoint = new NativeCoreCheckpoint();
-const nativeLockstep = new NativeLockstepAdapter(checkpoint);
 const parameters = new URLSearchParams(window.location.search);
 const developerMediaEnabled = parameters.has("dev-media");
 const pcjsReferenceEnabled = developerMediaEnabled && parameters.has("pcjs-reference");
+const portTraceEnabled = developerMediaEnabled && parameters.has("trace-ports");
+const machine = new MachineRuntime(pcAt386Profile);
+const checkpoint = new NativeCoreCheckpoint({ portTrace: portTraceEnabled });
+const nativeLockstep = new NativeLockstepAdapter(checkpoint);
 root.innerHTML = `
   <section class="machine-shell" aria-label="pc110-js machine">
     <header>
@@ -144,9 +145,13 @@ function render(snapshot: MachineSnapshot): void {
     `SYS61 ${native.systemPortControl} PIT2 GATE ${native.systemTimer2Gate} SPK ${native.systemSpeakerOutput} A20 ${native.a20Enabled}`,
     `8042 STAT ${native.keyboardControllerStatus} CMD ${native.keyboardControllerCommandByte} OBF ${native.keyboardControllerOutputBuffer} KBD ${native.keyboardControllerKeyboardEnabled} SCAN ${native.keyboardScanningEnabled}`,
     `BDA KBD HEAD ${native.bdaKeyboardHead} TAIL ${native.bdaKeyboardTail}`,
-    `8042 WRITES ${native.recentKeyboardControllerWrites}`,
-    `8042 PORTS ${native.recentKeyboardControllerPortEvents}`,
-    `PORTS ${native.recentPortEvents}`
+    ...(portTraceEnabled
+      ? [
+          `8042 WRITES ${native.recentKeyboardControllerWrites}`,
+          `8042 PORTS ${native.recentKeyboardControllerPortEvents}`,
+          `PORTS ${native.recentPortEvents}`
+        ]
+      : [])
   ].join(" | ");
   controls.run.disabled = snapshot.runState === "running";
   controls.pause.disabled = snapshot.runState !== "running";
