@@ -8,6 +8,7 @@ import { createRomImage } from "../firmware/rom-image.js";
 import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
 
 const PORT_EVENT_CAPACITY = 16;
+const KEYBOARD_PORT_EVENT_CAPACITY = 16;
 
 export interface NativeCoreCheckpointSnapshot {
   readonly codeAddress: string;
@@ -41,11 +42,13 @@ export interface NativeCoreCheckpointSnapshot {
   readonly keyboardControllerOutputBuffer: string;
   readonly keyboardControllerKeyboardEnabled: string;
   readonly keyboardScanningEnabled: string;
+  readonly recentKeyboardControllerPortEvents: string;
   readonly recentPortEvents: string;
 }
 
 export class NativeCoreCheckpoint {
   private readonly recentPortEvents: string[] = [];
+  private readonly recentKeyboardControllerPortEvents: string[] = [];
   public readonly memory = new PhysicalMemory({
     ramBytes: 0xa0000,
     a20Enabled: true,
@@ -69,6 +72,7 @@ export class NativeCoreCheckpoint {
 
   public reset(): void {
     this.recentPortEvents.length = 0;
+    this.recentKeyboardControllerPortEvents.length = 0;
     this.core.reset();
   }
 
@@ -131,21 +135,35 @@ export class NativeCoreCheckpoint {
           : hex8(keyboardController.outputBuffer),
       keyboardControllerKeyboardEnabled: bit(keyboardController.keyboardEnabled),
       keyboardScanningEnabled: bit(this.core.keyboardController.keyboard.canTransmitScanCodes()),
+      recentKeyboardControllerPortEvents: this.recentKeyboardControllerPortEvents.join(" ") || "--",
       recentPortEvents: this.recentPortEvents.join(" ") || "--"
     };
   }
 
   private recordMachineEvent(event: RebuiltMachineTraceEvent): void {
     if (event.kind !== "port") return;
-    if (this.recentPortEvents.length === PORT_EVENT_CAPACITY) this.recentPortEvents.shift();
-    const value = event.event.value
-      .toString(16)
-      .padStart(event.event.width / 4, "0")
-      .toUpperCase();
-    this.recentPortEvents.push(
-      `${event.event.direction === "read" ? "R" : "W"}${hex16(event.event.port)}:${value}`
-    );
+    const formatted = formatPortEvent(event);
+    retainPortEvent(this.recentPortEvents, formatted, PORT_EVENT_CAPACITY);
+    if (event.event.port === 0x60 || event.event.port === 0x64)
+      retainPortEvent(
+        this.recentKeyboardControllerPortEvents,
+        formatted,
+        KEYBOARD_PORT_EVENT_CAPACITY
+      );
   }
+}
+
+function formatPortEvent(event: Extract<RebuiltMachineTraceEvent, { kind: "port" }>): string {
+  const value = event.event.value
+    .toString(16)
+    .padStart(event.event.width / 4, "0")
+    .toUpperCase();
+  return `${event.event.direction === "read" ? "R" : "W"}${hex16(event.event.port)}:${value}`;
+}
+
+function retainPortEvent(events: string[], event: string, capacity: number): void {
+  if (events.length === capacity) events.shift();
+  events.push(event);
 }
 
 function hex8(value: number): string {

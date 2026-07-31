@@ -111,6 +111,7 @@ function render(snapshot: MachineSnapshot): void {
     `RTC A ${native.rtcStatusA} B ${native.rtcStatusB} C ${native.rtcStatusC} D ${native.rtcStatusD} NMI ${native.rtcNmiDisabled}`,
     `SYS61 ${native.systemPortControl} PIT2 GATE ${native.systemTimer2Gate} SPK ${native.systemSpeakerOutput} A20 ${native.a20Enabled}`,
     `8042 STAT ${native.keyboardControllerStatus} CMD ${native.keyboardControllerCommandByte} OBF ${native.keyboardControllerOutputBuffer} KBD ${native.keyboardControllerKeyboardEnabled} SCAN ${native.keyboardScanningEnabled}`,
+    `8042 PORTS ${native.recentKeyboardControllerPortEvents}`,
     `PORTS ${native.recentPortEvents}`
   ].join(" | ");
   controls.run.disabled = snapshot.runState === "running";
