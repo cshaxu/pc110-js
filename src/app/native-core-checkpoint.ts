@@ -10,6 +10,7 @@ import { createDeskPro386Memory } from "../machine/configurations/deskpro386-mem
 
 const PORT_EVENT_CAPACITY = 16;
 const KEYBOARD_PORT_EVENT_CAPACITY = 16;
+const KEYBOARD_COMMAND_WRITE_CAPACITY = 16;
 const BDA_KEYBOARD_HEAD = 0x41a;
 const BDA_KEYBOARD_TAIL = 0x41c;
 
@@ -47,6 +48,7 @@ export interface NativeCoreCheckpointSnapshot {
   readonly keyboardScanningEnabled: string;
   readonly bdaKeyboardHead: string;
   readonly bdaKeyboardTail: string;
+  readonly recentKeyboardControllerWrites: string;
   readonly recentKeyboardControllerPortEvents: string;
   readonly recentPortEvents: string;
 }
@@ -54,6 +56,7 @@ export interface NativeCoreCheckpointSnapshot {
 export class NativeCoreCheckpoint {
   private readonly recentPortEvents: string[] = [];
   private readonly recentKeyboardControllerPortEvents: string[] = [];
+  private readonly recentKeyboardControllerWrites: string[] = [];
   public readonly memory = createDeskPro386Memory();
   public readonly core = new RebuiltPcAt386Core(
     this.memory,
@@ -73,6 +76,7 @@ export class NativeCoreCheckpoint {
   public reset(): void {
     this.recentPortEvents.length = 0;
     this.recentKeyboardControllerPortEvents.length = 0;
+    this.recentKeyboardControllerWrites.length = 0;
     this.core.reset();
   }
 
@@ -137,6 +141,7 @@ export class NativeCoreCheckpoint {
       keyboardScanningEnabled: bit(this.core.keyboardController.keyboard.canTransmitScanCodes()),
       bdaKeyboardHead: hex16(readUint16(this.memory, BDA_KEYBOARD_HEAD)),
       bdaKeyboardTail: hex16(readUint16(this.memory, BDA_KEYBOARD_TAIL)),
+      recentKeyboardControllerWrites: this.recentKeyboardControllerWrites.join(" ") || "--",
       recentKeyboardControllerPortEvents: this.recentKeyboardControllerPortEvents.join(" ") || "--",
       recentPortEvents: this.recentPortEvents.join(" ") || "--"
     };
@@ -151,6 +156,15 @@ export class NativeCoreCheckpoint {
         this.recentKeyboardControllerPortEvents,
         formatted,
         KEYBOARD_PORT_EVENT_CAPACITY
+      );
+    if (
+      event.event.direction === "write" &&
+      (event.event.port === 0x60 || event.event.port === 0x64)
+    )
+      retainPortEvent(
+        this.recentKeyboardControllerWrites,
+        formatted,
+        KEYBOARD_COMMAND_WRITE_CAPACITY
       );
   }
 }

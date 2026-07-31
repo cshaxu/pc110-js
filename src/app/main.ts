@@ -112,6 +112,7 @@ function render(snapshot: MachineSnapshot): void {
     `SYS61 ${native.systemPortControl} PIT2 GATE ${native.systemTimer2Gate} SPK ${native.systemSpeakerOutput} A20 ${native.a20Enabled}`,
     `8042 STAT ${native.keyboardControllerStatus} CMD ${native.keyboardControllerCommandByte} OBF ${native.keyboardControllerOutputBuffer} KBD ${native.keyboardControllerKeyboardEnabled} SCAN ${native.keyboardScanningEnabled}`,
     `BDA KBD HEAD ${native.bdaKeyboardHead} TAIL ${native.bdaKeyboardTail}`,
+    `8042 WRITES ${native.recentKeyboardControllerWrites}`,
     `8042 PORTS ${native.recentKeyboardControllerPortEvents}`,
     `PORTS ${native.recentPortEvents}`
   ].join(" | ");
