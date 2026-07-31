@@ -58,6 +58,10 @@ Do not treat this file as a substitute for those canonical documents.
   application-specific shortcuts.
 - Any intentional behavior change to PCjs-derived implementation requires the
   one-page report defined in `docs/pcjs-change-reports/template.md`.
+- Follow `docs/governance/architecture-authority.md` for the distinct NXVM,
+  PCjs, and PC110-EMU reference roles, profile boundary, and M2 convergence
+  method. Do not import a reference repository's hacks or runtime into the
+  product while applying its authorized evidence.
 
 ## Execution Discipline
 

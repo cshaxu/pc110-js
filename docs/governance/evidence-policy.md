@@ -1,5 +1,8 @@
 # Evidence Policy
 
+Reference responsibilities, profile ownership, and excluded implementation
+shortcuts are defined by [Architecture Authority And M2 Convergence](architecture-authority.md).
+
 Hardware behavior must be implemented from explicit evidence, not from plausibility.
 
 ## Domain Authority

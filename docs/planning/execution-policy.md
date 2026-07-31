@@ -125,6 +125,9 @@ filesystem, or application behavior.
 
 ## PCjs-Assisted Differential Policy
 
+For the architecture boundary and selected-profile M2 completion scope, follow
+[Architecture Authority And M2 Convergence](../governance/architecture-authority.md).
+
 The project maintains two distinct PCjs uses:
 
 - The M1 reference machine runs the pinned PCjs CPU and devices as a read-only
@@ -148,6 +151,11 @@ project-native and PCjs machines from equivalent diagnostic state by an
 explicit instruction or cycle budget, then compares normalized state at the
 instruction boundary. The PCjs diagnostic control plane exists only on its
 local `pc110` branch; it must never be imported by the product runtime.
+
+Whole-machine diagnostics must converge by bounded batch comparison, batch
+reduction, then instruction-level first-difference replay. Independent long
+native and PCjs browser runs are milestone evidence only and cannot by
+themselves justify a behavior correction.
 
 After the harness passes, every M2 T3 through M4 native-device migration must
 add a project-owned device or tightly coupled device group, rerun the relevant

@@ -54,6 +54,9 @@ These rules are project constraints.
 
 ## Source Authority
 
+The concise source-role and profile-boundary rules are canonical in
+[the architecture authority policy](docs/governance/architecture-authority.md).
+
 - Use PCjs PCx86 v2 as the primary implementation source for standard PC/AT CPU, memory, bus, chipset, storage, video, and input behavior.
 - PCjs PCx86 v2 supports through the 80386. Do not describe it as a complete 80486 core.
 - Introduce PC110-required 486SX/SL behavior in M3 as explicit, tested CPU variants or deltas.
@@ -99,6 +102,9 @@ These rules are project constraints.
 ## Device Architecture
 
 - Selection follows `Machine Profile -> Device Registry -> Device Interface -> Device Variant`.
+- The generic core owns reusable execution and device contracts; a profile owns
+  selected-machine ROMs, memory map, I/O ownership, wiring, timing, and device
+  selection. UI code remains outside both boundaries.
 - M2 registers generic 80386 PC/AT devices as default variants.
 - M3 and M4 add machine-specific variants without removing generic variants.
 - Machine profiles own ROM selection, memory maps, I/O ownership, device selection, and wiring.
