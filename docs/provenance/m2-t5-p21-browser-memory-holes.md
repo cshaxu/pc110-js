@@ -1,6 +1,7 @@
 # M2 T5 P21 Browser Memory Holes Provenance
 
-The selected native ROM trace already uses project-native physical-memory and
-I/O-bus profiles that float unpopulated reads and ignore writes. The browser
-checkpoint now uses the same selected-machine profiles. No PCjs runtime or
-source is imported by the browser product.
+P21 introduced a selected-machine non-faulting physical-hole and I/O profile.
+Its original physical-read value was inferred from a native trace rather than a
+controlled PCjs comparison. P109 supersedes that physical-read assumption with
+the observed PCjs zero value; ignored physical writes and the independent I/O
+profile remain project-native.

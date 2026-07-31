@@ -1,6 +1,6 @@
 # M2 T5 P21 Verification: Browser Memory Holes
 
-Focused tests assert the browser checkpoint's unpopulated physical and I/O
-buses return `0xFF` and ignore writes. Manual browser run with validated local
-ROM and floppy remains running from `F000:B5B5` through `F000:B5EC`, without
-the former `0xE0000` or `0x4B` unmapped-bus exceptions.
+Historical P21 focused tests covered non-faulting physical and I/O accesses.
+P109 replaces its unverified physical `0xFF` expectation with the controlled
+PCjs zero-read evidence. Ignored physical writes and unpopulated-I/O behavior
+remain covered separately.
