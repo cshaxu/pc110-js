@@ -4,8 +4,21 @@ import { estimate386Cycles } from "./cycle-estimator.js";
 describe("80386 cycle estimator", () => {
   it("distinguishes string, I/O, and conditional control timing classes", () => {
     expect(
-      estimate386Cycles({ opcode: 0xab, prefixes: { bytes: 1 }, length: 2 } as never, 0, 0)
-    ).toBe(5);
+      estimate386Cycles(
+        { opcode: 0xab, prefixes: { bytes: 1, repeat: "rep" }, length: 2 } as never,
+        0,
+        0
+      )
+    ).toBe(7);
+    expect(
+      estimate386Cycles(
+        { opcode: 0xab, prefixes: { bytes: 1, repeat: "rep" }, length: 2 } as never,
+        0,
+        0,
+        true,
+        true
+      )
+    ).toBe(3);
     expect(
       estimate386Cycles({ opcode: 0xe4, prefixes: { bytes: 0 }, length: 2 } as never, 0, 2)
     ).toBe(5);
@@ -55,6 +68,7 @@ describe("80386 cycle estimator", () => {
     expect(
       estimate386Cycles({ opcode: 0x8b, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
     ).toBe(3);
+    expect(estimate386Cycles({ opcode: 0x8e, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(3);
     expect(
       estimate386Cycles({ opcode: 0xf7, prefixes: { bytes: 0 }, modRm: memory } as never, 0, 0)
     ).toBe(6);

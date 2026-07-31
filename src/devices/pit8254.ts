@@ -225,10 +225,14 @@ class PitCounter {
       if (this.lowPulse) {
         this.lowPulse = false;
         this.output = true;
-        this.count = this.reload - 1;
-      } else if (this.count > 1) this.count -= 1;
-      else {
         this.count = this.reload;
+      } else if (this.count > 2) this.count -= 1;
+      else if (this.count === 2) {
+        this.count = 1;
+        this.output = false;
+        this.lowPulse = true;
+      } else {
+        this.count = 1;
         this.output = false;
         this.lowPulse = true;
       }

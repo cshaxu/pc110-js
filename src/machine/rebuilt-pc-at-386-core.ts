@@ -87,6 +87,7 @@ export type RebuiltMachineTrace = (event: RebuiltMachineTraceEvent) => void;
 /** One in-memory diagnostic replay point for the project-native machine core. */
 export interface RebuiltPcAt386CoreState {
   readonly cpu: RebuiltCpuSnapshot;
+  readonly runner: ReturnType<RebuiltCpuRunner["capture"]>;
   readonly memory: ReturnType<PhysicalMemory["capture"]>;
   readonly scheduler: ReturnType<CycleScheduler["capture"]>;
   readonly keyboardOutputPort: number;
@@ -267,6 +268,7 @@ export class RebuiltPcAt386Core {
   public capture(): RebuiltPcAt386CoreState {
     return {
       cpu: this.runner.state.snapshot(),
+      runner: this.runner.capture(),
       memory: this.memory.capture(),
       scheduler: this.scheduler.capture(),
       keyboardOutputPort: this.keyboardOutputPort.capture(),
@@ -303,6 +305,7 @@ export class RebuiltPcAt386Core {
       throw new RangeError("Machine checkpoint configuration changed since capture");
     this.memory.restore(state.memory);
     this.runner.state.restore(state.cpu);
+    this.runner.restore(state.runner);
     this.scheduler.restore(state.scheduler);
     this.keyboardOutputPort.restore(state.keyboardOutputPort);
     this.pit.restore(state.pit);

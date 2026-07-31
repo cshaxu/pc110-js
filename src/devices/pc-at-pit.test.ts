@@ -23,9 +23,7 @@ describe("project-native PC/AT PIT", () => {
     pit.write(PIT_CONTROL_PORT, 0xb6, 8);
     pit.write(PIT_COUNTER2_PORT, 2, 8);
     pit.write(PIT_COUNTER2_PORT, 0, 8);
-    pit.advance(2);
-    expect(irqs).toEqual([]);
-    pit.advance(1);
+    pit.advance(3);
     expect(irqs).toEqual([0]);
     expect(pit.counter2Output()).toBe(false);
   });
@@ -44,5 +42,20 @@ describe("project-native PC/AT PIT", () => {
     pit.restore(checkpoint);
     pit.advanceCycles(4, 16n, 1n);
     expect(pit.snapshot(1).count).toBe(0x11);
+  });
+
+  it("rebases a periodic reload to the observed instruction boundary", () => {
+    const pit = new PcAtPit();
+    pit.write(PIT_CONTROL_PORT, 0x34, 8);
+    pit.write(PIT_COUNTER0_PORT, 2, 8);
+    pit.write(PIT_COUNTER0_PORT, 0, 8);
+
+    pit.advanceCycles(12, 16n, 1n);
+    pit.advanceCycles(16, 16n, 1n);
+    expect(pit.snapshot(0)).toMatchObject({ count: 1, output: false });
+    pit.advanceCycles(16, 16n, 1n);
+    expect(pit.snapshot(0)).toMatchObject({ count: 2, output: true });
+    pit.advanceCycles(4, 16n, 1n);
+    expect(pit.snapshot(0)).toMatchObject({ count: 2, output: true });
   });
 });

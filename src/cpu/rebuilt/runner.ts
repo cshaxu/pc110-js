@@ -10,9 +10,14 @@ export interface RebuiltCpuStepResult {
   readonly cycles: number;
 }
 
+export interface RebuiltCpuRunnerState {
+  readonly repeatContinuation: number | undefined;
+}
+
 export class RebuiltCpuRunner {
   public readonly state = new RebuiltCpuState();
   private readonly executor: RebuiltCpuExecutor;
+  private repeatContinuation: number | undefined;
 
   public constructor(
     memory: RebuiltMemoryBus,
@@ -24,22 +29,45 @@ export class RebuiltCpuRunner {
 
   public reset(): void {
     this.state.reset();
+    this.repeatContinuation = undefined;
   }
 
   public step(): RebuiltCpuStepResult {
     const beforeEip = this.state.readEip();
     const codeDefault32 = this.state.codeDefault32();
     const instruction = this.executor.step(dispatchRebuiltInstruction);
+    const repeatContinuation = this.repeatContinuation === beforeEip;
+    const continues =
+      instruction.prefixes.repeat !== undefined && this.state.readEip() === beforeEip;
+    this.repeatContinuation = continues ? beforeEip : undefined;
     return {
-      cycles: estimate386Cycles(instruction, beforeEip, this.state.readEip(), codeDefault32)
+      cycles: estimate386Cycles(
+        instruction,
+        beforeEip,
+        this.state.readEip(),
+        codeDefault32,
+        repeatContinuation
+      )
     };
   }
 
+  public capture(): RebuiltCpuRunnerState {
+    return { repeatContinuation: this.repeatContinuation };
+  }
+
+  public restore(state: RebuiltCpuRunnerState): void {
+    if (state.repeatContinuation !== undefined && !Number.isInteger(state.repeatContinuation))
+      throw new RangeError("Repeated-string continuation must be an integer instruction pointer");
+    this.repeatContinuation = state.repeatContinuation;
+  }
+
   public serviceExternalInterrupt(vector: number): boolean {
+    this.repeatContinuation = undefined;
     return this.executor.serviceExternalInterrupt(vector);
   }
 
   public serviceNonMaskableInterrupt(vector = 2): boolean {
+    this.repeatContinuation = undefined;
     return this.executor.serviceNonMaskableInterrupt(vector);
   }
 

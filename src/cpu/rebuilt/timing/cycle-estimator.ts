@@ -14,12 +14,14 @@ export function estimate386Cycles(
   instruction: DecodedInstruction | undefined,
   beforeEip: number,
   afterEip: number,
-  codeDefault32 = true
+  codeDefault32 = true,
+  repeatContinuation = false
 ): number {
   if (!instruction) return 3;
   const opcode = instruction.opcode;
   const modRm = instruction.modRm;
-  if (isStringOpcode(opcode)) return 5;
+  if (isStringOpcode(opcode))
+    return instruction.prefixes.repeat === undefined ? 5 : repeatContinuation ? 3 : 7;
   if (isIoOpcode(opcode)) return 5;
   if (opcode === 0xa8 || opcode === 0xa9 || opcode === 0x3c || opcode === 0x3d || opcode === 0xfa)
     return 3;
@@ -33,6 +35,7 @@ export function estimate386Cycles(
     if (!modRm.memory) return 2;
     return opcode === 0x88 || opcode === 0x89 ? 5 : 3;
   }
+  if (opcode === 0x8e) return 3;
   if ((opcode === 0xf6 || opcode === 0xf7) && modRm?.reg === 0) return modRm.memory ? 6 : 3;
   if (opcode === 0xff && modRm?.reg === 4) return modRm.memory ? 11 : 7;
   if (isPushOpcode(opcode)) return withPrefixes(3, instruction);

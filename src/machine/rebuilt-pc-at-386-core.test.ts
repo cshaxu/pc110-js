@@ -348,8 +348,6 @@ describe("RebuiltPcAt386Core", () => {
     core.ports.write(0x40, 0, 8);
 
     core.advancePit(2);
-    expect(core.pic.pendingVector()).toBeUndefined();
-    core.advancePit(1);
     expect(core.pic.pendingVector()).toBe(0x20);
     core.step();
     expect(core.runner.state.readEip()).toBe(0x40);
@@ -496,7 +494,7 @@ describe("RebuiltPcAt386Core", () => {
     deskPro.ports.write(0x4b, 0x34, 8);
     deskPro.ports.write(0x48, 2, 8);
     deskPro.ports.write(0x48, 0, 8);
-    deskPro.advancePit(3);
+    deskPro.advancePit(2);
     expect(deskPro.deskProSecondaryPit?.snapshot(0)).toMatchObject({ output: true });
   });
 

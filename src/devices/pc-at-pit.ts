@@ -75,6 +75,7 @@ export class PcAtPit {
       if (ticks > BigInt(Number.MAX_SAFE_INTEGER))
         throw new RangeError("PIT tick charge exceeds safe range");
       const result = this.timer.advanceCounter(index, Number(ticks));
+      if (result.risingEdges.length) this.cycleRemainders[index] = 0n;
       if (index === 0 && result.risingEdges.length) this.raiseIrq?.(0);
     }
   }

@@ -48,7 +48,11 @@ describe("project-native 8254 PIT", () => {
   it("implements mode 2 rate generation and mode 3 square-wave output", () => {
     const rate = new Pit8254();
     program(rate, 0, 2, 3);
-    rate.advance(3);
+    rate.advance(2);
+    expect(rate.snapshot(0)).toMatchObject({ count: 1, output: false });
+    rate.advance(1);
+    expect(rate.snapshot(0)).toMatchObject({ count: 3, output: true });
+    rate.advance(2);
     expect(rate.snapshot(0).output).toBe(false);
     expect(rate.advance(1).risingEdges).toEqual([0]);
 
