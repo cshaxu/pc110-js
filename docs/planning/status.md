@@ -81,8 +81,11 @@ native devices as the M2 whole-machine completion gate.
 P31 further corrects the S6 execution method: the lockstep harness has
 established its initial baseline and is now a targeted diagnostic mechanism.
 Browser-visible project-owned workload evidence is the primary S6 driver. The
-current browser entry has only MachineRuntime controls, so it is not yet a
-native firmware, storage, display, or DOS workload claim.
+browser entry now composes `NativeCoreCheckpoint` with the project-native
+rebuilt CPU, memory, selected PC/AT devices, native text presentation, and
+validated user-provided system ROM, VGA ROM, and floppy inputs. It has advanced
+through native firmware execution, but it is not yet a DOS workload claim until
+the selected floppy reaches a visible prompt.
 
 P32 completed the mandatory post-T2 architecture review. The rebuilt CPU's
 primary and `0F` dispatch now uses a project-native typed opcode table while
