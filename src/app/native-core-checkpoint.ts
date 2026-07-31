@@ -1,8 +1,13 @@
 import { PhysicalMemory } from "../memory/physical-memory.js";
-import { RebuiltPcAt386Core } from "../machine/rebuilt-pc-at-386-core.js";
+import {
+  RebuiltPcAt386Core,
+  type RebuiltMachineTraceEvent
+} from "../machine/rebuilt-pc-at-386-core.js";
 import { VgaTextFramebuffer } from "../devices/vga-text-framebuffer.js";
 import { createRomImage } from "../firmware/rom-image.js";
 import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
+
+const PORT_EVENT_CAPACITY = 16;
 
 export interface NativeCoreCheckpointSnapshot {
   readonly codeAddress: string;
@@ -33,19 +38,26 @@ export interface NativeCoreCheckpointSnapshot {
   readonly keyboardControllerCommandByte: string;
   readonly keyboardControllerOutputBuffer: string;
   readonly keyboardControllerKeyboardEnabled: string;
+  readonly recentPortEvents: string;
 }
 
 export class NativeCoreCheckpoint {
+  private readonly recentPortEvents: string[] = [];
   public readonly memory = new PhysicalMemory({
     ramBytes: 0xa0000,
     a20Enabled: true,
     unmappedReadValue: 0xff,
     ignoreUnmappedWrites: true
   });
-  public readonly core = new RebuiltPcAt386Core(this.memory, undefined, {
-    deskProSecondaryPit: true,
-    unpopulatedIo: "floating"
-  });
+  public readonly core = new RebuiltPcAt386Core(
+    this.memory,
+    (event) => this.recordMachineEvent(event),
+    {
+      deskProSecondaryPit: true,
+      unpopulatedIo: "floating",
+      instructionTrace: false
+    }
+  );
   public readonly textFramebuffer = new VgaTextFramebuffer(
     this.core.vgaMemory,
     this.core.crtc,
@@ -53,6 +65,7 @@ export class NativeCoreCheckpoint {
   );
 
   public reset(): void {
+    this.recentPortEvents.length = 0;
     this.core.reset();
   }
 
@@ -111,8 +124,21 @@ export class NativeCoreCheckpoint {
         keyboardController.outputBuffer === undefined
           ? "--"
           : hex8(keyboardController.outputBuffer),
-      keyboardControllerKeyboardEnabled: bit(keyboardController.keyboardEnabled)
+      keyboardControllerKeyboardEnabled: bit(keyboardController.keyboardEnabled),
+      recentPortEvents: this.recentPortEvents.join(" ") || "--"
     };
+  }
+
+  private recordMachineEvent(event: RebuiltMachineTraceEvent): void {
+    if (event.kind !== "port") return;
+    if (this.recentPortEvents.length === PORT_EVENT_CAPACITY) this.recentPortEvents.shift();
+    const value = event.event.value
+      .toString(16)
+      .padStart(event.event.width / 4, "0")
+      .toUpperCase();
+    this.recentPortEvents.push(
+      `${event.event.direction === "read" ? "R" : "W"}${hex16(event.event.port)}:${value}`
+    );
   }
 }
 

@@ -32,7 +32,8 @@ describe("NativeCoreCheckpoint", () => {
       keyboardControllerStatus: "00",
       keyboardControllerCommandByte: "10",
       keyboardControllerOutputBuffer: "--",
-      keyboardControllerKeyboardEnabled: "0"
+      keyboardControllerKeyboardEnabled: "0",
+      recentPortEvents: "--"
     });
 
     checkpoint.core.pic.master.raise(1);
@@ -72,5 +73,15 @@ describe("NativeCoreCheckpoint", () => {
     expect(checkpoint.core.ports.read(0x4b, 8)).toBe(0);
     expect(checkpoint.core.ports.read(0x4c, 8)).toBe(0xff);
     expect(() => checkpoint.core.ports.write(0x4c, 0x36, 8)).not.toThrow();
+  });
+
+  it("retains a bounded native port-event tail without instruction snapshots", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+    checkpoint.core.ports.write(0x64, 0xae, 8);
+    checkpoint.core.ports.read(0x64, 8);
+
+    expect(checkpoint.snapshot().recentPortEvents).toBe("W0064:AE R0064:08");
+    checkpoint.reset();
+    expect(checkpoint.snapshot().recentPortEvents).toBe("--");
   });
 });

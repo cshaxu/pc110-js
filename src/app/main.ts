@@ -105,7 +105,8 @@ function render(snapshot: MachineSnapshot): void {
     `FDC ${native.fdcPhase} MSR ${native.fdcMainStatus} IRQ ${native.fdcInterruptPending} DMA ${native.fdcDmaBytesPending} D0 ${native.fdcDrive0Ready}:${native.fdcDrive0Cylinder}`,
     `RTC A ${native.rtcStatusA} B ${native.rtcStatusB} C ${native.rtcStatusC} D ${native.rtcStatusD} NMI ${native.rtcNmiDisabled}`,
     `SYS61 ${native.systemPortControl} PIT2 GATE ${native.systemTimer2Gate} SPK ${native.systemSpeakerOutput} A20 ${native.a20Enabled}`,
-    `8042 STAT ${native.keyboardControllerStatus} CMD ${native.keyboardControllerCommandByte} OBF ${native.keyboardControllerOutputBuffer} KBD ${native.keyboardControllerKeyboardEnabled}`
+    `8042 STAT ${native.keyboardControllerStatus} CMD ${native.keyboardControllerCommandByte} OBF ${native.keyboardControllerOutputBuffer} KBD ${native.keyboardControllerKeyboardEnabled}`,
+    `PORTS ${native.recentPortEvents}`
   ].join(" | ");
   controls.run.disabled = snapshot.runState === "running";
   controls.pause.disabled = snapshot.runState !== "running";
