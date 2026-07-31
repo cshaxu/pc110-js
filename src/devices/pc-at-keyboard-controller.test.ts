@@ -96,6 +96,23 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(irqs).toEqual([1, 1, 1, 1, 1, 1]);
   });
 
+  it("acknowledges the selected ROM's F2 keyboard identify probe through IRQ1", () => {
+    const irqs: number[] = [];
+    const controller = new PcAtKeyboardController(
+      (irq) => irqs.push(irq),
+      () => {},
+      () => {}
+    );
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x4d, 8);
+    expect(controller.read(0x60, 8)).toBe(0xaa);
+
+    controller.write(0x60, 0xf2, 8);
+
+    expect(controller.read(0x60, 8)).toBe(0xfa);
+    expect(irqs).toEqual([1, 1]);
+  });
+
   it("serializes keyboard reset ACK and BAT through the single 8042 output buffer", () => {
     const irqs: number[] = [];
     const controller = new PcAtKeyboardController(

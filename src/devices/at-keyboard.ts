@@ -58,6 +58,8 @@ export class AtKeyboard {
       case 0xf6:
         this.scanningEnabled = true;
         return [ACK];
+      case 0xf2:
+        return [ACK];
       case 0xff:
         this.batPending = false;
         this.scanningEnabled = true;
