@@ -7,10 +7,16 @@ export const MDA_STATUS_PORT = 0x3ba;
 
 const MDA_STATUS_HDRIVE = 0x01;
 const MDA_STATUS_BWVIDEO = 0x08;
-const MDA_CYCLES_PER_LINE = 868;
-const MDA_ACTIVE_CYCLES_PER_LINE = 738;
-const MDA_LINES_PER_FRAME = 370;
-const MDA_ACTIVE_LINES_PER_FRAME = 354;
+const MDA_STATUS_RESERVED = 0xf0;
+const MDA_DEFAULT_CPU_CYCLES_PER_SECOND = 16_000_000;
+const MDA_HORIZONTAL_PERIODS_PER_SECOND = 18_432;
+const MDA_HORIZONTAL_PERIODS_PER_FRAME = 350;
+const MDA_HORIZONTAL_ACTIVE_PERCENT = 75;
+const MDA_VERTICAL_ACTIVE_PERCENT = 96;
+
+export interface MdaCompatibilityOptions {
+  readonly cpuCyclesPerSecond?: number;
+}
 
 export interface MdaCompatibilitySnapshot {
   readonly crtcIndex: number;
@@ -37,18 +43,39 @@ export interface MdaCompatibilityPortRange {
  */
 export class MdaCompatibility {
   private readonly crtcData = new Uint8Array(32);
+  private readonly cyclesPerHorizontalPeriod: number;
+  private readonly cyclesPerHorizontalActive: number;
+  private readonly cyclesPerVerticalActive: number;
+  private readonly cyclesPerVerticalPeriod: number;
   private crtcIndex = 0;
   private mode = 0;
   private horizontalRetrace = false;
-  private verticalRetrace = false;
+  private verticalRetrace = true;
   private frameCycles = 0;
+
+  public constructor(options: MdaCompatibilityOptions = {}) {
+    const cpuCyclesPerSecond = options.cpuCyclesPerSecond ?? MDA_DEFAULT_CPU_CYCLES_PER_SECOND;
+    if (!Number.isSafeInteger(cpuCyclesPerSecond) || cpuCyclesPerSecond <= 0)
+      throw new RangeError("MDA CPU clock must be a positive safe integer");
+    this.cyclesPerHorizontalPeriod = Math.trunc(
+      cpuCyclesPerSecond / MDA_HORIZONTAL_PERIODS_PER_SECOND
+    );
+    this.cyclesPerHorizontalActive = Math.trunc(
+      (this.cyclesPerHorizontalPeriod * MDA_HORIZONTAL_ACTIVE_PERCENT) / 100
+    );
+    this.cyclesPerVerticalActive =
+      this.cyclesPerHorizontalPeriod * MDA_HORIZONTAL_PERIODS_PER_FRAME;
+    this.cyclesPerVerticalPeriod = Math.trunc(
+      (this.cyclesPerVerticalActive * 100) / MDA_VERTICAL_ACTIVE_PERCENT
+    );
+  }
 
   public reset(): void {
     this.crtcData.fill(0);
     this.crtcIndex = 0;
     this.mode = 0;
     this.horizontalRetrace = false;
-    this.verticalRetrace = false;
+    this.verticalRetrace = true;
     this.frameCycles = 0;
   }
 
@@ -56,12 +83,13 @@ export class MdaCompatibility {
   public advance(cycles: number): void {
     if (!Number.isSafeInteger(cycles) || cycles < 0)
       throw new RangeError("MDA cycle charge must be a non-negative safe integer");
-    const frameLength = MDA_CYCLES_PER_LINE * MDA_LINES_PER_FRAME;
-    this.frameCycles = (this.frameCycles + cycles) % frameLength;
-    const lineCycles = this.frameCycles % MDA_CYCLES_PER_LINE;
-    const line = Math.floor(this.frameCycles / MDA_CYCLES_PER_LINE);
-    this.verticalRetrace = line >= MDA_ACTIVE_LINES_PER_FRAME;
-    this.horizontalRetrace = lineCycles >= MDA_ACTIVE_CYCLES_PER_LINE;
+    this.frameCycles = (this.frameCycles + cycles) % this.cyclesPerVerticalPeriod;
+    const verticalBlankCycles = this.cyclesPerVerticalPeriod - this.cyclesPerVerticalActive;
+    this.verticalRetrace = this.frameCycles < verticalBlankCycles;
+    const activeFrameCycles = this.frameCycles - verticalBlankCycles;
+    this.horizontalRetrace =
+      !this.verticalRetrace &&
+      activeFrameCycles % this.cyclesPerHorizontalPeriod > this.cyclesPerHorizontalActive;
   }
 
   public read(port: number, width: PortWidth): number {
@@ -73,6 +101,7 @@ export class MdaCompatibility {
     if (port === MDA_MODE_PORT) return this.mode;
     if (port === MDA_STATUS_PORT)
       return (
+        MDA_STATUS_RESERVED |
         (this.horizontalRetrace || this.verticalRetrace ? MDA_STATUS_HDRIVE : 0) |
         (this.verticalRetrace ? MDA_STATUS_BWVIDEO : 0)
       );
@@ -112,13 +141,12 @@ export class MdaCompatibility {
     return { ...this.snapshot(), frameCycles: this.frameCycles };
   }
   public restore(state: MdaCompatibilityState): void {
-    const frameLength = MDA_CYCLES_PER_LINE * MDA_LINES_PER_FRAME;
     if (
       state.crtcData.length !== this.crtcData.length ||
       !Number.isInteger(state.crtcIndex) ||
       !Number.isInteger(state.frameCycles) ||
       state.frameCycles < 0 ||
-      state.frameCycles >= frameLength
+      state.frameCycles >= this.cyclesPerVerticalPeriod
     )
       throw new RangeError("MDA checkpoint state is invalid");
     this.crtcIndex = state.crtcIndex & 0x1f;

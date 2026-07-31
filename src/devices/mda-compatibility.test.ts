@@ -28,14 +28,23 @@ describe("VGA MDA compatibility ports", () => {
 
   it("provides deterministic status and enforces byte-wide read/write ownership", () => {
     const mda = new MdaCompatibility();
-    expect(mda.read(0x3ba, 8)).toBe(0);
-    mda.advance(738);
-    expect(mda.read(0x3ba, 8)).toBe(0x01);
-    mda.advance(868 * 354);
-    expect(mda.read(0x3ba, 8)).toBe(0x09);
+    expect(mda.read(0x3ba, 8)).toBe(0xf9);
+    mda.advance(12_658);
+    expect(mda.read(0x3ba, 8)).toBe(0xf0);
+    mda.advance(652);
+    expect(mda.read(0x3ba, 8)).toBe(0xf1);
+    mda.advance(303_148);
+    expect(mda.read(0x3ba, 8)).toBe(0xf9);
     expect(() => mda.write(0x3ba, 0, 8)).toThrow("not writable");
     expect(() => mda.read(0x3b8, 32)).toThrow("8-bit");
     mda.reset();
     expect(mda.snapshot()).toMatchObject({ crtcIndex: 0, mode: 0, horizontalRetrace: false });
+  });
+
+  it("derives the retrace periods from the selected virtual CPU clock", () => {
+    const mda = new MdaCompatibility({ cpuCyclesPerSecond: 8_000_000 });
+    expect(mda.read(0x3ba, 8)).toBe(0xf9);
+    mda.advance(6_329);
+    expect(mda.read(0x3ba, 8)).toBe(0xf0);
   });
 });
