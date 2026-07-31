@@ -26,8 +26,9 @@ export function estimate386Cycles(
   if (opcode === 0x90 || (opcode >= 0x91 && opcode <= 0x97) || opcode === 0x86 || opcode === 0x87)
     return withPrefixes(3, instruction);
   if (isConditionalBranch(instruction)) return afterEip === beforeEip + instruction.length ? 3 : 7;
-  if (opcode === 0xe8 || opcode === 0xe9 || opcode === 0xea || opcode === 0xeb || opcode === 0x9a)
-    return withPrefixes(7, instruction);
+  if (opcode === 0xea) return withPrefixes(11, instruction);
+  if (opcode === 0x9a) return withPrefixes(13, instruction);
+  if (opcode === 0xe8 || opcode === 0xe9 || opcode === 0xeb) return withPrefixes(7, instruction);
   if (opcode === 0xc2 || opcode === 0xc3) return withPrefixes(11, instruction);
   if (opcode === 0xca || opcode === 0xcb) return withPrefixes(15, instruction);
   if (opcode === 0xcf) return withPrefixes(17, instruction);

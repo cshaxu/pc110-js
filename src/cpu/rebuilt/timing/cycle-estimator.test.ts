@@ -24,11 +24,13 @@ describe("80386 cycle estimator", () => {
     expect(estimate386Cycles(undefined, 0, 0)).toBe(3);
   });
 
-  it("charges stack, return, exchange, and short jump paths explicitly", () => {
+  it("charges stack, return, exchange, and control-transfer paths explicitly", () => {
     expect(estimate386Cycles({ opcode: 0x53, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(3);
     expect(estimate386Cycles({ opcode: 0x5b, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(5);
     expect(estimate386Cycles({ opcode: 0x86, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(3);
     expect(estimate386Cycles({ opcode: 0xeb, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(7);
+    expect(estimate386Cycles({ opcode: 0xea, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(11);
+    expect(estimate386Cycles({ opcode: 0x9a, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(13);
     expect(estimate386Cycles({ opcode: 0xcf, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(17);
   });
 });
