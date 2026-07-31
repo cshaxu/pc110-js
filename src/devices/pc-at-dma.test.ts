@@ -97,4 +97,26 @@ describe("project-native PC/AT DMA", () => {
     expect(dma.grant()).toMatchObject({ channel: 0, address: 0x1234 });
     expect(dma.dma1.snapshot(0)).toMatchObject({ currentAddress: 0, currentCount: 0 });
   });
+
+  it("restores controller sequencing, pending transfers, and spare pages", () => {
+    const dma = new PcAtDma();
+    dma.write(0x0c, 0, 8);
+    dma.write(0x04, 0x34, 8);
+    dma.write(0x04, 0x12, 8);
+    dma.write(0x05, 0x01, 8);
+    dma.write(0x05, 0x00, 8);
+    dma.write(0x81, 0xab, 8);
+    dma.write(0x0a, 0x02, 8);
+    dma.write(0x0b, 0x46, 8);
+    dma.setHardwareRequest(2, true);
+    const checkpoint = dma.capture();
+
+    dma.grantFromController(0);
+    dma.write(0x84, 0x55, 8);
+    dma.restore(checkpoint);
+
+    expect(dma.capture()).toEqual(checkpoint);
+    expect(dma.grantFromController(0)).toMatchObject({ channel: 2, address: 0xab1234 });
+    expect(dma.sparePage(0x84)).toBe(0);
+  });
 });

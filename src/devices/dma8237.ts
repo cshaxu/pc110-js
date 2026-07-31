@@ -22,6 +22,14 @@ export interface Dma8237Options {
   readonly wordAddressed?: boolean;
 }
 
+export interface Dma8237State {
+  readonly channels: readonly DmaChannelSnapshot[];
+  readonly command: number;
+  readonly flipFlopHigh: boolean;
+  readonly priorityBase: number;
+  readonly wordAddressed: boolean;
+}
+
 export class Dma8237 {
   private readonly channels = Array.from({ length: 4 }, () => new DmaChannel());
   private readonly wordAddressed: boolean;
@@ -171,6 +179,28 @@ export class Dma8237 {
     return this.channel(channel).snapshot();
   }
 
+  public capture(): Dma8237State {
+    return {
+      channels: this.channels.map((channel) => channel.snapshot()),
+      command: this.command,
+      flipFlopHigh: this.flipFlopHigh,
+      priorityBase: this.priorityBase,
+      wordAddressed: this.wordAddressed
+    };
+  }
+
+  public restore(state: Dma8237State): void {
+    if (
+      state.wordAddressed !== this.wordAddressed ||
+      state.channels.length !== this.channels.length
+    )
+      throw new RangeError("DMA checkpoint geometry is invalid");
+    state.channels.forEach((channel, index) => this.channel(index).restore(channel));
+    this.command = state.command;
+    this.flipFlopHigh = state.flipFlopHigh;
+    this.priorityBase = state.priorityBase;
+  }
+
   private nextRequestedChannel(): number | undefined {
     for (let offset = 1; offset <= 4; offset += 1) {
       const index = (this.priorityBase + offset) & 3;
@@ -237,6 +267,18 @@ class DmaChannel {
       requested: this.requested,
       terminalCount: this.terminalCount
     };
+  }
+
+  public restore(state: DmaChannelSnapshot): void {
+    this.baseAddress = state.baseAddress;
+    this.currentAddress = state.currentAddress;
+    this.baseCount = state.baseCount;
+    this.currentCount = state.currentCount;
+    this.page = state.page;
+    this.mode = state.mode;
+    this.masked = state.masked;
+    this.requested = state.requested;
+    this.terminalCount = state.terminalCount;
   }
 }
 

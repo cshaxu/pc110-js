@@ -35,4 +35,16 @@ describe("project-native PC/AT system port", () => {
       ioCheckEnabled: true
     });
   });
+
+  it("restores writable controls and refresh state", () => {
+    const port = new PcAtSystemPort();
+    port.write(0x33);
+    port.setRefreshActive(false);
+    const checkpoint = port.snapshot();
+
+    port.reset();
+    port.restore(checkpoint);
+
+    expect(port.snapshot()).toEqual(checkpoint);
+  });
 });

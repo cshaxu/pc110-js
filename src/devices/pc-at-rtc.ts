@@ -4,7 +4,8 @@ import {
   type RtcAdvanceResult,
   type RtcCmosConfiguration,
   type RtcCmosOptions,
-  type RtcCmosSnapshot
+  type RtcCmosSnapshot,
+  type RtcCmosState
 } from "./rtc-cmos.js";
 
 export const RTC_CMOS_ADDRESS_PORT = 0x70;
@@ -19,6 +20,11 @@ export interface PcAtRtcPortRange {
 
 export interface PcAtRtcOptions extends RtcCmosOptions {
   readonly configuration?: RtcCmosConfiguration;
+}
+
+export interface PcAtRtcState {
+  readonly rtc: RtcCmosState;
+  readonly address: number;
 }
 
 /**
@@ -72,6 +78,15 @@ export class PcAtRtc {
 
   public snapshot(): RtcCmosSnapshot {
     return this.rtc.snapshot();
+  }
+
+  public capture(): PcAtRtcState {
+    return { rtc: this.rtc.capture(), address: this.address };
+  }
+
+  public restore(state: PcAtRtcState): void {
+    this.rtc.restore(state.rtc);
+    this.address = state.address;
   }
 
   public portRanges(): readonly PcAtRtcPortRange[] {

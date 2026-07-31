@@ -28,4 +28,18 @@ describe("project-native PC/AT RTC/CMOS", () => {
     expect(rtc.read(RTC_CMOS_DATA_PORT, 8) & 0xc0).toBe(0xc0);
     expect(rtc.snapshot().statusC).toBe(0);
   });
+
+  it("restores the CMOS address and NMI-mask signal with RTC state", () => {
+    const rtc = new PcAtRtc();
+    rtc.write(RTC_CMOS_ADDRESS_PORT, 0x80 | RtcCmosRegister.Equipment, 8);
+    const checkpoint = rtc.capture();
+
+    rtc.write(RTC_CMOS_ADDRESS_PORT, RtcCmosRegister.StatusA, 8);
+    rtc.write(RTC_CMOS_DATA_PORT, 0x20, 8);
+    rtc.restore(checkpoint);
+
+    expect(rtc.capture()).toEqual(checkpoint);
+    expect(rtc.nmiDisabled()).toBe(true);
+    expect(rtc.read(RTC_CMOS_ADDRESS_PORT, 8)).toBe(0x94);
+  });
 });

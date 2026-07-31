@@ -10,6 +10,20 @@ export interface PitCounterSnapshot {
   readonly nullCount: boolean;
 }
 
+export interface PitCounterState extends PitCounterSnapshot {
+  readonly writeLow: number | undefined;
+  readonly readLow: boolean;
+  readonly latchedCount: number | undefined;
+  readonly latchedStatus: number | undefined;
+  readonly counting: boolean;
+  readonly lowPulse: boolean;
+  readonly phaseRemaining: number;
+}
+
+export interface Pit8254State {
+  readonly counters: readonly PitCounterState[];
+}
+
 export interface PitAdvanceResult {
   readonly risingEdges: readonly number[];
 }
@@ -46,6 +60,16 @@ export class Pit8254 {
 
   public snapshot(index: number): PitCounterSnapshot {
     return this.counter(index).snapshot();
+  }
+
+  public capture(): Pit8254State {
+    return { counters: this.counters.map((counter) => counter.capture()) };
+  }
+
+  public restore(state: Pit8254State): void {
+    if (state.counters.length !== this.counters.length)
+      throw new RangeError("PIT checkpoint counter count is invalid");
+    state.counters.forEach((counter, index) => this.counter(index).restore(counter));
   }
 
   public advance(ticks: number): PitAdvanceResult {
@@ -224,6 +248,36 @@ class PitCounter {
       access: this.access,
       nullCount: this.nullCount
     };
+  }
+
+  public capture(): PitCounterState {
+    return {
+      ...this.snapshot(),
+      writeLow: this.writeLow,
+      readLow: this.readLow,
+      latchedCount: this.latchedCount,
+      latchedStatus: this.latchedStatus,
+      counting: this.counting,
+      lowPulse: this.lowPulse,
+      phaseRemaining: this.phaseRemaining
+    };
+  }
+
+  public restore(state: PitCounterState): void {
+    this.reload = state.reload;
+    this.count = state.count;
+    this.output = state.output;
+    this.gate = state.gate;
+    this.mode = state.mode;
+    this.access = state.access;
+    this.nullCount = state.nullCount;
+    this.writeLow = state.writeLow;
+    this.readLow = state.readLow;
+    this.latchedCount = state.latchedCount;
+    this.latchedStatus = state.latchedStatus;
+    this.counting = state.counting;
+    this.lowPulse = state.lowPulse;
+    this.phaseRemaining = state.phaseRemaining;
   }
 
   private load(rawCount: number): void {

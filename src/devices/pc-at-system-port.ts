@@ -72,4 +72,9 @@ export class PcAtSystemPort {
       ioCheckEnabled: this.ioCheckEnabled()
     };
   }
+
+  public restore(state: PcAtSystemPortSnapshot): void {
+    this.control = state.control;
+    this.refreshActive = state.refreshActive;
+  }
 }

@@ -78,6 +78,25 @@ describe("project-native 8254 PIT", () => {
     expect(pit.readCounter(1)).toBe(0x12);
   });
 
+  it("restores in-flight counter, latch, and read sequencing state", () => {
+    const pit = new Pit8254();
+    program(pit, 0, 3, 5);
+    pit.advance(2);
+    pit.writeControl(0x00);
+    expect(pit.readCounter(0)).toBe(3);
+    const checkpoint = pit.capture();
+    const expectedNextByte = pit.readCounter(0);
+    const expectedEdges = pit.advance(5).risingEdges;
+
+    pit.advance(9);
+    pit.readCounter(0);
+    pit.restore(checkpoint);
+
+    expect(pit.capture()).toEqual(checkpoint);
+    expect(pit.readCounter(0)).toBe(expectedNextByte);
+    expect(pit.advance(5).risingEdges).toEqual(expectedEdges);
+  });
+
   it("rejects BCD control and invalid counter access", () => {
     const pit = new Pit8254();
     expect(() => pit.writeControl(0x31)).toThrow("BCD");

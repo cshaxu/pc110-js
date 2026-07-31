@@ -64,6 +64,11 @@ export interface RtcCmosSnapshot {
   readonly statusD: number;
 }
 
+export interface RtcCmosState extends RtcCmosSnapshot {
+  readonly data: Uint8Array;
+  readonly elapsedTicks: number;
+}
+
 export interface RtcAdvanceResult {
   readonly periodic: boolean;
   readonly updated: boolean;
@@ -168,6 +173,25 @@ export class RtcCmos {
       statusC: this.data[RtcCmosRegister.StatusC]!,
       statusD: this.data[RtcCmosRegister.StatusD]!
     };
+  }
+
+  public capture(): RtcCmosState {
+    return { ...this.snapshot(), data: this.data.slice(), elapsedTicks: this.elapsedTicks };
+  }
+
+  public restore(state: RtcCmosState): void {
+    if (state.data.length !== this.data.length)
+      throw new RangeError("RTC checkpoint CMOS size is invalid");
+    if (
+      !Number.isInteger(state.elapsedTicks) ||
+      state.elapsedTicks < 0 ||
+      state.elapsedTicks >= RTC_TICKS_PER_SECOND
+    )
+      throw new RangeError("RTC checkpoint tick phase is invalid");
+    this.validateDateTime(state.dateTime);
+    this.data.set(state.data);
+    this.dateTime = { ...state.dateTime };
+    this.elapsedTicks = state.elapsedTicks;
   }
 
   public updateChecksum(): void {

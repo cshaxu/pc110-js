@@ -91,6 +91,21 @@ describe("project-native MC146818 RTC/CMOS state", () => {
     expect(rtc.read(RtcCmosRegister.Equipment)).toBe(0x41);
     expect(() => rtc.applyConfiguration({ baseMemoryKiB: 0x1_0000 })).toThrow("outside");
   });
+
+  it("restores CMOS bytes, status, and the deterministic tick phase", () => {
+    const rtc = new RtcCmos();
+    rtc.write(RtcCmosRegister.Equipment, 0x41);
+    rtc.advance(123);
+    const checkpoint = rtc.capture();
+
+    rtc.write(RtcCmosRegister.Equipment, 0);
+    rtc.advance(RTC_TICKS_PER_SECOND);
+    rtc.restore(checkpoint);
+
+    expect(rtc.capture()).toEqual(checkpoint);
+    expect(rtc.advance(RTC_TICKS_PER_SECOND - 123)).toMatchObject({ updated: true });
+    expect(rtc.snapshot().dateTime.second).toBe(1);
+  });
 });
 
 const STATUS_B_BINARY_24_HOUR = 0x06;

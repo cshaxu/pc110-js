@@ -1,5 +1,10 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
-import { Pit8254, type PitAdvanceResult, type PitCounterSnapshot } from "./pit8254.js";
+import {
+  Pit8254,
+  type Pit8254State,
+  type PitAdvanceResult,
+  type PitCounterSnapshot
+} from "./pit8254.js";
 
 export const PIT_COUNTER0_PORT = 0x40;
 export const PIT_COUNTER1_PORT = 0x41;
@@ -55,6 +60,14 @@ export class PcAtPit {
 
   public snapshot(index: number): PitCounterSnapshot {
     return this.timer.snapshot(index);
+  }
+
+  public capture(): Pit8254State {
+    return this.timer.capture();
+  }
+
+  public restore(state: Pit8254State): void {
+    this.timer.restore(state);
   }
 
   public portRanges(): readonly PcAtPitPortRange[] {

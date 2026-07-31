@@ -39,4 +39,17 @@ describe("project-native PC/AT system-port composition", () => {
     pit.advance(1);
     expect(control.read(0x61, 8) & 0x10).not.toBe(before);
   });
+
+  it("restores port 0x61 state and reapplies the counter-2 gate", () => {
+    const pit = new PcAtPit();
+    const control = new PcAtSystemControl(pit);
+    control.write(0x61, 0x03, 8);
+    const checkpoint = control.capture();
+
+    control.write(0x61, 0, 8);
+    control.restore(checkpoint);
+
+    expect(control.capture()).toEqual(checkpoint);
+    expect(pit.snapshot(2).gate).toBe(true);
+  });
 });

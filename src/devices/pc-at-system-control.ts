@@ -53,6 +53,15 @@ export class PcAtSystemControl {
     return this.state.snapshot();
   }
 
+  public capture(): PcAtSystemPortSnapshot {
+    return this.state.snapshot();
+  }
+
+  public restore(state: PcAtSystemPortSnapshot): void {
+    this.state.restore(state);
+    this.pit.timer.setGate(2, this.state.timer2Gate());
+  }
+
   public portRanges(): readonly PcAtSystemPortRange[] {
     return [
       {

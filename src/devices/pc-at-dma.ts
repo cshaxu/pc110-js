@@ -1,5 +1,5 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
-import { Dma8237, type DmaChannelSnapshot, type DmaGrant } from "./dma8237.js";
+import { Dma8237, type Dma8237State, type DmaChannelSnapshot, type DmaGrant } from "./dma8237.js";
 
 export const DMA0_FIRST_PORT = 0x00;
 export const DMA0_LAST_PORT = 0x0f;
@@ -33,6 +33,12 @@ export interface PcAtDmaPortRange {
   readonly end: number;
   readonly read?: (port: number, width: PortWidth) => number;
   readonly write?: (port: number, value: number, width: PortWidth) => void;
+}
+
+export interface PcAtDmaState {
+  readonly dma0: Dma8237State;
+  readonly dma1: Dma8237State;
+  readonly sparePages: Uint8Array;
 }
 
 export class PcAtDma {
@@ -119,6 +125,22 @@ export class PcAtDma {
   public snapshot(channel: number): DmaChannelSnapshot {
     const decoded = this.decodeGlobalChannel(channel);
     return this.controller(decoded.controller).snapshot(decoded.channel);
+  }
+
+  public capture(): PcAtDmaState {
+    return {
+      dma0: this.dma0.capture(),
+      dma1: this.dma1.capture(),
+      sparePages: this.sparePages.slice()
+    };
+  }
+
+  public restore(state: PcAtDmaState): void {
+    if (state.sparePages.length !== this.sparePages.length)
+      throw new RangeError("DMA checkpoint spare-page count is invalid");
+    this.dma0.restore(state.dma0);
+    this.dma1.restore(state.dma1);
+    this.sparePages.set(state.sparePages);
   }
 
   public maskBits(controller: 0 | 1): number {
