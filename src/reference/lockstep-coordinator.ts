@@ -111,7 +111,11 @@ export interface PcjsLockstepEndpoint {
 }
 
 export type ControlledLockstepResult =
-  | { readonly kind: "precondition-difference"; readonly comparison: LockstepComparison }
+  | {
+      readonly kind: "precondition-difference";
+      readonly comparison: LockstepComparison;
+      readonly before: LockstepBoundary;
+    }
   | { readonly kind: "pcjs-not-paused"; readonly snapshot: PcjsLockstepSnapshot }
   | { readonly kind: "pcjs-rejected"; readonly step: PcjsLockstepStep }
   | {
@@ -238,7 +242,12 @@ export function stepControlledLockstep(
   const beforePcjs = pcjs.snapshot();
   if (!beforePcjs.paused) return { kind: "pcjs-not-paused", snapshot: beforePcjs };
   const before = compareLockstepCpu(beforeNative, beforePcjs);
-  if (!before.equal) return { kind: "precondition-difference", comparison: before };
+  if (!before.equal)
+    return {
+      kind: "precondition-difference",
+      comparison: before,
+      before: lockstepBoundary(beforeNative, beforePcjs)
+    };
 
   const pcjsStep = pcjs.stepInstruction();
   if (!pcjsStep.accepted) return { kind: "pcjs-rejected", step: pcjsStep };

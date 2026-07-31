@@ -263,7 +263,7 @@ function compareBrowserLockstep(): void {
   const result = stepControlledLockstep(nativeLockstep, pcjs);
   switch (result.kind) {
     case "precondition-difference":
-      controls.nativeStatus.textContent = `Lockstep entry mismatch: ${formatDifference(result.comparison)}`;
+      controls.nativeStatus.textContent = `Lockstep entry mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}`;
       return;
     case "pcjs-not-paused":
       controls.nativeStatus.textContent = "Pause the PCjs machine before comparing a boundary";

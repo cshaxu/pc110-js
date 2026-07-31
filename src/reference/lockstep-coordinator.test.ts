@@ -222,7 +222,8 @@ describe("controlled lockstep comparator", () => {
       )
     ).toMatchObject({
       kind: "precondition-difference",
-      comparison: { difference: { path: "cpu.eip" } }
+      comparison: { difference: { path: "cpu.eip" } },
+      before: { native: { virtualCycles: "0" }, pcjs: { virtualCycles: 0 } }
     });
     expect(nativeSteps).toBe(0);
     expect(pcjsSteps).toBe(0);
