@@ -3,13 +3,18 @@ import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, relative, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
+import { KeyboardByteQueue } from "../app/keyboard-scancode-set1.js";
 import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory } from "../memory/physical-memory.js";
 import {
   RebuiltPcAt386Core,
+  type RebuiltMachineTrace,
   type RebuiltMachineTraceEvent
 } from "../machine/rebuilt-pc-at-386-core.js";
 import { FLOPPY_1440K_GEOMETRY, FloppyDrive } from "../devices/floppy-drive.js";
+import type { RebuiltTracePoint } from "../cpu/rebuilt/debug/trace.js";
+import { DiagnosticReplaySession } from "./diagnostic-replay-session.js";
 
 const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 const SOURCE_ROM = "machines/pcx86/compaq/deskpro386/rom/1988-01-28/1988-01-28.json5";
@@ -20,9 +25,23 @@ const pcjsRoot = resolve(projectRoot, "..", "pcjs");
 const DEFAULT_INSTRUCTION_BUDGET = 1_000;
 const DEFAULT_TRACE_TAIL = 0;
 const DEFAULT_EVENT_TAIL = 0;
+const DEFAULT_REPLAY_TAIL = 128;
+const MAX_REPLAY_INSTRUCTIONS = 10_000;
+const MAX_REPLAY_EVENTS_PER_INSTRUCTION = 32;
 const FLOPPY_BYTES = 1_474_560;
 const FLOPPY_SHA256 = "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5";
 let diagnosticLogDestination: string | undefined;
+
+interface TraceAssets {
+  readonly systemRom: Uint8Array;
+  readonly vgaRom: Uint8Array;
+  readonly floppy: Uint8Array | undefined;
+}
+
+interface CheckpointAddress {
+  readonly selector: number;
+  readonly eip: number;
+}
 
 function emit(text: string): void {
   if (diagnosticLogDestination !== undefined)
@@ -47,6 +66,44 @@ function instructionBudget(): number {
   const value = Number.parseInt(raw, 10);
   if (!Number.isSafeInteger(value) || value <= 0)
     throw new Error("PC110JS_ROM_TRACE_INSTRUCTIONS must be a positive safe integer");
+  return value;
+}
+
+function checkpointAddress(): CheckpointAddress | undefined {
+  const raw = process.env.PC110JS_ROM_TRACE_CHECKPOINT;
+  if (raw === undefined) return undefined;
+  const match = /^([0-9a-f]{1,4}):([0-9a-f]{1,8})$/i.exec(raw);
+  if (!match) throw new Error("PC110JS_ROM_TRACE_CHECKPOINT must be a CS:EIP hexadecimal address");
+  return {
+    selector: Number.parseInt(match[1]!, 16),
+    eip: Number.parseInt(match[2]!, 16)
+  };
+}
+
+function replayInstructionBudget(checkpoint: CheckpointAddress | undefined): number | undefined {
+  const raw = process.env.PC110JS_ROM_TRACE_REPLAY_INSTRUCTIONS;
+  if (raw === undefined) return undefined;
+  if (checkpoint === undefined)
+    throw new Error("PC110JS_ROM_TRACE_REPLAY_INSTRUCTIONS requires PC110JS_ROM_TRACE_CHECKPOINT");
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(value) || value <= 0 || value > MAX_REPLAY_INSTRUCTIONS)
+    throw new Error(
+      `PC110JS_ROM_TRACE_REPLAY_INSTRUCTIONS must be a positive safe integer up to ${MAX_REPLAY_INSTRUCTIONS}`
+    );
+  return value;
+}
+
+function replayTailLength(replayBudget: number | undefined): number {
+  const raw = process.env.PC110JS_ROM_TRACE_REPLAY_TAIL;
+  if (raw === undefined)
+    return replayBudget === undefined ? 0 : Math.min(DEFAULT_REPLAY_TAIL, replayBudget);
+  if (replayBudget === undefined)
+    throw new Error("PC110JS_ROM_TRACE_REPLAY_TAIL requires PC110JS_ROM_TRACE_REPLAY_INSTRUCTIONS");
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(value) || value < 0 || value > replayBudget)
+    throw new Error(
+      "PC110JS_ROM_TRACE_REPLAY_TAIL must be a non-negative safe integer within replay budget"
+    );
   return value;
 }
 
@@ -118,15 +175,52 @@ function loadRom(sourceRom: string, expectedBytes: number): Uint8Array {
   return Uint8Array.from(values);
 }
 
-function attachLocalFloppy(core: RebuiltPcAt386Core): void {
-  if (process.env.PC110JS_ROM_TRACE_FLOPPY !== "1") return;
+function loadLocalFloppy(): Uint8Array | undefined {
+  if (process.env.PC110JS_ROM_TRACE_FLOPPY !== "1") return undefined;
   const bytes = new Uint8Array(readFileSync(resolve(projectRoot, "..", "fdd.img")));
   if (bytes.byteLength !== FLOPPY_BYTES) throw new Error("Unexpected local floppy size");
   const hash = createHash("sha256").update(bytes).digest("hex");
   if (hash !== FLOPPY_SHA256) throw new Error("Unexpected local floppy SHA-256");
+  return bytes;
+}
+
+function attachLocalFloppy(core: RebuiltPcAt386Core, bytes: Uint8Array | undefined): void {
+  if (bytes === undefined) return;
   const drive = new FloppyDrive(FLOPPY_1440K_GEOMETRY);
   drive.attach(bytes);
   core.fdc.controller.attachDrive(0, drive);
+}
+
+function sha256(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
+function createTraceCore(
+  assets: TraceAssets,
+  trace: RebuiltMachineTrace | undefined,
+  instructionTrace: boolean,
+  instructionTraceSelector?: (point: RebuiltTracePoint) => boolean
+): RebuiltPcAt386Core {
+  const memory = new PhysicalMemory({
+    ramBytes: 0xa0000,
+    a20Enabled: true,
+    unmappedReadValue: 0xff,
+    ignoreUnmappedWrites: true
+  });
+  memory.mapRom(
+    createRomImage("deskpro386", assets.systemRom),
+    0xffff8000,
+    [0xf8000, 0xf0000, 0xffff0000]
+  );
+  memory.mapRom(createRomImage("ibm-vga", assets.vgaRom), 0xc0000);
+  const core = new RebuiltPcAt386Core(memory, trace, {
+    deskProSecondaryPit: true,
+    unpopulatedIo: "floating",
+    instructionTrace,
+    instructionTraceSelector
+  });
+  attachLocalFloppy(core, assets.floppy);
+  return core;
 }
 
 function formatAddress(core: RebuiltPcAt386Core): string {
@@ -229,12 +323,19 @@ function main(): void {
   const portTailLengthValue = portTailLength();
   const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
   const watches = watchedAddresses();
+  const checkpointAddressValue = checkpointAddress();
+  const replayBudget = replayInstructionBudget(checkpointAddressValue);
+  const replayTail = replayTailLength(replayBudget);
   const needsTrace =
     tailLength > 0 ||
     eventTailLengthValue > 0 ||
     portTailLengthValue > 0 ||
     transfers ||
     watches.size > 0;
+  if (checkpointAddressValue !== undefined && needsTrace)
+    throw new Error(
+      "PC110JS_ROM_TRACE_CHECKPOINT requires Fast execution without trace tail options"
+    );
   const fullDebug = tailLength > 0 || transfers;
   const traceMode = !needsTrace
     ? "fast"
@@ -246,18 +347,11 @@ function main(): void {
   const watchHits = new Map<string, WatchHit>(
     [...watches].map((address) => [address, { count: 0, lastEcx: 0, lastNextAddress: "none" }])
   );
-  const memory = new PhysicalMemory({
-    ramBytes: 0xa0000,
-    a20Enabled: true,
-    unmappedReadValue: 0xff,
-    ignoreUnmappedWrites: true
-  });
-  memory.mapRom(
-    createRomImage("deskpro386", loadRom(SOURCE_ROM, 0x8000)),
-    0xffff8000,
-    [0xf8000, 0xf0000, 0xffff0000]
-  );
-  memory.mapRom(createRomImage("ibm-vga", loadRom(SOURCE_VGA_ROM, 0x6000)), 0xc0000);
+  const assets: TraceAssets = {
+    systemRom: loadRom(SOURCE_ROM, 0x8000),
+    vgaRom: loadRom(SOURCE_VGA_ROM, 0x6000),
+    floppy: loadLocalFloppy()
+  };
   const trace: RebuiltMachineTraceEvent[] = [];
   const portTrace: RebuiltMachineTraceEvent[] = [];
   const transferTrace: RebuiltMachineTraceEvent[] = [];
@@ -283,19 +377,67 @@ function main(): void {
         });
     }
   };
-  const core = new RebuiltPcAt386Core(memory, needsTrace ? recordTrace : undefined, {
-    deskProSecondaryPit: true,
-    unpopulatedIo: "floating",
-    instructionTrace: fullDebug || watches.size > 0,
-    instructionTraceSelector: fullDebug
+  const core = createTraceCore(
+    assets,
+    needsTrace ? recordTrace : undefined,
+    fullDebug || watches.size > 0,
+    fullDebug
       ? undefined
       : (point) => watches.has(`${point.cs.toString(16)}:${point.eip.toString(16)}`)
-  });
-  attachLocalFloppy(core);
+  );
   emit(
-    `Trace identity mode=${traceMode} project=${projectCommit()} pcjs=${PINNED_PCJS_COMMIT} budget=${budget} floppy=${process.env.PC110JS_ROM_TRACE_FLOPPY === "1" ? FLOPPY_SHA256 : "none"}\n`
+    `Trace identity mode=${checkpointAddressValue === undefined ? traceMode : "fast-checkpoint"} project=${projectCommit()} pcjs=${PINNED_PCJS_COMMIT} budget=${budget} floppy=${assets.floppy === undefined ? "none" : FLOPPY_SHA256}\n`
   );
   try {
+    if (checkpointAddressValue !== undefined) {
+      const reached = core.runUntil(
+        budget,
+        () =>
+          core.runner.state.readCodeSelector() === checkpointAddressValue.selector &&
+          core.runner.state.readEip() === checkpointAddressValue.eip
+      );
+      const address = `${checkpointAddressValue.selector.toString(16).padStart(4, "0")}:${checkpointAddressValue.eip
+        .toString(16)
+        .padStart(4, "0")}`;
+      emit(
+        `Fast checkpoint ${reached.reached ? "reached" : "not reached"} after ${reached.executed} instructions at ${formatAddress(core)} target=${address}\n`
+      );
+      if (!reached.reached || replayBudget === undefined) return;
+
+      const session = new DiagnosticReplaySession(core, new KeyboardByteQueue(), {
+        projectCommit: projectCommit(),
+        pcjsCommit: PINNED_PCJS_COMMIT,
+        systemRomSha256: sha256(assets.systemRom),
+        vgaRomSha256: sha256(assets.vgaRom),
+        floppySha256: assets.floppy === undefined ? "none" : FLOPPY_SHA256,
+        configuration: "deskpro386-native-floating-io"
+      });
+      const checkpoint = session.capture(reached.executed);
+      const replayTrace: RebuiltMachineTraceEvent[] = [];
+      const replayTraceCapacity = replayBudget * MAX_REPLAY_EVENTS_PER_INSTRUCTION + 1;
+      const debugCore = createTraceCore(
+        assets,
+        (event) => retainTraceEvent(replayTrace, event, replayTraceCapacity),
+        true
+      );
+      debugCore.restore(checkpoint.core);
+      const first = debugCore.run(replayBudget);
+      const firstState = debugCore.capture();
+      const firstTrace = [...replayTrace];
+      debugCore.restore(checkpoint.core);
+      replayTrace.length = 0;
+      const second = debugCore.run(replayBudget);
+      const secondState = debugCore.capture();
+      if (!isDeepStrictEqual(first, second) || !isDeepStrictEqual(firstState, secondState))
+        throw new Error("Diagnostic checkpoint replay is not deterministic");
+      emit(
+        `Full debug replay completed ${first.executed} instructions from ${address}; deterministic=true\n`
+      );
+      writeDiagnosticTail(firstTrace, replayTail);
+      writeEventTail(firstTrace, replayTail);
+      writePortTail(firstTrace, replayTail);
+      return;
+    }
     const result = core.run(budget);
     emit(
       `Rebuilt selected-ROM trace completed ${result.executed} instructions at ${formatAddress(core)}\n`

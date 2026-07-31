@@ -142,6 +142,11 @@ export class RebuiltCpuState {
     return this.eip;
   }
 
+  /** Returns the current CS selector without cloning its hidden cache. */
+  public readCodeSelector(): number {
+    return this.segments.cs.selector;
+  }
+
   public writeEip(value: number): void {
     this.eip = value >>> 0;
   }

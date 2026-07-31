@@ -18,6 +18,15 @@ describe("RebuiltCpuState", () => {
     });
   });
 
+  it("reads the live code selector without exposing the hidden cache", () => {
+    const state = new RebuiltCpuState();
+
+    expect(state.readCodeSelector()).toBe(0xf000);
+    state.writeSegment("cs", { selector: 0x08, base: 0, limit: 0xffffffff, default32: true });
+
+    expect(state.readCodeSelector()).toBe(0x08);
+  });
+
   it("stores independent descriptor-table registers for protected-mode loading", () => {
     const state = new RebuiltCpuState();
     state.writeGdtr({ base: 0x0012_3000, limit: 0x0047 });

@@ -38,6 +38,10 @@ a checkpoint. CPU/RAM-only restoration is insufficient for a machine replay.
 4. Keep any composed checkpoint in memory, bounded to one active diagnostic
    checkpoint, and outside browser product UI. It must still meet the atomic
    state boundary above before it is claimed as a whole-machine replay point.
+5. P66 implements the first runner integration: an opt-in Fast `CS:EIP`
+   checkpoint takes one atomic capture, then an opt-in Full Debug replay is
+   limited to 10,000 instructions and repeated once to prove deterministic
+   continuation. Long Fast runs remain free of trace tails and snapshots.
 
 ## Non-Goals
 
