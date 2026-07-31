@@ -166,7 +166,11 @@ function writePortTail(trace: readonly RebuiltMachineTraceEvent[], length: numbe
   if (length === 0) return;
   for (const event of trace.slice(-length)) {
     if (event.kind !== "port") continue;
-    emit(`  port ${event.event.direction} ${event.event.port.toString(16)}\n`);
+    const width = event.event.width / 4;
+    const value = event.event.value.toString(16).padStart(width, "0");
+    emit(
+      `  port ${event.event.direction} ${event.event.port.toString(16).padStart(4, "0")}/${event.event.width} ${value}\n`
+    );
   }
 }
 
