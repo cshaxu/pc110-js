@@ -25,15 +25,19 @@ a checkpoint. CPU/RAM-only restoration is insufficient for a machine replay.
 
 ## Delivery Order
 
-1. Add private project-native restore contracts with focused round-trip tests
-   for CPU state, RAM/A20, scheduler, and each already-composed device.
-2. Compose those contracts in an in-memory diagnostic checkpoint that is
-   bounded to one active checkpoint and never exposed to browser runtime UI.
-3. Verify save, deterministic mutation, restore, and equal short continuation
-   for CPU, memory, port effects, virtual cycles, devices, and stop reason.
-4. Have the ROM diagnostic runner record Fast identities and checkpoints at an
-   explicit bounded interval. On a diagnostic trigger, replay only the short
-   interval from the nearest verified checkpoint with Full Debug.
+1. Keep Fast execution limited to replay identity, sparse verified checkpoints,
+   and an observed boundary. It must not collect full snapshots or become a
+   routine whole-machine replay workflow.
+2. Use short programs, differential checks, and short ROM checkpoints for
+   normal CPU and device work. A mismatch or unexpected boundary is the trigger
+   for diagnostic restore work, not a reason to preemptively add every device
+   snapshot contract.
+3. When a deterministic Full Debug replay is actually required, implement only
+   the missing project-native restore contracts needed for that bounded failing
+   interval, then verify save, mutation, restore, and equal continuation.
+4. Keep any composed checkpoint in memory, bounded to one active diagnostic
+   checkpoint, and outside browser product UI. It must still meet the atomic
+   state boundary above before it is claimed as a whole-machine replay point.
 
 ## Non-Goals
 
