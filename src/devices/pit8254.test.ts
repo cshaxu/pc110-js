@@ -59,6 +59,22 @@ describe("project-native 8254 PIT", () => {
     expect(square.advance(2).risingEdges).toEqual([0]);
   });
 
+  it("uses mode-3 double-counting for visible counter state", () => {
+    const even = new Pit8254();
+    program(even, 0, 3, 0);
+    even.advance(1);
+    expect(even.snapshot(0)).toMatchObject({ reload: 0x10000, count: 0xfffe, output: true });
+
+    const odd = new Pit8254();
+    program(odd, 0, 3, 5);
+    odd.advance(1);
+    expect(odd.snapshot(0).count).toBe(3);
+    odd.advance(1);
+    expect(odd.snapshot(0).count).toBe(1);
+    odd.advance(1);
+    expect(odd.snapshot(0)).toMatchObject({ count: 4, output: false });
+  });
+
   it("implements mode 4 software strobe output", () => {
     const pit = new Pit8254();
     program(pit, 0, 4, 2);
@@ -83,7 +99,7 @@ describe("project-native 8254 PIT", () => {
     program(pit, 0, 3, 5);
     pit.advance(2);
     pit.writeControl(0x00);
-    expect(pit.readCounter(0)).toBe(3);
+    expect(pit.readCounter(0)).toBe(1);
     const checkpoint = pit.capture();
     const expectedNextByte = pit.readCounter(0);
     const expectedEdges = pit.advance(5).risingEdges;

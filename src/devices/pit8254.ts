@@ -233,7 +233,9 @@ class PitCounter {
         this.lowPulse = true;
       }
     } else if (this.mode === 3) {
-      this.count = this.count > 1 ? this.count - 1 : this.reload;
+      // Mode 3 decrements the visible count by two per input clock. An odd
+      // terminal count carries one count into the following half-period.
+      this.count = this.count > 2 ? this.count - 2 : this.reload - (2 - this.count);
       this.phaseRemaining -= 1;
       if (this.phaseRemaining === 0) {
         this.output = !this.output;
