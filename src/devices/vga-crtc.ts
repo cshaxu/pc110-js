@@ -4,6 +4,11 @@ export const VGA_CRTC_INDEX_PORT = 0x3d4;
 export const VGA_CRTC_DATA_PORT = 0x3d5;
 const REGISTER_COUNT = 0x19;
 
+export interface VgaCrtcSnapshot {
+  readonly index: number;
+  readonly data: readonly number[];
+}
+
 export interface VgaCrtcPortRange {
   readonly start: number;
   readonly end: number;
@@ -58,8 +63,17 @@ export class VgaCrtc {
   public cursorAddress(): number {
     return (this.data[0x0e]! << 8) | this.data[0x0f]!;
   }
-  public snapshot(): { readonly index: number; readonly data: readonly number[] } {
+  public snapshot(): VgaCrtcSnapshot {
     return { index: this.index, data: Array.from(this.data) };
+  }
+  public capture(): VgaCrtcSnapshot {
+    return this.snapshot();
+  }
+  public restore(state: VgaCrtcSnapshot): void {
+    if (state.data.length !== REGISTER_COUNT || !Number.isInteger(state.index))
+      throw new RangeError("VGA CRTC checkpoint state is invalid");
+    this.index = state.index & 0x1f;
+    this.data.set(state.data);
   }
   public portRanges(): readonly VgaCrtcPortRange[] {
     return [

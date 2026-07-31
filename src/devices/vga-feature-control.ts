@@ -5,6 +5,10 @@ export const VGA_FEATURE_CONTROL_COLOR_PORT = 0x3da;
 export const VGA_FEATURE_CONTROL_READ_PORT = 0x3ca;
 const VGA_FEATURE_CONTROL_MASK = 0x03;
 
+export interface VgaFeatureControlState {
+  readonly value: number;
+}
+
 /** VGA Feature Control register with independent color and monochrome write aliases. */
 export class VgaFeatureControl {
   private value = 0;
@@ -25,6 +29,14 @@ export class VgaFeatureControl {
     if (port !== VGA_FEATURE_CONTROL_MONO_PORT && port !== VGA_FEATURE_CONTROL_COLOR_PORT)
       throw new RangeError(`VGA Feature Control write port is not mapped: 0x${port.toString(16)}`);
     this.value = value & VGA_FEATURE_CONTROL_MASK;
+  }
+  public capture(): VgaFeatureControlState {
+    return { value: this.value };
+  }
+  public restore(state: VgaFeatureControlState): void {
+    if (!Number.isInteger(state.value))
+      throw new RangeError("VGA feature checkpoint state is invalid");
+    this.value = state.value & VGA_FEATURE_CONTROL_MASK;
   }
 
   public portRanges() {

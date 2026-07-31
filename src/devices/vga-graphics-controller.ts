@@ -72,6 +72,17 @@ export class VgaGraphicsController {
     return { index: this.index, data: Array.from(this.data) };
   }
 
+  public capture(): VgaGraphicsControllerSnapshot {
+    return this.snapshot();
+  }
+
+  public restore(state: VgaGraphicsControllerSnapshot): void {
+    if (state.data.length !== GRAPHICS_REGISTER_COUNT || !Number.isInteger(state.index))
+      throw new RangeError("VGA graphics checkpoint state is invalid");
+    this.index = state.index & 0x0f;
+    this.data.set(state.data);
+  }
+
   public portRanges(): readonly VgaGraphicsControllerPortRange[] {
     return [
       {

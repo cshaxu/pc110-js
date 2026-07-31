@@ -116,6 +116,19 @@ export class CgaCompatibility {
       verticalRetrace: this.verticalRetrace
     };
   }
+  public capture(): CgaCompatibilitySnapshot {
+    return this.snapshot();
+  }
+  public restore(state: CgaCompatibilitySnapshot): void {
+    if (state.crtcData.length !== this.crtcData.length || !Number.isInteger(state.crtcIndex))
+      throw new RangeError("CGA checkpoint state is invalid");
+    this.crtcIndex = state.crtcIndex & 0x1f;
+    this.crtcData.set(state.crtcData);
+    this.mode = state.mode & 0xff;
+    this.color = state.color & 0xff;
+    this.retrace = state.retrace;
+    this.verticalRetrace = state.verticalRetrace;
+  }
 
   public portRanges(): readonly CgaCompatibilityPortRange[] {
     const ranges: CgaCompatibilityPortRange[] = [];

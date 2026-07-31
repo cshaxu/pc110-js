@@ -1,6 +1,9 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
 export const VGA_MISC_OUTPUT_WRITE_PORT = 0x3c2;
 export const VGA_MISC_OUTPUT_READ_PORT = 0x3cc;
+export interface VgaMiscellaneousOutputState {
+  readonly value: number;
+}
 export class VgaMiscellaneousOutput {
   private value = 0;
   public reset(): void {
@@ -18,6 +21,14 @@ export class VgaMiscellaneousOutput {
       return;
     }
     throw new RangeError(`VGA miscellaneous-output port is not writable: 0x${port.toString(16)}`);
+  }
+  public capture(): VgaMiscellaneousOutputState {
+    return { value: this.value };
+  }
+  public restore(state: VgaMiscellaneousOutputState): void {
+    if (!Number.isInteger(state.value))
+      throw new RangeError("VGA miscellaneous checkpoint state is invalid");
+    this.value = state.value & 0xff;
   }
   public portRanges() {
     return [

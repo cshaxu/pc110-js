@@ -64,6 +64,17 @@ export class VgaSequencer {
     return { index: this.index, data: Array.from(this.data) };
   }
 
+  public capture(): VgaSequencerSnapshot {
+    return this.snapshot();
+  }
+
+  public restore(state: VgaSequencerSnapshot): void {
+    if (state.data.length !== SEQUENCER_REGISTER_COUNT || !Number.isInteger(state.index))
+      throw new RangeError("VGA sequencer checkpoint state is invalid");
+    this.index = state.index & 0x07;
+    this.data.set(state.data);
+  }
+
   public readRegister(index: number): number {
     if (!Number.isInteger(index) || index < 0 || index >= SEQUENCER_REGISTER_COUNT)
       throw new RangeError(`VGA sequencer index is not defined: ${index}`);

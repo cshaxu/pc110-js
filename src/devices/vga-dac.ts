@@ -6,6 +6,14 @@ export const VGA_DAC_READ_ADDRESS_PORT = 0x3c7;
 export const VGA_DAC_WRITE_ADDRESS_PORT = 0x3c8;
 export const VGA_DAC_DATA_PORT = 0x3c9;
 
+export interface VgaDacState {
+  readonly palette: Uint8Array;
+  readonly mask: number;
+  readonly address: number;
+  readonly component: number;
+  readonly readMode: boolean;
+}
+
 export class VgaDac {
   private readonly palette = new Uint8Array(256 * 3);
   private mask = 0xff;
@@ -63,6 +71,31 @@ export class VgaDac {
       throw new RangeError(`VGA DAC index is out of range: ${index}`);
     const offset = index * 3;
     return [this.palette[offset]!, this.palette[offset + 1]!, this.palette[offset + 2]!];
+  }
+  public capture(): VgaDacState {
+    return {
+      palette: this.palette.slice(),
+      mask: this.mask,
+      address: this.address,
+      component: this.component,
+      readMode: this.readMode
+    };
+  }
+  public restore(state: VgaDacState): void {
+    if (
+      state.palette.byteLength !== this.palette.byteLength ||
+      !Number.isInteger(state.mask) ||
+      !Number.isInteger(state.address) ||
+      !Number.isInteger(state.component) ||
+      state.component < 0 ||
+      state.component > 2
+    )
+      throw new RangeError("VGA DAC checkpoint state is invalid");
+    this.palette.set(state.palette);
+    this.mask = state.mask & 0xff;
+    this.address = state.address & 0xff;
+    this.component = state.component;
+    this.readMode = state.readMode;
   }
   public portRanges() {
     return [

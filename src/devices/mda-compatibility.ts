@@ -20,6 +20,10 @@ export interface MdaCompatibilitySnapshot {
   readonly verticalRetrace: boolean;
 }
 
+export interface MdaCompatibilityState extends MdaCompatibilitySnapshot {
+  readonly frameCycles: number;
+}
+
 export interface MdaCompatibilityPortRange {
   readonly start: number;
   readonly end: number;
@@ -103,6 +107,26 @@ export class MdaCompatibility {
       horizontalRetrace: this.horizontalRetrace,
       verticalRetrace: this.verticalRetrace
     };
+  }
+  public capture(): MdaCompatibilityState {
+    return { ...this.snapshot(), frameCycles: this.frameCycles };
+  }
+  public restore(state: MdaCompatibilityState): void {
+    const frameLength = MDA_CYCLES_PER_LINE * MDA_LINES_PER_FRAME;
+    if (
+      state.crtcData.length !== this.crtcData.length ||
+      !Number.isInteger(state.crtcIndex) ||
+      !Number.isInteger(state.frameCycles) ||
+      state.frameCycles < 0 ||
+      state.frameCycles >= frameLength
+    )
+      throw new RangeError("MDA checkpoint state is invalid");
+    this.crtcIndex = state.crtcIndex & 0x1f;
+    this.crtcData.set(state.crtcData);
+    this.mode = state.mode & 0xff;
+    this.horizontalRetrace = state.horizontalRetrace;
+    this.verticalRetrace = state.verticalRetrace;
+    this.frameCycles = state.frameCycles;
   }
 
   public portRanges(): readonly MdaCompatibilityPortRange[] {

@@ -75,6 +75,19 @@ export class VgaAttributeController {
     };
   }
 
+  public capture(): VgaAttributeControllerSnapshot {
+    return this.snapshot();
+  }
+
+  public restore(state: VgaAttributeControllerSnapshot): void {
+    if (state.data.length !== ATTRIBUTE_REGISTER_COUNT || !Number.isInteger(state.index))
+      throw new RangeError("VGA attribute checkpoint state is invalid");
+    this.index = state.index & ATTRIBUTE_INDEX_MASK;
+    this.paletteEnabled = state.paletteEnabled;
+    this.expectsData = state.expectsData;
+    this.data.set(state.data);
+  }
+
   public portRanges(): readonly VgaAttributeControllerPortRange[] {
     return [
       {

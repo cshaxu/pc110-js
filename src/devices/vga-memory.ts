@@ -7,6 +7,11 @@ export const VGA_MEMORY_SIZE = 0x20000;
 
 const PLANE_SIZE = 0x10000;
 
+export interface VgaMemoryState {
+  readonly planes: readonly Uint8Array[];
+  readonly latches: Uint8Array;
+}
+
 /** VGA four-plane memory, latch, and graphics-controller access behavior. */
 export class VgaMemory implements MemoryMappedDevice {
   private readonly planes = Array.from({ length: 4 }, () => new Uint8Array(PLANE_SIZE));
@@ -51,6 +56,21 @@ export class VgaMemory implements MemoryMappedDevice {
 
   public latchSnapshot(): readonly number[] {
     return Array.from(this.latches);
+  }
+
+  public capture(): VgaMemoryState {
+    return { planes: this.planes.map((plane) => plane.slice()), latches: this.latches.slice() };
+  }
+
+  public restore(state: VgaMemoryState): void {
+    if (
+      state.planes.length !== this.planes.length ||
+      state.planes.some((plane) => plane.byteLength !== PLANE_SIZE) ||
+      state.latches.byteLength !== this.latches.byteLength
+    )
+      throw new RangeError("VGA memory checkpoint state is invalid");
+    state.planes.forEach((plane, index) => this.planes[index]!.set(plane));
+    this.latches.set(state.latches);
   }
 
   private decodeAddress(
