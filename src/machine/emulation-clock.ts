@@ -23,4 +23,9 @@ export class EmulationClock {
   public snapshot(): EmulationTime {
     return { cycles: this.cycles };
   }
+
+  public restore(time: EmulationTime): void {
+    if (time.cycles < 0n) throw new Error("Emulation cycles must not be negative");
+    this.cycles = time.cycles;
+  }
 }

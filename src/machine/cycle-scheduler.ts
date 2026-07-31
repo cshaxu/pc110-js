@@ -6,6 +6,13 @@ export interface CycleSchedulerProfile {
   readonly rtcTicksPerSecond: bigint;
 }
 
+export interface CycleSchedulerSnapshot {
+  readonly time: EmulationTime;
+  readonly pitRemainder: bigint;
+  readonly rtcRemainder: bigint;
+  readonly fdcDmaRemainder: bigint;
+}
+
 export const deskPro386CycleProfile: CycleSchedulerProfile = {
   cpuCyclesPerSecond: 16_000_000n,
   pitTicksPerSecond: 1_193_182n,
@@ -78,5 +85,29 @@ export class CycleScheduler {
 
   public snapshot(): EmulationTime {
     return this.clock.snapshot();
+  }
+
+  public capture(): CycleSchedulerSnapshot {
+    return {
+      time: this.clock.snapshot(),
+      pitRemainder: this.pitRemainder,
+      rtcRemainder: this.rtcRemainder,
+      fdcDmaRemainder: this.fdcDmaRemainder
+    };
+  }
+
+  public restore(snapshot: CycleSchedulerSnapshot): void {
+    this.assertRemainder(snapshot.pitRemainder, "PIT");
+    this.assertRemainder(snapshot.rtcRemainder, "RTC");
+    this.assertRemainder(snapshot.fdcDmaRemainder, "FDC DMA");
+    this.clock.restore(snapshot.time);
+    this.pitRemainder = snapshot.pitRemainder;
+    this.rtcRemainder = snapshot.rtcRemainder;
+    this.fdcDmaRemainder = snapshot.fdcDmaRemainder;
+  }
+
+  private assertRemainder(value: bigint, name: string): void {
+    if (value < 0n || value >= this.profile.cpuCyclesPerSecond)
+      throw new RangeError(`${name} remainder must be within one CPU-second divisor`);
   }
 }

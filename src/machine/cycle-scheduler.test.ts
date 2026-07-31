@@ -47,4 +47,23 @@ describe("CycleScheduler", () => {
     expect(() => scheduler.advanceFdcDmaSlots(-1, 1)).toThrow("non-negative");
     expect(() => scheduler.advanceFdcDmaSlots(1, -1)).toThrow("non-negative");
   });
+
+  it("round-trips virtual time and all carried device-clock remainders", () => {
+    const scheduler = new CycleScheduler({
+      cpuCyclesPerSecond: 10n,
+      pitTicksPerSecond: 3n,
+      rtcTicksPerSecond: 4n
+    });
+    scheduler.advance(3);
+    scheduler.advanceFdcDmaSlots(3, 3);
+    const captured = scheduler.capture();
+
+    scheduler.advance(7);
+    scheduler.advanceFdcDmaSlots(7, 3);
+    scheduler.restore(captured);
+
+    expect(scheduler.capture()).toEqual(captured);
+    expect(scheduler.advance(1)).toEqual({ time: { cycles: 4n }, pitTicks: 1, rtcTicks: 0 });
+    expect(scheduler.advanceFdcDmaSlots(1, 3)).toBe(1);
+  });
 });
