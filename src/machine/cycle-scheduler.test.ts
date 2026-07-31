@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CycleScheduler } from "./cycle-scheduler.js";
+import { CycleScheduler, deskPro386CycleProfile } from "./cycle-scheduler.js";
 
 describe("CycleScheduler", () => {
   it("converts cycles to PIT ticks with an exact carried remainder", () => {
@@ -11,6 +11,12 @@ describe("CycleScheduler", () => {
     expect(scheduler.advance(3)).toEqual({ time: { cycles: 3n }, pitTicks: 0, rtcTicks: 1 });
     expect(scheduler.advance(1)).toEqual({ time: { cycles: 4n }, pitTicks: 1, rtcTicks: 0 });
     expect(scheduler.advance(6)).toEqual({ time: { cycles: 10n }, pitTicks: 2, rtcTicks: 3 });
+  });
+
+  it("uses the selected PCjs PIT integer clock at its 80386 boundary", () => {
+    const scheduler = new CycleScheduler(deskPro386CycleProfile);
+    expect(scheduler.advance(2_816).pitTicks).toBe(209);
+    expect(scheduler.advance(1).pitTicks).toBe(1);
   });
 
   it("resets accumulated time and rejects invalid charges", () => {

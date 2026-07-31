@@ -15,7 +15,7 @@ export interface CycleSchedulerSnapshot {
 
 export const deskPro386CycleProfile: CycleSchedulerProfile = {
   cpuCyclesPerSecond: 16_000_000n,
-  pitTicksPerSecond: 1_193_182n,
+  pitTicksPerSecond: 1_193_181n,
   rtcTicksPerSecond: 32_768n
 };
 

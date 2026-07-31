@@ -59,6 +59,7 @@ function hasTimingModRm(opcode: number, secondaryOpcode: number | undefined): bo
     (opcode >= 0x38 && opcode <= 0x3b) ||
     (opcode >= 0x80 && opcode <= 0x83) ||
     (opcode >= 0x88 && opcode <= 0x8b) ||
+    opcode === 0x8e ||
     opcode === 0xf6 ||
     opcode === 0xf7 ||
     opcode === 0xff

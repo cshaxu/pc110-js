@@ -38,7 +38,7 @@ export class RebuiltCpuRunner {
     const instruction = this.executor.step(dispatchRebuiltInstruction);
     const repeatContinuation = this.repeatContinuation === beforeEip;
     const continues =
-      instruction.prefixes.repeat !== undefined && this.state.readEip() === beforeEip;
+      instruction?.prefixes.repeat !== undefined && this.state.readEip() === beforeEip;
     this.repeatContinuation = continues ? beforeEip : undefined;
     return {
       cycles: estimate386Cycles(

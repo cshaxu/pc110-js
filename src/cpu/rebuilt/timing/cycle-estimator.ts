@@ -35,7 +35,7 @@ export function estimate386Cycles(
     if (!modRm.memory) return 2;
     return opcode === 0x88 || opcode === 0x89 ? 5 : 3;
   }
-  if (opcode === 0x8e) return 3;
+  if (opcode === 0x8e && modRm) return modRm.memory ? 3 : 2;
   if ((opcode === 0xf6 || opcode === 0xf7) && modRm?.reg === 0) return modRm.memory ? 6 : 3;
   if (opcode === 0xff && modRm?.reg === 4) return modRm.memory ? 11 : 7;
   if (isPushOpcode(opcode)) return withPrefixes(3, instruction);
