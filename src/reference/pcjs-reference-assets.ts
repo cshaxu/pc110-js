@@ -59,6 +59,12 @@ export class PcjsReferenceAssets {
       )
         throw new Error("PCjs pc110 branch is missing the opt-in lockstep control");
       if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
+          .includes("registers: {")
+      )
+        throw new Error("PCjs pc110 branch is missing the normalized CPU snapshot");
+      if (
         !this.readWorkingResource(
           `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
         )
