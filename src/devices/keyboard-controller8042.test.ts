@@ -11,7 +11,8 @@ describe("project-native selected PC/AT 8042 state", () => {
       outputBuffer: undefined,
       controllerOutputPending: false,
       keyboardEnabled: false,
-      status: 0
+      keyboardInhibited: false,
+      status: 0x10
     });
   });
 
@@ -30,6 +31,16 @@ describe("project-native selected PC/AT 8042 state", () => {
     expect(controller.readStatus() & 0x01).toBe(0x01);
     expect(controller.readData()).toBe(0x0d);
     expect(controller.readStatus() & 0x01).toBe(0);
+  });
+
+  it("matches the selected controller-test status publication sequence", () => {
+    const controller = new KeyboardController8042();
+
+    expect(controller.readStatus()).toBe(0x10);
+    controller.writeCommand(0xaa);
+    expect(controller.readStatus()).toBe(0x18);
+    expect(controller.readStatus()).toBe(0x19);
+    expect(controller.readData()).toBe(0x55);
   });
 
   it("reports selected controller test, input-port, test-port, and output-port responses", () => {
@@ -63,7 +74,7 @@ describe("project-native selected PC/AT 8042 state", () => {
       outputBuffer: 0x00,
       outputSource: "controller",
       controllerOutputPending: true,
-      status: 0x08
+      status: 0x18
     });
     const captured = controller.capture();
     expect(controller.readStatus() & 0x01).toBe(0);

@@ -1,6 +1,5 @@
 const COMMAND_INTERRUPT_ENABLE = 0x01;
 const COMMAND_SYSTEM_FLAG = 0x04;
-const COMMAND_NO_INHIBIT = 0x08;
 const COMMAND_NO_CLOCK = 0x10;
 
 const STATUS_OUTPUT_BUFFER_FULL = 0x01;
@@ -30,6 +29,7 @@ export interface KeyboardController8042Snapshot {
   readonly controllerOutputPending: boolean;
   readonly expectingDataFor: number | undefined;
   readonly keyboardEnabled: boolean;
+  readonly keyboardInhibited: boolean;
   readonly status: number;
 }
 
@@ -70,6 +70,8 @@ export class KeyboardController8042 {
   private controllerOutputPending = false;
   private expectingDataFor: number | undefined;
   private lastWriteWasCommand = false;
+  // TODO(High): Model a selected-machine external keyboard-inhibit input when evidence requires it.
+  private keyboardInhibited = false;
 
   private readonly interfaceTestResult: number;
 
@@ -86,6 +88,7 @@ export class KeyboardController8042 {
     this.controllerOutputPending = false;
     this.expectingDataFor = undefined;
     this.lastWriteWasCommand = false;
+    this.keyboardInhibited = false;
   }
 
   public readData(): number {
@@ -108,7 +111,7 @@ export class KeyboardController8042 {
       status |= STATUS_OUTPUT_BUFFER_FULL;
     if (this.commandByte & COMMAND_SYSTEM_FLAG) status |= STATUS_SYSTEM_FLAG;
     if (this.lastWriteWasCommand) status |= STATUS_COMMAND;
-    if (this.commandByte & COMMAND_NO_INHIBIT) status |= STATUS_NO_INHIBIT;
+    if (!this.keyboardInhibited) status |= STATUS_NO_INHIBIT;
     return status;
   }
 
@@ -194,6 +197,7 @@ export class KeyboardController8042 {
       controllerOutputPending: this.controllerOutputPending,
       expectingDataFor: this.expectingDataFor,
       keyboardEnabled: this.keyboardEnabled(),
+      keyboardInhibited: this.keyboardInhibited,
       status: this.currentStatus()
     };
   }
@@ -211,6 +215,7 @@ export class KeyboardController8042 {
     this.controllerOutputPending = state.controllerOutputPending;
     this.expectingDataFor = state.expectingDataFor;
     this.lastWriteWasCommand = state.lastWriteWasCommand;
+    this.keyboardInhibited = state.keyboardInhibited;
   }
 
   private keyboardEnabled(): boolean {
