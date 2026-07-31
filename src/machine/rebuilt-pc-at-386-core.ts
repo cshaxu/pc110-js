@@ -190,6 +190,8 @@ export class RebuiltPcAt386Core {
     );
     this.pitTicksPerSecond = numberFrequency(this.cycleSchedulerProfile.pitTicksPerSecond, "PIT");
     this.scheduler = new CycleScheduler(this.cycleSchedulerProfile);
+    if (options.deskProSecondaryPit)
+      this.systemPort.setRefreshOutput(() => Boolean(this.scheduler.snapshot().cycles & 0x40n));
     this.ports = new RebuiltMachinePortBus(
       (event) => this.trace?.({ kind: "port", event }),
       options.unpopulatedIo === "floating"

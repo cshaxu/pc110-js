@@ -396,6 +396,21 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.systemPort.snapshot()).toMatchObject({ timer2Gate: false, speakerData: false });
   });
 
+  it("uses the selected DeskPro cycle-bit refresh signal at port 0x61", () => {
+    const generic = new RebuiltPcAt386Core(
+      new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true })
+    );
+    const deskPro = new RebuiltPcAt386Core(
+      new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true }),
+      undefined,
+      { deskProSecondaryPit: true }
+    );
+    generic.scheduler.advance(64);
+    deskPro.scheduler.advance(64);
+    expect(generic.ports.read(0x61, 8) & 0x10).toBe(0);
+    expect(deskPro.ports.read(0x61, 8) & 0x10).toBe(0x10);
+  });
+
   it("delivers a requested NMI only when the RTC address mask permits it", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0x08, 0x40);

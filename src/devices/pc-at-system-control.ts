@@ -22,6 +22,7 @@ export interface PcAtSystemPortRange {
  */
 export class PcAtSystemControl {
   public readonly state = new PcAtSystemPort();
+  private refreshOutput?: () => boolean;
 
   public constructor(private readonly pit: PcAtPit) {}
 
@@ -34,9 +35,14 @@ export class PcAtSystemControl {
     this.requirePort(port, width);
     return (
       this.state.read() |
-      (this.pit.counter1Output() ? REFRESH_OUTPUT : 0) |
+      (this.readRefreshOutput() ? REFRESH_OUTPUT : 0) |
       (this.pit.counter2Output() ? TIMER2_OUTPUT : 0)
     );
+  }
+
+  /** Selects a profile-owned refresh-status signal; unset retains generic PIT1 wiring. */
+  public setRefreshOutput(source: (() => boolean) | undefined): void {
+    this.refreshOutput = source;
   }
 
   public write(port: number, value: number, width: PortWidth): void {
@@ -78,5 +84,9 @@ export class PcAtSystemControl {
       throw new RangeError(`PC/AT system port is not mapped: 0x${port.toString(16)}`);
     if (width !== 8)
       throw new RangeError(`PC/AT system port supports 8-bit I/O only, received ${width}-bit`);
+  }
+
+  private readRefreshOutput(): boolean {
+    return this.refreshOutput ? this.refreshOutput() : this.pit.counter1Output();
   }
 }

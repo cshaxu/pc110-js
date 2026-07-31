@@ -40,6 +40,15 @@ describe("project-native PC/AT system-port composition", () => {
     expect(control.read(0x61, 8) & 0x10).not.toBe(before);
   });
 
+  it("allows a selected profile to supply its own refresh-status signal", () => {
+    const pit = new PcAtPit();
+    const control = new PcAtSystemControl(pit);
+    control.setRefreshOutput(() => false);
+    expect(control.read(0x61, 8) & 0x10).toBe(0);
+    control.setRefreshOutput(() => true);
+    expect(control.read(0x61, 8) & 0x10).toBe(0x10);
+  });
+
   it("restores port 0x61 state and reapplies the counter-2 gate", () => {
     const pit = new PcAtPit();
     const control = new PcAtSystemControl(pit);
