@@ -13,6 +13,9 @@ describe("PCjs diagnostic reference assets", () => {
     expect(assets.machineXml().toString("utf8")).toContain('autoStart="false"');
     expect(assets.pageHtml().toString("utf8")).toContain('id="pc110-lockstep-step"');
     expect(assets.pageHtml().toString("utf8")).toContain("stepInstruction");
+    expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(
+      "stepPC110LockstepBatch"
+    );
     expect(assets.pageHtml().toString("utf8")).toContain("snapshot");
     expect(assets.pageHtml().toString("utf8")).toContain("computerReady");
     expect(assets.readResource("machines/pcx86/modules/v2/chipset.js").toString("utf8")).toContain(

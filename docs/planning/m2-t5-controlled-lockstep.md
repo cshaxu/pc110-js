@@ -29,8 +29,8 @@ The opt-in PCjs control plane must expose, without changing normal execution:
 
 1. reset and pause state: implemented as paired normal reset controls with an
    immediate observable-state comparison; equivalence remains to be proven;
-2. one decoded-instruction stepping, including prefixes, plus an explicit
-   bounded virtual-cycle operation where PCjs can provide one honestly;
+2. one decoded-instruction stepping, including prefixes, and bounded
+   instruction-batch stepping that retains only before/after snapshots;
 3. PCjs virtual cycle count and the cycles consumed by the latest operation;
 4. a versioned normalized diagnostic snapshot;
 5. bounded I/O, interrupt, exception, and device-event journals; and
@@ -57,9 +57,10 @@ an authority, rationale, and activation condition.
    RTC.
 4. Start reset-to-checkpoint selected-ROM windows only after both sides prove
    equivalent at the chosen entry boundary.
-5. On the first mismatch, stop, retain the preceding bounded window, and run
-   one deterministic short replay. Resolve against PCjs behavior or record a
-   scoped exception; do not continue past an unexplained difference.
+5. On the first mismatched batch, reset both diagnostic endpoints, replay the
+   matching prefix in bounded batches, then replay only the mismatched batch
+   one instruction at a time. Resolve against PCjs behavior or record a scoped
+   exception; do not continue past an unexplained difference.
 
 ## Verification
 

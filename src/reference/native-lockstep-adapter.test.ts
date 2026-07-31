@@ -28,6 +28,20 @@ describe("NativeLockstepAdapter", () => {
     });
   });
 
+  it("executes a bounded batch without retaining intermediate snapshots", () => {
+    const adapter = new NativeLockstepAdapter(new NativeCoreCheckpoint());
+
+    const batch = adapter.stepBatch(4);
+
+    expect(batch).toMatchObject({
+      accepted: true,
+      reason: "executed",
+      instructions: 4,
+      cyclesConsumed: expect.any(Number)
+    });
+    expect(batch.after.virtualCycles).not.toBe(batch.before.virtualCycles);
+  });
+
   it("reports one instruction and its charged virtual cycles", () => {
     const checkpoint = new NativeCoreCheckpoint();
     checkpoint.memory.writeUint8(0, 0x90);

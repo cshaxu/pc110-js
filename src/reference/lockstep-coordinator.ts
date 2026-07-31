@@ -1,4 +1,4 @@
-import type { NativeLockstepSnapshot } from "./native-lockstep-adapter.js";
+import type { NativeLockstepBatch, NativeLockstepSnapshot } from "./native-lockstep-adapter.js";
 import type { RebuiltMachineStepResult } from "../machine/rebuilt-pc-at-386-core.js";
 
 export interface PcjsLockstepSnapshot {
@@ -100,6 +100,7 @@ export interface NativeLockstepEndpoint {
   snapshot(): NativeLockstepSnapshot;
   resetMachine(): void;
   stepInstruction(): RebuiltMachineStepResult;
+  stepBatch?(maximumInstructions: number): NativeLockstepBatch;
 }
 
 export interface PcjsLockstepReset {
@@ -117,11 +118,78 @@ export interface PcjsLockstepStep {
   readonly after: PcjsLockstepSnapshot;
 }
 
+export interface PcjsLockstepBatch {
+  readonly accepted: boolean;
+  readonly reason: string;
+  readonly instructions: number;
+  readonly cyclesConsumed: number;
+  readonly before: PcjsLockstepSnapshot;
+  readonly after: PcjsLockstepSnapshot;
+}
+
 export interface PcjsLockstepEndpoint {
   snapshot(): PcjsLockstepSnapshot;
   resetMachine(): PcjsLockstepReset;
   stepInstruction(): PcjsLockstepStep;
+  stepBatch?(maximumInstructions: number): PcjsLockstepBatch;
 }
+
+export type ControlledLockstepBatchResult =
+  | { readonly kind: "batch-unavailable" }
+  | {
+      readonly kind: "precondition-difference";
+      readonly comparison: LockstepComparison;
+      readonly before: LockstepBoundary;
+    }
+  | { readonly kind: "pcjs-not-paused"; readonly snapshot: PcjsLockstepSnapshot }
+  | { readonly kind: "pcjs-rejected"; readonly batch: PcjsLockstepBatch }
+  | { readonly kind: "native-rejected"; readonly batch: NativeLockstepBatch }
+  | {
+      readonly kind: "batch-count-difference";
+      readonly nativeBatch: NativeLockstepBatch;
+      readonly pcjsBatch: PcjsLockstepBatch;
+      readonly before: LockstepBoundary;
+    }
+  | {
+      readonly kind: "stepped";
+      readonly nativeBatch: NativeLockstepBatch;
+      readonly pcjsBatch: PcjsLockstepBatch;
+      readonly before: LockstepBoundary;
+      readonly after: LockstepBoundary;
+      readonly comparison: LockstepComparison;
+      readonly timing: LockstepInstructionTiming;
+    };
+
+export type ControlledLockstepNarrowingResult =
+  | {
+      readonly kind: "completed";
+      readonly instructions: number;
+      readonly batches: number;
+      readonly timingDifferences: readonly LockstepTimingDifference[];
+    }
+  | {
+      readonly kind: "architectural-difference";
+      readonly batchStart: number;
+      readonly batchEnd: number;
+      readonly batches: number;
+      readonly result: Extract<
+        ControlledLockstepWindowResult,
+        { readonly kind: "architectural-difference" }
+      >;
+    }
+  | {
+      readonly kind: "stopped";
+      readonly instructions: number;
+      readonly batches: number;
+      readonly result: Exclude<ControlledLockstepBatchResult, { readonly kind: "stepped" }>;
+    }
+  | {
+      readonly kind: "replay-stopped";
+      readonly instructions: number;
+      readonly batches: number;
+      readonly result: ControlledLockstepBatchResult | ControlledLockstepWindowResult;
+    }
+  | { readonly kind: "reset-failed"; readonly result: ControlledLockstepResetResult };
 
 export type ControlledLockstepResult =
   | {
@@ -299,6 +367,110 @@ export function stepControlledLockstep(
       equal: nativeStep.cycles === pcjsStep.cyclesConsumed
     }
   };
+}
+
+/**
+ * Advances a bounded batch without serializing every instruction across the
+ * browser boundary. A mismatched batch is replayed through single stepping.
+ */
+export function runControlledLockstepBatch(
+  native: NativeLockstepEndpoint,
+  pcjs: PcjsLockstepEndpoint,
+  maximumInstructions: number
+): ControlledLockstepBatchResult {
+  if (!Number.isSafeInteger(maximumInstructions) || maximumInstructions < 1)
+    throw new RangeError("Lockstep batch size must be a positive integer");
+  if (!native.stepBatch || !pcjs.stepBatch) return { kind: "batch-unavailable" };
+
+  const beforeNative = native.snapshot();
+  const beforePcjs = pcjs.snapshot();
+  if (!beforePcjs.paused) return { kind: "pcjs-not-paused", snapshot: beforePcjs };
+  const entry = compareLockstepCpu(beforeNative, beforePcjs);
+  if (!entry.equal)
+    return {
+      kind: "precondition-difference",
+      comparison: entry,
+      before: lockstepBoundary(beforeNative, beforePcjs)
+    };
+
+  const pcjsBatch = pcjs.stepBatch(maximumInstructions);
+  if (!pcjsBatch.accepted) return { kind: "pcjs-rejected", batch: pcjsBatch };
+  const nativeBatch = native.stepBatch(maximumInstructions);
+  const before = lockstepBoundary(beforeNative, beforePcjs);
+  if (!nativeBatch.accepted) return { kind: "native-rejected", batch: nativeBatch };
+  if (nativeBatch.instructions !== pcjsBatch.instructions)
+    return { kind: "batch-count-difference", nativeBatch, pcjsBatch, before };
+
+  return {
+    kind: "stepped",
+    nativeBatch,
+    pcjsBatch,
+    before,
+    after: lockstepBoundary(nativeBatch.after, pcjsBatch.after),
+    comparison: compareLockstepCpu(nativeBatch.after, pcjsBatch.after),
+    timing: {
+      nativeCycles: nativeBatch.cyclesConsumed,
+      pcjsCycles: pcjsBatch.cyclesConsumed,
+      equal: nativeBatch.cyclesConsumed === pcjsBatch.cyclesConsumed
+    }
+  };
+}
+
+/**
+ * Finds the first architectural difference from a deterministic reset without
+ * retaining a long per-instruction trace. The first pass uses batches; only
+ * the differing batch is replayed one instruction at a time.
+ */
+export function locateFirstDifferenceFromReset(
+  native: NativeLockstepEndpoint,
+  pcjs: PcjsLockstepEndpoint,
+  maximumInstructions: number,
+  batchSize: number
+): ControlledLockstepNarrowingResult {
+  if (!Number.isSafeInteger(maximumInstructions) || maximumInstructions < 1)
+    throw new RangeError("Lockstep search size must be a positive integer");
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1)
+    throw new RangeError("Lockstep batch size must be a positive integer");
+  const reset = resetControlledLockstep(native, pcjs);
+  if (reset.kind !== "reset" || !reset.comparison.equal)
+    return { kind: "reset-failed", result: reset };
+
+  let completed = 0;
+  let batches = 0;
+  while (completed < maximumInstructions) {
+    const size = Math.min(batchSize, maximumInstructions - completed);
+    const batch = runControlledLockstepBatch(native, pcjs, size);
+    batches += 1;
+    if (batch.kind === "stepped" && batch.comparison.equal) {
+      completed += size;
+      continue;
+    }
+    if (batch.kind !== "stepped")
+      return { kind: "stopped", instructions: completed, batches, result: batch };
+
+    const replayReset = resetControlledLockstep(native, pcjs);
+    if (replayReset.kind !== "reset" || !replayReset.comparison.equal)
+      return { kind: "reset-failed", result: replayReset };
+    let replayed = 0;
+    while (replayed < completed) {
+      const replaySize = Math.min(batchSize, completed - replayed);
+      const replay = runControlledLockstepBatch(native, pcjs, replaySize);
+      if (replay.kind !== "stepped" || !replay.comparison.equal)
+        return { kind: "replay-stopped", instructions: replayed, batches, result: replay };
+      replayed += replaySize;
+    }
+    const window = runControlledLockstepWindow(native, pcjs, size);
+    if (window.kind === "architectural-difference")
+      return {
+        kind: "architectural-difference",
+        batchStart: completed + 1,
+        batchEnd: completed + size,
+        batches,
+        result: window
+      };
+    return { kind: "replay-stopped", instructions: completed, batches, result: window };
+  }
+  return { kind: "completed", instructions: completed, batches, timingDifferences: [] };
 }
 
 /**

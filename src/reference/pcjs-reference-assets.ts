@@ -62,6 +62,12 @@ export class PcjsReferenceAssets {
       if (
         !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
           .toString("utf8")
+          .includes("stepPC110LockstepBatch")
+      )
+        throw new Error("PCjs pc110 branch is missing the opt-in batch lockstep control");
+      if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
           .includes("resetPC110LockstepMachine")
       )
         throw new Error("PCjs pc110 branch is missing the opt-in reset control");
@@ -94,9 +100,9 @@ export class PcjsReferenceAssets {
           `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
         )
           .toString("utf8")
-          .includes("pc110Lockstep")
+          .includes("stepPC110LockstepBatch")
       )
-        throw new Error("PCjs pc110 branch is missing the diagnostic uncompiled bundle");
+        throw new Error("PCjs pc110 branch is missing the batch diagnostic uncompiled bundle");
     } else {
       try {
         this.runGit(["cat-file", "-e", `${PINNED_PCJS_COMMIT}:${SOURCE_MACHINE}`]);

@@ -4,6 +4,8 @@ import { NativeCoreCheckpoint } from "./native-core-checkpoint.js";
 import { NativeLockstepAdapter } from "../reference/native-lockstep-adapter.js";
 import {
   resetControlledLockstep,
+  locateFirstDifferenceFromReset,
+  runControlledLockstepBatch,
   runControlledLockstepWindow,
   stepControlledLockstep,
   type PcjsLockstepEndpoint,
@@ -65,6 +67,8 @@ root.innerHTML = `
       ${developerMediaEnabled ? '<button id="dev-key-f1" type="button">Send F1</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep" type="button">Compare boundary</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-window" type="button">Compare 16 boundaries</button>' : ""}
+      ${pcjsReferenceEnabled ? '<button id="lockstep-batch" type="button">Compare 1024 boundaries</button>' : ""}
+      ${pcjsReferenceEnabled ? '<button id="lockstep-locate" type="button">Locate difference in 1024</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-reset" type="button">Reset boundary</button>' : ""}
     </footer>
   </section>
@@ -85,6 +89,8 @@ const developerKeyA = root.querySelector<HTMLButtonElement>("#dev-key-a");
 const developerKeyF1 = root.querySelector<HTMLButtonElement>("#dev-key-f1");
 const lockstep = root.querySelector<HTMLButtonElement>("#lockstep");
 const lockstepWindow = root.querySelector<HTMLButtonElement>("#lockstep-window");
+const lockstepBatch = root.querySelector<HTMLButtonElement>("#lockstep-batch");
+const lockstepLocate = root.querySelector<HTMLButtonElement>("#lockstep-locate");
 const lockstepReset = root.querySelector<HTMLButtonElement>("#lockstep-reset");
 const referenceFrame = root.querySelector<HTMLIFrameElement>("#pcjs-reference");
 if (
@@ -208,6 +214,8 @@ developerKeyF1?.addEventListener("click", () => {
 });
 lockstep?.addEventListener("click", () => compareBrowserLockstep());
 lockstepWindow?.addEventListener("click", () => compareBrowserLockstepWindow());
+lockstepBatch?.addEventListener("click", () => compareBrowserLockstepBatch());
+lockstepLocate?.addEventListener("click", () => locateBrowserLockstepDifference());
 lockstepReset?.addEventListener("click", () => resetBrowserLockstep());
 
 async function mountDeveloperMedia(): Promise<void> {
@@ -329,6 +337,95 @@ function compareBrowserLockstepWindow(): void {
   }
 }
 
+function compareBrowserLockstepBatch(): void {
+  if (!prepareBrowserLockstep("a batch")) return;
+  const pcjs = pcjsLockstepEndpoint(referenceFrame);
+  if (!pcjs) return;
+  const result = runControlledLockstepBatch(nativeLockstep, pcjs, 1024);
+  switch (result.kind) {
+    case "batch-unavailable":
+      controls.nativeStatus.textContent = "PCjs batch lockstep control is not ready";
+      return;
+    case "precondition-difference":
+      controls.nativeStatus.textContent = `Batch entry mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}`;
+      return;
+    case "pcjs-not-paused":
+      controls.nativeStatus.textContent = "Pause the PCjs machine before comparing a batch";
+      return;
+    case "pcjs-rejected":
+      controls.nativeStatus.textContent = `PCjs rejected batch: ${result.batch.reason}`;
+      return;
+    case "native-rejected":
+      controls.nativeStatus.textContent = `Native machine stopped batch: ${result.batch.reason}`;
+      return;
+    case "batch-count-difference":
+      controls.nativeStatus.textContent = `Batch count mismatch: native ${result.nativeBatch.instructions}, PCjs ${result.pcjsBatch.instructions}`;
+      return;
+    case "stepped":
+      controls.nativeStatus.textContent = result.comparison.equal
+        ? `Lockstep batch matched: ${result.nativeBatch.instructions} boundaries, ${result.timing.nativeCycles}/${result.timing.pcjsCycles} cycles`
+        : `Lockstep batch mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}. Use Locate difference in 1024.`;
+  }
+}
+
+function locateBrowserLockstepDifference(): void {
+  if (!prepareBrowserLockstep("a deterministic search")) return;
+  const pcjs = pcjsLockstepEndpoint(referenceFrame);
+  if (!pcjs) return;
+  const result = locateFirstDifferenceFromReset(nativeLockstep, pcjs, 1024, 64);
+  switch (result.kind) {
+    case "completed":
+      controls.nativeStatus.textContent = `Lockstep search matched: ${result.instructions} boundaries in ${result.batches} batches`;
+      return;
+    case "architectural-difference":
+      controls.nativeStatus.textContent = `First difference in boundaries ${result.batchStart}-${result.batchEnd} at ${formatBoundary(result.result.result.before)}: ${formatDifference(result.result.result.comparison)}`;
+      return;
+    case "stopped":
+      controls.nativeStatus.textContent = `Lockstep search stopped after ${result.instructions} boundaries: ${formatBatchStop(result.result)}`;
+      return;
+    case "replay-stopped":
+      controls.nativeStatus.textContent = `Lockstep replay stopped after ${result.instructions} boundaries`;
+      return;
+    case "reset-failed":
+      controls.nativeStatus.textContent = "Lockstep deterministic reset boundary did not match";
+  }
+}
+
+function prepareBrowserLockstep(activity: string): boolean {
+  if (!mediaMounted) {
+    controls.nativeStatus.textContent = `Load verified local media before comparing ${activity}`;
+    return false;
+  }
+  if (machine.snapshot().runState === "running") {
+    controls.nativeStatus.textContent = `Pause the native machine before comparing ${activity}`;
+    return false;
+  }
+  if (!pcjsLockstepEndpoint(referenceFrame)) {
+    controls.nativeStatus.textContent = "PCjs lockstep control is not ready";
+    return false;
+  }
+  return true;
+}
+
+function formatBatchStop(result: { readonly kind: string }): string {
+  switch (result.kind) {
+    case "batch-unavailable":
+      return "batch control unavailable";
+    case "pcjs-not-paused":
+      return "PCjs is not paused";
+    case "pcjs-rejected":
+      return "PCjs rejected the batch";
+    case "native-rejected":
+      return "native machine stopped";
+    case "batch-count-difference":
+      return "executed different instruction counts";
+    case "precondition-difference":
+      return "entry boundary differs";
+    default:
+      return "unexpected batch result";
+  }
+}
+
 function formatLockstepStop(
   result: Exclude<ReturnType<typeof stepControlledLockstep>, { kind: "stepped" }>
 ): string {
@@ -403,16 +500,21 @@ function pcjsLockstepEndpoint(frame: HTMLIFrameElement | null): PcjsLockstepEndp
         readonly snapshot?: () => PcjsLockstepSnapshot;
         readonly resetMachine?: () => PcjsLockstepReset;
         readonly stepInstruction?: () => PcjsLockstepStep;
+        readonly stepBatch?: (
+          maximumInstructions: number
+        ) => import("../reference/lockstep-coordinator.js").PcjsLockstepBatch;
       }
     | undefined;
   const snapshot = control?.snapshot;
   const resetMachine = control?.resetMachine;
   const stepInstruction = control?.stepInstruction;
+  const stepBatch = control?.stepBatch;
   if (!snapshot || !resetMachine || !stepInstruction) return undefined;
   return {
     snapshot,
     resetMachine,
-    stepInstruction
+    stepInstruction,
+    stepBatch
   };
 }
 

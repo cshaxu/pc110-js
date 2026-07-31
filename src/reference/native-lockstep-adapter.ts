@@ -42,6 +42,15 @@ export interface NativeLockstepSnapshot {
   readonly devices: NativeLockstepDeviceSnapshot;
 }
 
+export interface NativeLockstepBatch {
+  readonly accepted: boolean;
+  readonly reason: string;
+  readonly instructions: number;
+  readonly cyclesConsumed: number;
+  readonly before: NativeLockstepSnapshot;
+  readonly after: NativeLockstepSnapshot;
+}
+
 export interface NativeLockstepDeviceSnapshot {
   readonly pic: {
     readonly master: {
@@ -85,6 +94,36 @@ export class NativeLockstepAdapter {
 
   public stepInstruction(): RebuiltMachineStepResult {
     return this.checkpoint.core.step();
+  }
+
+  /** Runs a bounded diagnostic batch without collecting per-instruction snapshots. */
+  public stepBatch(maximumInstructions: number): NativeLockstepBatch {
+    if (!Number.isSafeInteger(maximumInstructions) || maximumInstructions < 1)
+      throw new RangeError("Native lockstep batch size must be a positive integer");
+    const before = this.snapshot();
+    let cyclesConsumed = 0;
+    for (let instructions = 0; instructions < maximumInstructions; instructions += 1) {
+      const step = this.stepInstruction();
+      if (step.kind !== "instruction") {
+        return {
+          accepted: false,
+          reason: step.kind,
+          instructions,
+          cyclesConsumed,
+          before,
+          after: this.snapshot()
+        };
+      }
+      cyclesConsumed += step.cycles;
+    }
+    return {
+      accepted: true,
+      reason: "executed",
+      instructions: maximumInstructions,
+      cyclesConsumed,
+      before,
+      after: this.snapshot()
+    };
   }
 
   public resetMachine(): void {

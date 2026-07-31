@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   compareLockstepCpu,
+  locateFirstDifferenceFromReset,
   resetControlledLockstep,
+  runControlledLockstepBatch,
   runControlledLockstepWindow,
   stepControlledLockstep,
   type PcjsLockstepSnapshot
@@ -346,6 +348,148 @@ describe("controlled lockstep comparator", () => {
         { instruction: 2, timing: { nativeCycles: 2, pcjsCycles: 3 } },
         { instruction: 3, timing: { nativeCycles: 2, pcjsCycles: 3 } }
       ]
+    });
+  });
+
+  it("compares a bounded batch without collecting per-instruction snapshots", () => {
+    const { native, pcjs } = snapshots();
+    let nativeCurrent = native;
+    let pcjsCurrent = pcjs;
+    const result = runControlledLockstepBatch(
+      {
+        snapshot: () => nativeCurrent,
+        resetMachine: () => undefined,
+        stepInstruction: () => ({ kind: "instruction" as const, cycles: 1 }),
+        stepBatch: (instructions) => {
+          const before = nativeCurrent;
+          nativeCurrent = {
+            ...nativeCurrent,
+            cpu: { ...nativeCurrent.cpu, eip: nativeCurrent.cpu.eip + instructions }
+          };
+          return {
+            accepted: true,
+            reason: "executed",
+            instructions,
+            cyclesConsumed: instructions,
+            before,
+            after: nativeCurrent
+          };
+        }
+      },
+      {
+        snapshot: () => pcjsCurrent,
+        resetMachine: () => ({
+          accepted: true,
+          reason: "reset",
+          before: pcjsCurrent,
+          after: pcjsCurrent
+        }),
+        stepInstruction: () => ({
+          accepted: true,
+          reason: "executed",
+          cyclesConsumed: 1,
+          before: pcjsCurrent,
+          after: pcjsCurrent
+        }),
+        stepBatch: (instructions) => {
+          const before = pcjsCurrent;
+          pcjsCurrent = {
+            ...pcjsCurrent,
+            cpu: { ...pcjsCurrent.cpu, eip: pcjsCurrent.cpu.eip + instructions }
+          };
+          return {
+            accepted: true,
+            reason: "executed",
+            instructions,
+            cyclesConsumed: instructions,
+            before,
+            after: pcjsCurrent
+          };
+        }
+      },
+      64
+    );
+
+    expect(result).toMatchObject({
+      kind: "stepped",
+      comparison: { equal: true },
+      timing: { nativeCycles: 64, pcjsCycles: 64, equal: true }
+    });
+  });
+
+  it("replays only the first mismatched batch from deterministic reset", () => {
+    const { native, pcjs } = snapshots();
+    let nativeCurrent = native;
+    let pcjsCurrent = pcjs;
+    let pcjsInstructions = 0;
+    const reset = () => {
+      nativeCurrent = native;
+      pcjsCurrent = pcjs;
+      pcjsInstructions = 0;
+    };
+    const nativeEndpoint = {
+      snapshot: () => nativeCurrent,
+      resetMachine: reset,
+      stepInstruction: () => {
+        nativeCurrent = {
+          ...nativeCurrent,
+          cpu: { ...nativeCurrent.cpu, eip: nativeCurrent.cpu.eip + 1 }
+        };
+        return { kind: "instruction" as const, cycles: 1 };
+      },
+      stepBatch: (instructions: number) => {
+        const before = nativeCurrent;
+        for (let index = 0; index < instructions; index += 1) nativeEndpoint.stepInstruction();
+        return {
+          accepted: true,
+          reason: "executed",
+          instructions,
+          cyclesConsumed: instructions,
+          before,
+          after: nativeCurrent
+        };
+      }
+    };
+    const pcjsEndpoint = {
+      snapshot: () => pcjsCurrent,
+      resetMachine: () => {
+        const before = pcjsCurrent;
+        reset();
+        return { accepted: true, reason: "reset", before, after: pcjsCurrent };
+      },
+      stepInstruction: () => {
+        pcjsInstructions += 1;
+        pcjsCurrent = {
+          ...pcjsCurrent,
+          cpu: { ...pcjsCurrent.cpu, eip: pcjsCurrent.cpu.eip + (pcjsInstructions === 5 ? 2 : 1) }
+        };
+        return {
+          accepted: true,
+          reason: "executed",
+          cyclesConsumed: 1,
+          before: pcjsCurrent,
+          after: pcjsCurrent
+        };
+      },
+      stepBatch: (instructions: number) => {
+        const before = pcjsCurrent;
+        for (let index = 0; index < instructions; index += 1) pcjsEndpoint.stepInstruction();
+        return {
+          accepted: true,
+          reason: "executed",
+          instructions,
+          cyclesConsumed: instructions,
+          before,
+          after: pcjsCurrent
+        };
+      }
+    };
+
+    expect(locateFirstDifferenceFromReset(nativeEndpoint, pcjsEndpoint, 16, 4)).toMatchObject({
+      kind: "architectural-difference",
+      batchStart: 5,
+      batchEnd: 8,
+      result: { result: { comparison: { difference: { path: "cpu.eip", native: 5, pcjs: 6 } } } }
     });
   });
 
