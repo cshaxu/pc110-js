@@ -7,6 +7,20 @@ import { FixedDrive } from "../devices/fixed-drive.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
+  it("keeps the generic 8042 interface test separate from the selected DeskPro result", () => {
+    const genericMemory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const generic = new RebuiltPcAt386Core(genericMemory);
+    generic.ports.write(0x64, 0xab, 8);
+    expect(generic.ports.read(0x60, 8)).toBe(0x00);
+
+    const deskProMemory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const deskPro = new RebuiltPcAt386Core(deskProMemory, undefined, {
+      keyboardInterfaceTestResult: 0x05
+    });
+    deskPro.ports.write(0x64, 0xab, 8);
+    expect(deskPro.ports.read(0x60, 8)).toBe(0x05);
+  });
+
   it("restores CPU, memory, scheduling, device, video, and pending-NMI state atomically", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0x90);

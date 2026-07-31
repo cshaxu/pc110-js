@@ -3,6 +3,7 @@ import {
   KEYBOARD_CONTROLLER_DATA_PORT,
   KEYBOARD_CONTROLLER_STATUS_PORT,
   KeyboardController8042,
+  type KeyboardController8042Options,
   type KeyboardController8042Result,
   type KeyboardController8042Snapshot,
   type KeyboardController8042State
@@ -22,20 +23,25 @@ export interface PcAtKeyboardControllerState {
   readonly pendingKeyboardBytes: readonly number[];
 }
 
+export type PcAtKeyboardControllerOptions = KeyboardController8042Options;
+
 /**
  * PC/AT-facing 8042 adapter. It owns only ports 0x60/0x64 and routes explicit
  * controller results into the native PIC and S5 output-port contracts.
  */
 export class PcAtKeyboardController {
-  public readonly controller = new KeyboardController8042();
+  public readonly controller: KeyboardController8042;
   public readonly keyboard = new AtKeyboard();
   private pendingKeyboardBytes: number[] = [];
 
   public constructor(
     private readonly raiseIrq: (irq: number) => void,
     private readonly writeOutputPort: (value: number) => void,
-    private readonly resetProcessor: () => void
-  ) {}
+    private readonly resetProcessor: () => void,
+    options: PcAtKeyboardControllerOptions = {}
+  ) {
+    this.controller = new KeyboardController8042(options);
+  }
 
   public reset(): void {
     this.controller.reset();

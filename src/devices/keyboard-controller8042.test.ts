@@ -45,6 +45,14 @@ describe("project-native selected PC/AT 8042 state", () => {
     expect(controller.readData()).toBe(0x03);
   });
 
+  it("keeps the generic interface-test result configurable per selected machine", () => {
+    const controller = new KeyboardController8042({ interfaceTestResult: 0x05 });
+
+    controller.writeCommand(0xab);
+
+    expect(controller.readData()).toBe(0x05);
+  });
+
   it("controls keyboard ingress and requests IRQ1 only for enabled interrupt input", () => {
     const controller = new KeyboardController8042();
     expect(controller.receiveKeyboardByte(0x1c)).toMatchObject({ accepted: false });

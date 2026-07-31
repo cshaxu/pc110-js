@@ -49,6 +49,8 @@ export interface RebuiltMachineUntilResult extends RebuiltMachineRunResult {
 
 export interface RebuiltPcAt386Options {
   readonly deskProSecondaryPit?: boolean;
+  /** ROM-evidenced 8042 interface-test result for a selected machine profile. */
+  readonly keyboardInterfaceTestResult?: number;
   readonly cycleSchedulerProfile?: CycleSchedulerProfile;
   readonly unpopulatedIo?: "strict" | "floating";
   /** Selects eligible full instruction snapshots for an attached machine trace. */
@@ -111,11 +113,7 @@ export class RebuiltPcAt386Core {
   public readonly dma = new PcAtDma();
   public readonly rtc = new PcAtRtc({}, (irq) => this.pic.raiseIrq(irq));
   public readonly systemPort = new PcAtSystemControl(this.pit);
-  public readonly keyboardController = new PcAtKeyboardController(
-    (irq) => this.pic.raiseIrq(irq),
-    (value) => this.writeKeyboardOutputPort(value),
-    () => this.runner.reset()
-  );
+  public readonly keyboardController: PcAtKeyboardController;
   public readonly fpuControl = new PcAtFpuControl();
   public readonly fdc = new PcAtFdc(
     (irq) => this.pic.raiseIrq(irq),
@@ -155,6 +153,12 @@ export class RebuiltPcAt386Core {
     private readonly trace?: RebuiltMachineTrace,
     options: RebuiltPcAt386Options = {}
   ) {
+    this.keyboardController = new PcAtKeyboardController(
+      (irq) => this.pic.raiseIrq(irq),
+      (value) => this.writeKeyboardOutputPort(value),
+      () => this.runner.reset(),
+      { interfaceTestResult: options.keyboardInterfaceTestResult }
+    );
     this.scheduler = new CycleScheduler(options.cycleSchedulerProfile ?? deskPro386CycleProfile);
     this.ports = new RebuiltMachinePortBus(
       (event) => this.trace?.({ kind: "port", event }),

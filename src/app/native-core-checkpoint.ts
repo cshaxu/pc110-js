@@ -60,6 +60,7 @@ export class NativeCoreCheckpoint {
     (event) => this.recordMachineEvent(event),
     {
       deskProSecondaryPit: true,
+      keyboardInterfaceTestResult: 0x05,
       unpopulatedIo: "floating",
       instructionTrace: false
     }

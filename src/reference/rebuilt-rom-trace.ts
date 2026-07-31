@@ -215,6 +215,7 @@ function createTraceCore(
   memory.mapRom(createRomImage("ibm-vga", assets.vgaRom), 0xc0000);
   const core = new RebuiltPcAt386Core(memory, trace, {
     deskProSecondaryPit: true,
+    keyboardInterfaceTestResult: 0x05,
     unpopulatedIo: "floating",
     instructionTrace,
     instructionTraceSelector

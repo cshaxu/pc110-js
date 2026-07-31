@@ -16,6 +16,11 @@ export const KEYBOARD_CONTROLLER_STATUS_PORT = 0x64;
 
 export type KeyboardControllerOutputSource = "controller" | "keyboard";
 
+export interface KeyboardController8042Options {
+  /** Result returned by the controller-interface test command (0xAB). */
+  readonly interfaceTestResult?: number;
+}
+
 export interface KeyboardController8042Snapshot {
   readonly commandByte: number;
   readonly inputPort: number;
@@ -64,6 +69,12 @@ export class KeyboardController8042 {
   private expectingDataFor: number | undefined;
   private lastWriteWasCommand = false;
 
+  private readonly interfaceTestResult: number;
+
+  public constructor(options: KeyboardController8042Options = {}) {
+    this.interfaceTestResult = options.interfaceTestResult ?? 0x00;
+  }
+
   public reset(): void {
     this.commandByte = COMMAND_NO_CLOCK;
     this.inputPort = INPUT_PORT_DEFAULT;
@@ -107,7 +118,7 @@ export class KeyboardController8042 {
         this.outputPort = OUTPUT_PORT_DEFAULT;
         return this.withOutputPortUpdate(this.placeControllerOutput(0x55));
       case 0xab:
-        return this.placeControllerOutput(0x00);
+        return this.placeControllerOutput(this.interfaceTestResult);
       case 0xad:
         this.commandByte |= COMMAND_NO_CLOCK;
         return result(true);
