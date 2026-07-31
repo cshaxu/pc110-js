@@ -27,6 +27,16 @@ describe("RebuiltCpuState", () => {
     expect(state.readCodeSelector()).toBe(0x08);
   });
 
+  it("keeps cloning at the public segment boundary while reusing the internal cache view", () => {
+    const state = new RebuiltCpuState();
+
+    expect(state.readSegment("cs")).not.toBe(state.readSegment("cs"));
+    expect(state.segmentCache("cs")).toBe(state.segmentCache("cs"));
+    state.writeSegment("cs", { selector: 0x08, base: 0, limit: 0xffffffff, default32: true });
+
+    expect(state.segmentCache("cs")).toMatchObject({ selector: 0x08, default32: true });
+  });
+
   it("stores independent descriptor-table registers for protected-mode loading", () => {
     const state = new RebuiltCpuState();
     state.writeGdtr({ base: 0x0012_3000, limit: 0x0047 });

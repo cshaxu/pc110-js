@@ -100,7 +100,7 @@ export class SegmentedMemory {
     write: boolean,
     instructionFetch: boolean
   ): number {
-    const segment = this.state.readSegment(segmentName);
+    const segment = this.state.segmentCache(segmentName);
     const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
     const protectedMode = Boolean(this.state.readCr0() & 0x00000001);
     const virtual8086 = this.state.isVirtual8086();
@@ -158,7 +158,7 @@ export class SegmentedMemory {
     const normalizedOffset = addressSize === 16 ? offset & 0xffff : offset >>> 0;
     this.validateProtectedAccess(
       segmentName,
-      this.state.readSegment(segmentName),
+      this.state.segmentCache(segmentName),
       normalizedOffset,
       width,
       write,
@@ -168,7 +168,7 @@ export class SegmentedMemory {
 
   private validateProtectedAccess(
     segmentName: SegmentName,
-    segment: ReturnType<RebuiltCpuState["readSegment"]>,
+    segment: ReturnType<RebuiltCpuState["segmentCache"]>,
     offset: number,
     width: number,
     write: boolean,
@@ -189,7 +189,7 @@ export class SegmentedMemory {
 
   private pagingAccess(write: boolean): PagingAccess {
     const flags = this.state.flags.read();
-    const code = this.state.readSegment("cs");
+    const code = this.state.segmentCache("cs");
     const user = Boolean(flags & 0x00020000) || (code.dpl ?? code.selector & 3) === 3;
     return { write, user };
   }

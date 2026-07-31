@@ -63,15 +63,19 @@ export class RebuiltCpuExecutor {
   public step(dispatch: RebuiltInstructionDispatcher): DecodedInstruction | undefined {
     const faultEip = this.state.readEip();
     const codeDefault32 = this.state.codeDefault32();
-    const tracePoint = {
-      cs: this.state.readSegment("cs").selector,
-      eip: faultEip,
-      codeDefault32
-    };
+    const tracePoint = this.trace
+      ? {
+          cs: this.state.segmentCache("cs").selector,
+          eip: faultEip,
+          codeDefault32
+        }
+      : undefined;
     // A diagnostic run must retain a pre-fault state even when this ordinary
     // instruction boundary is not selected for emission.
     const before = this.trace ? this.state.snapshot() : undefined;
-    const captureInstruction = this.shouldCapture === undefined || this.shouldCapture(tracePoint);
+    const captureInstruction =
+      tracePoint !== undefined &&
+      (this.shouldCapture === undefined || this.shouldCapture(tracePoint));
     const codeAddressSize = codeDefault32 ? 32 : 16;
     const reader = {
       readCodeByte: (offset: number) => {

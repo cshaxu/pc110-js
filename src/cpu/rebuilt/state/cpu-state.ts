@@ -196,6 +196,11 @@ export class RebuiltCpuState {
     return cloneSegment(this.segments[name]);
   }
 
+  /** @internal Returns the immutable CPU-owned segment cache without cloning. */
+  public segmentCache(name: SegmentName): Readonly<SegmentCache> {
+    return this.segments[name];
+  }
+
   public writeSegment(name: SegmentName, segment: SegmentCache): void {
     this.segments[name] = cloneSegment(segment);
   }
