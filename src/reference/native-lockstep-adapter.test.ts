@@ -14,6 +14,11 @@ describe("NativeLockstepAdapter", () => {
         eflags: 0x00000002,
         cr0: 0x7ffffff0,
         segments: { cs: { selector: 0xf000, base: 0xffff0000, valid: true } }
+      },
+      devices: {
+        pic: { master: { mask: 0xff, request: 0, inService: 0 } },
+        keyboardController: { status: 0x10, commandByte: 0x10, outputBuffer: undefined },
+        rtc: { address: 0, statusA: 0x26, statusB: 0x02, statusC: 0, statusD: 0x80 }
       }
     });
   });

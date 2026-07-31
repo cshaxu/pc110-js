@@ -39,6 +39,37 @@ export interface NativeLockstepSnapshot {
   readonly version: typeof NATIVE_LOCKSTEP_SNAPSHOT_VERSION;
   readonly virtualCycles: string;
   readonly cpu: NativeLockstepCpuSnapshot;
+  readonly devices: NativeLockstepDeviceSnapshot;
+}
+
+export interface NativeLockstepDeviceSnapshot {
+  readonly pic: {
+    readonly master: {
+      readonly mask: number;
+      readonly request: number;
+      readonly inService: number;
+    };
+    readonly slave: { readonly mask: number; readonly request: number; readonly inService: number };
+  };
+  readonly pit: readonly {
+    readonly reload: number;
+    readonly count: number;
+    readonly output: boolean;
+  }[];
+  readonly dma: readonly { readonly masked: boolean; readonly requested: boolean }[];
+  readonly keyboardController: {
+    readonly status: number;
+    readonly commandByte: number;
+    readonly outputBuffer: number | undefined;
+    readonly outputDataLatch: number;
+  };
+  readonly rtc: {
+    readonly address: number;
+    readonly statusA: number;
+    readonly statusB: number;
+    readonly statusC: number;
+    readonly statusD: number;
+  };
 }
 
 /**
@@ -57,9 +88,57 @@ export class NativeLockstepAdapter {
     return {
       version: NATIVE_LOCKSTEP_SNAPSHOT_VERSION,
       virtualCycles: this.checkpoint.core.scheduler.snapshot().cycles.toString(),
-      cpu: normalizeCpu(cpu)
+      cpu: normalizeCpu(cpu),
+      devices: this.snapshotDevices()
     };
   }
+
+  private snapshotDevices(): NativeLockstepDeviceSnapshot {
+    const pic = this.checkpoint.core.pic.snapshot();
+    const keyboardController = this.checkpoint.core.keyboardController.snapshot();
+    const rtc = this.checkpoint.core.rtc.snapshot();
+    const rtcState = this.checkpoint.core.rtc.capture();
+    return {
+      pic: {
+        master: normalizePic(pic.master),
+        slave: normalizePic(pic.slave)
+      },
+      pit: [0, 1, 2].map((index) => normalizePit(this.checkpoint.core.pit.snapshot(index))),
+      dma: Array.from({ length: 8 }, (_value, index) => {
+        const channel = this.checkpoint.core.dma.snapshot(index);
+        return { masked: channel.masked, requested: channel.requested };
+      }),
+      keyboardController: {
+        status: keyboardController.status,
+        commandByte: keyboardController.commandByte,
+        outputBuffer: keyboardController.outputBuffer,
+        outputDataLatch: keyboardController.outputDataLatch
+      },
+      rtc: {
+        address: rtcState.address,
+        statusA: rtc.statusA,
+        statusB: rtc.statusB,
+        statusC: rtc.statusC,
+        statusD: rtc.statusD
+      }
+    };
+  }
+}
+
+function normalizePic(pic: {
+  readonly mask: number;
+  readonly request: number;
+  readonly inService: number;
+}) {
+  return { mask: pic.mask, request: pic.request, inService: pic.inService };
+}
+
+function normalizePit(counter: {
+  readonly reload: number;
+  readonly count: number;
+  readonly output: boolean;
+}) {
+  return { reload: counter.reload, count: counter.count, output: counter.output };
 }
 
 function normalizeCpu(cpu: RebuiltCpuSnapshot): NativeLockstepCpuSnapshot {

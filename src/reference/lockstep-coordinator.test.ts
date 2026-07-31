@@ -84,6 +84,25 @@ function snapshots(): { native: NativeLockstepSnapshot; pcjs: PcjsLockstepSnapsh
             expandDown: false
           }
         }
+      },
+      devices: {
+        pic: {
+          master: { mask: 0xff, request: 0, inService: 0 },
+          slave: { mask: 0xff, request: 0, inService: 0 }
+        },
+        pit: [
+          { reload: 0, count: 0, output: false },
+          { reload: 0, count: 0, output: false },
+          { reload: 0, count: 0, output: false }
+        ],
+        dma: Array.from({ length: 8 }, () => ({ masked: true, requested: false })),
+        keyboardController: {
+          status: 0x10,
+          commandByte: 0x10,
+          outputBuffer: undefined,
+          outputDataLatch: 0
+        },
+        rtc: { address: 0, statusA: 0x26, statusB: 2, statusC: 0, statusD: 0x80 }
       }
     },
     pcjs: {
