@@ -42,10 +42,10 @@ describe("rebuilt arithmetic semantics", () => {
     });
   });
 
-  it("clears CF and OF for logical results while preserving undefined AF", () => {
+  it("clears CF, OF, and AF for PCjs-compatible logical results", () => {
     expect(logical(EFLAGS_CARRY | EFLAGS_OVERFLOW | EFLAGS_AUXILIARY_CARRY, 0, 16)).toEqual({
       value: 0,
-      flags: EFLAGS_AUXILIARY_CARRY | EFLAGS_PARITY | EFLAGS_ZERO
+      flags: EFLAGS_PARITY | EFLAGS_ZERO
     });
   });
 });
