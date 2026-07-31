@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, relative, resolve } from "node:path";
 import { createRomImage } from "../firmware/rom-image.js";
@@ -22,21 +22,23 @@ const DEFAULT_TRACE_TAIL = 0;
 const DEFAULT_EVENT_TAIL = 0;
 const FLOPPY_BYTES = 1_474_560;
 const FLOPPY_SHA256 = "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5";
-const diagnosticOutput: string[] = [];
+let diagnosticLogDestination: string | undefined;
 
 function emit(text: string): void {
-  diagnosticOutput.push(text);
+  if (diagnosticLogDestination !== undefined)
+    appendFileSync(diagnosticLogDestination, text, "utf8");
   process.stdout.write(text);
 }
 
-function writeDiagnosticLog(): void {
+function prepareDiagnosticLog(): void {
   const raw = process.env.PC110JS_ROM_TRACE_LOG;
   if (raw === undefined) return;
   const destination = resolve(projectRoot, raw);
   const pathFromRoot = relative(projectRoot, destination);
   if (pathFromRoot === "" || pathFromRoot.startsWith("..") || pathFromRoot.includes(":"))
     throw new Error("PC110JS_ROM_TRACE_LOG must be a project-relative file path");
-  writeFileSync(destination, diagnosticOutput.join(""), "utf8");
+  writeFileSync(destination, "", "utf8");
+  diagnosticLogDestination = destination;
 }
 
 function instructionBudget(): number {
@@ -216,6 +218,7 @@ function retainTraceEvent(
 }
 
 function main(): void {
+  prepareDiagnosticLog();
   const budget = instructionBudget();
   const tailLength = traceTailLength();
   const eventTailLengthValue = eventTailLength();
@@ -313,7 +316,6 @@ function main(): void {
     writePitState(core);
     writeWatchCounts(watchHits);
   }
-  writeDiagnosticLog();
 }
 
 main();
