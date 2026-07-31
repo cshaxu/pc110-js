@@ -59,6 +59,18 @@ describe("project-native PC/AT PIT", () => {
     expect(pit.snapshot(0)).toMatchObject({ count: 2, output: true });
   });
 
+  it("rebases both mode-3 half-periods to the visible output transition", () => {
+    const pit = new PcAtPit();
+    pit.write(PIT_CONTROL_PORT, 0x36, 8);
+    pit.write(PIT_COUNTER0_PORT, 5, 8);
+    pit.write(PIT_COUNTER0_PORT, 0, 8);
+
+    pit.advanceCycles(52, 16, 1);
+    expect(pit.snapshot(0)).toMatchObject({ count: 4, output: false });
+    pit.advanceCycles(12, 16, 1);
+    expect(pit.snapshot(0)).toMatchObject({ count: 4, output: false });
+  });
+
   it("rejects a cycle charge whose exact clock numerator would exceed safe integers", () => {
     const pit = new PcAtPit();
     expect(() => pit.advanceCycles(Number.MAX_SAFE_INTEGER, 16_000_000, 1_193_181)).toThrow(

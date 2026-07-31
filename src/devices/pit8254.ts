@@ -55,7 +55,11 @@ export class Pit8254 {
   }
 
   public output(index: number): boolean {
-    return this.counter(index).snapshot().output;
+    return this.counter(index).outputLevel();
+  }
+
+  public mode(index: number): number {
+    return this.counter(index).modeValue();
   }
 
   public snapshot(index: number): PitCounterSnapshot {
@@ -104,6 +108,20 @@ export class Pit8254 {
       if (counter.advanceOne()) risingEdge = true;
     }
     return risingEdge;
+  }
+
+  /** Returns bit zero for a rising edge and bit one for any output transition. */
+  public advanceCounterEventFlags(index: number, ticks: number): number {
+    if (!Number.isInteger(ticks) || ticks < 0)
+      throw new RangeError("PIT ticks must be non-negative integers");
+    const counter = this.counter(index);
+    let flags = 0;
+    for (let tick = 0; tick < ticks; tick += 1) {
+      const output = counter.outputLevel();
+      if (counter.advanceOne()) flags |= 1;
+      if (output !== counter.outputLevel()) flags |= 2;
+    }
+    return flags;
   }
 
   private writeReadBack(command: number): void {
@@ -271,6 +289,14 @@ class PitCounter {
       }
     }
     return !wasOutput && this.output;
+  }
+
+  public outputLevel(): boolean {
+    return this.output;
+  }
+
+  public modeValue(): number {
+    return this.mode;
   }
 
   public snapshot(): PitCounterSnapshot {
