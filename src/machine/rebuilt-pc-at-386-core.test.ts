@@ -7,6 +7,24 @@ import { FixedDrive } from "../devices/fixed-drive.js";
 import { RebuiltPcAt386Core, type RebuiltMachineTraceEvent } from "./rebuilt-pc-at-386-core.js";
 
 describe("RebuiltPcAt386Core", () => {
+  it("accepts an RTC seed through machine configuration", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory, undefined, {
+      rtc: {
+        initialDateTime: {
+          year: 1990,
+          month: 1,
+          day: 1,
+          weekday: 2,
+          hour: 0,
+          minute: 0,
+          second: 45
+        }
+      }
+    });
+    expect(core.rtc.rtc.read(RtcCmosRegister.Seconds)).toBe(0x45);
+  });
+
   it("keeps the generic 8042 interface test separate from the selected DeskPro result", () => {
     const genericMemory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     const generic = new RebuiltPcAt386Core(genericMemory);

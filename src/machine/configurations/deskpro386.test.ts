@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { PcAtRtc } from "../../devices/pc-at-rtc.js";
 import { RtcCmosRegister } from "../../devices/rtc-cmos.js";
-import { deskPro386CmosConfiguration } from "./deskpro386.js";
+import {
+  deskPro386CmosConfiguration,
+  deskPro386ReferenceRtcDate,
+  deskPro386ReferenceRtcDateTime
+} from "./deskpro386.js";
 
 describe("DeskPro 386 CMOS configuration", () => {
+  it("publishes one fixed RTC seed for native and PCjs differential execution", () => {
+    expect(deskPro386ReferenceRtcDate).toBe("1990-01-01T00:00:00");
+    expect(deskPro386ReferenceRtcDateTime).toEqual({
+      year: 1990,
+      month: 1,
+      day: 1,
+      weekday: 2,
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
+  });
+
   it("keeps the M1 4MB memory declaration explicit and outside the generic default", () => {
     const generic = new PcAtRtc();
     const deskpro = new PcAtRtc({ configuration: deskPro386CmosConfiguration });

@@ -7,6 +7,7 @@ describe("PCjs diagnostic reference assets", () => {
     assets.verify();
 
     expect(assets.machineXml().toString("utf8")).toContain('pc110Lockstep="true"');
+    expect(assets.machineXml().toString("utf8")).toContain('dateRTC="1990-01-01T00:00:00"');
     expect(assets.pageHtml().toString("utf8")).toContain('id="pc110-lockstep-step"');
     expect(assets.pageHtml().toString("utf8")).toContain("stepInstruction");
     expect(assets.pageHtml().toString("utf8")).toContain("snapshot");

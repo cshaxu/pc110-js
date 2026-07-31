@@ -6,6 +6,7 @@ import { PcAtPic } from "../devices/pc-at-pic.js";
 import { PcAtPit } from "../devices/pc-at-pit.js";
 import { PcAtDma } from "../devices/pc-at-dma.js";
 import { PcAtRtc } from "../devices/pc-at-rtc.js";
+import type { PcAtRtcOptions } from "../devices/pc-at-rtc.js";
 import { PcAtSystemControl } from "../devices/pc-at-system-control.js";
 import { KeyboardOutputPort } from "../devices/keyboard-output-port.js";
 import { PcAtKeyboardController } from "../devices/pc-at-keyboard-controller.js";
@@ -60,6 +61,8 @@ export interface RebuiltPcAt386Options {
   readonly keyboardInterfaceTestResult?: number;
   readonly cycleSchedulerProfile?: CycleSchedulerProfile;
   readonly unpopulatedIo?: "strict" | "floating";
+  /** Optional RTC seed/configuration selected by a machine profile. */
+  readonly rtc?: PcAtRtcOptions;
   /** Selects eligible full instruction snapshots for an attached machine trace. */
   readonly instructionTraceSelector?: (point: RebuiltTracePoint) => boolean;
   /** Retains machine I/O and stop events without enabling CPU instruction tracing. */
@@ -118,7 +121,7 @@ export class RebuiltPcAt386Core {
   public readonly pic = new PcAtPic();
   public readonly pit = new PcAtPit((irq) => this.pic.raiseIrq(irq));
   public readonly dma = new PcAtDma();
-  public readonly rtc = new PcAtRtc({}, (irq) => this.pic.raiseIrq(irq));
+  public readonly rtc: PcAtRtc;
   public readonly systemPort = new PcAtSystemControl(this.pit);
   public readonly keyboardController: PcAtKeyboardController;
   public readonly fpuControl = new PcAtFpuControl();
@@ -160,6 +163,7 @@ export class RebuiltPcAt386Core {
     private readonly trace?: RebuiltMachineTrace,
     options: RebuiltPcAt386Options = {}
   ) {
+    this.rtc = new PcAtRtc(options.rtc, (irq) => this.pic.raiseIrq(irq));
     this.keyboardController = new PcAtKeyboardController(
       (irq) => this.pic.raiseIrq(irq),
       (value) => this.writeKeyboardOutputPort(value),

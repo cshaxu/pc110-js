@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { deskPro386ReferenceRtcDate } from "../machine/configurations/deskpro386.js";
 
 export const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
 export const PCJS_REFERENCE_PAGE = "/_pc110js-reference/index.html";
@@ -138,7 +139,7 @@ export class PcjsReferenceAssets {
       throw new Error("Selected PCjs machine has an unexpected diagnostic configuration");
     return Buffer.from(
       machine
-        .replace(root, `${root} uncompiled="true"`)
+        .replace(root, `${root} dateRTC="${deskPro386ReferenceRtcDate}" uncompiled="true"`)
         .replace(chipset, `${chipset.slice(0, -2)} pc110Probe="true" pc110Lockstep="true"/>`),
       "utf8"
     );
