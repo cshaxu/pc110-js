@@ -25,6 +25,7 @@ export interface KeyboardController8042Snapshot {
   readonly inputPort: number;
   readonly outputPort: number;
   readonly outputBuffer: number | undefined;
+  readonly outputDataLatch: number;
   readonly outputSource: KeyboardControllerOutputSource | undefined;
   readonly controllerOutputPending: boolean;
   readonly expectingDataFor: number | undefined;
@@ -66,6 +67,7 @@ export class KeyboardController8042 {
   private inputPort = INPUT_PORT_DEFAULT;
   private outputPort = OUTPUT_PORT_DEFAULT;
   private outputBuffer: number | undefined;
+  private outputDataLatch = 0;
   private outputSource: KeyboardControllerOutputSource | undefined;
   private controllerOutputPending = false;
   private expectingDataFor: number | undefined;
@@ -84,6 +86,7 @@ export class KeyboardController8042 {
     this.inputPort = INPUT_PORT_DEFAULT;
     this.outputPort = OUTPUT_PORT_DEFAULT;
     this.outputBuffer = undefined;
+    this.outputDataLatch = 0;
     this.outputSource = undefined;
     this.controllerOutputPending = false;
     this.expectingDataFor = undefined;
@@ -92,7 +95,7 @@ export class KeyboardController8042 {
   }
 
   public readData(): number {
-    const value = this.outputBuffer ?? 0;
+    const value = this.outputDataLatch;
     this.outputBuffer = undefined;
     this.outputSource = undefined;
     this.controllerOutputPending = false;
@@ -182,6 +185,7 @@ export class KeyboardController8042 {
     const data = this.requireByte(value);
     if (!this.keyboardEnabled() || this.outputBuffer !== undefined) return result(false);
     this.outputBuffer = data;
+    this.outputDataLatch = data;
     this.outputSource = "keyboard";
     this.controllerOutputPending = false;
     return result(true, { irq1Requested: Boolean(this.commandByte & COMMAND_INTERRUPT_ENABLE) });
@@ -193,6 +197,7 @@ export class KeyboardController8042 {
       inputPort: this.inputPort,
       outputPort: this.outputPort,
       outputBuffer: this.outputBuffer,
+      outputDataLatch: this.outputDataLatch,
       outputSource: this.outputSource,
       controllerOutputPending: this.controllerOutputPending,
       expectingDataFor: this.expectingDataFor,
@@ -211,6 +216,7 @@ export class KeyboardController8042 {
     this.inputPort = state.inputPort;
     this.outputPort = state.outputPort;
     this.outputBuffer = state.outputBuffer;
+    this.outputDataLatch = state.outputDataLatch;
     this.outputSource = state.outputSource;
     this.controllerOutputPending = state.controllerOutputPending;
     this.expectingDataFor = state.expectingDataFor;
@@ -225,6 +231,7 @@ export class KeyboardController8042 {
   private placeControllerOutput(value: number): KeyboardController8042Result {
     if (this.outputBuffer !== undefined) return result(false);
     this.outputBuffer = value & 0xff;
+    this.outputDataLatch = this.outputBuffer;
     this.outputSource = "controller";
     this.controllerOutputPending = true;
     return result(true);

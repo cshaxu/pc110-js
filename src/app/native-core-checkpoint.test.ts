@@ -31,7 +31,7 @@ describe("NativeCoreCheckpoint", () => {
       systemTimer2Gate: "0",
       systemSpeakerOutput: "0",
       a20Enabled: "1",
-      keyboardControllerStatus: "00",
+      keyboardControllerStatus: "10",
       keyboardControllerCommandByte: "10",
       keyboardControllerOutputBuffer: "--",
       keyboardControllerKeyboardEnabled: "0",
@@ -95,9 +95,9 @@ describe("NativeCoreCheckpoint", () => {
     checkpoint.core.ports.write(0x64, 0xae, 8);
     checkpoint.core.ports.read(0x64, 8);
 
-    expect(checkpoint.snapshot().recentPortEvents).toBe("W0064:AE R0064:08");
+    expect(checkpoint.snapshot().recentPortEvents).toBe("W0064:AE R0064:18");
     expect(checkpoint.snapshot().recentKeyboardControllerWrites).toBe("W0064:AE");
-    expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("W0064:AE R0064:08");
+    expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("W0064:AE R0064:18");
     checkpoint.reset();
     expect(checkpoint.snapshot().recentPortEvents).toBe("--");
     expect(checkpoint.snapshot().recentKeyboardControllerPortEvents).toBe("--");

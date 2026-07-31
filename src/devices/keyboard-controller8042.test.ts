@@ -9,6 +9,7 @@ describe("project-native selected PC/AT 8042 state", () => {
       inputPort: 0xa0,
       outputPort: 0x03,
       outputBuffer: undefined,
+      outputDataLatch: 0x00,
       controllerOutputPending: false,
       keyboardEnabled: false,
       keyboardInhibited: false,
@@ -41,6 +42,21 @@ describe("project-native selected PC/AT 8042 state", () => {
     expect(controller.readStatus()).toBe(0x18);
     expect(controller.readStatus()).toBe(0x19);
     expect(controller.readData()).toBe(0x55);
+  });
+
+  it("retains the output data latch after consuming a controller response", () => {
+    const controller = new KeyboardController8042();
+
+    controller.writeCommand(0xaa);
+    controller.readStatus();
+    controller.readStatus();
+    expect(controller.readData()).toBe(0x55);
+    controller.writeCommand(0xad);
+    expect(controller.readData()).toBe(0x55);
+    expect(controller.snapshot()).toMatchObject({
+      outputBuffer: undefined,
+      outputDataLatch: 0x55
+    });
   });
 
   it("reports selected controller test, input-port, test-port, and output-port responses", () => {
