@@ -123,6 +123,24 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(irqs).toEqual([1, 1, 1, 1]);
   });
 
+  it("releases the keyboard clock before dispatching direct keyboard data", () => {
+    const irqs: number[] = [];
+    const controller = new PcAtKeyboardController(
+      (irq) => irqs.push(irq),
+      () => {},
+      () => {}
+    );
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x5d, 8);
+
+    controller.write(0x60, 0xff, 8);
+
+    expect(controller.controller.snapshot().commandByte & 0x10).toBe(0);
+    expect(controller.read(0x60, 8)).toBe(0xfa);
+    expect(controller.read(0x60, 8)).toBe(0xaa);
+    expect(irqs).toEqual([1, 1]);
+  });
+
   it("routes output-port writes and pulse requests through explicit callbacks", () => {
     const outputPorts: number[] = [];
     let resets = 0;

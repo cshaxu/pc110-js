@@ -57,7 +57,10 @@ export class PcAtKeyboardController {
       const controllerData = this.controller.expectsData();
       const operation = this.controller.writeData(value);
       this.apply(operation);
-      if (!controllerData) this.deliverKeyboardBytes(this.keyboard.receiveCommand(value));
+      if (!controllerData) {
+        this.controller.releaseKeyboardClockForData();
+        this.deliverKeyboardBytes(this.keyboard.receiveCommand(value));
+      }
       this.synchronizeKeyboardLines();
       return;
     }

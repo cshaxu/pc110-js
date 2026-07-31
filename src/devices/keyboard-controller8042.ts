@@ -148,6 +148,11 @@ export class KeyboardController8042 {
     return this.expectingDataFor !== undefined;
   }
 
+  /** Releases the keyboard clock for a byte addressed to the keyboard itself. */
+  public releaseKeyboardClockForData(): void {
+    this.commandByte &= ~COMMAND_NO_CLOCK;
+  }
+
   public receiveKeyboardByte(value: number): KeyboardController8042Result {
     const data = this.requireByte(value);
     if (!this.keyboardEnabled() || this.outputBuffer !== undefined) return result(false);
