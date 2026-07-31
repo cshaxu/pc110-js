@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 import { createRomImage } from "../firmware/rom-image.js";
 import { PhysicalMemory } from "../memory/physical-memory.js";
 import {
@@ -22,6 +22,22 @@ const DEFAULT_TRACE_TAIL = 0;
 const DEFAULT_EVENT_TAIL = 0;
 const FLOPPY_BYTES = 1_474_560;
 const FLOPPY_SHA256 = "fadeb3a27c6a0e1cf582dde0b9aecb7e5d30678f2f967f2f4562f167cc0cb1d5";
+const diagnosticOutput: string[] = [];
+
+function emit(text: string): void {
+  diagnosticOutput.push(text);
+  process.stdout.write(text);
+}
+
+function writeDiagnosticLog(): void {
+  const raw = process.env.PC110JS_ROM_TRACE_LOG;
+  if (raw === undefined) return;
+  const destination = resolve(projectRoot, raw);
+  const pathFromRoot = relative(projectRoot, destination);
+  if (pathFromRoot === "" || pathFromRoot.startsWith("..") || pathFromRoot.includes(":"))
+    throw new Error("PC110JS_ROM_TRACE_LOG must be a project-relative file path");
+  writeFileSync(destination, diagnosticOutput.join(""), "utf8");
+}
 
 function instructionBudget(): number {
   const raw = process.env.PC110JS_ROM_TRACE_INSTRUCTIONS;
@@ -122,17 +138,16 @@ function writeDiagnosticTail(trace: readonly RebuiltMachineTraceEvent[], length:
     const registerTail = registers
       ? ` ax=${before.registers.eax.toString(16).padStart(8, "0")} bx=${before.registers.ebx.toString(16).padStart(8, "0")} sp=${before.registers.esp.toString(16).padStart(8, "0")}`
       : "";
-    process.stdout.write(`  ${address} ${byte}${registerTail}\n`);
+    emit(`  ${address} ${byte}${registerTail}\n`);
   }
 }
 
 function writeEventTail(trace: readonly RebuiltMachineTraceEvent[], length: number): void {
   if (length === 0) return;
   for (const event of trace.filter((item) => item.kind !== "instruction").slice(-length)) {
-    if (event.kind === "interrupt")
-      process.stdout.write(`  interrupt ${event.vector.toString(16)}\n`);
+    if (event.kind === "interrupt") emit(`  interrupt ${event.vector.toString(16)}\n`);
     else if (event.kind === "port")
-      process.stdout.write(`  port ${event.event.direction} ${event.event.port.toString(16)}\n`);
+      emit(`  port ${event.event.direction} ${event.event.port.toString(16)}\n`);
   }
 }
 
@@ -147,7 +162,7 @@ function writeSegmentTransfers(trace: readonly RebuiltMachineTraceEvent[]): void
     const to = `${after.segments.cs.selector.toString(16).padStart(4, "0")}:${after.eip
       .toString(16)
       .padStart(4, "0")}`;
-    process.stdout.write(`  transfer ${from} -> ${to} opcode ${opcode?.toString(16) ?? "??"}\n`);
+    emit(`  transfer ${from} -> ${to} opcode ${opcode?.toString(16) ?? "??"}\n`);
   }
 }
 
@@ -155,7 +170,7 @@ function writePitState(core: RebuiltPcAt386Core): void {
   if (process.env.PC110JS_ROM_TRACE_PIT !== "1") return;
   for (let index = 0; index < 3; index += 1) {
     const counter = core.pit.snapshot(index);
-    process.stdout.write(
+    emit(
       `  pit${index} reload=${counter.reload} count=${counter.count} mode=${counter.mode} output=${Number(counter.output)} null=${Number(counter.nullCount)}\n`
     );
   }
@@ -169,7 +184,7 @@ interface WatchHit {
 
 function writeWatchCounts(hits: ReadonlyMap<string, WatchHit>): void {
   for (const [address, hit] of hits)
-    process.stdout.write(
+    emit(
       `  watch ${address} hits=${hit.count} last-cx=${hit.lastEcx.toString(16)} next=${hit.lastNextAddress}\n`
     );
 }
@@ -244,12 +259,12 @@ function main(): void {
       : (point) => watches.has(`${point.cs.toString(16)}:${point.eip.toString(16)}`)
   });
   attachLocalFloppy(core);
-  process.stdout.write(
+  emit(
     `Trace identity mode=${traceMode} project=${projectCommit()} pcjs=${PINNED_PCJS_COMMIT} budget=${budget} floppy=${process.env.PC110JS_ROM_TRACE_FLOPPY === "1" ? FLOPPY_SHA256 : "none"}\n`
   );
   try {
     const result = core.run(budget);
-    process.stdout.write(
+    emit(
       `Rebuilt selected-ROM trace completed ${result.executed} instructions at ${formatAddress(core)}\n`
     );
     writeDiagnosticTail(trace, tailLength);
@@ -261,7 +276,7 @@ function main(): void {
     const stop = trace.at(-1);
     const detail = stop?.kind === "stop" && stop.error ? stop.error : String(error);
     const executed = stop?.kind === "stop" ? stop.executed : 0;
-    process.stdout.write(
+    emit(
       `Rebuilt selected-ROM trace stopped after ${executed} instructions at ${formatAddress(core)}: ${detail}\n`
     );
     writeDiagnosticTail(trace, tailLength);
@@ -270,6 +285,7 @@ function main(): void {
     writePitState(core);
     writeWatchCounts(watchHits);
   }
+  writeDiagnosticLog();
 }
 
 main();
