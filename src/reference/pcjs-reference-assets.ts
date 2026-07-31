@@ -16,7 +16,7 @@ const SOURCE_MACHINE = "machines/pcx86/compaq/deskpro386/vga/4096kb/machine.xml"
 const PC110_PROBE_RELEASE = "2.25";
 const PCJS_RESOURCE_ROOTS = ["/machines/", "/assets/"];
 const CPU_CONTROLS = [
-  '<cpu id="cpu386" model="80386">',
+  '<cpu id="cpu386" model="80386" autoStart="false">',
   '<control type="button" binding="run">Run</control>',
   '<control type="button" binding="reset">Reset</control>',
   "</cpu>"

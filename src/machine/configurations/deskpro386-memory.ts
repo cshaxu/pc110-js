@@ -11,8 +11,7 @@ export function createDeskPro386Memory(): PhysicalMemory {
   const memory = new PhysicalMemory({
     ramBytes: DESKPRO386_LOW_RAM_BYTES,
     a20Enabled: true,
-    // PCjs returns zero for an unallocated physical block in the selected machine.
-    unmappedReadValue: 0,
+    unmappedReadValue: 0xff,
     ignoreUnmappedWrites: true
   });
   memory.mapRam(DESKPRO386_EXTENDED_RAM_START, DESKPRO386_EXTENDED_RAM_BYTES);

@@ -5,6 +5,6 @@
 - Native EFLAGS `0x86` corresponds to the configured `0xFFFF` physical-hole
   word; PCjs EFLAGS `0x97` corresponds to a zero word and is consistent with
   the selected PCjs memory-block behavior.
-- The DeskPro-only physical-memory profile now supplies zero for unallocated
-  reads while preserving ignored unallocated writes. Generic memory remains
-  strict unless a caller explicitly requests another policy.
+- P112 supersedes this soft-reset inference. Its paused pre-execution PCjs
+  probe establishes `0xFF` for both `C8000` and `E0000`; selected unmapped
+  reads therefore remain `0xFF` while ignored writes remain unchanged.
