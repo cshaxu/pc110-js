@@ -87,6 +87,7 @@ describe("project-native MC146818 RTC/CMOS state", () => {
       baseMemoryKiB: 640,
       extendedMemoryKiB: 3072,
       floppyDriveTypes: 0x44,
+      fixedDriveTypes: 0x50,
       equipment: 0x41
     });
     expect(rtc.read(RtcCmosRegister.BaseMemoryLow)).toBe(0x80);
@@ -94,6 +95,7 @@ describe("project-native MC146818 RTC/CMOS state", () => {
     expect(rtc.read(RtcCmosRegister.ExtendedMemoryLow)).toBe(0);
     expect(rtc.read(RtcCmosRegister.ExtendedMemoryHigh)).toBe(0x0c);
     expect(rtc.read(RtcCmosRegister.FloppyDriveType)).toBe(0x44);
+    expect(rtc.read(RtcCmosRegister.FixedDriveType)).toBe(0x50);
     expect(rtc.read(RtcCmosRegister.Equipment)).toBe(0x41);
     expect(() => rtc.applyConfiguration({ baseMemoryKiB: 0x1_0000 })).toThrow("outside");
   });

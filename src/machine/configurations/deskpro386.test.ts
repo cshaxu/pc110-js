@@ -30,6 +30,7 @@ describe("DeskPro 386 CMOS configuration", () => {
     expect(deskpro.rtc.read(RtcCmosRegister.ExtendedMemoryLow)).toBe(0);
     expect(deskpro.rtc.read(RtcCmosRegister.ExtendedMemoryHigh)).toBe(0x0c);
     expect(deskpro.rtc.read(RtcCmosRegister.FloppyDriveType)).toBe(0x44);
+    expect(deskpro.rtc.read(RtcCmosRegister.FixedDriveType)).toBe(0x50);
     deskpro.reset();
     expect(deskpro.rtc.read(RtcCmosRegister.ExtendedMemoryHigh)).toBe(0x0c);
   });
