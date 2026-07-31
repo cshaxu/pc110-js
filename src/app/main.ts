@@ -34,7 +34,7 @@ root.innerHTML = `
           ? `
         <section class="reference-panel" aria-label="PCjs reference machine">
           <header><strong>PCjs reference</strong></header>
-          <iframe id="pcjs-reference" title="PCjs reference machine" src="/_pc110js-reference/machine.xml"></iframe>
+          <iframe id="pcjs-reference" title="PCjs reference machine" src="/_pc110js-reference/index.html"></iframe>
         </section>
       `
           : ""

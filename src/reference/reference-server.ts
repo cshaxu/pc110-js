@@ -5,6 +5,7 @@ import process from "node:process";
 import {
   PCJS_REFERENCE_FLOPPY,
   PCJS_REFERENCE_MACHINE,
+  PCJS_REFERENCE_PAGE,
   PINNED_PCJS_COMMIT,
   PcjsReferenceAssets
 } from "./pcjs-reference-assets.js";
@@ -39,7 +40,7 @@ function handleRequest(request: IncomingMessage, response: ServerResponse): void
     return;
   }
   if (pathname === "/") {
-    response.writeHead(302, { Location: PCJS_REFERENCE_MACHINE });
+    response.writeHead(302, { Location: PCJS_REFERENCE_PAGE });
     response.end();
     return;
   }
@@ -48,18 +49,23 @@ function handleRequest(request: IncomingMessage, response: ServerResponse): void
     return;
   }
   try {
+    const page = pathname === PCJS_REFERENCE_PAGE;
     const machine = pathname === PCJS_REFERENCE_MACHINE || pathname === LEGACY_MACHINE;
     const floppy = pathname === PCJS_REFERENCE_FLOPPY || pathname === LEGACY_FLOPPY;
-    const body = machine
-      ? assets.machineXml()
-      : floppy
-        ? assets.floppyBytes()
-        : assets.readResource(pathname);
-    const type = machine
-      ? "application/xml; charset=utf-8"
-      : floppy
-        ? "application/octet-stream"
-        : assets.contentType(pathname);
+    const body = page
+      ? assets.pageHtml()
+      : machine
+        ? assets.machineXml()
+        : floppy
+          ? assets.floppyBytes()
+          : assets.readResource(pathname);
+    const type = page
+      ? "text/html; charset=utf-8"
+      : machine
+        ? "application/xml; charset=utf-8"
+        : floppy
+          ? "application/octet-stream"
+          : assets.contentType(pathname);
     if (request.method === "HEAD") {
       response.writeHead(200, { "Content-Type": type, "Content-Length": body.length });
       response.end();
@@ -81,7 +87,7 @@ function openBrowser(url: string): void {
 assets.verify();
 const server = createServer(handleRequest);
 server.listen(port, "127.0.0.1", () => {
-  const url = `http://127.0.0.1:${port}${PCJS_REFERENCE_MACHINE}`;
+  const url = `http://127.0.0.1:${port}${PCJS_REFERENCE_PAGE}`;
   process.stdout.write(`PCjs reference runner listening at ${url}\n`);
   process.stdout.write(
     diagnosticProbe

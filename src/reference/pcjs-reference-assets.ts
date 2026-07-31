@@ -5,6 +5,7 @@ import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const PINNED_PCJS_COMMIT = "c7f21b4fa2bdedac3d5c73094a6402fdc8b24c70";
+export const PCJS_REFERENCE_PAGE = "/_pc110js-reference/index.html";
 export const PCJS_REFERENCE_MACHINE = "/_pc110js-reference/machine.xml";
 export const PCJS_REFERENCE_FLOPPY = "/_pc110js-reference/media/fdd.img";
 
@@ -86,7 +87,7 @@ export class PcjsReferenceAssets {
       : this.runGit(["show", `${PINNED_PCJS_COMMIT}:${normalized}`]);
     const selected =
       normalized === "machines/pcx86/xsl/components.xsl" && this.diagnosticProbe
-        ? Buffer.from(this.replaceDiagnosticVersion(content.toString("utf8")), "utf8")
+        ? Buffer.from(this.configureDiagnosticComponentsXsl(content.toString("utf8")), "utf8")
         : content;
     this.resourceCache.set(normalized, selected);
     return selected;
@@ -115,6 +116,41 @@ export class PcjsReferenceAssets {
       machine
         .replace(root, `${root} uncompiled="true"`)
         .replace(chipset, `${chipset.slice(0, -2)} pc110Probe="true"/>`),
+      "utf8"
+    );
+  }
+
+  public pageHtml(): Buffer {
+    const bundle = this.diagnosticProbe
+      ? "/machines/pcx86/releases/2.25/pcx86-uncompiled.js"
+      : "/machines/pcx86/releases/2.23/pcx86.js";
+    return Buffer.from(
+      [
+        "<!doctype html>",
+        '<html lang="en">',
+        '<head><meta charset="utf-8"><title>PCjs diagnostic reference</title></head>',
+        "<body>",
+        '<div id="deskpro386"></div>',
+        '<output id="pc110-probe" aria-label="PCjs 8042 probe"></output>',
+        `<script src="${bundle}"></script>`,
+        `<script>embedPCx86("deskpro386", "${PCJS_REFERENCE_MACHINE}", "/machines/pcx86/xsl/components.xsl");</script>`,
+        `<script>(() => {
+          const output = document.getElementById("pc110-probe");
+          const render = () => {
+            const components = window.PCjs?.components ?? [];
+            const chipset = components.find((component) => String(component?.id ?? "").endsWith(".chipset"));
+            output.textContent = JSON.stringify({
+              components: components.map((component) => component?.id).filter(Boolean),
+              enabled: chipset?.fPC110Probe ?? null,
+              events: chipset?.pc110ProbeEvents?.slice(-32) ?? []
+            });
+          };
+          render();
+          window.setInterval(render, 100);
+        })();</script>`,
+        "</body>",
+        "</html>"
+      ].join("\n"),
       "utf8"
     );
   }
@@ -164,13 +200,21 @@ export class PcjsReferenceAssets {
     return readFileSync(resolve(this.pcjsRoot, normalizeResourcePath(pathname)));
   }
 
-  private replaceDiagnosticVersion(source: string): string {
+  private configureDiagnosticComponentsXsl(source: string): string {
     const originalVersion = '<xsl:variable name="APPVERSION">2.23</xsl:variable>';
     if (!source.includes(originalVersion))
       throw new Error("PCjs components XSL has an unexpected release version");
-    return source.replace(
+    const configuredVersion = source.replace(
       originalVersion,
       `<xsl:variable name="APPVERSION">${PC110_PROBE_RELEASE}</xsl:variable>`
+    );
+    const originalChipsetParameters =
+      ",monitor:'<xsl:value-of select=\"$monitor\"/>',dateRTC:'<xsl:value-of select=\"$dateRTC\"/>'</xsl:with-param>";
+    if (!configuredVersion.includes(originalChipsetParameters))
+      throw new Error("PCjs components XSL has unexpected chipset parameters");
+    return configuredVersion.replace(
+      originalChipsetParameters,
+      ",monitor:'<xsl:value-of select=\"$monitor\"/>',dateRTC:'<xsl:value-of select=\"$dateRTC\"/>',pc110Probe:true</xsl:with-param>"
     );
   }
 }

@@ -5,6 +5,7 @@ import { defineConfig, type Plugin } from "vite";
 import {
   PCJS_REFERENCE_FLOPPY,
   PCJS_REFERENCE_MACHINE,
+  PCJS_REFERENCE_PAGE,
   PcjsReferenceAssets
 } from "./src/reference/pcjs-reference-assets.js";
 
@@ -60,16 +61,29 @@ function pcjsReferencePlugin(): Plugin {
       assets.verify();
       server.middlewares.use((request: IncomingMessage, response: ServerResponse, next) => {
         const pathname = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
+        const page = pathname === PCJS_REFERENCE_PAGE;
         const machine = pathname === PCJS_REFERENCE_MACHINE;
         const floppy = pathname === PCJS_REFERENCE_FLOPPY;
-        if (!machine && !floppy && !assets.servesResource(pathname)) return next();
+        if (!page && !machine && !floppy && !assets.servesResource(pathname)) return next();
         if (request.method !== "GET" && request.method !== "HEAD") {
           response.writeHead(405).end();
           return;
         }
         try {
-          const body = machine ? assets.machineXml() : floppy ? assets.floppyBytes() : assets.readResource(pathname);
-          const type = machine ? "application/xml; charset=utf-8" : floppy ? "application/octet-stream" : assets.contentType(pathname);
+          const body = page
+            ? assets.pageHtml()
+            : machine
+              ? assets.machineXml()
+              : floppy
+                ? assets.floppyBytes()
+                : assets.readResource(pathname);
+          const type = page
+            ? "text/html; charset=utf-8"
+            : machine
+              ? "application/xml; charset=utf-8"
+              : floppy
+                ? "application/octet-stream"
+                : assets.contentType(pathname);
           response.writeHead(200, {
             "Cache-Control": "no-store",
             "Content-Length": body.byteLength,
@@ -80,7 +94,9 @@ function pcjsReferencePlugin(): Plugin {
           else response.end(body);
         } catch (error) {
           const detail = error instanceof Error ? error.message : String(error);
-          response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end(`${detail}\n`);
+          response
+            .writeHead(404, { "Content-Type": "text/plain; charset=utf-8" })
+            .end(`${detail}\n`);
         }
       });
     }
