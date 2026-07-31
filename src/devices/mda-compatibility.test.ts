@@ -28,8 +28,10 @@ describe("VGA MDA compatibility ports", () => {
 
   it("provides deterministic status and enforces byte-wide read/write ownership", () => {
     const mda = new MdaCompatibility();
-    expect(mda.read(0x3ba, 8)).toBe(0x08);
-    mda.advance();
+    expect(mda.read(0x3ba, 8)).toBe(0);
+    mda.advance(738);
+    expect(mda.read(0x3ba, 8)).toBe(0x01);
+    mda.advance(868 * 354);
     expect(mda.read(0x3ba, 8)).toBe(0x09);
     expect(() => mda.write(0x3ba, 0, 8)).toThrow("not writable");
     expect(() => mda.read(0x3b8, 32)).toThrow("8-bit");

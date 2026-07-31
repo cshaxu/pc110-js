@@ -7,12 +7,17 @@ export const MDA_STATUS_PORT = 0x3ba;
 
 const MDA_STATUS_HDRIVE = 0x01;
 const MDA_STATUS_BWVIDEO = 0x08;
+const MDA_CYCLES_PER_LINE = 868;
+const MDA_ACTIVE_CYCLES_PER_LINE = 738;
+const MDA_LINES_PER_FRAME = 370;
+const MDA_ACTIVE_LINES_PER_FRAME = 354;
 
 export interface MdaCompatibilitySnapshot {
   readonly crtcIndex: number;
   readonly crtcData: readonly number[];
   readonly mode: number;
   readonly horizontalRetrace: boolean;
+  readonly verticalRetrace: boolean;
 }
 
 export interface MdaCompatibilityPortRange {
@@ -31,16 +36,28 @@ export class MdaCompatibility {
   private crtcIndex = 0;
   private mode = 0;
   private horizontalRetrace = false;
+  private verticalRetrace = false;
+  private frameCycles = 0;
 
   public reset(): void {
     this.crtcData.fill(0);
     this.crtcIndex = 0;
     this.mode = 0;
     this.horizontalRetrace = false;
+    this.verticalRetrace = false;
+    this.frameCycles = 0;
   }
 
-  public advance(): void {
-    this.horizontalRetrace = !this.horizontalRetrace;
+  /** Advances MDA status timing from guest CPU cycles, never host time. */
+  public advance(cycles: number): void {
+    if (!Number.isSafeInteger(cycles) || cycles < 0)
+      throw new RangeError("MDA cycle charge must be a non-negative safe integer");
+    const frameLength = MDA_CYCLES_PER_LINE * MDA_LINES_PER_FRAME;
+    this.frameCycles = (this.frameCycles + cycles) % frameLength;
+    const lineCycles = this.frameCycles % MDA_CYCLES_PER_LINE;
+    const line = Math.floor(this.frameCycles / MDA_CYCLES_PER_LINE);
+    this.verticalRetrace = line >= MDA_ACTIVE_LINES_PER_FRAME;
+    this.horizontalRetrace = lineCycles >= MDA_ACTIVE_CYCLES_PER_LINE;
   }
 
   public read(port: number, width: PortWidth): number {
@@ -51,7 +68,10 @@ export class MdaCompatibility {
       return (port & 1) === 0 ? this.crtcIndex : this.crtcData[this.crtcIndex]!;
     if (port === MDA_MODE_PORT) return this.mode;
     if (port === MDA_STATUS_PORT)
-      return MDA_STATUS_BWVIDEO | (this.horizontalRetrace ? MDA_STATUS_HDRIVE : 0);
+      return (
+        (this.horizontalRetrace || this.verticalRetrace ? MDA_STATUS_HDRIVE : 0) |
+        (this.verticalRetrace ? MDA_STATUS_BWVIDEO : 0)
+      );
     throw new RangeError(`MDA compatibility port is not mapped: 0x${port.toString(16)}`);
   }
 
@@ -80,7 +100,8 @@ export class MdaCompatibility {
       crtcIndex: this.crtcIndex,
       crtcData: Array.from(this.crtcData),
       mode: this.mode,
-      horizontalRetrace: this.horizontalRetrace
+      horizontalRetrace: this.horizontalRetrace,
+      verticalRetrace: this.verticalRetrace
     };
   }
 

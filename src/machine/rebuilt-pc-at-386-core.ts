@@ -49,6 +49,8 @@ export interface RebuiltPcAt386Options {
   readonly unpopulatedIo?: "strict" | "floating";
   /** Selects eligible full instruction snapshots for an attached machine trace. */
   readonly instructionTraceSelector?: (point: RebuiltTracePoint) => boolean;
+  /** Retains machine I/O and stop events without enabling CPU instruction tracing. */
+  readonly instructionTrace?: boolean;
 }
 
 export type RebuiltMachineTraceEvent =
@@ -127,7 +129,7 @@ export class RebuiltPcAt386Core {
     this.runner = new RebuiltCpuRunner(
       memory,
       this.ports,
-      this.trace
+      this.trace && options.instructionTrace !== false
         ? {
             onTrace: (event) => this.trace?.({ kind: "instruction", event }),
             shouldCapture: options.instructionTraceSelector
@@ -216,13 +218,11 @@ export class RebuiltPcAt386Core {
   }
 
   /** Advances project-native video compatibility timing independently of rendering. */
-  public advanceVideo(ticks: number): void {
-    if (!Number.isInteger(ticks) || ticks < 0)
-      throw new RangeError("Video tick count must be a non-negative integer");
-    for (let index = 0; index < ticks; index += 1) {
-      this.mdaCompatibility.advance();
-      this.cgaCompatibility.advance();
-    }
+  public advanceVideo(cycles: number): void {
+    if (!Number.isInteger(cycles) || cycles < 0)
+      throw new RangeError("Video cycle charge must be a non-negative integer");
+    this.mdaCompatibility.advance(cycles);
+    this.cgaCompatibility.advance();
   }
 
   public advanceFdcDma(maxTransfers: number): number {
@@ -326,7 +326,7 @@ export class RebuiltPcAt386Core {
       );
       if (slots > 0) this.advanceFdcDma(slots);
     } else this.scheduler.resetFdcDmaSlots();
-    this.advanceVideo(1);
+    this.advanceVideo(cycles);
   }
 
   private servicePendingNmi(): boolean {

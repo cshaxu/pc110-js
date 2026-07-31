@@ -154,6 +154,23 @@ describe("RebuiltPcAt386Core", () => {
     expect(fastCore.runner.state.snapshot()).toEqual(core.runner.state.snapshot());
   });
 
+  it("retains port and stop diagnostics without attaching an instruction trace", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0, 0xe6);
+    memory.writeUint8(1, 0xee);
+    memory.writeUint8(2, 0xf4);
+    const trace: RebuiltMachineTraceEvent[] = [];
+    const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event), {
+      instructionTrace: false
+    });
+    core.registerPorts({ start: 0xee, end: 0xee, write: () => undefined });
+    core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeEip(0);
+
+    expect(core.run(2)).toEqual({ executed: 2, halted: true });
+    expect(trace.map((event) => event.kind)).toEqual(["port", "stop"]);
+  });
+
   it("resets the rebuilt CPU and emits a reset trace", () => {
     const firmware = new Uint8Array(0x10000);
     firmware[0xfff0] = 0x90;

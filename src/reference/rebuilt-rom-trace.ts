@@ -191,7 +191,13 @@ function main(): void {
   const watches = watchedAddresses();
   const needsTrace = tailLength > 0 || eventTailLengthValue > 0 || transfers || watches.size > 0;
   const fullDebug = tailLength > 0 || transfers;
-  const traceMode = !needsTrace ? "fast" : fullDebug ? "full-debug" : "selective";
+  const traceMode = !needsTrace
+    ? "fast"
+    : fullDebug
+      ? "full-debug"
+      : watches.size > 0
+        ? "selective"
+        : "fast-machine-events";
   const watchHits = new Map<string, WatchHit>(
     [...watches].map((address) => [address, { count: 0, lastEcx: 0, lastNextAddress: "none" }])
   );
@@ -232,6 +238,7 @@ function main(): void {
   const core = new RebuiltPcAt386Core(memory, needsTrace ? recordTrace : undefined, {
     deskProSecondaryPit: true,
     unpopulatedIo: "floating",
+    instructionTrace: fullDebug || watches.size > 0,
     instructionTraceSelector: fullDebug
       ? undefined
       : (point) => watches.has(`${point.cs.toString(16)}:${point.eip.toString(16)}`)
