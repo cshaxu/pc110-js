@@ -117,6 +117,8 @@ These rules are project constraints.
 
 ## Tests And Verification
 
+- Use npm only. Keep `package-lock.json` authoritative and do not add pnpm,
+  Yarn, Bun, or their lockfiles/workspace files.
 - Tests and reproducible demonstrations define progress.
 - Each completed subtask has explicit acceptance criteria and exact verification commands.
 - M1 proves the sibling PCjs reference run.

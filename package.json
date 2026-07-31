@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "npm@10.9.4",
   "engines": {
     "node": ">=22.0.0",
-    "pnpm": "11.9.0"
+    "npm": "10.9.4"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json && vite build",
@@ -15,10 +15,10 @@
     "format": "prettier --check \"src/**/*.ts\" \"*.{json,mjs,yaml}\"",
     "dev": "vite",
     "serve": "node scripts/serve.mjs",
-    "headless": "pnpm run build && node build/headless/main.js",
-    "trace:rebuilt-rom": "pnpm run build && node build/reference/rebuilt-rom-trace.js",
-    "reference": "pnpm run build && node build/reference/reference-server.js --open",
-    "reference:serve": "pnpm run build && node build/reference/reference-server.js"
+    "headless": "npm run build && node build/headless/main.js",
+    "trace:rebuilt-rom": "npm run build && node build/reference/rebuilt-rom-trace.js",
+    "reference": "npm run build && node build/reference/reference-server.js --open",
+    "reference:serve": "npm run build && node build/reference/reference-server.js"
   },
   "devDependencies": {
     "@eslint/js": "9.17.0",

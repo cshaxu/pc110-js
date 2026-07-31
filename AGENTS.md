@@ -20,9 +20,11 @@ Do not treat this file as a substitute for those canonical documents.
 ## Scope And Repository Boundaries
 
 - This repository is the canonical product repository.
-- Sibling repositories are read-only references. Never modify `../pcjs`,
-  `../PC110-EMU`, `../pc110js-v2`, `../pc110js-v1`, or `../nxvm` as part of
-  this project's work.
+- Sibling repositories are read-only references except when the owner
+  explicitly authorizes a PCjs diagnostic change. Such a change may modify
+  only `../pcjs` on its `pc110` branch, requires a one-page report, and must
+  never modify PCjs `main`. Never modify `../PC110-EMU`, `../pc110js-v2`,
+  `../pc110js-v1`, or `../nxvm` as part of this project's work.
 - Use relative paths for sibling references and local assets. Never commit a
   developer-machine absolute path.
 - Follow `docs/governance/asset-policy.md`. ROMs, firmware, disk images, and
@@ -99,6 +101,9 @@ Do not treat this file as a substitute for those canonical documents.
 
 ## Verification, Commits, And Pushes
 
+- Use npm only for this repository. Run `npm install` from the repository root
+  when dependencies change, and use `npm run <script>` for project scripts.
+  Do not add pnpm, Yarn, Bun, or their lockfiles/workspace files.
 - Define exact verification commands and observable acceptance evidence before
   implementation.
 - Run all required automated checks and manual browser checks. Do not claim a

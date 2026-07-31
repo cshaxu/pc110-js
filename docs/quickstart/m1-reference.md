@@ -5,7 +5,7 @@ emulator; that is the M2 goal.
 
 ## Prerequisites
 
-- Node.js 22 or later and pnpm 11.9.0.
+- Node.js 22 or later and npm 10.9.4.
 - A sibling layout containing `pc110-js`, `pcjs`, and `fdd.img`.
 - The floppy must be 1,474,560 bytes with SHA-256
   `FADEB3A27C6A0E1CF582DDE0B9AECB7E5D30678F2F967F2F4562F167CC0CB1D5`.
@@ -16,8 +16,8 @@ emulator; that is the M2 goal.
 From the `pc110-js` checkout:
 
 ```text
-pnpm install
-pnpm reference
+npm install
+npm run reference
 ```
 
 The command opens `http://127.0.0.1:5173/_pc110js/machine.xml`. Wait for the
