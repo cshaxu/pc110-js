@@ -31,6 +31,14 @@ selected standard PC/AT machine. It supplies evidence for CPU-adjacent PC/AT
 behavior, device contracts, virtual-time behavior, machine composition, and
 the selected DeskPro 386 reference profile.
 
+The historical M1 DeskPro browser prompt uses the upstream XML's
+`ramLow test="false"` configuration. PCjs writes the BDA warm-boot marker for
+that option, so M1 proves reference integration and local-media viability but
+not the no-shortcut cold-POST timing or path required by M2. Cold M2
+comparison must use the generated diagnostic configuration with `test="true"`.
+The standalone M2 DOS gate remains mandatory and must not use a warm-boot
+marker or another firmware shortcut.
+
 The project may reproduce PCjs observable behavior through project-native
 TypeScript, configuration, and device interfaces. It must not import PCjs at
 product runtime, translate its JavaScript line by line, inherit web lifecycle
