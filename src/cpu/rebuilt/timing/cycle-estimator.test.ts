@@ -8,7 +8,7 @@ describe("80386 cycle estimator", () => {
     ).toBe(5);
     expect(
       estimate386Cycles({ opcode: 0xe4, prefixes: { bytes: 0 }, length: 2 } as never, 0, 2)
-    ).toBe(12);
+    ).toBe(5);
     expect(
       estimate386Cycles({ opcode: 0x75, prefixes: { bytes: 0 }, length: 2 } as never, 0, 2)
     ).toBe(3);

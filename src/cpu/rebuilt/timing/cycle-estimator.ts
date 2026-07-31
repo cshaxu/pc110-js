@@ -1,9 +1,9 @@
 import type { DecodedInstruction } from "../decode/decoder.js";
 
 /**
- * Approximate 80386-compatible core-cycle charges for machine-time scheduling.
+ * PCjs-compatible 80286-derived core-cycle charges for machine-time scheduling.
  *
- * The explicit classes retain conservative I/O charging and use 80286-compatible
+ * The explicit classes use PCjs's selected 80286-compatible
  * control/stack timings where 80386-specific timing is not yet modelled. They
  * are deliberately not a physical bus, cache, or wait-state simulation.
  * TODO(High): Replace the remaining fallback and compatibility timings with
@@ -18,7 +18,7 @@ export function estimate386Cycles(
   if (!instruction) return 3;
   const opcode = instruction.opcode;
   if (isStringOpcode(opcode)) return 5;
-  if (isIoOpcode(opcode)) return 12;
+  if (isIoOpcode(opcode)) return 5;
   if (isPushOpcode(opcode)) return withPrefixes(3, instruction);
   if (isPopOpcode(opcode)) return withPrefixes(5, instruction);
   if (opcode === 0x60) return withPrefixes(17, instruction);
