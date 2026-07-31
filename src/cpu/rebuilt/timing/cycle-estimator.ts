@@ -23,12 +23,12 @@ export function estimate386Cycles(
   if (isStringOpcode(opcode))
     return instruction.prefixes.repeat === undefined ? 5 : repeatContinuation ? 3 : 7;
   if (isIoOpcode(opcode)) return 5;
-  if (opcode === 0xa8 || opcode === 0xa9 || opcode === 0x3c || opcode === 0x3d || opcode === 0xfa)
-    return 3;
+  if (opcode === 0xa8 || opcode === 0xa9 || opcode === 0xfa) return 3;
+  if (isAccumulatorArithmeticImmediate(opcode)) return 3;
   if (opcode >= 0xa0 && opcode <= 0xa1) return 5;
   if (opcode >= 0xa2 && opcode <= 0xa3) return 3;
-  if (opcode === 0x0f && instruction.secondaryOpcode === 0x01 && modRm?.reg === 6 && !modRm.memory)
-    return 3;
+  const groupSevenCycles = groupSevenCyclesFor(instruction);
+  if (groupSevenCycles !== undefined) return groupSevenCycles;
   if (opcode >= 0x80 && opcode <= 0x83 && modRm) return modRm.memory ? 7 : 3;
   if (opcode >= 0x38 && opcode <= 0x3b && modRm) return modRm.memory ? 6 : 2;
   if (opcode >= 0x88 && opcode <= 0x8b && modRm) {
@@ -83,6 +83,43 @@ function isStringOpcode(opcode: number): boolean {
 
 function isIoOpcode(opcode: number): boolean {
   return (opcode >= 0xe4 && opcode <= 0xe7) || (opcode >= 0xec && opcode <= 0xef);
+}
+
+function isAccumulatorArithmeticImmediate(opcode: number): boolean {
+  return (
+    opcode === 0x04 ||
+    opcode === 0x05 ||
+    opcode === 0x0c ||
+    opcode === 0x0d ||
+    opcode === 0x14 ||
+    opcode === 0x15 ||
+    opcode === 0x1c ||
+    opcode === 0x1d ||
+    opcode === 0x24 ||
+    opcode === 0x25 ||
+    opcode === 0x2c ||
+    opcode === 0x2d ||
+    opcode === 0x34 ||
+    opcode === 0x35 ||
+    opcode === 0x3c ||
+    opcode === 0x3d
+  );
+}
+
+/**
+ * PCjs's 80386 Group 7 handlers use direct timing classes for the valid
+ * descriptor-table and machine-status forms.  This remains a generic opcode
+ * classification; it deliberately has no knowledge of ROM addresses.
+ */
+function groupSevenCyclesFor(instruction: DecodedInstruction): number | undefined {
+  if (instruction.opcode !== 0x0f || instruction.secondaryOpcode !== 0x01 || !instruction.modRm)
+    return undefined;
+  const { reg, memory } = instruction.modRm;
+  if (reg === 0 || reg === 2) return memory ? 11 : undefined;
+  if (reg === 1 || reg === 3) return memory ? 12 : undefined;
+  if (reg === 4) return memory ? 3 : 2;
+  if (reg === 6) return memory ? 6 : 3;
+  return undefined;
 }
 
 function isPushOpcode(opcode: number): boolean {

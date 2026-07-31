@@ -7,6 +7,12 @@ describe("PCjs diagnostic reference assets", () => {
     assets.verify();
 
     expect(assets.machineXml().toString("utf8")).toContain('pc110Lockstep="true"');
+    expect(assets.machineXml().toString("utf8")).toContain(
+      '<ram id="ramLow" addr="0x00000" test="true"'
+    );
+    expect(assets.machineXml().toString("utf8")).not.toContain(
+      '<ram id="ramLow" addr="0x00000" test="false"'
+    );
     expect(assets.machineXml().toString("utf8")).toMatch(
       /<chipset[^>]*dateRTC="1990-01-01T00:00:00"/
     );

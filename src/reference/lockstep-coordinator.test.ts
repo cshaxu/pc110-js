@@ -318,7 +318,7 @@ describe("controlled lockstep comparator", () => {
     expect(pcjsResets).toBe(1);
   });
 
-  it("retains cycle-only evidence through a bounded matched window", () => {
+  it("stops a bounded window at the first cycle-only difference", () => {
     const { native, pcjs } = snapshots();
     const result = runControlledLockstepWindow(
       {
@@ -341,13 +341,9 @@ describe("controlled lockstep comparator", () => {
     );
 
     expect(result).toMatchObject({
-      kind: "completed",
-      instructions: 3,
-      timingDifferences: [
-        { instruction: 1, timing: { nativeCycles: 2, pcjsCycles: 3 } },
-        { instruction: 2, timing: { nativeCycles: 2, pcjsCycles: 3 } },
-        { instruction: 3, timing: { nativeCycles: 2, pcjsCycles: 3 } }
-      ]
+      kind: "timing-difference",
+      instructions: 1,
+      timingDifference: { instruction: 1, timing: { nativeCycles: 2, pcjsCycles: 3 } }
     });
   });
 

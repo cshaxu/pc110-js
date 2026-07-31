@@ -21,6 +21,8 @@ const CPU_CONTROLS = [
   '<control type="button" binding="reset">Reset</control>',
   "</cpu>"
 ].join("");
+const WARM_BOOT_RAM = '<ram id="ramLow" addr="0x00000" test="false"';
+const COLD_BOOT_RAM = '<ram id="ramLow" addr="0x00000" test="true"';
 
 export class PcjsReferenceAssets {
   private readonly projectRoot: string;
@@ -150,13 +152,16 @@ export class PcjsReferenceAssets {
       throw new Error("Selected PCjs machine has no expected CPU definition");
     const machine = withLocalMedia.replace(originalCpu, CPU_CONTROLS);
     if (!this.diagnosticProbe) return Buffer.from(machine, "utf8");
+    if (!machine.includes(WARM_BOOT_RAM))
+      throw new Error("Selected PCjs diagnostic machine has no expected RAM test configuration");
+    const coldDiagnosticMachine = machine.replace(WARM_BOOT_RAM, COLD_BOOT_RAM);
     const root = '<machine id="deskpro386" type="pcx86"';
     const chipset =
       '<chipset id="chipset" model="deskpro386" floppies="[1440,1440]" monitor="vga"/>';
-    if (!machine.includes(root) || !machine.includes(chipset))
+    if (!coldDiagnosticMachine.includes(root) || !coldDiagnosticMachine.includes(chipset))
       throw new Error("Selected PCjs machine has an unexpected diagnostic configuration");
     return Buffer.from(
-      machine
+      coldDiagnosticMachine
         .replace(root, `${root} uncompiled="true"`)
         .replace(
           chipset,

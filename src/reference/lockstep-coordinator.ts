@@ -178,6 +178,16 @@ export type ControlledLockstepNarrowingResult =
       >;
     }
   | {
+      readonly kind: "timing-difference";
+      readonly batchStart: number;
+      readonly batchEnd: number;
+      readonly batches: number;
+      readonly result: Extract<
+        ControlledLockstepWindowResult,
+        { readonly kind: "timing-difference" }
+      >;
+    }
+  | {
       readonly kind: "stopped";
       readonly instructions: number;
       readonly batches: number;
@@ -228,6 +238,12 @@ export type ControlledLockstepWindowResult =
       readonly kind: "architectural-difference";
       readonly instructions: number;
       readonly timingDifferences: readonly LockstepTimingDifference[];
+      readonly result: Extract<ControlledLockstepResult, { readonly kind: "stepped" }>;
+    }
+  | {
+      readonly kind: "timing-difference";
+      readonly instructions: number;
+      readonly timingDifference: LockstepTimingDifference;
       readonly result: Extract<ControlledLockstepResult, { readonly kind: "stepped" }>;
     }
   | {
@@ -441,7 +457,7 @@ export function locateFirstDifferenceFromReset(
     const size = Math.min(batchSize, maximumInstructions - completed);
     const batch = runControlledLockstepBatch(native, pcjs, size);
     batches += 1;
-    if (batch.kind === "stepped" && batch.comparison.equal) {
+    if (batch.kind === "stepped" && batch.comparison.equal && batch.timing.equal) {
       completed += size;
       continue;
     }
@@ -455,7 +471,7 @@ export function locateFirstDifferenceFromReset(
     while (replayed < completed) {
       const replaySize = Math.min(batchSize, completed - replayed);
       const replay = runControlledLockstepBatch(native, pcjs, replaySize);
-      if (replay.kind !== "stepped" || !replay.comparison.equal)
+      if (replay.kind !== "stepped" || !replay.comparison.equal || !replay.timing.equal)
         return { kind: "replay-stopped", instructions: replayed, batches, result: replay };
       replayed += replaySize;
     }
@@ -468,14 +484,22 @@ export function locateFirstDifferenceFromReset(
         batches,
         result: window
       };
+    if (window.kind === "timing-difference")
+      return {
+        kind: "timing-difference",
+        batchStart: completed + 1,
+        batchEnd: completed + size,
+        batches,
+        result: window
+      };
     return { kind: "replay-stopped", instructions: completed, batches, result: window };
   }
   return { kind: "completed", instructions: completed, batches, timingDifferences: [] };
 }
 
 /**
- * Runs one short diagnostic window. Cycle-only differences remain evidence;
- * the first architectural or device difference stops the window immediately.
+ * Runs one short diagnostic window and stops at the first timing,
+ * architectural, or device difference.
  */
 export function runControlledLockstepWindow(
   native: NativeLockstepEndpoint,
@@ -490,13 +514,15 @@ export function runControlledLockstepWindow(
     const result = stepControlledLockstep(native, pcjs);
     if (result.kind !== "stepped")
       return { kind: "stopped", instructions: instruction - 1, timingDifferences, result };
-    if (!result.timing.equal)
-      timingDifferences.push({
+    if (!result.timing.equal) {
+      const timingDifference = {
         instruction,
         before: result.before,
         after: result.after,
         timing: result.timing
-      });
+      };
+      return { kind: "timing-difference", instructions: instruction, timingDifference, result };
+    }
     if (!result.comparison.equal)
       return {
         kind: "architectural-difference",

@@ -29,6 +29,8 @@ const parameters = new URLSearchParams(window.location.search);
 const developerMediaEnabled = parameters.has("dev-media");
 const pcjsReferenceEnabled = developerMediaEnabled && parameters.has("pcjs-reference");
 const portTraceEnabled = developerMediaEnabled && parameters.has("trace-ports");
+const LOCKSTEP_BATCH_SIZE = 1024;
+const LOCKSTEP_SEARCH_LIMIT = 65_536;
 const machine = new MachineRuntime(pcAt386Profile);
 const checkpoint = new NativeCoreCheckpoint({ portTrace: portTraceEnabled });
 const nativeLockstep = new NativeLockstepAdapter(checkpoint);
@@ -67,8 +69,8 @@ root.innerHTML = `
       ${developerMediaEnabled ? '<button id="dev-key-f1" type="button">Send F1</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep" type="button">Compare boundary</button>' : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-window" type="button">Compare 16 boundaries</button>' : ""}
-      ${pcjsReferenceEnabled ? '<button id="lockstep-batch" type="button">Compare 1024 boundaries</button>' : ""}
-      ${pcjsReferenceEnabled ? '<button id="lockstep-locate" type="button">Locate difference in 1024</button>' : ""}
+      ${pcjsReferenceEnabled ? `<button id="lockstep-batch" type="button">Compare ${LOCKSTEP_BATCH_SIZE} boundaries</button>` : ""}
+      ${pcjsReferenceEnabled ? `<button id="lockstep-locate" type="button">Locate difference in ${LOCKSTEP_SEARCH_LIMIT}</button>` : ""}
       ${pcjsReferenceEnabled ? '<button id="lockstep-reset" type="button">Reset boundary</button>' : ""}
     </footer>
   </section>
@@ -318,6 +320,10 @@ function compareBrowserLockstepWindow(): void {
     return;
   }
   const result = runControlledLockstepWindow(nativeLockstep, pcjs, 16);
+  if (result.kind === "timing-difference") {
+    controls.nativeStatus.textContent = `Lockstep window cycle difference at ${formatBoundary(result.timingDifference.before)}: native ${result.timingDifference.timing.nativeCycles}, PCjs ${result.timingDifference.timing.pcjsCycles}`;
+    return;
+  }
   const timing = result.timingDifferences
     .map(
       (difference) =>
@@ -341,7 +347,7 @@ function compareBrowserLockstepBatch(): void {
   if (!prepareBrowserLockstep("a batch")) return;
   const pcjs = pcjsLockstepEndpoint(referenceFrame);
   if (!pcjs) return;
-  const result = runControlledLockstepBatch(nativeLockstep, pcjs, 1024);
+  const result = runControlledLockstepBatch(nativeLockstep, pcjs, LOCKSTEP_BATCH_SIZE);
   switch (result.kind) {
     case "batch-unavailable":
       controls.nativeStatus.textContent = "PCjs batch lockstep control is not ready";
@@ -364,7 +370,7 @@ function compareBrowserLockstepBatch(): void {
     case "stepped":
       controls.nativeStatus.textContent = result.comparison.equal
         ? `Lockstep batch matched: ${result.nativeBatch.instructions} boundaries, ${result.timing.nativeCycles}/${result.timing.pcjsCycles} cycles`
-        : `Lockstep batch mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}. Use Locate difference in 1024.`;
+        : `Lockstep batch mismatch at ${formatBoundary(result.before)}: ${formatDifference(result.comparison)}. Use Locate difference in ${LOCKSTEP_SEARCH_LIMIT}.`;
   }
 }
 
@@ -372,13 +378,21 @@ function locateBrowserLockstepDifference(): void {
   if (!prepareBrowserLockstep("a deterministic search")) return;
   const pcjs = pcjsLockstepEndpoint(referenceFrame);
   if (!pcjs) return;
-  const result = locateFirstDifferenceFromReset(nativeLockstep, pcjs, 1024, 64);
+  const result = locateFirstDifferenceFromReset(
+    nativeLockstep,
+    pcjs,
+    LOCKSTEP_SEARCH_LIMIT,
+    LOCKSTEP_BATCH_SIZE
+  );
   switch (result.kind) {
     case "completed":
       controls.nativeStatus.textContent = `Lockstep search matched: ${result.instructions} boundaries in ${result.batches} batches`;
       return;
     case "architectural-difference":
       controls.nativeStatus.textContent = `First difference in boundaries ${result.batchStart}-${result.batchEnd} at ${formatBoundary(result.result.result.before)}: ${formatDifference(result.result.result.comparison)}`;
+      return;
+    case "timing-difference":
+      controls.nativeStatus.textContent = `First cycle difference in boundaries ${result.batchStart}-${result.batchEnd} at ${formatBoundary(result.result.timingDifference.before)}: native ${result.result.timingDifference.timing.nativeCycles}, PCjs ${result.result.timingDifference.timing.pcjsCycles}`;
       return;
     case "stopped":
       controls.nativeStatus.textContent = `Lockstep search stopped after ${result.instructions} boundaries: ${formatBatchStop(result.result)}`;

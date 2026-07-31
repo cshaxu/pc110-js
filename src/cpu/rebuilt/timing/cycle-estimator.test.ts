@@ -43,6 +43,35 @@ describe("80386 cycle estimator", () => {
     expect(estimate386Cycles(undefined, 0, 0)).toBe(3);
   });
 
+  it("charges the accumulator arithmetic-immediate family as PCjs direct-register paths", () => {
+    for (const opcode of [
+      0x04, 0x05, 0x0c, 0x0d, 0x14, 0x15, 0x1c, 0x1d, 0x24, 0x25, 0x2c, 0x2d, 0x34, 0x35, 0x3c, 0x3d
+    ])
+      expect(estimate386Cycles({ opcode, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(3);
+  });
+
+  it("classifies valid Group 7 descriptor-table and machine-status forms generically", () => {
+    const memory = (reg: number) => ({ raw: reg << 3, mod: 0, reg, rm: 6, memory: true });
+    const register = (reg: number) => ({
+      raw: 0xc0 | (reg << 3),
+      mod: 3,
+      reg,
+      rm: 0,
+      memory: false
+    });
+    const instruction = (modRm: object) =>
+      ({ opcode: 0x0f, secondaryOpcode: 0x01, prefixes: { bytes: 0 }, modRm }) as never;
+
+    expect(estimate386Cycles(instruction(memory(0)), 0, 0)).toBe(11); // SGDT m
+    expect(estimate386Cycles(instruction(memory(1)), 0, 0)).toBe(12); // SIDT m
+    expect(estimate386Cycles(instruction(memory(2)), 0, 0)).toBe(11); // LGDT m
+    expect(estimate386Cycles(instruction(memory(3)), 0, 0)).toBe(12); // LIDT m
+    expect(estimate386Cycles(instruction(memory(4)), 0, 0)).toBe(3); // SMSW m
+    expect(estimate386Cycles(instruction(register(4)), 0, 0)).toBe(2); // SMSW r
+    expect(estimate386Cycles(instruction(memory(6)), 0, 0)).toBe(6); // LMSW m
+    expect(estimate386Cycles(instruction(register(6)), 0, 0)).toBe(3); // LMSW r
+  });
+
   it("charges stack, return, exchange, and control-transfer paths explicitly", () => {
     expect(estimate386Cycles({ opcode: 0x53, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(3);
     expect(estimate386Cycles({ opcode: 0x5b, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(5);
