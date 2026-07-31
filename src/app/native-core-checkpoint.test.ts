@@ -14,6 +14,12 @@ describe("NativeCoreCheckpoint", () => {
       timer2Output: "0",
       dma0Masks: "0F",
       dma1Masks: "0F",
+      fdcPhase: "command",
+      fdcMainStatus: "80",
+      fdcInterruptPending: "0",
+      fdcDmaBytesPending: "0",
+      fdcDrive0Ready: "0",
+      fdcDrive0Cylinder: "0",
       rtcStatusA: "26",
       rtcStatusB: "02",
       rtcStatusC: "00",
@@ -52,6 +58,7 @@ describe("NativeCoreCheckpoint", () => {
 
     checkpoint.attachFloppy(new Uint8Array(80 * 2 * 18 * 512));
     expect(checkpoint.core.fdc.controller.snapshot().drives[0]).toMatchObject({ ready: true });
+    expect(checkpoint.snapshot()).toMatchObject({ fdcDrive0Ready: "1", fdcDrive0Cylinder: "0" });
   });
 
   it("models selected-machine expansion ROM holes as a floating physical bus", () => {

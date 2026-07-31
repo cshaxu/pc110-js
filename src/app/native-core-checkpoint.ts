@@ -14,6 +14,12 @@ export interface NativeCoreCheckpointSnapshot {
   readonly timer2Output: string;
   readonly dma0Masks: string;
   readonly dma1Masks: string;
+  readonly fdcPhase: string;
+  readonly fdcMainStatus: string;
+  readonly fdcInterruptPending: string;
+  readonly fdcDmaBytesPending: string;
+  readonly fdcDrive0Ready: string;
+  readonly fdcDrive0Cylinder: string;
   readonly rtcStatusA: string;
   readonly rtcStatusB: string;
   readonly rtcStatusC: string;
@@ -72,6 +78,8 @@ export class NativeCoreCheckpoint {
     const cpu = this.core.runner.state.snapshot();
     const pic = this.core.pic.snapshot();
     const keyboardController = this.core.keyboardController.snapshot();
+    const fdc = this.core.fdc.controller.snapshot();
+    const fdcDrive0 = fdc.drives[0];
     return {
       codeAddress: `${hex16(cpu.segments.cs.selector)}:${hex16(cpu.eip)}`,
       masterRequest: hex8(pic.master.request),
@@ -82,6 +90,12 @@ export class NativeCoreCheckpoint {
       timer2Output: bit(this.core.pit.counter2Output()),
       dma0Masks: hex8(this.core.dma.maskBits(0)),
       dma1Masks: hex8(this.core.dma.maskBits(1)),
+      fdcPhase: fdc.phase,
+      fdcMainStatus: hex8(fdc.mainStatus),
+      fdcInterruptPending: bit(fdc.interruptPending),
+      fdcDmaBytesPending: String(fdc.dmaBytesPending),
+      fdcDrive0Ready: bit(fdcDrive0?.ready ?? false),
+      fdcDrive0Cylinder: String(fdcDrive0?.cylinder ?? 0),
       rtcStatusA: hex8(this.core.rtc.snapshot().statusA),
       rtcStatusB: hex8(this.core.rtc.snapshot().statusB),
       rtcStatusC: hex8(this.core.rtc.snapshot().statusC),

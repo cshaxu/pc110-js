@@ -102,6 +102,7 @@ function render(snapshot: MachineSnapshot): void {
     `PIC S IRR ${native.slaveRequest} ISR ${native.slaveInService}`,
     `PIT 0 OUT ${native.timer0Output} 2 OUT ${native.timer2Output}`,
     `DMA0 MASK ${native.dma0Masks} DMA1 MASK ${native.dma1Masks}`,
+    `FDC ${native.fdcPhase} MSR ${native.fdcMainStatus} IRQ ${native.fdcInterruptPending} DMA ${native.fdcDmaBytesPending} D0 ${native.fdcDrive0Ready}:${native.fdcDrive0Cylinder}`,
     `RTC A ${native.rtcStatusA} B ${native.rtcStatusB} C ${native.rtcStatusC} D ${native.rtcStatusD} NMI ${native.rtcNmiDisabled}`,
     `SYS61 ${native.systemPortControl} PIT2 GATE ${native.systemTimer2Gate} SPK ${native.systemSpeakerOutput} A20 ${native.a20Enabled}`,
     `8042 STAT ${native.keyboardControllerStatus} CMD ${native.keyboardControllerCommandByte} OBF ${native.keyboardControllerOutputBuffer} KBD ${native.keyboardControllerKeyboardEnabled}`
