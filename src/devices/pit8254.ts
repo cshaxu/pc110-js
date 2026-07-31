@@ -42,8 +42,8 @@ export class Pit8254 {
     this.counter(selection).writeControl(command);
   }
 
-  public writeCounter(index: number, value: number): void {
-    this.counter(index).writeData(value);
+  public writeCounter(index: number, value: number): boolean {
+    return this.counter(index).writeData(value);
   }
 
   public readCounter(index: number): number {
@@ -80,6 +80,17 @@ export class Pit8254 {
       this.counters.forEach((counter, index) => {
         if (counter.advanceOne()) risingEdges.push(index);
       });
+    }
+    return { risingEdges };
+  }
+
+  public advanceCounter(index: number, ticks: number): PitAdvanceResult {
+    if (!Number.isInteger(ticks) || ticks < 0)
+      throw new RangeError("PIT ticks must be non-negative integers");
+    const counter = this.counter(index);
+    const risingEdges: number[] = [];
+    for (let tick = 0; tick < ticks; tick += 1) {
+      if (counter.advanceOne()) risingEdges.push(index);
     }
     return { risingEdges };
   }
@@ -148,16 +159,23 @@ class PitCounter {
     this.nullCount = true;
   }
 
-  public writeData(value: number): void {
+  public writeData(value: number): boolean {
     const data = byte(value);
-    if (this.access === 1) return this.load(data);
-    if (this.access === 2) return this.load(data << 8);
+    if (this.access === 1) {
+      this.load(data);
+      return true;
+    }
+    if (this.access === 2) {
+      this.load(data << 8);
+      return true;
+    }
     if (this.writeLow === undefined) {
       this.writeLow = data;
-      return;
+      return false;
     }
     this.load(this.writeLow | (data << 8));
     this.writeLow = undefined;
+    return true;
   }
 
   public readData(): number {

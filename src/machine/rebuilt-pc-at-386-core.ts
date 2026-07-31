@@ -157,6 +157,7 @@ export class RebuiltPcAt386Core {
   public readonly runner: RebuiltCpuRunner;
   public readonly scheduler: CycleScheduler;
   private nmiPending = false;
+  private readonly cycleSchedulerProfile: CycleSchedulerProfile;
 
   public constructor(
     private readonly memory: PhysicalMemory,
@@ -170,7 +171,8 @@ export class RebuiltPcAt386Core {
       () => this.runner.reset(),
       { interfaceTestResult: options.keyboardInterfaceTestResult }
     );
-    this.scheduler = new CycleScheduler(options.cycleSchedulerProfile ?? deskPro386CycleProfile);
+    this.cycleSchedulerProfile = options.cycleSchedulerProfile ?? deskPro386CycleProfile;
+    this.scheduler = new CycleScheduler(this.cycleSchedulerProfile);
     this.ports = new RebuiltMachinePortBus(
       (event) => this.trace?.({ kind: "port", event }),
       options.unpopulatedIo === "floating"
@@ -476,7 +478,12 @@ export class RebuiltPcAt386Core {
 
   private advanceExecutedInstruction(cycles: number): void {
     const scheduled = this.scheduler.advance(cycles);
-    if (scheduled.pitTicks > 0) this.advancePit(scheduled.pitTicks);
+    this.pit.advanceCycles(
+      cycles,
+      this.cycleSchedulerProfile.cpuCyclesPerSecond,
+      this.cycleSchedulerProfile.pitTicksPerSecond
+    );
+    if (scheduled.pitTicks > 0) this.deskProSecondaryPit?.advance(scheduled.pitTicks);
     if (scheduled.rtcTicks > 0) this.advanceRtc(scheduled.rtcTicks);
     if (this.dma.snapshot(2).requested) {
       const slots = this.scheduler.advanceFdcDmaSlots(

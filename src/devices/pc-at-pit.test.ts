@@ -29,4 +29,20 @@ describe("project-native PC/AT PIT", () => {
     expect(irqs).toEqual([0]);
     expect(pit.counter2Output()).toBe(false);
   });
+
+  it("starts a loaded counter on the following CPU instruction and restores its phase", () => {
+    const pit = new PcAtPit();
+    pit.write(PIT_CONTROL_PORT, 0x54, 8);
+    pit.write(PIT_COUNTER0_PORT + 1, 0x12, 8);
+
+    pit.advanceCycles(12, 16n, 1n);
+    expect(pit.snapshot(1).count).toBe(0x12);
+    const checkpoint = pit.capture();
+
+    pit.advanceCycles(16, 16n, 1n);
+    expect(pit.snapshot(1).count).toBe(0x11);
+    pit.restore(checkpoint);
+    pit.advanceCycles(16, 16n, 1n);
+    expect(pit.snapshot(1).count).toBe(0x11);
+  });
 });
