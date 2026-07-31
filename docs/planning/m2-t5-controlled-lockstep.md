@@ -48,8 +48,8 @@ an authority, rationale, and activation condition.
 1. Add only a paused PCjs diagnostic control surface and prove that one call
    executes one decoded instruction and advances PCjs timers consistently.
 2. Add the native normalized CPU and cycle snapshot endpoint, then add matching
-   PCjs CPU, cycle, and I/O snapshots; compare short real-mode programs against
-   the existing native differential harness.
+   PCjs CPU, cycle, and I/O snapshots. Compare established CPU fields through a
+   project-owned first-difference comparator before wiring browser sampling.
 3. Add the smallest selected-device snapshot adapters needed for the actual
    whole-machine blocker, beginning with PIC, PIT, DMA, 8042, and RTC.
 4. Start reset-to-checkpoint selected-ROM windows only after both sides prove
