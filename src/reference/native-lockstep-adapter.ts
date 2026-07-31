@@ -146,7 +146,15 @@ function normalizePit(counter: {
   readonly count: number;
   readonly output: boolean;
 }) {
-  return { reload: counter.reload, count: counter.count, output: counter.output };
+  return {
+    reload: normalizePitCount(counter.reload),
+    count: normalizePitCount(counter.count),
+    output: counter.output
+  };
+}
+
+function normalizePitCount(value: number): number {
+  return value || 0x10000;
 }
 
 function normalizeCpu(cpu: RebuiltCpuSnapshot): NativeLockstepCpuSnapshot {

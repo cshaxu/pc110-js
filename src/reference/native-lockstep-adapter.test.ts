@@ -17,6 +17,11 @@ describe("NativeLockstepAdapter", () => {
       },
       devices: {
         pic: { master: { mask: undefined, request: undefined, inService: undefined } },
+        pit: [
+          { reload: 0x10000, count: 0x10000, output: false },
+          { reload: 0x10000, count: 0x10000, output: false },
+          { reload: 0x10000, count: 0x10000, output: false }
+        ],
         keyboardController: { status: 0x10, commandByte: 0x10, outputBuffer: undefined },
         rtc: { address: 0, statusA: 0x26, statusB: 0x02, statusC: 0, statusD: 0x80 }
       }
