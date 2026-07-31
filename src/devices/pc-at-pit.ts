@@ -25,13 +25,13 @@ export interface PcAtPitState {
 
 export class PcAtPit {
   public readonly timer = new Pit8254();
-  private readonly cycleRemainders = [0n, 0n, 0n];
+  private readonly cycleRemainders = [0, 0, 0];
 
   public constructor(private readonly raiseIrq?: (irq: number) => void) {}
 
   public reset(): void {
     this.timer.reset();
-    this.cycleRemainders.fill(0n);
+    this.cycleRemainders.fill(0);
   }
 
   public read(port: number, width: PortWidth): number {
@@ -46,7 +46,7 @@ export class PcAtPit {
     if (port >= PIT_COUNTER0_PORT && port <= PIT_COUNTER2_PORT) {
       const index = port - PIT_COUNTER0_PORT;
       if (this.timer.writeCounter(index, value)) {
-        this.cycleRemainders[index] = 0n;
+        this.cycleRemainders[index] = 0;
       }
       return;
     }
@@ -63,19 +63,24 @@ export class PcAtPit {
   /** Advances each counter from CPU cycles using its own reload-relative phase. */
   public advanceCycles(
     cycles: number,
-    cpuCyclesPerSecond: bigint,
-    pitTicksPerSecond: bigint
+    cpuCyclesPerSecond: number,
+    pitTicksPerSecond: number
   ): void {
     if (!Number.isSafeInteger(cycles) || cycles < 0)
       throw new RangeError("PIT CPU cycles must be non-negative safe integers");
+    if (
+      !Number.isSafeInteger(cpuCyclesPerSecond) ||
+      !Number.isSafeInteger(pitTicksPerSecond) ||
+      cpuCyclesPerSecond <= 0 ||
+      pitTicksPerSecond <= 0
+    )
+      throw new RangeError("PIT clock frequencies must be positive safe integers");
     for (let index = 0; index < 3; index += 1) {
-      const numerator = this.cycleRemainders[index] + BigInt(cycles) * pitTicksPerSecond;
-      const ticks = numerator / cpuCyclesPerSecond;
+      const numerator = this.cycleRemainders[index]! + cycles * pitTicksPerSecond;
+      const ticks = Math.floor(numerator / cpuCyclesPerSecond);
       this.cycleRemainders[index] = numerator % cpuCyclesPerSecond;
-      if (ticks > BigInt(Number.MAX_SAFE_INTEGER))
-        throw new RangeError("PIT tick charge exceeds safe range");
-      const result = this.timer.advanceCounter(index, Number(ticks));
-      if (result.risingEdges.length) this.cycleRemainders[index] = 0n;
+      const result = this.timer.advanceCounter(index, ticks);
+      if (result.risingEdges.length) this.cycleRemainders[index] = 0;
       if (index === 0 && result.risingEdges.length) this.raiseIrq?.(0);
     }
   }
@@ -95,7 +100,7 @@ export class PcAtPit {
   public capture(): PcAtPitState {
     return {
       timer: this.timer.capture(),
-      cycleRemainders: [...this.cycleRemainders]
+      cycleRemainders: this.cycleRemainders.map((remainder) => BigInt(remainder))
     };
   }
 
@@ -105,7 +110,7 @@ export class PcAtPit {
     this.timer.restore(state.timer);
     state.cycleRemainders.forEach((remainder, index) => {
       if (remainder < 0n) throw new RangeError("PC/AT PIT cycle remainder must be non-negative");
-      this.cycleRemainders[index] = remainder;
+      this.cycleRemainders[index] = Number(remainder);
     });
   }
 

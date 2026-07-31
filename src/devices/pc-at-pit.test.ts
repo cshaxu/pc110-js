@@ -33,14 +33,14 @@ describe("project-native PC/AT PIT", () => {
     pit.write(PIT_CONTROL_PORT, 0x54, 8);
     pit.write(PIT_COUNTER0_PORT + 1, 0x12, 8);
 
-    pit.advanceCycles(12, 16n, 1n);
+    pit.advanceCycles(12, 16, 1);
     expect(pit.snapshot(1).count).toBe(0x12);
     const checkpoint = pit.capture();
 
-    pit.advanceCycles(4, 16n, 1n);
+    pit.advanceCycles(4, 16, 1);
     expect(pit.snapshot(1).count).toBe(0x11);
     pit.restore(checkpoint);
-    pit.advanceCycles(4, 16n, 1n);
+    pit.advanceCycles(4, 16, 1);
     expect(pit.snapshot(1).count).toBe(0x11);
   });
 
@@ -50,12 +50,12 @@ describe("project-native PC/AT PIT", () => {
     pit.write(PIT_COUNTER0_PORT, 2, 8);
     pit.write(PIT_COUNTER0_PORT, 0, 8);
 
-    pit.advanceCycles(12, 16n, 1n);
-    pit.advanceCycles(16, 16n, 1n);
+    pit.advanceCycles(12, 16, 1);
+    pit.advanceCycles(16, 16, 1);
     expect(pit.snapshot(0)).toMatchObject({ count: 1, output: false });
-    pit.advanceCycles(16, 16n, 1n);
+    pit.advanceCycles(16, 16, 1);
     expect(pit.snapshot(0)).toMatchObject({ count: 2, output: true });
-    pit.advanceCycles(4, 16n, 1n);
+    pit.advanceCycles(4, 16, 1);
     expect(pit.snapshot(0)).toMatchObject({ count: 2, output: true });
   });
 });

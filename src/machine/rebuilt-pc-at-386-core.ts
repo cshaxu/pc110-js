@@ -167,6 +167,8 @@ export class RebuiltPcAt386Core {
   public readonly scheduler: CycleScheduler;
   private nmiPending = false;
   private readonly cycleSchedulerProfile: CycleSchedulerProfile;
+  private readonly pitCpuCyclesPerSecond: number;
+  private readonly pitTicksPerSecond: number;
   private pendingDeviceWork: PendingDeviceWork | undefined;
 
   public constructor(
@@ -182,6 +184,11 @@ export class RebuiltPcAt386Core {
       { interfaceTestResult: options.keyboardInterfaceTestResult }
     );
     this.cycleSchedulerProfile = options.cycleSchedulerProfile ?? deskPro386CycleProfile;
+    this.pitCpuCyclesPerSecond = numberFrequency(
+      this.cycleSchedulerProfile.cpuCyclesPerSecond,
+      "CPU"
+    );
+    this.pitTicksPerSecond = numberFrequency(this.cycleSchedulerProfile.pitTicksPerSecond, "PIT");
     this.scheduler = new CycleScheduler(this.cycleSchedulerProfile);
     this.ports = new RebuiltMachinePortBus(
       (event) => this.trace?.({ kind: "port", event }),
@@ -509,11 +516,7 @@ export class RebuiltPcAt386Core {
     const work = this.pendingDeviceWork;
     if (!work) return;
     this.pendingDeviceWork = undefined;
-    this.pit.advanceCycles(
-      work.cycles,
-      this.cycleSchedulerProfile.cpuCyclesPerSecond,
-      this.cycleSchedulerProfile.pitTicksPerSecond
-    );
+    this.pit.advanceCycles(work.cycles, this.pitCpuCyclesPerSecond, this.pitTicksPerSecond);
     if (work.pitTicks > 0) this.deskProSecondaryPit?.advance(work.pitTicks);
     if (work.rtcTicks > 0) this.advanceRtc(work.rtcTicks);
     if (work.fdcDmaSlots > 0) this.advanceFdcDma(work.fdcDmaSlots);
@@ -527,4 +530,10 @@ export class RebuiltPcAt386Core {
     this.trace?.({ kind: "interrupt", vector: 2 });
     return true;
   }
+}
+
+function numberFrequency(value: bigint, name: string): number {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new RangeError(`${name} frequency exceeds the safe integer range`);
+  return Number(value);
 }

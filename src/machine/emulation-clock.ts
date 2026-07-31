@@ -7,25 +7,38 @@ export interface HostScheduler {
 }
 
 export class EmulationClock {
-  private cycles = 0n;
+  private cycles = 0;
 
-  public advance(cycles: bigint): EmulationTime {
-    if (cycles < 0n) throw new Error("Emulation cycles must not be negative");
-    this.cycles += cycles;
+  public advance(cycles: number | bigint): EmulationTime {
+    const charge = safeCycleNumber(cycles);
+    if (this.cycles > Number.MAX_SAFE_INTEGER - charge)
+      throw new RangeError("Emulation cycle count exceeds the safe integer range");
+    this.cycles += charge;
     return this.snapshot();
   }
 
   public reset(): EmulationTime {
-    this.cycles = 0n;
+    this.cycles = 0;
     return this.snapshot();
   }
 
   public snapshot(): EmulationTime {
-    return { cycles: this.cycles };
+    return { cycles: BigInt(this.cycles) };
   }
 
   public restore(time: EmulationTime): void {
-    if (time.cycles < 0n) throw new Error("Emulation cycles must not be negative");
-    this.cycles = time.cycles;
+    this.cycles = safeCycleNumber(time.cycles);
   }
+}
+
+function safeCycleNumber(value: number | bigint): number {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value) || value < 0)
+      throw new RangeError("Emulation cycles must be non-negative safe integers");
+    return value;
+  }
+  if (value < 0n) throw new Error("Emulation cycles must not be negative");
+  if (value > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new RangeError("Emulation cycle count exceeds the safe integer range");
+  return Number(value);
 }

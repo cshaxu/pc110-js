@@ -19,6 +19,27 @@ describe("CycleScheduler", () => {
     expect(scheduler.advance(1).pitTicks).toBe(1);
   });
 
+  it("matches the bigint reference arithmetic across variable CPU charges", () => {
+    const scheduler = new CycleScheduler(deskPro386CycleProfile);
+    let pitRemainder = 0n;
+    let rtcRemainder = 0n;
+    let cycles = 0n;
+    for (const charge of [1, 2, 7, 13, 4, 19, 3, 29, 5, 25_000]) {
+      const pitNumerator = pitRemainder + BigInt(charge) * deskPro386CycleProfile.pitTicksPerSecond;
+      const rtcNumerator = rtcRemainder + BigInt(charge) * deskPro386CycleProfile.rtcTicksPerSecond;
+      pitRemainder = pitNumerator % deskPro386CycleProfile.cpuCyclesPerSecond;
+      rtcRemainder = rtcNumerator % deskPro386CycleProfile.cpuCyclesPerSecond;
+      cycles += BigInt(charge);
+
+      expect(scheduler.advance(charge)).toEqual({
+        time: { cycles },
+        pitTicks: Number(pitNumerator / deskPro386CycleProfile.cpuCyclesPerSecond),
+        rtcTicks: Number(rtcNumerator / deskPro386CycleProfile.cpuCyclesPerSecond)
+      });
+      expect(scheduler.capture()).toMatchObject({ pitRemainder, rtcRemainder });
+    }
+  });
+
   it("resets accumulated time and rejects invalid charges", () => {
     const scheduler = new CycleScheduler({
       cpuCyclesPerSecond: 2n,

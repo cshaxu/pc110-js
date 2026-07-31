@@ -22,9 +22,12 @@ export const deskPro386CycleProfile: CycleSchedulerProfile = {
 /** Converts explicit CPU cycles into deterministic device-clock ticks. */
 export class CycleScheduler {
   private readonly clock = new EmulationClock();
-  private pitRemainder = 0n;
-  private rtcRemainder = 0n;
-  private fdcDmaRemainder = 0n;
+  private readonly cpuCyclesPerSecond: number;
+  private readonly pitTicksPerSecond: number;
+  private readonly rtcTicksPerSecond: number;
+  private pitRemainder = 0;
+  private rtcRemainder = 0;
+  private fdcDmaRemainder = 0;
 
   public constructor(private readonly profile: CycleSchedulerProfile) {
     if (
@@ -33,6 +36,9 @@ export class CycleScheduler {
       profile.rtcTicksPerSecond <= 0n
     )
       throw new RangeError("Cycle scheduler frequencies must be positive");
+    this.cpuCyclesPerSecond = safeFrequency(profile.cpuCyclesPerSecond, "CPU");
+    this.pitTicksPerSecond = safeFrequency(profile.pitTicksPerSecond, "PIT");
+    this.rtcTicksPerSecond = safeFrequency(profile.rtcTicksPerSecond, "RTC");
   }
 
   public advance(cycles: number): {
@@ -42,27 +48,24 @@ export class CycleScheduler {
   } {
     if (!Number.isSafeInteger(cycles) || cycles < 0)
       throw new RangeError("CPU cycle charge must be a non-negative safe integer");
-    const charge = BigInt(cycles);
-    const numerator = this.pitRemainder + charge * this.profile.pitTicksPerSecond;
-    const pitTicks = numerator / this.profile.cpuCyclesPerSecond;
-    this.pitRemainder = numerator % this.profile.cpuCyclesPerSecond;
-    const rtcNumerator = this.rtcRemainder + charge * this.profile.rtcTicksPerSecond;
-    const rtcTicks = rtcNumerator / this.profile.cpuCyclesPerSecond;
-    this.rtcRemainder = rtcNumerator % this.profile.cpuCyclesPerSecond;
-    if (pitTicks > BigInt(Number.MAX_SAFE_INTEGER) || rtcTicks > BigInt(Number.MAX_SAFE_INTEGER))
-      throw new RangeError("Device tick charge exceeds safe range");
+    const pitNumerator = this.pitRemainder + cycles * this.pitTicksPerSecond;
+    const pitTicks = Math.floor(pitNumerator / this.cpuCyclesPerSecond);
+    this.pitRemainder = pitNumerator % this.cpuCyclesPerSecond;
+    const rtcNumerator = this.rtcRemainder + cycles * this.rtcTicksPerSecond;
+    const rtcTicks = Math.floor(rtcNumerator / this.cpuCyclesPerSecond);
+    this.rtcRemainder = rtcNumerator % this.cpuCyclesPerSecond;
     return {
-      time: this.clock.advance(charge),
-      pitTicks: Number(pitTicks),
-      rtcTicks: Number(rtcTicks)
+      time: this.clock.advance(cycles),
+      pitTicks,
+      rtcTicks
     };
   }
 
   public reset(): void {
     this.clock.reset();
-    this.pitRemainder = 0n;
-    this.rtcRemainder = 0n;
-    this.fdcDmaRemainder = 0n;
+    this.pitRemainder = 0;
+    this.rtcRemainder = 0;
+    this.fdcDmaRemainder = 0;
   }
 
   /** Converts elapsed CPU cycles into selected FDC DMA byte-service slots. */
@@ -71,16 +74,14 @@ export class CycleScheduler {
       throw new RangeError("CPU cycle charge must be a non-negative safe integer");
     if (!Number.isSafeInteger(bytesPerSecond) || bytesPerSecond < 0)
       throw new RangeError("FDC DMA byte rate must be a non-negative safe integer");
-    const numerator = this.fdcDmaRemainder + BigInt(cycles) * BigInt(bytesPerSecond);
-    const slots = numerator / this.profile.cpuCyclesPerSecond;
-    this.fdcDmaRemainder = numerator % this.profile.cpuCyclesPerSecond;
-    if (slots > BigInt(Number.MAX_SAFE_INTEGER))
-      throw new RangeError("FDC DMA slot charge exceeds safe range");
-    return Number(slots);
+    const numerator = this.fdcDmaRemainder + cycles * bytesPerSecond;
+    const slots = Math.floor(numerator / this.cpuCyclesPerSecond);
+    this.fdcDmaRemainder = numerator % this.cpuCyclesPerSecond;
+    return slots;
   }
 
   public resetFdcDmaSlots(): void {
-    this.fdcDmaRemainder = 0n;
+    this.fdcDmaRemainder = 0;
   }
 
   public snapshot(): EmulationTime {
@@ -90,9 +91,9 @@ export class CycleScheduler {
   public capture(): CycleSchedulerSnapshot {
     return {
       time: this.clock.snapshot(),
-      pitRemainder: this.pitRemainder,
-      rtcRemainder: this.rtcRemainder,
-      fdcDmaRemainder: this.fdcDmaRemainder
+      pitRemainder: BigInt(this.pitRemainder),
+      rtcRemainder: BigInt(this.rtcRemainder),
+      fdcDmaRemainder: BigInt(this.fdcDmaRemainder)
     };
   }
 
@@ -101,13 +102,19 @@ export class CycleScheduler {
     this.assertRemainder(snapshot.rtcRemainder, "RTC");
     this.assertRemainder(snapshot.fdcDmaRemainder, "FDC DMA");
     this.clock.restore(snapshot.time);
-    this.pitRemainder = snapshot.pitRemainder;
-    this.rtcRemainder = snapshot.rtcRemainder;
-    this.fdcDmaRemainder = snapshot.fdcDmaRemainder;
+    this.pitRemainder = Number(snapshot.pitRemainder);
+    this.rtcRemainder = Number(snapshot.rtcRemainder);
+    this.fdcDmaRemainder = Number(snapshot.fdcDmaRemainder);
   }
 
   private assertRemainder(value: bigint, name: string): void {
     if (value < 0n || value >= this.profile.cpuCyclesPerSecond)
       throw new RangeError(`${name} remainder must be within one CPU-second divisor`);
   }
+}
+
+function safeFrequency(value: bigint, name: string): number {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new RangeError(`${name} frequency exceeds the safe integer range`);
+  return Number(value);
 }
