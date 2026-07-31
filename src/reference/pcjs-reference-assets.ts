@@ -65,6 +65,12 @@ export class PcjsReferenceAssets {
       )
         throw new Error("PCjs pc110 branch is missing the normalized CPU snapshot");
       if (
+        !this.readWorkingResource("machines/pcx86/modules/v2/chipset.js")
+          .toString("utf8")
+          .includes("keyboardController: {")
+      )
+        throw new Error("PCjs pc110 branch is missing the selected device snapshot");
+      if (
         !this.readWorkingResource(
           `machines/pcx86/releases/${PC110_PROBE_RELEASE}/pcx86-uncompiled.js`
         )
