@@ -53,6 +53,19 @@ describe("NativeLockstepAdapter", () => {
     expect(after.cpu.eip).toBe(1);
   });
 
+  it("maps pending controller output to PCjs's delayed 8042 diagnostic state", () => {
+    const checkpoint = new NativeCoreCheckpoint();
+    checkpoint.core.ports.write(0x64, 0xaa, 8);
+    const snapshot = new NativeLockstepAdapter(checkpoint).snapshot();
+
+    expect(snapshot.devices.keyboardController).toEqual({
+      status: 0x118,
+      commandByte: 0x10,
+      outputBuffer: undefined,
+      outputDataLatch: 0x55
+    });
+  });
+
   it("does not disguise a halted CPU as an instruction boundary", () => {
     const checkpoint = new NativeCoreCheckpoint();
     checkpoint.core.runner.state.halt();

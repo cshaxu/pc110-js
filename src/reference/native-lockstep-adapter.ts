@@ -116,12 +116,7 @@ export class NativeLockstepAdapter {
         const channel = this.checkpoint.core.dma.snapshot(index);
         return { masked: channel.masked, requested: channel.requested };
       }),
-      keyboardController: {
-        status: keyboardController.status,
-        commandByte: keyboardController.commandByte,
-        outputBuffer: keyboardController.outputBuffer,
-        outputDataLatch: keyboardController.outputDataLatch
-      },
+      keyboardController: normalizeKeyboardController(keyboardController),
       rtc: {
         address: rtcState.address,
         statusA: rtc.statusA,
@@ -150,6 +145,21 @@ function normalizePit(counter: {
     reload: normalizePitCount(counter.reload),
     count: normalizePitCount(counter.count),
     output: counter.output
+  };
+}
+
+function normalizeKeyboardController(controller: {
+  readonly status: number;
+  readonly commandByte: number;
+  readonly outputBuffer: number | undefined;
+  readonly outputDataLatch: number;
+  readonly controllerOutputPending: boolean;
+}) {
+  return {
+    status: controller.status | (controller.controllerOutputPending ? 0x100 : 0),
+    commandByte: controller.commandByte,
+    outputBuffer: controller.controllerOutputPending ? undefined : controller.outputBuffer,
+    outputDataLatch: controller.outputDataLatch
   };
 }
 
