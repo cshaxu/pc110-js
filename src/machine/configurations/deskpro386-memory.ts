@@ -2,7 +2,7 @@ import { PhysicalMemory } from "../../memory/physical-memory.js";
 
 export const DESKPRO386_LOW_RAM_BYTES = 0xa0000;
 export const DESKPRO386_EXTENDED_RAM_START = 0x100000;
-export const DESKPRO386_EXTENDED_RAM_BYTES = 0x100000;
+export const DESKPRO386_EXTENDED_RAM_BYTES = 0x300000;
 export const DESKPRO386_RELOCATABLE_RAM_START = 0xfa0000;
 export const DESKPRO386_RELOCATABLE_RAM_BYTES = 0x60000;
 
