@@ -43,6 +43,10 @@ export interface RebuiltMachineRunResult {
   readonly halted: boolean;
 }
 
+export interface RebuiltMachineUntilResult extends RebuiltMachineRunResult {
+  readonly reached: boolean;
+}
+
 export interface RebuiltPcAt386Options {
   readonly deskProSecondaryPit?: boolean;
   readonly cycleSchedulerProfile?: CycleSchedulerProfile;
@@ -60,7 +64,7 @@ export type RebuiltMachineTraceEvent =
   | { readonly kind: "reset"; readonly state: RebuiltCpuSnapshot }
   | {
       readonly kind: "stop";
-      readonly reason: "halted" | "budget" | "error";
+      readonly reason: "halted" | "budget" | "checkpoint" | "error";
       readonly executed: number;
       readonly state: RebuiltCpuSnapshot;
       readonly error?: string;
@@ -401,6 +405,45 @@ export class RebuiltPcAt386Core {
       state: this.runner.state.snapshot()
     });
     return { executed, halted };
+  }
+
+  /** Runs without instruction tracing until an instruction-boundary predicate matches. */
+  public runUntil(maxInstructions: number, predicate: () => boolean): RebuiltMachineUntilResult {
+    if (!Number.isInteger(maxInstructions) || maxInstructions < 0)
+      throw new RangeError("Instruction budget must be a non-negative integer");
+    let executed = 0;
+    try {
+      while (executed < maxInstructions) {
+        if (predicate()) {
+          const state = this.runner.state.snapshot();
+          this.trace?.({ kind: "stop", reason: "checkpoint", executed, state });
+          return { executed, halted: state.halted, reached: true };
+        }
+        if (this.servicePendingNmi()) continue;
+        if (this.servicePendingInterrupt()) continue;
+        if (this.runner.state.isHalted()) break;
+        this.advanceExecutedInstruction(this.runner.step().cycles);
+        executed += 1;
+      }
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      this.trace?.({
+        kind: "stop",
+        reason: "error",
+        executed,
+        state: this.runner.state.snapshot(),
+        error: detail
+      });
+      throw error;
+    }
+    const halted = this.runner.state.isHalted();
+    this.trace?.({
+      kind: "stop",
+      reason: halted ? "halted" : "budget",
+      executed,
+      state: this.runner.state.snapshot()
+    });
+    return { executed, halted, reached: false };
   }
 
   private servicePendingInterrupt(): boolean {

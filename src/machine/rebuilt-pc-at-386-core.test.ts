@@ -50,6 +50,20 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.run(5)).toEqual({ executed: 2, halted: true });
   });
 
+  it("stops at an instruction boundary without enabling instruction tracing", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    memory.writeUint8(0, 0x90);
+    memory.writeUint8(1, 0xf4);
+    const core = new RebuiltPcAt386Core(memory);
+    core.runner.state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+    core.runner.state.writeEip(0);
+
+    const result = core.runUntil(5, () => core.runner.state.readEip() === 1);
+
+    expect(result).toEqual({ executed: 1, halted: false, reached: true });
+    expect(core.runner.state.snapshot().eip).toBe(1);
+  });
+
   it("advances the native RTC from scheduled CPU cycles", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0x90);
