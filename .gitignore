@@ -5,3 +5,4 @@ node_modules/
 local-assets/*
 !local-assets/README.md
 !local-assets/manifest.example.json
+artifacts/verification/raw/
