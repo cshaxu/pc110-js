@@ -246,6 +246,11 @@ function enqueueKeyboardCode(code: string, pressed: boolean): boolean {
 }
 
 function compareBrowserLockstep(): void {
+  if (!mediaMounted) {
+    controls.nativeStatus.textContent =
+      "Load verified local media before comparing an instruction boundary";
+    return;
+  }
   if (machine.snapshot().runState === "running") {
     controls.nativeStatus.textContent = "Pause the native machine before comparing a boundary";
     return;
