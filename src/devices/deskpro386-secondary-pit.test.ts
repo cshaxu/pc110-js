@@ -27,4 +27,21 @@ describe("DeskPro 386 secondary PIT", () => {
     pit.reset();
     expect(pit.read(DESKPRO386_SECONDARY_PIT_CONTROL_PORT, 8)).toBe(0);
   });
+
+  it("restores counter sequencing and the control register", () => {
+    const pit = new DeskPro386SecondaryPit();
+    pit.write(DESKPRO386_SECONDARY_PIT_CONTROL_PORT, 0x34, 8);
+    pit.write(DESKPRO386_SECONDARY_PIT_COUNTER0_PORT, 0x05, 8);
+    pit.write(DESKPRO386_SECONDARY_PIT_COUNTER0_PORT, 0x00, 8);
+    pit.advance(2);
+    const checkpoint = pit.capture();
+    const expectedEdges = pit.advance(3).risingEdges;
+
+    pit.reset();
+    pit.restore(checkpoint);
+
+    expect(pit.capture()).toEqual(checkpoint);
+    expect(pit.advance(3).risingEdges).toEqual(expectedEdges);
+    expect(pit.read(DESKPRO386_SECONDARY_PIT_CONTROL_PORT, 8)).toBe(0x34);
+  });
 });

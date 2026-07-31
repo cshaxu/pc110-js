@@ -26,4 +26,15 @@ describe("PC/AT FPU control ports", () => {
     for (const range of control.portRanges()) bus.register(range);
     expect(() => bus.read(PC_AT_FPU_RESET_PORT, 8)).toThrow("Unmapped I/O read");
   });
+
+  it("restores control-line observation counters", () => {
+    const control = new PcAtFpuControl();
+    control.write(PC_AT_FPU_CLEAR_PORT, 0, 8);
+    const checkpoint = control.capture();
+
+    control.write(PC_AT_FPU_RESET_PORT, 0, 8);
+    control.restore(checkpoint);
+
+    expect(control.capture()).toEqual(checkpoint);
+  });
 });

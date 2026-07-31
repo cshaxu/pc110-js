@@ -1,5 +1,10 @@
 import type { PortWidth } from "../cpu/rebuilt/io/port-bus.js";
-import { Pit8254, type PitAdvanceResult, type PitCounterSnapshot } from "./pit8254.js";
+import {
+  Pit8254,
+  type Pit8254State,
+  type PitAdvanceResult,
+  type PitCounterSnapshot
+} from "./pit8254.js";
 
 export const DESKPRO386_SECONDARY_PIT_COUNTER0_PORT = 0x48;
 export const DESKPRO386_SECONDARY_PIT_COUNTER1_PORT = 0x49;
@@ -11,6 +16,11 @@ export interface DeskPro386SecondaryPitPortRange {
   readonly end: number;
   readonly read: (port: number, width: PortWidth) => number;
   readonly write: (port: number, value: number, width: PortWidth) => void;
+}
+
+export interface DeskPro386SecondaryPitState {
+  readonly timer: Pit8254State;
+  readonly control: number;
 }
 
 /**
@@ -60,6 +70,17 @@ export class DeskPro386SecondaryPit {
 
   public snapshot(index: number): PitCounterSnapshot {
     return this.timer.snapshot(index);
+  }
+
+  public capture(): DeskPro386SecondaryPitState {
+    return { timer: this.timer.capture(), control: this.control };
+  }
+
+  public restore(state: DeskPro386SecondaryPitState): void {
+    if (!Number.isInteger(state.control))
+      throw new RangeError("DeskPro 386 secondary PIT checkpoint control is invalid");
+    this.timer.restore(state.timer);
+    this.control = state.control & 0xff;
   }
 
   public portRanges(): readonly DeskPro386SecondaryPitPortRange[] {

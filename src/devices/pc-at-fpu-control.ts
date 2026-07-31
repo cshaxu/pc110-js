@@ -39,6 +39,22 @@ export class PcAtFpuControl {
     return { clearCount: this.clearCount, resetCount: this.resetCount };
   }
 
+  public capture(): PcAtFpuControlSnapshot {
+    return this.snapshot();
+  }
+
+  public restore(state: PcAtFpuControlSnapshot): void {
+    if (
+      !Number.isSafeInteger(state.clearCount) ||
+      state.clearCount < 0 ||
+      !Number.isSafeInteger(state.resetCount) ||
+      state.resetCount < 0
+    )
+      throw new RangeError("PC/AT FPU checkpoint counter is invalid");
+    this.clearCount = state.clearCount;
+    this.resetCount = state.resetCount;
+  }
+
   public portRanges(): readonly PcAtFpuControlPortRange[] {
     return [
       {
