@@ -29,6 +29,8 @@ export function estimate386Cycles(
   if (opcode >= 0xa2 && opcode <= 0xa3) return 3;
   const groupSevenCycles = groupSevenCyclesFor(instruction);
   if (groupSevenCycles !== undefined) return groupSevenCycles;
+  const controlRegisterCycles = controlRegisterCyclesFor(instruction);
+  if (controlRegisterCycles !== undefined) return controlRegisterCycles;
   if (opcode >= 0x80 && opcode <= 0x83 && modRm) return modRm.memory ? 7 : 3;
   if (opcode >= 0x38 && opcode <= 0x3b && modRm) return modRm.memory ? 6 : 2;
   if (opcode >= 0x88 && opcode <= 0x8b && modRm) {
@@ -120,6 +122,28 @@ function groupSevenCyclesFor(instruction: DecodedInstruction): number | undefine
   if (reg === 4) return memory ? 3 : 2;
   if (reg === 6) return memory ? 6 : 3;
   return undefined;
+}
+
+/**
+ * 80386 MOV-to/from-control-register forms operate on register fields even
+ * when the historical 386 MOD field is not register-direct.  Timing therefore
+ * depends on the opcode and CR index, never on an effective address.
+ */
+function controlRegisterCyclesFor(instruction: DecodedInstruction): number | undefined {
+  if (!instruction.modRm || instruction.opcode !== 0x0f) return undefined;
+  if (instruction.secondaryOpcode === 0x20)
+    return [0, 2, 3].includes(instruction.modRm.reg) ? 6 : undefined;
+  if (instruction.secondaryOpcode !== 0x22) return undefined;
+  switch (instruction.modRm.reg) {
+    case 0:
+      return 10;
+    case 2:
+      return 4;
+    case 3:
+      return 5;
+    default:
+      return undefined;
+  }
 }
 
 function isPushOpcode(opcode: number): boolean {

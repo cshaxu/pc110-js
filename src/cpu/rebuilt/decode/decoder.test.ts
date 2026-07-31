@@ -51,6 +51,20 @@ describe("decodeInstruction", () => {
       rm: 7,
       memory: true
     });
+    expect(decodeInstruction(reader([0x0f, 0x20, 0x00]), 0, false).modRm).toEqual({
+      raw: 0,
+      mod: 0,
+      reg: 0,
+      rm: 0,
+      memory: true
+    });
+    expect(decodeInstruction(reader([0x0f, 0x22, 0xd8]), 0, false).modRm).toEqual({
+      raw: 0xd8,
+      mod: 3,
+      reg: 3,
+      rm: 0,
+      memory: false
+    });
     expect(decodeInstruction(reader([0xb0, 0x01]), 0, false).modRm).toBeUndefined();
   });
 

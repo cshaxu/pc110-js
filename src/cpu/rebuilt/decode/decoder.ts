@@ -54,7 +54,8 @@ export function decodeInstruction(
 }
 
 function hasTimingModRm(opcode: number, secondaryOpcode: number | undefined): boolean {
-  if (opcode === 0x0f) return secondaryOpcode === 0x01;
+  if (opcode === 0x0f)
+    return secondaryOpcode === 0x01 || secondaryOpcode === 0x20 || secondaryOpcode === 0x22;
   return (
     (opcode >= 0x38 && opcode <= 0x3b) ||
     (opcode >= 0x80 && opcode <= 0x83) ||

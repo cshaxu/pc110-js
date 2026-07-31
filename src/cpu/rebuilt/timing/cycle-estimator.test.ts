@@ -72,6 +72,17 @@ describe("80386 cycle estimator", () => {
     expect(estimate386Cycles(instruction(register(6)), 0, 0)).toBe(3); // LMSW r
   });
 
+  it("classifies all valid 80386 control-register moves without a MOD-field rule", () => {
+    const modRm = (reg: number) => ({ raw: reg << 3, mod: 0, reg, rm: 0, memory: true });
+    const instruction = (secondaryOpcode: number, reg: number) =>
+      ({ opcode: 0x0f, secondaryOpcode, prefixes: { bytes: 0 }, modRm: modRm(reg) }) as never;
+
+    for (const reg of [0, 2, 3]) expect(estimate386Cycles(instruction(0x20, reg), 0, 0)).toBe(6);
+    expect(estimate386Cycles(instruction(0x22, 0), 0, 0)).toBe(10);
+    expect(estimate386Cycles(instruction(0x22, 2), 0, 0)).toBe(4);
+    expect(estimate386Cycles(instruction(0x22, 3), 0, 0)).toBe(5);
+  });
+
   it("charges stack, return, exchange, and control-transfer paths explicitly", () => {
     expect(estimate386Cycles({ opcode: 0x53, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(3);
     expect(estimate386Cycles({ opcode: 0x5b, prefixes: { bytes: 0 } } as never, 0, 0)).toBe(5);
