@@ -124,5 +124,12 @@ describe("80386 cycle estimator", () => {
         0
       )
     ).toBe(7);
+    expect(
+      estimate386Cycles(
+        { opcode: 0xff, prefixes: { bytes: 0 }, modRm: { ...memory, reg: 5 } } as never,
+        0,
+        0
+      )
+    ).toBe(30);
   });
 });
