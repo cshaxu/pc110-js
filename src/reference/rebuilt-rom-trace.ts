@@ -61,6 +61,12 @@ function watchedAddresses(): ReadonlySet<string> {
   return new Set(values);
 }
 
+function projectCommit(): string {
+  return execFileSync("git", ["-C", projectRoot, "rev-parse", "HEAD"], {
+    encoding: "utf8"
+  }).trim();
+}
+
 function loadRom(sourceRom: string, expectedBytes: number): Uint8Array {
   const source = execFileSync(
     "git",
@@ -184,6 +190,8 @@ function main(): void {
   const transfers = process.env.PC110JS_ROM_TRACE_TRANSFERS === "1";
   const watches = watchedAddresses();
   const needsTrace = tailLength > 0 || eventTailLengthValue > 0 || transfers || watches.size > 0;
+  const fullDebug = tailLength > 0 || transfers;
+  const traceMode = !needsTrace ? "fast" : fullDebug ? "full-debug" : "selective";
   const watchHits = new Map<string, WatchHit>(
     [...watches].map((address) => [address, { count: 0, lastEcx: 0, lastNextAddress: "none" }])
   );
@@ -223,9 +231,15 @@ function main(): void {
   };
   const core = new RebuiltPcAt386Core(memory, needsTrace ? recordTrace : undefined, {
     deskProSecondaryPit: true,
-    unpopulatedIo: "floating"
+    unpopulatedIo: "floating",
+    instructionTraceSelector: fullDebug
+      ? undefined
+      : (point) => watches.has(`${point.cs.toString(16)}:${point.eip.toString(16)}`)
   });
   attachLocalFloppy(core);
+  process.stdout.write(
+    `Trace identity mode=${traceMode} project=${projectCommit()} pcjs=${PINNED_PCJS_COMMIT} budget=${budget} floppy=${process.env.PC110JS_ROM_TRACE_FLOPPY === "1" ? FLOPPY_SHA256 : "none"}\n`
+  );
   try {
     const result = core.run(budget);
     process.stdout.write(

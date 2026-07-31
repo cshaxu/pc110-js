@@ -4,7 +4,7 @@ import {
   type DecodedInstruction
 } from "./decode/decoder.js";
 import type { InstructionReader } from "./decode/instruction-reader.js";
-import type { RebuiltTraceHook } from "./debug/trace.js";
+import type { RebuiltTraceHook, RebuiltTraceOptions } from "./debug/trace.js";
 import { PageFaultError } from "../../memory/address-translation.js";
 import {
   deliverFault,
@@ -43,20 +43,35 @@ export class RebuiltUnsupportedOpcodeError extends Error {
 
 export class RebuiltCpuExecutor {
   private readonly memory: SegmentedMemory;
+  private readonly trace?: RebuiltTraceHook;
+  private readonly shouldCapture?: RebuiltTraceOptions["shouldCapture"];
 
   public constructor(
     private readonly state: RebuiltCpuState,
     bus: RebuiltMemoryBus,
-    private readonly trace?: RebuiltTraceHook,
+    trace?: RebuiltTraceHook | RebuiltTraceOptions,
     private readonly io?: RebuiltPortBus
   ) {
     this.memory = new SegmentedMemory(bus, state);
+    if (typeof trace === "function") this.trace = trace;
+    else if (trace) {
+      this.trace = trace.onTrace;
+      this.shouldCapture = trace.shouldCapture;
+    }
   }
 
   public step(dispatch: RebuiltInstructionDispatcher): DecodedInstruction | undefined {
-    const before = this.trace ? this.state.snapshot() : undefined;
     const faultEip = this.state.readEip();
     const codeDefault32 = this.state.codeDefault32();
+    const tracePoint = {
+      cs: this.state.readSegment("cs").selector,
+      eip: faultEip,
+      codeDefault32
+    };
+    // A diagnostic run must retain a pre-fault state even when this ordinary
+    // instruction boundary is not selected for emission.
+    const before = this.trace ? this.state.snapshot() : undefined;
+    const captureInstruction = this.shouldCapture === undefined || this.shouldCapture(tracePoint);
     const codeAddressSize = codeDefault32 ? 32 : 16;
     const reader = {
       readCodeByte: (offset: number) => {
@@ -72,13 +87,23 @@ export class RebuiltCpuExecutor {
       if (this.trace && before) this.trace({ before, fault: true, after: this.state.snapshot() });
       return undefined;
     }
+    let dispatchFaultBefore: typeof before = undefined;
     try {
       dispatch({ state: this.state, memory: this.memory, instruction, reader, io: this.io });
     } catch (error) {
+      dispatchFaultBefore = before;
       if (!this.deliverAccessFault(error, faultEip)) throw error;
     }
     this.state.completeInstructionBoundary();
-    if (this.trace && before)
+    if (this.trace && dispatchFaultBefore)
+      this.trace({
+        before: dispatchFaultBefore,
+        opcodeOffset: instruction.opcodeOffset,
+        opcode: instruction.opcode,
+        fault: true,
+        after: this.state.snapshot()
+      });
+    else if (this.trace && before && captureInstruction)
       this.trace({
         before,
         opcodeOffset: instruction.opcodeOffset,

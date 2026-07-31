@@ -105,14 +105,16 @@ describe("RebuiltPcAt386Core", () => {
     expect(() => core.ports.write(0x3bc, 0, 8)).not.toThrow();
   });
 
-  it("composes rebuilt CPU stepping, port dispatch, and trace hooks", () => {
+  it("retains machine boundaries when a trace selector suppresses instruction events", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     memory.writeUint8(0, 0xe6);
     memory.writeUint8(1, 0xee);
     memory.writeUint8(2, 0xf4);
     const trace: RebuiltMachineTraceEvent[] = [];
     const writes: Array<[number, number, number]> = [];
-    const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event));
+    const core = new RebuiltPcAt386Core(memory, (event) => trace.push(event), {
+      instructionTraceSelector: () => false
+    });
     core.registerPorts({
       start: 0xee,
       end: 0xee,
@@ -124,13 +126,32 @@ describe("RebuiltPcAt386Core", () => {
 
     expect(core.run(5)).toEqual({ executed: 2, halted: true });
     expect(writes).toEqual([[0xee, 0x5a, 8]]);
-    expect(trace.map((event) => event.kind)).toEqual([
-      "port",
-      "instruction",
-      "instruction",
-      "stop"
-    ]);
+    expect(trace.map((event) => event.kind)).toEqual(["port", "stop"]);
     expect(trace.at(-1)).toMatchObject({ kind: "stop", reason: "halted", executed: 2 });
+
+    const fastMemory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
+    fastMemory.writeUint8(0, 0xe6);
+    fastMemory.writeUint8(1, 0xee);
+    fastMemory.writeUint8(2, 0xf4);
+    const fastWrites: Array<[number, number, number]> = [];
+    const fastCore = new RebuiltPcAt386Core(fastMemory);
+    fastCore.registerPorts({
+      start: 0xee,
+      end: 0xee,
+      write: (port, value, width) => fastWrites.push([port, value, width])
+    });
+    fastCore.runner.state.writeSegment("cs", {
+      selector: 0,
+      base: 0,
+      limit: 0xffff,
+      default32: false
+    });
+    fastCore.runner.state.writeEip(0);
+    fastCore.runner.state.registers.write8(0, 0x5a);
+
+    expect(fastCore.run(5)).toEqual({ executed: 2, halted: true });
+    expect(fastWrites).toEqual(writes);
+    expect(fastCore.runner.state.snapshot()).toEqual(core.runner.state.snapshot());
   });
 
   it("resets the rebuilt CPU and emits a reset trace", () => {

@@ -1,4 +1,4 @@
-import type { RebuiltTraceEvent } from "../cpu/rebuilt/debug/trace.js";
+import type { RebuiltTraceEvent, RebuiltTracePoint } from "../cpu/rebuilt/debug/trace.js";
 import { RebuiltCpuRunner } from "../cpu/rebuilt/runner.js";
 import type { RebuiltCpuSnapshot } from "../cpu/rebuilt/state/cpu-state.js";
 import type { PhysicalMemory } from "../memory/physical-memory.js";
@@ -47,6 +47,8 @@ export interface RebuiltPcAt386Options {
   readonly deskProSecondaryPit?: boolean;
   readonly cycleSchedulerProfile?: CycleSchedulerProfile;
   readonly unpopulatedIo?: "strict" | "floating";
+  /** Selects eligible full instruction snapshots for an attached machine trace. */
+  readonly instructionTraceSelector?: (point: RebuiltTracePoint) => boolean;
 }
 
 export type RebuiltMachineTraceEvent =
@@ -122,8 +124,15 @@ export class RebuiltPcAt386Core {
         ? { unmappedRead: "ff", unmappedWrite: "ignore" }
         : undefined
     );
-    this.runner = new RebuiltCpuRunner(memory, this.ports, (event) =>
-      this.trace?.({ kind: "instruction", event })
+    this.runner = new RebuiltCpuRunner(
+      memory,
+      this.ports,
+      this.trace
+        ? {
+            onTrace: (event) => this.trace?.({ kind: "instruction", event }),
+            shouldCapture: options.instructionTraceSelector
+          }
+        : undefined
     );
     this.memory.mapDevice(VGA_MEMORY_START, VGA_MEMORY_SIZE, this.vgaMemory);
     for (const range of this.pic.portRanges()) this.registerPorts(range);

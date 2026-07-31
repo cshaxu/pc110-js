@@ -23,6 +23,46 @@ describe("RebuiltCpuExecutor", () => {
     expect(trace[0]).toMatchObject({ before: { eip: 0xfff0 }, after: { eip: 0xfff1 } });
   });
 
+  it("captures only selected instruction boundaries without changing execution", () => {
+    const makeState = () => {
+      const state = new RebuiltCpuState();
+      state.writeSegment("cs", { selector: 0, base: 0, limit: 0xffff, default32: false });
+      state.writeEip(0);
+      return state;
+    };
+    const bytes = new Map<number, number>([
+      [0, 0x90],
+      [1, 0x90]
+    ]);
+    const bus = {
+      readUint8: (address: number) => bytes.get(address) ?? 0,
+      writeUint8: () => undefined
+    };
+    const fastState = makeState();
+    const selectiveState = makeState();
+    const trace: Array<{ readonly before: { readonly eip: number } }> = [];
+    const fast = new RebuiltCpuExecutor(fastState, bus);
+    const selective = new RebuiltCpuExecutor(selectiveState, bus, {
+      onTrace: (event) => trace.push(event),
+      shouldCapture: (point) => point.eip === 1
+    });
+    const dispatch = ({
+      instruction,
+      state
+    }: {
+      instruction: { readonly length: number };
+      state: RebuiltCpuState;
+    }) => state.advanceEip(instruction.length);
+
+    fast.step(dispatch);
+    fast.step(dispatch);
+    selective.step(dispatch);
+    selective.step(dispatch);
+
+    expect(trace).toMatchObject([{ before: { eip: 1 } }]);
+    expect(selectiveState.snapshot()).toEqual(fastState.snapshot());
+  });
+
   it("fetches from reset CS:EIP and preserves instruction-start EIP for dispatch", () => {
     const state = new RebuiltCpuState();
     const bytes = new Map<number, number>([[0xfffffff0, 0x90]]);
@@ -221,7 +261,10 @@ describe("RebuiltCpuExecutor", () => {
         readUint8: (address) => bytes.get(address) ?? 0,
         writeUint8: (address, value) => bytes.set(address, value)
       },
-      (event) => trace.push(event)
+      {
+        onTrace: (event) => trace.push(event),
+        shouldCapture: () => false
+      }
     );
 
     expect(executor.step(() => (dispatched = true))).toBeUndefined();
@@ -231,6 +274,7 @@ describe("RebuiltCpuExecutor", () => {
     expect(state.readCr2()).toBe(0x400000);
     expect(trace).toHaveLength(1);
     expect(trace[0]?.fault).toBe(true);
+    expect(trace[0]).toMatchObject({ before: { eip: 0 }, after: { eip: 0x40 } });
   });
 
   it("delivers a non-present segment-load fault through the rebuilt IDT path", () => {
