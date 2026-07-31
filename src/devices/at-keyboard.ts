@@ -69,7 +69,7 @@ export class AtKeyboard {
   }
 
   public canTransmitScanCodes(): boolean {
-    return this.scanningEnabled && this.lines.dataEnabled && this.lines.clockEnabled;
+    return this.scanningEnabled && this.lines.clockEnabled;
   }
 
   public snapshot(): AtKeyboardState {
@@ -88,7 +88,7 @@ export class AtKeyboard {
     this.awaitingLedValue = state.awaitingLedValue;
   }
 
-  // TODO(High): Add reset, resend, scan-set, and typematic protocol after selected-ROM evidence requires them.
+  // TODO(High): Add resend, scan-set, and typematic protocol after selected-ROM evidence requires them.
 }
 
 function requireByte(value: number): number {

@@ -35,6 +35,7 @@ root.innerHTML = `
       <label>Floppy <input id="floppy" type="file" /></label>
       <button id="mount" type="button">Mount</button>
       ${developerMediaEnabled ? '<button id="dev-media" type="button">Load local media</button>' : ""}
+      ${developerMediaEnabled ? '<button id="dev-key-a" type="button">Send A</button>' : ""}
     </footer>
   </section>
 `;
@@ -50,6 +51,7 @@ const vgaRom = root.querySelector<HTMLInputElement>("#vga-rom");
 const floppy = root.querySelector<HTMLInputElement>("#floppy");
 const mount = root.querySelector<HTMLButtonElement>("#mount");
 const developerMedia = root.querySelector<HTMLButtonElement>("#dev-media");
+const developerKeyA = root.querySelector<HTMLButtonElement>("#dev-key-a");
 if (
   !state ||
   !run ||
@@ -153,6 +155,10 @@ mount.addEventListener("click", async () => {
   }
 });
 developerMedia?.addEventListener("click", () => void mountDeveloperMedia());
+developerKeyA?.addEventListener("click", () => {
+  enqueueKeyboardCode("KeyA", true);
+  enqueueKeyboardCode("KeyA", false);
+});
 
 async function mountDeveloperMedia(): Promise<void> {
   try {
@@ -192,10 +198,16 @@ function scheduleNativeRun(timestamp = 0): void {
 }
 
 function enqueueKeyboardEvent(event: KeyboardEvent, pressed: boolean): void {
-  if (machine.snapshot().runState !== "running" || (pressed && event.repeat)) return;
-  const bytes = set1ScancodeBytes(event.code, pressed);
-  if (!bytes) return;
+  if (pressed && event.repeat) return;
+  if (!enqueueKeyboardCode(event.code, pressed)) return;
   event.preventDefault();
+}
+
+function enqueueKeyboardCode(code: string, pressed: boolean): boolean {
+  if (machine.snapshot().runState !== "running") return false;
+  const bytes = set1ScancodeBytes(code, pressed);
+  if (!bytes) return false;
   keyboardQueue.enqueue(bytes);
+  return true;
 }
 machine.subscribe(render);

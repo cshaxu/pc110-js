@@ -141,6 +141,25 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(irqs).toEqual([1, 1]);
   });
 
+  it("accepts scan codes with the clock released when data inhibit remains active", () => {
+    const irqs: number[] = [];
+    const controller = new PcAtKeyboardController(
+      (irq) => irqs.push(irq),
+      () => {},
+      () => {}
+    );
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x45, 8);
+
+    expect(controller.keyboard.snapshot()).toMatchObject({
+      dataEnabled: false,
+      clockEnabled: true
+    });
+    expect(controller.receiveKeyboardByte(0x1e)).toBe(true);
+    expect(controller.read(0x60, 8)).toBe(0x1e);
+    expect(irqs).toEqual([1]);
+  });
+
   it("routes output-port writes and pulse requests through explicit callbacks", () => {
     const outputPorts: number[] = [];
     let resets = 0;
