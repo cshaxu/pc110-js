@@ -38,7 +38,7 @@ describe("project-native video checkpoint state", () => {
     feature.write(VGA_FEATURE_CONTROL_COLOR_PORT, 3, 8);
     miscellaneous.write(VGA_MISC_OUTPUT_WRITE_PORT, 0x67, 8);
     mda.advance(1_000);
-    cga.advance();
+    cga.advance(1_000);
     const checkpoint = {
       sequencer: sequencer.capture(),
       graphics: graphics.capture(),

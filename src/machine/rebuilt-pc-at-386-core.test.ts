@@ -647,17 +647,17 @@ describe("RebuiltPcAt386Core", () => {
     expect(core.ports.read(0x3c2, 8)).toBe(0);
     core.ports.write(0x3da, 0x03, 8);
     expect(core.ports.read(0x3ca, 8)).toBe(0x03);
-    expect(core.ports.read(0x3da, 8)).toBe(0);
+    expect(core.ports.read(0x3da, 8)).toBe(0x39);
   });
 
   it("advances VGA-compatible status timing separately from rendering", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     const core = new RebuiltPcAt386Core(memory);
-    expect(core.ports.read(0x3da, 8)).toBe(0);
+    expect(core.ports.read(0x3da, 8)).toBe(0x39);
     core.advanceVideo(1);
-    expect(core.ports.read(0x3da, 8)).toBe(0x01);
+    expect(core.ports.read(0x3da, 8)).toBe(0x09);
     core.advanceVideo(1);
-    expect(core.ports.read(0x3da, 8)).toBe(0x08);
+    expect(core.ports.read(0x3da, 8)).toBe(0x39);
     expect(() => core.advanceVideo(-1)).toThrow("non-negative");
   });
 });

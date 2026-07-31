@@ -357,7 +357,7 @@ export class RebuiltPcAt386Core {
     if (!Number.isInteger(cycles) || cycles < 0)
       throw new RangeError("Video cycle charge must be a non-negative integer");
     this.mdaCompatibility.advance(cycles);
-    this.cgaCompatibility.advance();
+    this.cgaCompatibility.advance(cycles);
   }
 
   public advanceFdcDma(maxTransfers: number): number {

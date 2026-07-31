@@ -28,16 +28,29 @@ describe("VGA CGA compatibility ports", () => {
     expect(bus.read(0x3d8, 16)).toBe(0x1e29);
   });
 
-  it("exposes deterministic retrace state and rejects invalid width/write ownership", () => {
+  it("models deterministic VGA Input Status 1 timing and diagnostic bits", () => {
     const cga = new CgaCompatibility();
-    expect(cga.read(0x3da, 8)).toBe(0);
-    cga.advance();
+    expect(cga.read(0x3da, 8)).toBe(0x39);
+    expect(cga.read(0x3da, 8)).toBe(0x09);
+    cga.advance(41_537);
+    expect(cga.read(0x3da, 8)).toBe(0x30);
+    cga.advance(431);
     expect(cga.read(0x3da, 8)).toBe(0x01);
-    cga.advance();
-    expect(cga.read(0x3da, 8)).toBe(0x08);
     expect(() => cga.write(0x3da, 0, 8)).toThrow("not writable");
     expect(() => cga.read(0x3d8, 32)).toThrow("8-bit");
     cga.reset();
-    expect(cga.snapshot()).toMatchObject({ crtcIndex: 0, mode: 0, color: 0 });
+    expect(cga.snapshot()).toMatchObject({
+      crtcIndex: 0,
+      mode: 0,
+      color: 0,
+      verticalRetrace: true
+    });
+  });
+
+  it("derives VGA status timing from the selected virtual CPU clock", () => {
+    const cga = new CgaCompatibility(undefined, true, { cpuCyclesPerSecond: 8_000_000 });
+    expect(cga.read(0x3da, 8)).toBe(0x39);
+    cga.advance(20_727);
+    expect(cga.read(0x3da, 8)).toBe(0);
   });
 });
