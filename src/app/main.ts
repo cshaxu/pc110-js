@@ -22,7 +22,7 @@ root.innerHTML = `
       <span id="state" role="status"></span>
     </header>
     <div class="display" aria-label="Machine display">
-      <canvas id="screen" width="720" height="400" aria-label="Native VGA text display"></canvas>
+      <canvas id="screen" width="720" height="400" tabindex="0" aria-label="Native VGA text display"></canvas>
       <div class="native-status" id="native-status" aria-live="polite"></div>
     </div>
     <footer>
@@ -97,7 +97,7 @@ function render(snapshot: MachineSnapshot): void {
   controls.state.textContent = `${snapshot.profileId}: ${snapshot.runState}`;
   const native = checkpoint.snapshot();
   controls.nativeStatus.textContent = [
-    `CPU reset ${native.codeAddress}`,
+    `CPU ${native.codeAddress}`,
     `PIC M IRR ${native.masterRequest} ISR ${native.masterInService}`,
     `PIC S IRR ${native.slaveRequest} ISR ${native.slaveInService}`,
     `PIT 0 OUT ${native.timer0Output} 2 OUT ${native.timer2Output}`,
@@ -126,6 +126,7 @@ controls.reset.addEventListener("click", () => {
   checkpoint.reset();
   machine.reset();
 });
+screen.addEventListener("click", () => screen.focus());
 window.addEventListener("keydown", (event) => enqueueKeyboardEvent(event, true));
 window.addEventListener("keyup", (event) => enqueueKeyboardEvent(event, false));
 mount.addEventListener("click", async () => {
