@@ -34,6 +34,41 @@ describe("project-native PC/AT 8042 adapter", () => {
     expect(irqs).toEqual([1]);
   });
 
+  it("delivers keyboard BAT after the controller releases data and clock", () => {
+    const irqs: number[] = [];
+    const controller = new PcAtKeyboardController(
+      (irq) => irqs.push(irq),
+      () => {},
+      () => {}
+    );
+
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x4d, 8);
+
+    expect(controller.read(0x60, 8)).toBe(0xaa);
+    expect(irqs).toEqual([1]);
+    expect(controller.keyboard.snapshot()).toEqual({
+      dataEnabled: true,
+      clockEnabled: true,
+      batPending: false
+    });
+  });
+
+  it("does not deliver BAT while either controller line is held", () => {
+    const controller = new PcAtKeyboardController(
+      () => {},
+      () => {},
+      () => {}
+    );
+
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x01, 8);
+    expect(controller.controller.snapshot().outputBuffer).toBeUndefined();
+    controller.write(0x64, 0x60, 8);
+    controller.write(0x60, 0x09, 8);
+    expect(controller.controller.snapshot().outputBuffer).toBe(0xaa);
+  });
+
   it("routes output-port writes and pulse requests through explicit callbacks", () => {
     const outputPorts: number[] = [];
     let resets = 0;

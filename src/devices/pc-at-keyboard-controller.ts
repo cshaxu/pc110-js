@@ -6,6 +6,7 @@ import {
   type KeyboardController8042Result,
   type KeyboardController8042Snapshot
 } from "./keyboard-controller8042.js";
+import { AtKeyboard } from "./at-keyboard.js";
 
 export interface PcAtKeyboardControllerPortRange {
   readonly start: number;
@@ -20,6 +21,7 @@ export interface PcAtKeyboardControllerPortRange {
  */
 export class PcAtKeyboardController {
   public readonly controller = new KeyboardController8042();
+  public readonly keyboard = new AtKeyboard();
 
   public constructor(
     private readonly raiseIrq: (irq: number) => void,
@@ -29,6 +31,7 @@ export class PcAtKeyboardController {
 
   public reset(): void {
     this.controller.reset();
+    this.keyboard.reset();
   }
 
   public read(port: number, width: PortWidth): number {
@@ -45,6 +48,7 @@ export class PcAtKeyboardController {
         ? this.controller.writeData(value)
         : this.controller.writeCommand(value);
     this.apply(operation);
+    this.synchronizeKeyboardLines();
   }
 
   public receiveKeyboardByte(value: number): boolean {
@@ -78,6 +82,15 @@ export class PcAtKeyboardController {
     if (operation.resetPulseRequested) this.resetProcessor();
     if (operation.irq1Requested) this.raiseIrq(1);
     return true;
+  }
+
+  private synchronizeKeyboardLines(): void {
+    const commandByte = this.controller.snapshot().commandByte;
+    const bytes = this.keyboard.setLines({
+      dataEnabled: Boolean(commandByte & 0x08),
+      clockEnabled: !(commandByte & 0x10)
+    });
+    for (const byte of bytes) this.apply(this.controller.receiveKeyboardByte(byte));
   }
 
   private requirePort(port: number, width: PortWidth): void {

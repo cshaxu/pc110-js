@@ -379,6 +379,21 @@ describe("RebuiltPcAt386Core", () => {
     });
   });
 
+  it("routes the native keyboard BAT through the selected 8042 and IRQ1", () => {
+    const memory = new PhysicalMemory({ ramBytes: 0x200000, a20Enabled: true });
+    const core = new RebuiltPcAt386Core(memory);
+    core.ports.write(0x20, 0x11, 8);
+    core.ports.write(0x21, 0x20, 8);
+    core.ports.write(0x21, 0x04, 8);
+    core.ports.write(0x21, 0x01, 8);
+
+    core.ports.write(0x64, 0x60, 8);
+    core.ports.write(0x60, 0x4d, 8);
+
+    expect(core.pic.pendingVector()).toBe(0x21);
+    expect(core.ports.read(0x60, 8)).toBe(0xaa);
+  });
+
   it("registers the native FPU control lines without an x87 execution engine", () => {
     const memory = new PhysicalMemory({ ramBytes: 0x1000, a20Enabled: true });
     const core = new RebuiltPcAt386Core(memory);
