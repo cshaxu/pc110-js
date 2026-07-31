@@ -25,6 +25,32 @@ export interface PcjsLockstepSnapshot {
       }
     >;
   };
+  readonly devices: {
+    readonly pic: readonly {
+      readonly mask: number;
+      readonly request: number;
+      readonly inService: number;
+    }[];
+    readonly pit: readonly {
+      readonly reload: number;
+      readonly count: number;
+      readonly output: boolean;
+    }[];
+    readonly dma: readonly { readonly masked: boolean; readonly requested: boolean }[];
+    readonly keyboardController: {
+      readonly status: number;
+      readonly commandByte: number;
+      readonly outputBuffer: number | null;
+      readonly outputDataLatch: number;
+    };
+    readonly rtc: {
+      readonly address: number;
+      readonly statusA: number;
+      readonly statusB: number;
+      readonly statusC: number;
+      readonly statusD: number;
+    };
+  };
 }
 
 export interface LockstepDifference {
@@ -100,7 +126,68 @@ export function compareLockstepCpu(
       if (difference) return { equal: false, difference };
     }
   }
+  const deviceDifference = compareDevices(native, pcjs);
+  if (deviceDifference) return { equal: false, difference: deviceDifference };
   return { equal: true, difference: undefined };
+}
+
+function compareDevices(
+  native: NativeLockstepSnapshot,
+  pcjs: PcjsLockstepSnapshot
+): LockstepDifference | undefined {
+  for (const controller of ["master", "slave"] as const) {
+    for (const field of ["mask", "request", "inService"] as const) {
+      const difference = compare(
+        `devices.pic.${controller}.${field}`,
+        native.devices.pic[controller][field],
+        pcjs.devices.pic[controller === "master" ? 0 : 1]?.[field] ?? -1
+      );
+      if (difference) return difference;
+    }
+  }
+  for (let index = 0; index < 3; index += 1) {
+    for (const field of ["reload", "count", "output"] as const) {
+      const difference = compare(
+        `devices.pit.${index}.${field}`,
+        native.devices.pit[index]?.[field] ?? -1,
+        pcjs.devices.pit[index]?.[field] ?? -1
+      );
+      if (difference) return difference;
+    }
+  }
+  for (let index = 0; index < 8; index += 1) {
+    for (const field of ["masked", "requested"] as const) {
+      const difference = compare(
+        `devices.dma.${index}.${field}`,
+        native.devices.dma[index]?.[field] ?? false,
+        pcjs.devices.dma[index]?.[field] ?? false
+      );
+      if (difference) return difference;
+    }
+  }
+  for (const field of ["status", "commandByte", "outputDataLatch"] as const) {
+    const difference = compare(
+      `devices.keyboardController.${field}`,
+      native.devices.keyboardController[field],
+      pcjs.devices.keyboardController[field]
+    );
+    if (difference) return difference;
+  }
+  const outputBuffer = compare(
+    "devices.keyboardController.outputBuffer",
+    native.devices.keyboardController.outputBuffer ?? -1,
+    pcjs.devices.keyboardController.outputBuffer ?? -1
+  );
+  if (outputBuffer) return outputBuffer;
+  for (const field of ["address", "statusA", "statusB", "statusC", "statusD"] as const) {
+    const difference = compare(
+      `devices.rtc.${field}`,
+      native.devices.rtc[field],
+      pcjs.devices.rtc[field]
+    );
+    if (difference) return difference;
+  }
+  return undefined;
 }
 
 /** Advances both endpoints only after their established CPU state matches. */

@@ -109,7 +109,26 @@ function snapshots(): { native: NativeLockstepSnapshot; pcjs: PcjsLockstepSnapsh
       version: 2,
       cycles: 0,
       paused: true,
-      cpu: { registers, eip: 0, eflags: 2, cr0: 0x10, cr2: 0, cr3: 0, segments }
+      cpu: { registers, eip: 0, eflags: 2, cr0: 0x10, cr2: 0, cr3: 0, segments },
+      devices: {
+        pic: [
+          { mask: 0xff, request: 0, inService: 0 },
+          { mask: 0xff, request: 0, inService: 0 }
+        ],
+        pit: [
+          { reload: 0, count: 0, output: false },
+          { reload: 0, count: 0, output: false },
+          { reload: 0, count: 0, output: false }
+        ],
+        dma: Array.from({ length: 8 }, () => ({ masked: true, requested: false })),
+        keyboardController: {
+          status: 0x10,
+          commandByte: 0x10,
+          outputBuffer: null,
+          outputDataLatch: 0
+        },
+        rtc: { address: 0, statusA: 0x26, statusB: 2, statusC: 0, statusD: 0x80 }
+      }
     }
   };
 }
@@ -126,6 +145,18 @@ describe("controlled lockstep comparator", () => {
     expect(compareLockstepCpu(native, changed)).toEqual({
       equal: false,
       difference: { path: "cpu.registers.ecx", native: 2, pcjs: 9 }
+    });
+  });
+
+  it("reports the first selected-device difference after equal CPU state", () => {
+    const { native, pcjs } = snapshots();
+    const changed = {
+      ...pcjs,
+      devices: { ...pcjs.devices, rtc: { ...pcjs.devices.rtc, statusC: 0x40 } }
+    };
+    expect(compareLockstepCpu(native, changed)).toEqual({
+      equal: false,
+      difference: { path: "devices.rtc.statusC", native: 0, pcjs: 0x40 }
     });
   });
 
