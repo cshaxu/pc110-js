@@ -4,6 +4,9 @@ import { estimate386Cycles } from "./cycle-estimator.js";
 describe("80386 cycle estimator", () => {
   it("distinguishes string, I/O, and conditional control timing classes", () => {
     expect(
+      estimate386Cycles({ opcode: 0xab, prefixes: { bytes: 1 }, length: 2 } as never, 0, 0)
+    ).toBe(3);
+    expect(
       estimate386Cycles(
         { opcode: 0xab, prefixes: { bytes: 1, repeat: "rep" }, length: 2 } as never,
         0,

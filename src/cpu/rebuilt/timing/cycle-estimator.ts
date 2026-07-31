@@ -21,6 +21,8 @@ export function estimate386Cycles(
   if (!instruction) return 3;
   const opcode = instruction.opcode;
   const modRm = instruction.modRm;
+  if (isStoreStringOpcode(opcode))
+    return instruction.prefixes.repeat === undefined ? 3 : repeatContinuation ? 3 : 7;
   if (isStringOpcode(opcode))
     return instruction.prefixes.repeat === undefined ? 5 : repeatContinuation ? 3 : 7;
   if (isIoOpcode(opcode)) return 5;
@@ -84,6 +86,10 @@ function isStringOpcode(opcode: number): boolean {
     (opcode >= 0xa4 && opcode <= 0xa7) ||
     (opcode >= 0xaa && opcode <= 0xaf)
   );
+}
+
+function isStoreStringOpcode(opcode: number): boolean {
+  return opcode === 0xaa || opcode === 0xab;
 }
 
 function isIoOpcode(opcode: number): boolean {
